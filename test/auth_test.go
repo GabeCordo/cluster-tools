@@ -9,10 +9,13 @@ import (
 	"fmt"
 	mrand "math/rand"
 	"strconv"
+	"testing"
 	"time"
 )
 
-func main() {
+/*? Test Function */
+
+func TestNodeAuth(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		panic(err)
@@ -27,13 +30,15 @@ func main() {
 		panic(err)
 	}
 
-	var na core.NodeAuth = NewAuth()
+	var na core.NodeAuth = core.NewAuth()
 	var ne core.NodeEndpoint = core.NewEndpoint("test", [4]bool{true, true, true, true}, privateKey.PublicKey)
 	na.AddTrusted("10.10.10.1", &ne)
 
 	fmt.Println("core auth verified: ", na.ValidateSource("10.10.10.1", hash[:], sig))
 
 	valid := ecdsa.VerifyASN1(&privateKey.PublicKey, hash[:], sig)
-	fmt.Println("signature verified: ", valid)
 
+	if !valid {
+		t.Error("ECDSA signature/public-key verification failed!")
+	}
 }
