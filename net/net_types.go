@@ -1,21 +1,21 @@
 package net
 
 import (
+	"ETLFramework/logger"
 	"crypto/ecdsa"
 	"net/http"
+	"sync"
 )
 
 type Router func(http.ResponseWriter, *http.Request)
 
-type RequestAuth struct {
-	signature []byte
-	nonce     int
-}
-
 type Request struct {
 	lambda string
 	param  []string
-	auth   *RequestAuth
+	auth   struct {
+		signature []byte
+		nonce     int
+	}
 }
 
 type Node struct {
@@ -23,20 +23,11 @@ type Node struct {
 	port   string
 	debug  bool
 	status NodeStatus
+
 	auth   *NodeAuth
-	logger *NodeLogger
-}
+	logger *logger.Logger
 
-type ILogger interface {
-	Log(template string, params ...interface{})
-	Alert(template string, params ...interface{})
-	Warning(template string, params ...interface{})
-}
-
-type NodeLogger struct {
-	folder string
-	style  LoggerOutput
-	node   *Node
+	mutex sync.Mutex
 }
 
 type Permission struct {
@@ -55,4 +46,6 @@ type NodeEndpoint struct {
 
 type NodeAuth struct {
 	trusted map[string]*NodeEndpoint
+	logger  *logger.Logger
+	mutex   sync.Mutex
 }

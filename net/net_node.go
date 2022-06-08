@@ -1,6 +1,7 @@
 package net
 
 import (
+	"ETLFramework/logger"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -31,14 +32,9 @@ func (ns NodeStatus) String() string {
 	}
 }
 
-func NewNode(name string, port int, debug bool, logger *NodeLogger) Node {
+func NewNode(name string, port int, debug bool, auth *NodeAuth, logger *logger.Logger) Node {
 	portString := fmt.Sprintf(":%d", port)
-	authInstance := NewAuth()
-	if logger == nil {
-		return Node{name, portString, debug, Startup, &authInstance, logger}
-	} else {
-		return Node{name, portString, debug, Startup, &authInstance, nil}
-	}
+	return Node{name: name, port: portString, debug: debug, status: Startup, auth: auth, logger: logger}
 }
 
 func (n Node) IsAuthAttached() bool {
@@ -49,11 +45,19 @@ func (n Node) IsLoggerAttached() bool {
 	return n.logger == nil
 }
 
-func (n Node) DebugMode() bool {
-	return n.IsLoggerAttached() && n.debug
+func (n Node) MissingModules() bool {
+	return (n.auth == nil) || (n.logger == nil)
+}
+
+func (n Node) SetStatus(status NodeStatus) {
+	n.mutex.Lock()
+	n.status = status // if we don't lock this, two threads attempting to change the status can cause a race condition
+	n.mutex.Unlock()
 }
 
 func (n Node) Route(path string, handler Router, methods []string, auth bool) error {
+	// the design pattern calls for routes to be appended before the HTTP server is started up
+	// so ensure that it cannot be called during runtime
 	if n.status == Startup {
 		http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 			if !IsUsingJSONContent(r) {
@@ -67,13 +71,13 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 				}
 			}
 			if flagRequestToAllowedMethod {
-				fmt.Println("Request Good")
+				n.logger.Log(n.name, "Request %s used an approved %s method.", r.Host, r.Method)
 
 				/** Unmarshal the JSON body to Request Struct */
 				var body Request
 				err := json.NewDecoder(r.Body).Decode(&body)
 				if err != nil {
-					fmt.Println("Decoder Error")
+					n.logger.Log(n.name, "Request %s contained a malformed HTTP body", r.Host)
 					http.Error(w, err.Error(), http.StatusBadRequest)
 				}
 				if auth {
@@ -82,27 +86,30 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 					if n.auth.ValidateSource(ip, hash[:], body.auth.signature) {
 						handler(w, r)
 					} else {
-						http.Error(w, "blah", http.StatusForbidden)
+						n.logger.Warning("Request %s attempted to submit a request to %s (%s); did not have permission", path, r.Method)
+						http.Error(w, "Bye Bye.", http.StatusForbidden)
 					}
 				} else {
-					handler(w, r)
+					// we do not know what handler may be passed to this function while registering a route,
+					// run it as a go thread to avoid blocking the main execution thread
+					go handler(w, r)
 				}
 			} else {
-				strError := fmt.Sprintf("%s not allowed for /%s", r.Method, path)
 				if n.logger != nil {
-					n.logger.Log(strError)
+					n.logger.Log(n.name, "Request to %s failed; Path does not support %s", path, r.Method)
 				}
 			}
 		})
 		return nil
 	}
-	return &NodeIllegalActionError{}
+	return &NodeIllegalActionError{} // the developer should know that they're breaking
+	// the pattern by calling this during runtime
 }
 
 func (n Node) Start() {
-	n.status = Running
+	n.SetStatus(Running) // thread safe
 	if n.logger != nil {
-		n.logger.Log("Starting up ETLNode Server over port ")
+		n.logger.Log(n.name, "Starting up ETLNode Server over port ")
 	}
 	log.Fatal(http.ListenAndServe(n.port, nil))
 }
