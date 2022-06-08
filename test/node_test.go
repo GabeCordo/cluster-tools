@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ETLFramework/core"
+	"ETLFramework/net"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +13,7 @@ import (
 /*? Routing Functions */
 
 func index(w http.ResponseWriter, r *http.Request) {
-	core.FormatResponse(w, http.StatusOK, "{\"value\":\"good\"}")
+	net.FormatResponse(w, http.StatusOK, "{\"value\":\"good\"}")
 }
 
 func onlyPost(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func onlyPost(w http.ResponseWriter, r *http.Request) {
 /*? Source Code to Test */
 
 func StartupHTTPNode() {
-	n := core.NewNode("main", 10000, false, nil) // pass a nil to logger pointer ~ no logging
+	n := net.NewNode("main", 5050, false, nil) // pass a nil to logger pointer ~ no logging
 	n.Route("/", index, []string{"GET"}, false)
 	n.Route("/onlyPost", onlyPost, []string{"POST"}, true)
 	go n.Start()
@@ -36,6 +36,7 @@ func GetHTTPResponseJSON(resp *http.Response) map[string]string {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	fmt.Println(string(body))
 
 	bodyJson := map[string]string{}
 	json.Unmarshal([]byte(body), &bodyJson)
@@ -47,12 +48,15 @@ func GetHTTPResponseJSON(resp *http.Response) map[string]string {
 
 func TestNodeHTTP(t *testing.T) {
 	StartupHTTPNode()
-	resp, err := http.Get("localhost:10000/")
+	resp, err := http.Get("http://127.0.0.1:5050")
 	if err != nil {
+		log.Println(err.Error())
 		t.Error("Failed to startup an HTTP GET route.")
-	}
-	respJson := GetHTTPResponseJSON(resp)
-	if respJson["value"] != "good" {
-		t.Error("HTTP Get route returned the wrong data")
+	} else {
+		defer resp.Body.Close()
+		respJson := GetHTTPResponseJSON(resp)
+		if respJson["value"] != "good" {
+			t.Error("HTTP Get route returned the wrong data")
+		}
 	}
 }

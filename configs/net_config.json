@@ -1,0 +1,28 @@
+{
+  "version": 0.001,
+  "common": {
+    "ip": "127.0.0.1",
+    "port": 5050
+  },
+  "auth": {
+    "publicKeyDirectory": "",
+    "endpoints": [
+      {
+        "127.0.0.1": {
+          "name": "localhost",
+          "globalPermissions": "",
+          "publickey": "",
+          "localPermissions": {
+            "/extract": "",
+            "/transform": "",
+            "/load": ""
+          }
+        }
+      }
+    ]
+  },
+  "logging": {
+    "enabled": true,
+    "folder": ""
+  }
+}

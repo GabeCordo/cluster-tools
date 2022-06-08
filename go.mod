@@ -1,3 +1,3 @@
-module github.com/ETLFramework
+module ETLFramework
 
 go 1.18

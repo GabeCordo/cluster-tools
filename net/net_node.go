@@ -1,4 +1,4 @@
-package core
+package net
 
 import (
 	"crypto/sha256"
@@ -9,8 +9,6 @@ import (
 	"strconv"
 )
 
-// ~
-
 type NodeStatus int
 
 const (
@@ -19,39 +17,6 @@ const (
 	Frozen
 	Killed
 )
-
-// ~
-
-type NodeIllegalActionError struct{}
-
-func (e *NodeIllegalActionError) Error() string {
-	return "Illegal Action Given the Node's Current State"
-}
-
-// ~
-
-type Router func(http.ResponseWriter, *http.Request)
-
-// ~
-
-type Request struct {
-	nonce     int
-	signature []byte
-	data      map[string]string
-}
-
-// ~
-
-type INode interface{}
-
-type Node struct {
-	name   string
-	port   string
-	debug  bool
-	status NodeStatus
-	auth   *NodeAuth
-	logger *NodeLogger
-}
 
 func NewNode(name string, port int, debug bool, logger *NodeLogger) Node {
 	portString := fmt.Sprintf(":%d", port)
@@ -63,6 +28,18 @@ func NewNode(name string, port int, debug bool, logger *NodeLogger) Node {
 	}
 }
 
+func (n Node) IsAuthAttached() bool {
+	return n.auth == nil
+}
+
+func (n Node) IsLoggerAttached() bool {
+	return n.logger == nil
+}
+
+func (n Node) DebugMode() bool {
+	return n.IsLoggerAttached() && n.debug
+}
+
 func (n Node) Route(path string, handler Router, methods []string, auth bool) error {
 	if n.status == Startup {
 		http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
@@ -70,14 +47,16 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 				http.Error(w, "Only JSON Content permitted", http.StatusBadRequest)
 				return
 			}
-			flag := false
-			for _, m := range methods {
-				if m == r.Method {
-					flag = true
+			flagRequestToAllowedMethod := false
+			for _, method := range methods {
+				if method == r.Method {
+					flagRequestToAllowedMethod = true
 				}
 			}
-			if flag {
+			if flagRequestToAllowedMethod {
 				fmt.Println("Request Good")
+
+				/** Unmarshal the JSON body to Request Struct */
 				var body Request
 				err := json.NewDecoder(r.Body).Decode(&body)
 				if err != nil {
@@ -86,8 +65,8 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 				}
 				if auth {
 					ip := GetInternetProtocol(r)
-					hash := sha256.Sum256([]byte(path + strconv.Itoa(body.nonce)))
-					if n.auth.ValidateSource(ip, hash[:], body.signature) {
+					hash := sha256.Sum256([]byte(path + strconv.Itoa(body.auth.nonce)))
+					if n.auth.ValidateSource(ip, hash[:], body.auth.signature) {
 						handler(w, r)
 					} else {
 						http.Error(w, "blah", http.StatusForbidden)
@@ -97,7 +76,9 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 				}
 			} else {
 				strError := fmt.Sprintf("%s not allowed for /%s", r.Method, path)
-				n.logger.Log(strError)
+				if n.logger != nil {
+					n.logger.Log(strError)
+				}
 			}
 		})
 		return nil
@@ -107,7 +88,9 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 
 func (n Node) Start() {
 	n.status = Running
-	n.logger.Log("Starting up ETLNode Server over port ")
+	if n.logger != nil {
+		n.logger.Log("Starting up ETLNode Server over port ")
+	}
 	log.Fatal(http.ListenAndServe(n.port, nil))
 }
 

@@ -1,4 +1,4 @@
-package core
+package net
 
 import (
 	"fmt"
@@ -11,18 +11,6 @@ const (
 	Verbose LoggerOutput = iota
 	Simple
 )
-
-type ILogger interface {
-	Log(template string, params ...interface{})
-	Alert(template string, params ...interface{})
-	Warning(template string, params ...interface{})
-}
-
-type NodeLogger struct {
-	folder string
-	style  LoggerOutput
-	node   *Node
-}
 
 func NewLogger(folder string, style LoggerOutput, node *Node) NodeLogger {
 	return NodeLogger{folder, style, node}
