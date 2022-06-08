@@ -3,6 +3,7 @@ package net
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"encoding/json"
 )
 
 func NewEndpoint(name string, permissions *Permission, publicKey *ecdsa.PublicKey) NodeEndpoint {
@@ -40,4 +41,9 @@ func (ne NodeEndpoint) HasPermission(route string, method string) bool {
 	} else {
 		return ne.globalPermissions.Check(method)
 	}
+}
+
+func (ne NodeEndpoint) String() string {
+	j, _ := json.Marshal(ne)
+	return string(j)
 }

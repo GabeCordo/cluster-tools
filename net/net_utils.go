@@ -2,8 +2,10 @@ package net
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
 )
 
@@ -27,7 +29,24 @@ func GenerateRandomString(seed int) string {
 	return buffer.String()
 }
 
-func main() {
-	s := GenerateRandomString(24)
-	fmt.Println(s)
+func GetInternetProtocol(r *http.Request) string {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
+}
+
+func FormatResponse(w http.ResponseWriter, httpResponseCode int, data string) string {
+	response := fmt.Sprintf("{\"status\":%d, \"data\": %s }", httpResponseCode, data)
+	fmt.Println(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpResponseCode)
+	json.NewEncoder(w).Encode(response)
+	return response
+}
+
+func IsUsingJSONContent(r *http.Request) bool {
+	content := r.Header.Get("Content-Type")
+	return content == "application/json"
 }
