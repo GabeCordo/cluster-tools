@@ -18,28 +18,28 @@ func (ne NodeEndpoint) GeneratePublicKey(data []byte) {
 	key.X = x
 	key.Y = y
 
-	ne.publicKey = key
+	ne.PublicKey = key
 }
 
 func (ne NodeEndpoint) PublicKeyToBytes() []byte {
-	if ne.publicKey == nil {
+	if ne.PublicKey == nil {
 		return []byte{}
 	}
-	return elliptic.Marshal(ne.publicKey.Curve, ne.publicKey.X, ne.publicKey.Y)
+	return elliptic.Marshal(ne.PublicKey.Curve, ne.PublicKey.X, ne.PublicKey.Y)
 }
 
 func (ne NodeEndpoint) ValidateSource(hash, sig []byte) bool {
-	if ne.publicKey == nil {
+	if ne.PublicKey == nil {
 		return false
 	}
-	return ecdsa.VerifyASN1(ne.publicKey, hash, sig)
+	return ecdsa.VerifyASN1(ne.PublicKey, hash, sig)
 }
 
 func (ne NodeEndpoint) HasPermission(route string, method string) bool {
-	if localPermission, ok := ne.localPermissions[route]; ok {
+	if localPermission, ok := ne.LocalPermissions[route]; ok {
 		return localPermission.Check(method)
 	} else {
-		return ne.globalPermissions.Check(method)
+		return ne.GlobalPermissions.Check(method)
 	}
 }
 

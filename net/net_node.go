@@ -4,7 +4,6 @@ import (
 	"ETLFramework/logger"
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,33 +31,32 @@ func (ns NodeStatus) String() string {
 	}
 }
 
-func NewNode(name string, port int, debug bool, auth *NodeAuth, logger *logger.Logger) Node {
-	portString := fmt.Sprintf(":%d", port)
-	return Node{name: name, port: portString, debug: debug, status: Startup, auth: auth, logger: logger}
+func NewNode(name string, address Address, debug bool, auth *NodeAuth, logger *logger.Logger) Node {
+	return Node{Name: name, Address: address, Debug: debug, Status: Startup, Auth: auth, Logger: logger}
 }
 
 func (n Node) IsAuthAttached() bool {
-	return n.auth == nil
+	return n.Auth == nil
 }
 
 func (n Node) IsLoggerAttached() bool {
-	return n.logger == nil
+	return n.Logger == nil
 }
 
 func (n Node) MissingModules() bool {
-	return (n.auth == nil) || (n.logger == nil)
+	return (n.Auth == nil) || (n.Logger == nil)
 }
 
 func (n Node) SetStatus(status NodeStatus) {
-	n.mutex.Lock()
-	n.status = status // if we don't lock this, two threads attempting to change the status can cause a race condition
-	n.mutex.Unlock()
+	n.Mutex.Lock()
+	n.Status = status // if we don't lock this, two threads attempting to change the status can cause a race condition
+	n.Mutex.Unlock()
 }
 
 func (n Node) Route(path string, handler Router, methods []string, auth bool) error {
 	// the design pattern calls for routes to be appended before the HTTP server is started up
 	// so ensure that it cannot be called during runtime
-	if n.status == Startup {
+	if n.Status == Startup {
 		http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 			if !IsUsingJSONContent(r) {
 				http.Error(w, "Only JSON Content permitted", http.StatusBadRequest)
@@ -71,22 +69,22 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 				}
 			}
 			if flagRequestToAllowedMethod {
-				n.logger.Log(n.name, "Request %s used an approved %s method.", r.Host, r.Method)
+				n.Logger.Log(n.Name, "Request %s used an approved %s method.", r.Host, r.Method)
 
 				/** Unmarshal the JSON body to Request Struct */
 				var body Request
 				err := json.NewDecoder(r.Body).Decode(&body)
 				if err != nil {
-					n.logger.Log(n.name, "Request %s contained a malformed HTTP body", r.Host)
+					n.Logger.Log(n.Name, "Request %s contained a malformed HTTP body", r.Host)
 					http.Error(w, err.Error(), http.StatusBadRequest)
 				}
 				if auth {
 					ip := GetInternetProtocol(r)
-					hash := sha256.Sum256([]byte(path + strconv.Itoa(body.auth.nonce)))
-					if n.auth.ValidateSource(ip, hash[:], body.auth.signature) {
+					hash := sha256.Sum256([]byte(path + strconv.Itoa(body.Auth.Nonce)))
+					if n.Auth.ValidateSource(ip, hash[:], body.Auth.Signature) {
 						handler(w, r)
 					} else {
-						n.logger.Warning("Request %s attempted to submit a request to %s (%s); did not have permission", path, r.Method)
+						n.Logger.Warning("Request %s attempted to submit a request to %s (%s); did not have permission", path, r.Method)
 						http.Error(w, "Bye Bye.", http.StatusForbidden)
 					}
 				} else {
@@ -95,8 +93,8 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 					go handler(w, r)
 				}
 			} else {
-				if n.logger != nil {
-					n.logger.Log(n.name, "Request to %s failed; Path does not support %s", path, r.Method)
+				if n.Logger != nil {
+					n.Logger.Log(n.Name, "Request to %s failed; Path does not support %s", path, r.Method)
 				}
 			}
 		})
@@ -108,10 +106,10 @@ func (n Node) Route(path string, handler Router, methods []string, auth bool) er
 
 func (n Node) Start() {
 	n.SetStatus(Running) // thread safe
-	if n.logger != nil {
-		n.logger.Log(n.name, "Starting up ETLNode Server over port ")
+	if n.Logger != nil {
+		n.Logger.Log(n.Name, "Starting up ETLNode Server over port ")
 	}
-	log.Fatal(http.ListenAndServe(n.port, nil))
+	log.Fatal(http.ListenAndServe(n.Address.String(), nil))
 }
 
 func (n Node) String() string {

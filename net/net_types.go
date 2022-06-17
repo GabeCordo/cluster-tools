@@ -7,45 +7,50 @@ import (
 	"sync"
 )
 
+type Address struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
 type Router func(http.ResponseWriter, *http.Request)
 
 type Request struct {
-	lambda string
-	param  []string
-	auth   struct {
-		signature []byte
-		nonce     int
-	}
+	Lambda string   `json:"lambda"`
+	Param  []string `json:"param"`
+	Auth   struct {
+		Signature []byte `json:"signature"`
+		Nonce     int    `json:"nonce"`
+	} `json:"auth"`
 }
 
 type Node struct {
-	name   string
-	port   string
-	debug  bool
-	status NodeStatus
+	Name    string     `json:"name"`
+	Address Address    `json:"address"`
+	Debug   bool       `json:"debug"`
+	Status  NodeStatus `json:"status"`
 
-	auth   *NodeAuth
-	logger *logger.Logger
+	Auth   *NodeAuth
+	Logger *logger.Logger
 
-	mutex sync.Mutex
+	Mutex sync.Mutex
 }
 
 type Permission struct {
-	get    bool
-	post   bool
-	pull   bool
-	delete bool
+	Get    bool `json:"get"`
+	Post   bool `json:"post"`
+	Pull   bool `json:"pull"`
+	Delete bool `json:"delete"`
 }
 
 type NodeEndpoint struct {
-	name              string
-	publicKey         *ecdsa.PublicKey
-	globalPermissions *Permission
-	localPermissions  map[string]*Permission
+	Name              string                 `json:"name"`
+	PublicKey         *ecdsa.PublicKey       `json:"publicKey"`
+	GlobalPermissions *Permission            `json:"globalPermissions"`
+	LocalPermissions  map[string]*Permission `json:"localPermissions"`
 }
 
 type NodeAuth struct {
-	trusted map[string]*NodeEndpoint
-	logger  *logger.Logger
-	mutex   sync.Mutex
+	Trusted map[string]*NodeEndpoint `json:"trusted"`
+	Logger  *logger.Logger           `json:"logger"`
+	Mutex   sync.Mutex               `json:"mutex"`
 }

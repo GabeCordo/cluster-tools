@@ -9,16 +9,16 @@ func NewPermission(get, post, pull, delete bool) Permission {
 func (p Permission) Check(method string) bool {
 	switch method {
 	case "get":
-		return p.get
+		return p.Get
 	case "post":
-		return p.post
+		return p.Post
 	case "delete":
-		return p.delete
+		return p.Delete
 	default:
-		return p.pull
+		return p.Pull
 	}
 }
 
 func (p Permission) String() string {
-	return fmt.Sprintf("Permission[%t, %t, %t, %t]", p.get, p.delete, p.post, p.pull)
+	return fmt.Sprintf("Permission[%t, %t, %t, %t]", p.Get, p.Delete, p.Post, p.Pull)
 }
