@@ -14,14 +14,14 @@ const (
 )
 
 type Log struct {
-	component string
-	data      string
+	Component string
+	Data      string
 }
 
 type LogInterval struct {
-	hours        float64
-	minutes      float64
-	lastInterval time.Time
+	Hours        float64   `json:"hours"`
+	Minutes      float64   `json:"minutes"`
+	LastInterval time.Time `json:"lastInterval"`
 }
 
 type ILogger interface {
@@ -31,8 +31,8 @@ type ILogger interface {
 }
 
 type Logger struct {
-	folder   string
-	style    LogOutput
-	logQueue chan string
-	interval *LogInterval
+	Folder   string       `json:"folder"`
+	Style    LogOutput    `json:"style"`
+	LogQueue chan string  `json:"queue"`
+	Interval *LogInterval `json:"interval"`
 }

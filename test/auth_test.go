@@ -5,44 +5,75 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
-	mrand "math/rand"
-	"strconv"
+	"net/http"
 	"testing"
 	"time"
 )
 
 /*? Test Function */
 
-func TestNodeAuth(t *testing.T) {
+func AuthenticatedIndex(response *net.Response) {
+	response.AddStatus(http.StatusOK, "authenticated")
+}
+
+func TestAuthNoGlobalOrLocalPermissionsPresent(t *testing.T) {
+
+}
+
+func TestAuthGlobalPermissionPresent(t *testing.T) {
+
+}
+
+func TestAuthLocalPermissionPresent(t *testing.T) {
+
+}
+
+func TestAuthGlobalAndLocalPermissionsPresent(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		panic(err)
+		t.Error("Could not generate an ECDSA key pair")
 	}
-	mrand.Seed(time.Now().UnixNano())
-	nonce := 1 + mrand.Intn(9)
-	msg := "/extract" + strconv.Itoa(nonce)
-	hash := sha256.Sum256([]byte(msg))
 
-	sig, err := ecdsa.SignASN1(rand.Reader, privateKey, hash[:])
+	var na *net.Auth = net.NewAuth()
+	var ne *net.Endpoint = net.NewEndpoint("test", &privateKey.PublicKey)
+
+	globalPermissionMap := net.NewPermission(false, false, false, false)
+	localPermissionMap := net.NewPermission(true, false, false, false)
+	ne.AddGlobalPermission(globalPermissionMap)
+	ne.AddLocalPermission("/", localPermissionMap)
+	na.AddTrusted("127.0.0.1", ne)
+
+	a := net.Address{"localhost", 8000}
+	n := net.NewNode("", a, false, na, nil) // pass a nil to logger pointer ~ no logging
+	n.Route("/", AuthenticatedIndex, []string{"GET", "POST"}, true)
+
+	go n.Start()
+
+	// if you are on macos, you may need to give the binary permission to use a socket port
+	time.Sleep(WaitForServerStart)
+
+	request := net.NewRequest("/")
+	request.Sign(privateKey)
+
+	/* GET request should succeed */
+	resp, err := request.Send("GET", LocalHost+fmt.Sprint(GETPort))
 	if err != nil {
-		panic(err)
+		t.Error("Failed to startup an HTTP GET route.")
 	}
-	fmt.Println("----------Signature----------")
-	fmt.Printf("%v\n", sig)
-	fmt.Printf("%d", len(sig))
 
-	var na net.NodeAuth = net.NewAuth()
-	var pm net.Permission = net.NewPermission(true, true, true, true)
-	var ne net.NodeEndpoint = net.NewEndpoint("test", &pm, &privateKey.PublicKey)
-	na.AddTrusted("10.10.10.1", &ne)
-
-	fmt.Println("net auth verified: ", na.ValidateSource("10.10.10.1", hash[:], sig))
-
-	valid := ecdsa.VerifyASN1(&privateKey.PublicKey, hash[:], sig)
-
-	if !valid {
-		t.Error("ECDSA signature/public-key verification failed!")
+	if (*resp).Data["status"] != "authenticated" {
+		t.Error("Node could not authenticate a valid host")
 	}
+
+	/* POST request should NOT succeed */
+	resp, err = request.Send("POST", LocalHost+fmt.Sprint(GETPort))
+	if err != nil {
+		t.Error("Failed to startup an HTTP GET route.")
+	}
+
+	if resp.Status == http.StatusUnauthorized {
+		t.Error("Node was let into a permission ")
+	}
+
 }
