@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "Template",
   "version": 0.001,
   "debug": true,
   "logging": {
@@ -7,12 +7,9 @@
     "folder": ""
   },
   "net": {
-    "address": {
-      "host": "127.0.0.1",
-      "port": 8000
-    }
+    "host": "127.0.0.1",
+    "port": 8000
   },
   "auth": {
-    ""
   }
 }

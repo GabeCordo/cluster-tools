@@ -9,21 +9,21 @@ func NewInterval(hours, minutes float64) LogInterval {
 	return LogInterval{hours, minutes, now}
 }
 
-func (li LogInterval) Expired() bool {
+func (li *LogInterval) Expired() bool {
 	now := time.Now()
-	difference := now.Sub(li.lastInterval)
-	if difference.Hours() > li.hours {
-		if difference.Minutes() > li.minutes {
+	difference := now.Sub(li.LastInterval)
+	if difference.Hours() > li.Hours {
+		if difference.Minutes() > li.Minutes {
 			return true
 		}
 	}
 	return false
 }
 
-func (li LogInterval) Refresh() {
-	li.lastInterval = time.Now()
+func (li *LogInterval) Refresh() {
+	li.LastInterval = time.Now()
 }
 
-func (li LogInterval) String() string {
-	return li.lastInterval.Format(dateOutputFormat)
+func (li *LogInterval) String() string {
+	return li.LastInterval.Format(dateOutputFormat)
 }

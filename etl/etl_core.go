@@ -18,7 +18,7 @@ var loggerLock = &sync.Mutex{}
 var (
 	ConfigInstance *Config
 	NodeInstance   *net.Node
-	AuthInstance   *net.NodeAuth
+	AuthInstance   *net.Auth
 	LoggerInstance *logger.Logger
 )
 
@@ -43,20 +43,13 @@ func GetNodeInstance() *net.Node {
 
 	if NodeInstance == nil {
 		config := GetConfigInstance()
-
-		NodeInstance = new(net.Node)
-		NodeInstance.Address = config.Net
-		NodeInstance.Logger = GetLoggerInstance()
-		NodeInstance.Auth = GetAuthInstance()
-		NodeInstance.Name = config.Name
-		NodeInstance.Debug = config.Debug
-		NodeInstance.Status = net.Startup
+		NodeInstance = net.NewNode(config.Name, config.Net, config.Debug, GetAuthInstance(), GetLoggerInstance())
 	}
 
 	return NodeInstance
 }
 
-func GetAuthInstance() *net.NodeAuth {
+func GetAuthInstance() *net.Auth {
 	authLock.Lock()
 	defer authLock.Unlock()
 

@@ -2,8 +2,6 @@ package net
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -20,6 +18,11 @@ func RandInteger(min int, max int) int {
 	return min + rand.Intn(max-min)
 }
 
+func RandInteger64(min int64, max int64) int64 {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Int63n(max-min)
+}
+
 func GenerateRandomString(seed int) string {
 	buffer := new(bytes.Buffer)
 	for i := 0; i < maxGeneratedStringLength; i++ {
@@ -29,24 +32,27 @@ func GenerateRandomString(seed int) string {
 	return buffer.String()
 }
 
-func GetInternetProtocol(r *http.Request) string {
-	forwarded := r.Header.Get("X-FORWARDED-FOR")
-	if forwarded != "" {
-		return forwarded
-	}
-	return r.RemoteAddr
+func GenerateNonce() int64 {
+	return time.Now().Unix() * RandInteger64(4, 9)
 }
 
-func FormatResponse(w http.ResponseWriter, httpResponseCode int, data string) string {
-	response := fmt.Sprintf("{\"status\":%d, \"data\": %s }", httpResponseCode, data)
-	fmt.Println(response)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(httpResponseCode)
-	json.NewEncoder(w).Encode(response)
-	return response
+func GetInternetProtocol(r *http.Request) (*Address, error) {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != "" {
+		return NewAddress(forwarded)
+	}
+	return NewAddress(r.RemoteAddr)
 }
 
 func IsUsingJSONContent(r *http.Request) bool {
 	content := r.Header.Get("Content-Type")
 	return content == "application/json"
+}
+
+func ArrayToLookupHashTable(a []string) map[string]any {
+	m := make(map[string]any)
+	for _, i := range a {
+		m[i] = nil
+	}
+	return m
 }

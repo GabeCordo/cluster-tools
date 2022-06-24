@@ -1,16 +1,13 @@
 package net
 
-import (
-	"ETLFramework/logger"
-)
-
-func NewAuth(logger *logger.Logger) NodeAuth {
-	trustedMap := make(map[string]*NodeEndpoint)
+func NewAuth() *Auth {
 	// mutex is initialized implicitly by the struct
-	return NodeAuth{Trusted: trustedMap, Logger: logger}
+	auth := new(Auth)
+	auth.Trusted = make(map[string]*Endpoint)
+	return auth
 }
 
-func (na NodeAuth) AddTrusted(ip string, ne *NodeEndpoint) bool {
+func (na *Auth) AddTrusted(ip string, ne *Endpoint) bool {
 	if ne == nil {
 		return false
 	}
@@ -25,17 +22,17 @@ func (na NodeAuth) AddTrusted(ip string, ne *NodeEndpoint) bool {
 	}
 }
 
-func (na NodeAuth) RemoveTrusted(ip string) error {
+func (na *Auth) RemoveTrusted(ip string) error {
 	na.Mutex.Lock()
 	delete(na.Trusted, ip)
 	na.Mutex.Unlock()
 	return nil
 }
 
-func (na NodeAuth) ValidateSource(ip string, hash, sig []byte) bool {
+func (na *Auth) ValidateSource(ip string, request *Request) bool {
 	validFlag := false // by default, we will assume that the ip doesn't exist in the hash map
 	if endpoint, ok := na.Trusted[ip]; ok {
-		validFlag = endpoint.ValidateSource(hash, sig)
+		validFlag = endpoint.ValidateSource(request)
 	}
 	return validFlag
 }

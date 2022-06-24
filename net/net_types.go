@@ -12,15 +12,22 @@ type Address struct {
 	Port int    `json:"port"`
 }
 
-type Router func(http.ResponseWriter, *http.Request)
+type Router func(response *Response)
 
 type Request struct {
 	Lambda string   `json:"lambda"`
 	Param  []string `json:"param"`
 	Auth   struct {
 		Signature []byte `json:"signature"`
-		Nonce     int    `json:"nonce"`
+		Nonce     int64  `json:"nonce"`
 	} `json:"auth"`
+}
+
+type ResponseData map[string]interface{}
+
+type Response struct {
+	Status int          `json:"status"`
+	Data   ResponseData `json:"data"`
 }
 
 type Node struct {
@@ -29,9 +36,10 @@ type Node struct {
 	Debug   bool       `json:"debug"`
 	Status  NodeStatus `json:"status"`
 
-	Auth   *NodeAuth
+	Auth   *Auth
 	Logger *logger.Logger
 
+	Mux   *http.ServeMux
 	Mutex sync.Mutex
 }
 
@@ -42,15 +50,14 @@ type Permission struct {
 	Delete bool `json:"delete"`
 }
 
-type NodeEndpoint struct {
+type Endpoint struct {
 	Name              string                 `json:"name"`
 	PublicKey         *ecdsa.PublicKey       `json:"publicKey"`
 	GlobalPermissions *Permission            `json:"globalPermissions"`
 	LocalPermissions  map[string]*Permission `json:"localPermissions"`
 }
 
-type NodeAuth struct {
-	Trusted map[string]*NodeEndpoint `json:"trusted"`
-	Logger  *logger.Logger           `json:"logger"`
-	Mutex   sync.Mutex               `json:"mutex"`
+type Auth struct {
+	Trusted map[string]*Endpoint `json:"trusted"`
+	Mutex   sync.Mutex           `json:"mutex"`
 }

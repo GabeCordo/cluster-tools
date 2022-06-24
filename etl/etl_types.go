@@ -19,5 +19,5 @@ type Config struct {
 	Debug   bool          `json:"debug"`
 	Logging logger.Logger `json:"logging"`
 	Net     net.Address   `json:"net"`
-	Auth    net.NodeAuth  `json:"auth"`
+	Auth    net.Auth      `json:"auth"`
 }
