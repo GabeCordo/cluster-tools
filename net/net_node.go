@@ -125,7 +125,15 @@ func (n *Node) Route(path string, handler Router, methods []string, auth bool) e
 				}
 
 				if auth {
-					if n.Auth.ValidateSource(sender.Host, body) {
+					// Why not pass the lambda provided by the request to IsEndpointAuthorized?
+					//		-> the user is not forced to use the request.Send() method and can
+					//		   direct the request to an url they do not have permission for while
+					//		   inserting an url path as the lambda for a route they do have permission
+					//		   for
+					// Why not place method into request type as well?
+					//		-> a lambda can support > 1 HTTP method
+					//		-> it is safer to use a server-defined method that the node has control over
+					if n.Auth.IsEndpointAuthorized(sender, body, path, r.Method) {
 						// the request IP destination either had local or global permission
 						handler(response)
 					} else {
@@ -157,8 +165,8 @@ func (n *Node) Route(path string, handler Router, methods []string, auth bool) e
 		})
 		return nil
 	}
-	return &NodeIllegalActionError{} // the developer should know that they're breaking
-	// the pattern by calling this during runtime
+	// the developer should know that they're breaking the pattern by calling this during runtime
+	return &NodeIllegalActionError{}
 }
 
 func (n *Node) Start() {
