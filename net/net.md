@@ -246,6 +246,7 @@ node.Start()  // turn on the HTTP server
 ```
 
 #### 2. Authentication
+```go
 address := net.NewAddress("localhost:8000")
 auth := net.NewAuth()
 node := net.NewNode(address, auth, true)  // optional parameters like *net.Auth can be passed in any order
@@ -264,5 +265,4 @@ request.SetStatus(http.StatusOK, "Welcome to Tern!")
 }(), methods: []string{"GET"}, auth: true) // the boolean representing auth has now been set to true
 
 node.Start()  // turn on the HTTP server
-```go
 ```
