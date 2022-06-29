@@ -11,6 +11,7 @@ func NewEndpoint(name string, publicKey *ecdsa.PublicKey) *Endpoint {
 
 	endpoint.Name = name
 	endpoint.PublicKey = publicKey
+	endpoint.LastNonce = MissingNonceValue
 	endpoint.GlobalPermissions = nil
 	endpoint.LocalPermissions = make(map[string]*Permission)
 
@@ -47,7 +48,13 @@ func (ne *Endpoint) PublicKeyToBytes() []byte {
 }
 
 func (ne *Endpoint) ValidateSource(request *Request) bool {
+	// if we do not have a public key we cannot verify the ECDSA signature
 	if ne.PublicKey == nil {
+		return false
+	}
+	// we cannot accept the last received or previous nonce, or we risk a threat actor
+	// resending an intercepted nonce/signature to forge credentials
+	if request.Auth.Nonce <= ne.LastNonce {
 		return false
 	}
 	hash := request.Hash()

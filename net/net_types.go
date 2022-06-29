@@ -51,8 +51,9 @@ type Permission struct {
 }
 
 type Endpoint struct {
-	Name              string                 `json:"name"`
-	PublicKey         *ecdsa.PublicKey       `json:"publicKey"`
+	Name              string           `json:"name"`
+	PublicKey         *ecdsa.PublicKey `json:"publicKey"`
+	LastNonce         int64
 	GlobalPermissions *Permission            `json:"globalPermissions"`
 	LocalPermissions  map[string]*Permission `json:"localPermissions"`
 }

@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	StandardTimeout = time.Duration(1) * time.Second
-	Decimal         = 10
+	StandardTimeout   = time.Duration(1) * time.Second
+	Decimal           = 10
+	MissingNonceValue = 0
 )
 
 func NewRequest(function string) *Request {
@@ -39,7 +40,14 @@ func (r Request) Hash() [32]byte {
 }
 
 func (r *Request) Sign(key *ecdsa.PrivateKey) error {
-	r.Auth.Nonce = GenerateNonce() // int64 -> currentTime * random int
+	// if the nonce has never been created, generate one
+	if r.Auth.Nonce == MissingNonceValue {
+		r.Auth.Nonce = GenerateNonce() // int64 -> currentTime * random int
+	} else {
+		// the Node will verify that the nonce is greater than the previous, otherwise
+		// we risk allowing a threat actor to re-send the same nonce and signature again
+		r.Auth.Nonce++
+	}
 
 	hash := r.Hash()
 	signature, err := ecdsa.SignASN1(rand.Reader, key, hash[:]) // [32]byte -> []byte

@@ -191,6 +191,8 @@ Generates a new NOnce and Signature based on the internal contents hashed by Req
 a request can be sent if a net.Function has authentication enabled. If the request is signed and passed to a net.Function with authentication disabled,
 the net.Function wrapper will ignore the Request.Auth JSON key - this will not reduce performance.
 
+![Sign](../.bin/activity_sign.png)
+
 ##### Bytes() []byte
 Returns a byte array holding the JSON encoding of the structure. This function should not be used to generate a hash for
 ECDSA or authentication related schemes, use Request.Hash() for that.
