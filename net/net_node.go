@@ -30,16 +30,29 @@ func (ns NodeStatus) String() string {
 	}
 }
 
-func NewNode(name string, address Address, debug bool, auth *Auth, logger *logger.Logger) *Node {
+// NewNode
+// address : Address -> defines the listening host and port
+// auth : *Auth ->
+//
+// LEGACY: func NewNode(address Address, debug bool, auth *Auth, logger *logger.Logger) *Node {
+func NewNode(address Address, optional ...interface{}) *Node {
 	node := new(Node)
 
-	node.Name = name
-	node.Address = address
-	node.Debug = debug
-	node.Status = Startup
-	node.Auth = auth
-	node.Logger = logger
+	for _, o := range optional {
+		switch val := o.(type) {
+		case *Auth:
+			node.Auth = val // default: nil
+		case *logger.Logger:
+			node.Logger = val // default: nil
+		case bool:
+			node.Debug = val // default: false
+		}
+	}
+
+	node.Name = GenerateRandomString(int(GenerateNonce()))
 	node.Mux = http.NewServeMux()
+	node.Address = address
+	node.Status = Startup
 
 	return node
 }
@@ -58,11 +71,20 @@ func (n Node) MissingModules() bool {
 
 func (n *Node) SetStatus(status NodeStatus) {
 	n.Mutex.Lock()
+	defer n.Mutex.Unlock()
 	n.Status = status // if we don't lock this, two threads attempting to change the status can cause a race condition
-	n.Mutex.Unlock()
 }
 
-func (n *Node) Route(path string, handler Router, methods []string, auth bool) error {
+func (n *Node) SetName(name string) {
+	// a node name should be static during runtime given that during a time interval from (0 to inf)
+	// if N logs are stored, using the node name as an id, then a dynamic name change at time t
+	// would render new logs created from (t to inf) detached from logs created from (0 to t)
+	if n.Status == Startup {
+		n.Name = name
+	}
+}
+
+func (n *Node) Function(path string, handler Router, methods []string, auth bool) error {
 
 	// the user should not be able to create a route that requires ECDSA or permission bitmap
 	// authentication if they have not registered an auth structure

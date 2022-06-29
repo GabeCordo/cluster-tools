@@ -25,8 +25,8 @@ func index(response *net.Response) {
 
 func StartupHTTPNodeWithGETEnabled() {
 	a := net.Address{"localhost", GETPort}
-	n := net.NewNode("", a, false, nil, nil) // pass a nil to logger pointer ~ no logging
-	n.Route("/", index, []string{"GET"}, false)
+	n := net.NewNode(a, false) // pass a nil to logger pointer ~ no logging
+	n.Function("/", index, []string{"GET"}, false)
 	go n.Start()
 }
 
@@ -34,10 +34,10 @@ func StartupHTTPNodeWithGETEnabled() {
 
 func TestNodeMissingAuthStruct(t *testing.T) {
 	a := net.Address{"", 8000}
-	n := net.NewNode("", a, false, nil, nil) // pass a nil to logger pointer ~ no logging
+	n := net.NewNode(a, false) // pass a nil to logger pointer ~ no logging
 
 	// since we have not registered an auth struct to the node, we should not be allowed to create an auth-mandatory route
-	err := n.Route("/", index, []string{"GET"}, true)
+	err := n.Function("/", index, []string{"GET"}, true)
 	if err == nil {
 		t.Error("a node should not be able to create an authenticated routed path without an auth node")
 	}
@@ -45,10 +45,10 @@ func TestNodeMissingAuthStruct(t *testing.T) {
 
 func TestAttemptAddRouteOutsideOfStartup(t *testing.T) {
 	a := net.Address{"localhost", 8000}
-	n := net.NewNode("", a, false, nil, nil)
+	n := net.NewNode(a, false)
 	n.SetStatus(net.Running) // simulate the n.Start() function
 
-	err := n.Route("/", index, []string{"GET"}, false)
+	err := n.Function("/", index, []string{"GET"}, false)
 	if err == nil {
 		t.Error("a node should not be able to dynamically assign routes while running")
 	}

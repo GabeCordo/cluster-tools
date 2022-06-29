@@ -30,8 +30,8 @@ func TestAuthNoGlobalOrLocalPermissionsPresent(t *testing.T) {
 	na.AddTrusted("127.0.0.1", ne)
 
 	a := net.Address{"localhost", 8000}
-	n := net.NewNode("", a, false, na, nil) // pass a nil to logger pointer ~ no logging
-	n.Route("/", AuthenticatedIndex, []string{"GET"}, true)
+	n := net.NewNode(a, false, na) // pass a nil to logger pointer ~ no logging
+	n.Function("/", AuthenticatedIndex, []string{"GET"}, true)
 
 	go n.Start()
 
@@ -68,8 +68,8 @@ func TestAuthGlobalPermissionPresent(t *testing.T) {
 	na.AddTrusted("127.0.0.1", ne)
 
 	a := net.Address{"localhost", 8000}
-	n := net.NewNode("", a, false, na, nil) // pass a nil to logger pointer ~ no logging
-	n.Route("/", AuthenticatedIndex, []string{"GET"}, true)
+	n := net.NewNode(a, false, na) // pass a nil to logger pointer ~ no logging
+	n.Function("/", AuthenticatedIndex, []string{"GET"}, true)
 
 	go n.Start()
 
@@ -107,8 +107,8 @@ func TestAuthLocalPermissionPresent(t *testing.T) {
 	na.AddTrusted("127.0.0.1", ne)
 
 	a := net.Address{"localhost", 8000}
-	n := net.NewNode("", a, false, na, nil) // pass a nil to logger pointer ~ no logging
-	n.Route("/", AuthenticatedIndex, []string{"GET"}, true)
+	n := net.NewNode(a, false, na) // pass a nil to logger pointer ~ no logging
+	n.Function("/", AuthenticatedIndex, []string{"GET"}, true)
 
 	go n.Start()
 
@@ -148,8 +148,8 @@ func TestAuthGlobalAndLocalPermissionsPresent(t *testing.T) {
 	na.AddTrusted("127.0.0.1", ne)
 
 	a := net.Address{"localhost", 8000}
-	n := net.NewNode("", a, false, na, nil) // pass a nil to logger pointer ~ no logging
-	n.Route("/", AuthenticatedIndex, []string{"GET", "POST"}, true)
+	n := net.NewNode(a, false, na) // pass a nil to logger pointer ~ no logging
+	n.Function("/", AuthenticatedIndex, []string{"GET", "POST"}, true)
 
 	go n.Start()
 

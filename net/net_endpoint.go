@@ -54,7 +54,7 @@ func (ne *Endpoint) ValidateSource(request *Request) bool {
 	return ecdsa.VerifyASN1(ne.PublicKey, hash[:], request.Auth.Signature)
 }
 
-func (ne Endpoint) HasPermissionToUseMethod(route string, method string) bool {
+func (ne Endpoint) HasPermissionToUseMethod(route, method string) bool {
 	if localPermission, ok := ne.LocalPermissions[route]; ok {
 		return localPermission.Check(method)
 	} else if ne.GlobalPermissions != nil {

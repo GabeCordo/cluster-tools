@@ -43,7 +43,8 @@ func GetNodeInstance() *net.Node {
 
 	if NodeInstance == nil {
 		config := GetConfigInstance()
-		NodeInstance = net.NewNode(config.Name, config.Net, config.Debug, GetAuthInstance(), GetLoggerInstance())
+		NodeInstance = net.NewNode(config.Net, config.Debug, GetAuthInstance(), GetLoggerInstance())
+		NodeInstance.Name = config.Name
 	}
 
 	return NodeInstance

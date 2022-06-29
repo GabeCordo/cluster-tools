@@ -15,9 +15,9 @@ type Address struct {
 type Router func(response *Response)
 
 type Request struct {
-	Lambda string   `json:"lambda"`
-	Param  []string `json:"param"`
-	Auth   struct {
+	Function string   `json:"lambda"`
+	Param    []string `json:"param"`
+	Auth     struct {
 		Signature []byte `json:"signature"`
 		Nonce     int64  `json:"nonce"`
 	} `json:"auth"`

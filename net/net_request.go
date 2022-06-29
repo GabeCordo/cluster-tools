@@ -19,9 +19,9 @@ const (
 	Decimal         = 10
 )
 
-func NewRequest(lambda string) *Request {
+func NewRequest(function string) *Request {
 	request := new(Request)
-	request.Lambda = lambda
+	request.Function = function
 	return request
 }
 
@@ -34,7 +34,7 @@ func (r Request) Bytes() []byte {
 }
 
 func (r Request) Hash() [32]byte {
-	concatenatedString := r.Lambda + strconv.FormatInt(r.Auth.Nonce, Decimal)
+	concatenatedString := r.Function + strconv.FormatInt(r.Auth.Nonce, Decimal)
 	return sha256.Sum256([]byte(concatenatedString))
 }
 
@@ -54,7 +54,7 @@ func (r *Request) Sign(key *ecdsa.PrivateKey) error {
 func (r *Request) Send(method, url string) (*Response, error) {
 	httpClient := http.Client{Timeout: StandardTimeout}
 
-	httpUrl := url + r.Lambda
+	httpUrl := url + r.Function
 	log.Println(httpUrl)
 	httpRequest, err := http.NewRequest(method, httpUrl, nil)
 	if err != nil {
