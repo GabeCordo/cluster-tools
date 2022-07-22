@@ -12,7 +12,7 @@ type Address struct {
 	Port int    `json:"port"`
 }
 
-type Router func(response *Response)
+type Router func(request *Request, response *Response)
 
 type Request struct {
 	Function string   `json:"lambda"`

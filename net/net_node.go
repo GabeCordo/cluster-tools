@@ -157,7 +157,7 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 					//		-> it is safer to use a server-defined method that the node has control over
 					if n.Auth.IsEndpointAuthorized(sender, body, path, r.Method) {
 						// the request IP destination either had local or global permission
-						handler(response)
+						handler(body, response)
 					} else {
 						// the request IP destination does not have local or global permission
 						if n.Logger != nil {
@@ -168,7 +168,7 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 				} else {
 					// the endpoint does not require the destination ip of the request to have local or global
 					// permission to send messages to the Node
-					handler(response)
+					handler(body, response)
 				}
 			} else {
 				if n.Logger != nil {

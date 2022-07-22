@@ -13,7 +13,7 @@ import (
 
 /*? Test Function */
 
-func AuthenticatedIndex(response *net.Response) {
+func AuthenticatedIndex(request *net.Request, response *net.Response) {
 	response.AddStatus(http.StatusOK, "authenticated")
 }
 

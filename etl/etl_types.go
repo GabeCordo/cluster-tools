@@ -1,8 +1,11 @@
 package etl
 
 import (
+	"ETLFramework/channel"
 	"ETLFramework/logger"
 	"ETLFramework/net"
+	"sync"
+	"time"
 )
 
 type Segment int8
@@ -20,4 +23,37 @@ type Config struct {
 	Logging logger.Logger `json:"logging"`
 	Net     net.Address   `json:"net"`
 	Auth    net.Auth      `json:"auth"`
+}
+
+type Cluster interface {
+	ExtractFunc(output channel.OutputChannel)
+	TransformFunc(input channel.InputChannel, output channel.OutputChannel)
+	LoadFunc(input channel.InputChannel)
+}
+
+type MonitorConfigRequest struct {
+	etChannelThreshold    int
+	etChannelGrowthFactor int
+	tlChannelThreshold    int
+	tlChannelGrowthFactor int
+}
+
+type MonitorData struct {
+	numProvisionedTransformRoutes int
+	numProvisionedLoadRoutines    int
+}
+
+type Monitor struct {
+	group     Cluster
+	config    MonitorConfigRequest
+	data      MonitorData
+	etChannel *channel.ManagedChannel
+	tlChannel *channel.ManagedChannel
+	waitGroup sync.WaitGroup
+}
+
+type MonitorCompleteResponse struct {
+	config     MonitorConfigRequest
+	data       MonitorData
+	lapsedTime time.Duration
 }

@@ -17,7 +17,7 @@ const (
 
 /*? Routing Functions */
 
-func index(response *net.Response) {
+func index(request *net.Request, response *net.Response) {
 	response.AddStatus(http.StatusOK, SuccessMessage)
 }
 

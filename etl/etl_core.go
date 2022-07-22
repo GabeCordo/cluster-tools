@@ -71,3 +71,7 @@ func GetLoggerInstance() *logger.Logger {
 
 	return LoggerInstance
 }
+
+func Run() {
+
+}
