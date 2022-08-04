@@ -15,7 +15,7 @@ type Address struct {
 type Router func(request *Request, response *Response)
 
 type Request struct {
-	Function string   `json:"lambda"`
+	Function string   `json:"function"`
 	Param    []string `json:"param"`
 	Auth     struct {
 		Signature []byte `json:"signature"`
@@ -39,8 +39,9 @@ type Node struct {
 	Auth   *Auth
 	Logger *logger.Logger
 
-	Mux   *http.ServeMux
-	Mutex sync.Mutex
+	mux    *http.ServeMux
+	server *http.Server
+	mutex  sync.Mutex
 }
 
 type Permission struct {

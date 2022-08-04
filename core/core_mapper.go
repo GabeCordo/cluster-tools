@@ -1,4 +1,4 @@
-package etl
+package core
 
 import (
 	"encoding/json"

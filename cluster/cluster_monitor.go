@@ -1,4 +1,4 @@
-package etl
+package cluster
 
 import (
 	"ETLFramework/channel"
@@ -6,21 +6,21 @@ import (
 )
 
 const (
-	DefaultMonitorRefreshDuration 1
+	DefaultMonitorRefreshDuration = 1
 )
 
 func NewMonitor(cluster Cluster) *Monitor {
 	monitor := new(Monitor)
 
 	monitor.group = cluster
-	monitor.config = MonitorConfigRequest{10, 2, 10, 2}
+	monitor.config = Config{10, 2, 10, 2}
 	monitor.etChannel = channel.NewManagedChannel(monitor.config.etChannelThreshold, monitor.config.etChannelGrowthFactor)
 	monitor.tlChannel = channel.NewManagedChannel(monitor.config.tlChannelThreshold, monitor.config.tlChannelGrowthFactor)
 
 	return monitor
 }
 
-func NewCustomMonitor(cluster Cluster, config MonitorConfigRequest) *Monitor {
+func NewCustomMonitor(cluster Cluster, config Config) *Monitor {
 	monitor := new(Monitor)
 
 	/**
@@ -38,16 +38,16 @@ func NewCustomMonitor(cluster Cluster, config MonitorConfigRequest) *Monitor {
 	return monitor
 }
 
-func (m *Monitor) Start() MonitorCompleteResponse {
+func (m *Monitor) Start() Response {
 	m.waitGroup.Add(3)
 
 	startTime := time.Now()
 
-	// start creating the default etl goroutines
+	// start creating the default frontend goroutines
 	m.Provision(Extract)
 	m.Provision(Transform)
 	m.Provision(Load)
-	// end creating the default etl goroutines
+	// end creating the default frontend goroutines
 
 	// every N seconds we should check if the etChannel or tlChannel is congested
 	// and requires us to provision additional nodes
@@ -55,10 +55,7 @@ func (m *Monitor) Start() MonitorCompleteResponse {
 
 	m.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
-	response := MonitorCompleteResponse{}
-	response.data = m.data  // copy the provision data into the response
-	response.lapsedTime = time.Now().Sub(startTime)
-
+	response := Response{data: m.data, lapsedTime: time.Now().Sub(startTime)}
 	return response
 }
 
@@ -66,11 +63,21 @@ func (m *Monitor) Runtime() {
 	for {
 		// is etChannel congested?
 		if m.etChannel.State == channel.Congested {
-			m.Provision(Transform)
+			n := m.data.numProvisionedTransformRoutes
+			for n > 0 {
+				m.Provision(Transform)
+				n--
+			}
+			m.data.numProvisionedTransformRoutes *= m.etChannel.Config.GrowthFactor
 		}
 		// is tlChannel congested?
 		if m.tlChannel.State == channel.Congested {
-			m.Provision(Load)
+			n := m.data.numProvisionedLoadRoutines
+			for n > 0 {
+				m.Provision(Load)
+				n--
+			}
+			m.data.numProvisionedLoadRoutines *= m.tlChannel.Config.GrowthFactor
 		}
 
 		// check if the channel is congested after DefaultMonitorRefreshDuration seconds

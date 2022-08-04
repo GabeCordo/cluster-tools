@@ -1,9 +1,7 @@
-package etl
+package cluster
 
 import (
 	"ETLFramework/channel"
-	"ETLFramework/logger"
-	"ETLFramework/net"
 	"sync"
 	"time"
 )
@@ -16,14 +14,12 @@ const (
 	Load              = 2
 )
 
-type Config struct {
-	Name    string        `json:"name"`
-	Version float64       `json:"version"`
-	Debug   bool          `json:"debug"`
-	Logging logger.Logger `json:"logging"`
-	Net     net.Address   `json:"net"`
-	Auth    net.Auth      `json:"auth"`
-}
+type OnCrash int8
+
+const (
+	Restart   OnCrash = 0
+	DoNothing         = 1
+)
 
 type Cluster interface {
 	ExtractFunc(output channel.OutputChannel)
@@ -31,29 +27,36 @@ type Cluster interface {
 	LoadFunc(input channel.InputChannel)
 }
 
-type MonitorConfigRequest struct {
+type Config struct {
 	etChannelThreshold    int
 	etChannelGrowthFactor int
 	tlChannelThreshold    int
 	tlChannelGrowthFactor int
 }
 
-type MonitorData struct {
+type Data struct {
 	numProvisionedTransformRoutes int
 	numProvisionedLoadRoutines    int
 }
 
 type Monitor struct {
 	group     Cluster
-	config    MonitorConfigRequest
-	data      MonitorData
+	config    Config
+	data      Data
 	etChannel *channel.ManagedChannel
 	tlChannel *channel.ManagedChannel
 	waitGroup sync.WaitGroup
 }
 
-type MonitorCompleteResponse struct {
-	config     MonitorConfigRequest
-	data       MonitorData
+type Response struct {
+	config     Config
+	data       Data
 	lapsedTime time.Duration
+}
+
+type Supervisor struct {
+	functions map[string]Cluster
+	configs   map[string]Config
+
+	mutex sync.Mutex
 }

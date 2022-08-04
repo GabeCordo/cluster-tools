@@ -69,7 +69,7 @@ func (r *Request) Send(method, url string) (*Response, error) {
 		return nil, err
 	}
 
-	// the server will only accept requests provided with the application/json Content-Type
+	// the server will only accept core provided with the application/json Content-Type
 	// header, otherwise the request will be rejected
 	httpRequest.Header.Add("Content-Type", "application/json")
 	httpRequest.Body = io.NopCloser(bytes.NewReader(r.Bytes()))
@@ -90,7 +90,7 @@ func (r *Request) Send(method, url string) (*Response, error) {
 	// body that needs to be stripped before we can unmarshal the JSON content
 	strBody := string(body)
 
-	// Unmarshal or Decode the JSON to the interface.
+	// Unmarshal or Decode the JSON to the frontend.
 	result := new(Response)
 	json.Unmarshal([]byte(strBody), &result)
 

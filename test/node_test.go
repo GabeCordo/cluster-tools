@@ -65,7 +65,7 @@ func TestNodeReceivedNonJSONRequest(t *testing.T) {
 	}
 
 	if rsp.StatusCode != http.StatusBadRequest {
-		t.Error("node is not properly rejecting non-json requests")
+		t.Error("node is not properly rejecting non-json core")
 	}
 }
 

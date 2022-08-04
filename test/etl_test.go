@@ -2,7 +2,7 @@ package main
 
 import (
 	"ETLFramework/channel"
-	"ETLFramework/etl"
+	"ETLFramework/cluster"
 	"log"
 	"testing"
 )
@@ -38,6 +38,6 @@ func (m Multiply) LoadFunc(input channel.InputChannel) {
 func TestRegisterETLGroup(t *testing.T) {
 	multiply := Multiply{}
 
-	monitor := etl.NewMonitor(multiply)
+	monitor := cluster.NewMonitor(multiply)
 	monitor.Start()
 }
