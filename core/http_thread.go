@@ -84,7 +84,7 @@ func (http Http) Setup() {
 	// core_callbacks functions
 	node.Function("/clusters", http.ClustersFunction, []string{"GET"}, false)
 	node.Function("/statistics", http.StatisticsFunction, []string{"GET"}, true)
-	node.Function("/debug", http.DebugFunction, []string{"GET", "POST", "DELETE"}, false) // TODO - allow auth (DO NOT DEPLOY)
+	node.Function("/debug", http.DebugFunction, []string{"GET", "POST", "DELETE"}, true)
 }
 
 func (http Http) Start() {

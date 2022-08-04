@@ -7,6 +7,10 @@ import (
 	"sync"
 )
 
+const (
+	localhost = "127.0.0.1"
+)
+
 type Address struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`

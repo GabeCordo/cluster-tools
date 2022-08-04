@@ -158,7 +158,7 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 					// Why not place method into request type as well?
 					//		-> a lambda can support > 1 HTTP method
 					//		-> it is safer to use a server-defined method that the node has control over
-					if n.Auth.IsEndpointAuthorized(sender, body, path, r.Method) {
+					if (n.Debug && sender.Host == localhost) || n.Auth.IsEndpointAuthorized(sender, body, path, r.Method) {
 						// the request IP destination either had local or global permission
 						handler(body, response)
 					} else {
