@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ETLFramework/frontend"
+	"ETLFramework/core"
 	"testing"
 )
 
@@ -19,7 +19,7 @@ func TestMarshalJSONConfig(t *testing.T) {
 		}
 	}()
 
-	node := frontend.GetNodeInstance()
+	node := core.GetNodeInstance()
 	if node.Name != "Template" {
 		t.Error("JSON Name not reflected in Marshal")
 	}

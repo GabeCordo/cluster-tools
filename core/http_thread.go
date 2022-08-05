@@ -3,6 +3,7 @@ package core
 import (
 	"ETLFramework/logger"
 	"ETLFramework/net"
+	"log"
 	"sync"
 )
 
@@ -35,6 +36,21 @@ func GetAuthInstance() *net.Auth {
 
 	if AuthInstance == nil {
 		AuthInstance = &GetConfigInstance().Auth
+
+		// the config may not define a map of trusted endpoints leaving the
+		// Trusted field as a nil value that cannot be used
+		if AuthInstance.Trusted == nil {
+			AuthInstance.Trusted = make(map[string]*net.Endpoint)
+		}
+
+		// ECDSA public keys are stored as an uint64 representation of bytes
+		// to ease the process of copying + storing keys - convert to the ECDSA structure
+		for trusted, endpoint := range AuthInstance.Trusted {
+			_, ok := endpoint.GetPublicKey() // populates the PublicKey structure using the uint64 bytes
+			if !ok {
+				log.Println("failed to generate ECDSA key for trusted " + trusted)
+			}
+		}
 	}
 
 	return AuthInstance
@@ -59,23 +75,6 @@ func GetLoggerInstance() *logger.Logger {
 	}
 
 	return LoggerInstance
-}
-
-func (http Http) ClustersFunction(request *net.Request, response *net.Response) {
-	supervisorRequest := SupervisorRequest{Provision, request.Function, request.Param}
-	http.C5 <- supervisorRequest
-
-	response.AddStatus(200, "good")
-}
-
-func (http Http) StatisticsFunction(request *net.Request, response *net.Response) {
-	// TODO - not implemented
-}
-
-func (http Http) DebugFunction(request *net.Request, response *net.Response) {
-	if request.Function == "shutdown" {
-		http.Interrupt <- Shutdown
-	}
 }
 
 func (http Http) Setup() {

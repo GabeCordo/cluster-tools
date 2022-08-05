@@ -3,6 +3,11 @@ package main
 import (
 	"ETLFramework/channel"
 	"ETLFramework/core"
+	"ETLFramework/net"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
@@ -44,13 +49,14 @@ func main() {
 	args := os.Args[1:] // strip out the file descriptor in position 0
 
 	for i := range args {
-		if args[i] == "-h" {
-			fmt.Println("ETLFramework")
-			fmt.Println("-h\tView helpful information about the etl service")
-			fmt.Println("-d\tEnable debug mode")
+		if args[i] == "-h" || args[i] == "--help" {
+			HelpCommand()
 			return
-		} else if args[i] == "-d" {
+		} else if args[i] == "-d" || args[i] == "--debug" {
 			debug = true
+		} else if args[i] == "-g" || args[i] == "--generate-key" {
+			GenerateKeyPair()
+			return
 		}
 	}
 	// stop reading cli arguments
@@ -63,10 +69,34 @@ func main() {
 
 	m := Multiply{}
 	core.Cluster("multiply", m)
-	
+
 	core.Run()
 
 	if debug {
 		fmt.Println("shutting down etlframework")
 	}
+}
+
+func HelpCommand() {
+	fmt.Println("ETLFramework")
+	fmt.Println("-h\tView helpful information about the etl service")
+	fmt.Println("-d\tEnable debug mode")
+}
+
+func GenerateKeyPair() {
+	// generate a public / private key pair
+	pair, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		fmt.Println("Could not generate public and private key pair")
+		return
+	}
+
+	x509Encoded, _ := x509.MarshalECPrivateKey(pair)
+	fmt.Println("[private]")
+	fmt.Println(net.ByteToString(x509Encoded))
+
+	x509EncodedPub, err := x509.MarshalPKIXPublicKey(&pair.PublicKey)
+	fmt.Println(len(x509EncodedPub))
+	fmt.Println("[public]")
+	fmt.Println(net.ByteToString(x509EncodedPub))
 }

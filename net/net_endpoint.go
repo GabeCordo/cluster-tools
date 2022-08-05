@@ -3,6 +3,7 @@ package net
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/x509"
 	"encoding/json"
 )
 
@@ -12,39 +13,63 @@ func NewEndpoint(name string, publicKey *ecdsa.PublicKey) *Endpoint {
 	endpoint.Name = name
 	endpoint.PublicKey = publicKey
 	endpoint.LastNonce = MissingNonceValue
-	endpoint.GlobalPermissions = nil
-	endpoint.LocalPermissions = make(map[string]*Permission)
+	endpoint.LocalPermissions = make(map[string]Permission)
 
 	return endpoint
 }
 
-func (ne *Endpoint) AddGlobalPermission(permission *Permission) {
-	if permission != nil {
-		ne.GlobalPermissions = permission
-	}
+func (ne *Endpoint) AddGlobalPermission(permission Permission) {
+	ne.GlobalPermissions = permission
 }
 
-func (ne *Endpoint) AddLocalPermission(route string, permission *Permission) {
-	if permission != nil {
+func (ne *Endpoint) AddLocalPermission(route string, permission Permission) bool {
+	if _, found := ne.LocalPermissions[route]; !found {
 		ne.LocalPermissions[route] = permission
+		return true
 	}
+	return false
 }
 
-func (ne *Endpoint) GeneratePublicKey(data []byte) {
-	key := new(ecdsa.PublicKey)
+func (ne *Endpoint) GetPublicKey() (*ecdsa.PublicKey, bool) {
+	if (len(ne.X509) == 0) && (ne.PublicKey == nil) {
+		return nil, false
+	}
 
-	x, y := elliptic.Unmarshal(key.Curve, data)
-	key.X = x
-	key.Y = y
+	if ne.PublicKey != nil {
+		return ne.PublicKey, true
+	}
 
-	ne.PublicKey = key
+	publicKeyByteArray, ok := StringToByte(ne.X509)
+	if !ok {
+		return nil, false
+	}
+	ne.GeneratePublicKey(publicKeyByteArray)
+
+	return ne.PublicKey, true
+}
+
+func (ne *Endpoint) GeneratePublicKey(data []byte) bool {
+	ne.X509 = ByteToString(data)
+
+	// any ECDSA key stored in a byte format should be encoded using the x509 scheme
+	// rather than the default ecdsa.Marshal encoding scheme
+	publicKey, err := x509.ParsePKIXPublicKey(data)
+	if err != nil {
+		return false
+	}
+
+	ne.PublicKey = publicKey.(*ecdsa.PublicKey)
+
+	return true
 }
 
 func (ne *Endpoint) PublicKeyToBytes() []byte {
 	if ne.PublicKey == nil {
 		return []byte{}
 	}
-	return elliptic.Marshal(ne.PublicKey.Curve, ne.PublicKey.X, ne.PublicKey.Y)
+
+	b := elliptic.Marshal(ne.PublicKey.Curve, ne.PublicKey.X, ne.PublicKey.Y)
+	return b
 }
 
 func (ne *Endpoint) ValidateSource(request *Request) bool {
@@ -64,10 +89,8 @@ func (ne *Endpoint) ValidateSource(request *Request) bool {
 func (ne Endpoint) HasPermissionToUseMethod(route, method string) bool {
 	if localPermission, ok := ne.LocalPermissions[route]; ok {
 		return localPermission.Check(method)
-	} else if ne.GlobalPermissions != nil {
-		return ne.GlobalPermissions.Check(method)
 	} else {
-		return false
+		return ne.GlobalPermissions.Check(method)
 	}
 }
 

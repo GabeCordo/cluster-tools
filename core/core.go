@@ -2,6 +2,8 @@ package core
 
 import (
 	"ETLFramework/cluster"
+	"encoding/json"
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -29,6 +31,7 @@ func GetConfigInstance() *Config {
 		for i := range commonConfigPaths {
 			err := JSONToETLConfig(ConfigInstance, commonConfigPaths[i])
 			if err == nil {
+				ConfigInstance.Path = commonConfigPaths[i] // the path we found the config for future reference
 				configFound = true
 				break
 			}
@@ -36,11 +39,29 @@ func GetConfigInstance() *Config {
 
 		// no config found
 		if !configFound {
-			panic("(!) missing etl configuration file")
+			panic("(!) the etl configuration file can either not be found or is corrupted")
 		}
 	}
 
 	return ConfigInstance
+}
+
+func (c Config) Store() bool {
+	// verify that the config file we initially loaded from has not been deleted
+	if _, err := os.Stat(c.Path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	jsonRepOfConfig, err := json.Marshal(c)
+	if err != nil {
+		return false
+	}
+
+	err = os.WriteFile(c.Path, jsonRepOfConfig, Write)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func NewCore() *Core {

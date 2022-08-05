@@ -25,6 +25,7 @@ type Config struct {
 	Logging logger.Logger `json:"logging"`
 	Net     net.Address   `json:"net"`
 	Auth    net.Auth      `json:"auth"`
+	Path    string
 }
 
 type Core struct {
