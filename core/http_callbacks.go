@@ -8,7 +8,7 @@ func (http Http) ClustersFunction(request *net.Request, response *net.Response) 
 	supervisorRequest := SupervisorRequest{Provision, request.Function, request.Param}
 	http.C5 <- supervisorRequest
 
-	response.AddStatus(200, "good")
+	response.AddStatus(200, net.Success)
 }
 
 func (http Http) StatisticsFunction(request *net.Request, response *net.Response) {
@@ -26,7 +26,7 @@ func (http Http) DebugFunction(request *net.Request, response *net.Response) {
 				response.AddPair("localPermission", endpoint.LocalPermissions)
 				response.AddPair("globalPermission", endpoint.GlobalPermissions)
 			} else {
-				response.AddStatus(400, "endpoint unknown")
+				response.AddStatus(400, net.BadArgument)
 				return
 			}
 		} else {
@@ -38,6 +38,6 @@ func (http Http) DebugFunction(request *net.Request, response *net.Response) {
 			response.AddPair("endpoints", endpoints)
 		}
 
-		response.AddStatus(200, "success")
+		response.AddStatus(200, net.Success)
 	}
 }
