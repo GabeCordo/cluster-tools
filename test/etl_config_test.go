@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ETLFramework/etl"
+	"ETLFramework/core"
 	"testing"
 )
 
@@ -9,7 +9,7 @@ import (
  * \fn		TestMarshalJSONConfig
  * \brief	Function verifies that the ETL Package can properly Marshal config JSON
  *          data and store it within Node, Auth, and Logging Golang Structures
- * \note	If the config.etl.json format has changed, the reflections must be made in
+ * \note	If the config.frontend.json format has changed, the reflections must be made in
  * 			this test case.
  */
 func TestMarshalJSONConfig(t *testing.T) {
@@ -19,7 +19,7 @@ func TestMarshalJSONConfig(t *testing.T) {
 		}
 	}()
 
-	node := etl.GetNodeInstance()
+	node := core.GetNodeInstance()
 	if node.Name != "Template" {
 		t.Error("JSON Name not reflected in Marshal")
 	}

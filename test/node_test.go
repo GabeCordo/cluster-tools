@@ -17,7 +17,7 @@ const (
 
 /*? Routing Functions */
 
-func index(response *net.Response) {
+func index(request *net.Request, response *net.Response) {
 	response.AddStatus(http.StatusOK, SuccessMessage)
 }
 
@@ -65,7 +65,7 @@ func TestNodeReceivedNonJSONRequest(t *testing.T) {
 	}
 
 	if rsp.StatusCode != http.StatusBadRequest {
-		t.Error("node is not properly rejecting non-json requests")
+		t.Error("node is not properly rejecting non-json core")
 	}
 }
 

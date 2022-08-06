@@ -6,23 +6,25 @@ import (
 	"time"
 )
 
-func NewLogger(folder string, style LogOutput, interval *LogInterval) *Logger {
+func NewLogger(folder string, style LogOutput, interval LogInterval) *Logger {
 	// check to see if the path provided by the logger exists
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		return nil
 	}
-	channel := make(chan string)
 	logger := new(Logger)
 
 	logger.Folder = folder
 	logger.Style = style
-	logger.LogQueue = channel
+	logger.LogQueue = make(chan string)
 	logger.Interval = interval
 
 	return logger
 }
 
 func (l *Logger) LoggerEventLoop() {
+	if l.LogQueue == nil {
+		panic("logger missing queue")
+	}
 	for {
 		// block until we get a new log request sent from the log/warning/alert functions
 		log := <-l.LogQueue
@@ -31,7 +33,7 @@ func (l *Logger) LoggerEventLoop() {
 		// created without the use of a constructor
 		if _, err := os.Stat(l.Folder); os.IsNotExist(err) {
 			// discard the log
-			os.Exit(-1) // TODO - replace this
+			os.Mkdir(l.Folder, os.ModePerm)
 		}
 
 		if l.Interval.Expired() {
@@ -62,6 +64,10 @@ func (l *Logger) Init() {
 }
 
 func (l *Logger) Log(objectName, template string, params ...interface{}) {
+	if l.LogQueue == nil {
+		panic("logger missing queue")
+	}
+
 	var data, header string
 	if l.Style == Verbose {
 		dt := time.Now().Format(dateOutputFormat)
@@ -74,11 +80,21 @@ func (l *Logger) Log(objectName, template string, params ...interface{}) {
 }
 
 func (l *Logger) Alert(template string, params ...interface{}) {
-	data := fmt.Sprintf("[!] %s", params...)
+	if l.LogQueue == nil {
+		panic("logger missing queue")
+	}
+
+	modifiedTemplate := "[!] " + template
+	data := fmt.Sprintf(modifiedTemplate, params...)
 	l.LogQueue <- data
 }
 
 func (l *Logger) Warning(template string, params ...interface{}) {
-	data := fmt.Sprintf("[?] %s", params...)
+	if l.LogQueue == nil {
+		panic("logger missing queue")
+	}
+
+	modifiedTemplate := "[?] " + template
+	data := fmt.Sprintf(modifiedTemplate, params...)
 	l.LogQueue <- data
 }

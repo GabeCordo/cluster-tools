@@ -2,10 +2,12 @@ package net
 
 import (
 	"ETLFramework/logger"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"time"
 )
 
 type NodeStatus int
@@ -50,7 +52,8 @@ func NewNode(address Address, optional ...interface{}) *Node {
 	}
 
 	node.Name = GenerateRandomString(int(GenerateNonce()))
-	node.Mux = http.NewServeMux()
+	node.mux = http.NewServeMux()
+	node.server = new(http.Server)
 	node.Address = address
 	node.Status = Startup
 
@@ -70,9 +73,9 @@ func (n Node) MissingModules() bool {
 }
 
 func (n *Node) SetStatus(status NodeStatus) {
-	n.Mutex.Lock()
-	defer n.Mutex.Unlock()
-	n.Status = status // if we don't lock this, two threads attempting to change the status can cause a race condition
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+	n.Status = status // if we don't lock this, two core attempting to change the status can cause a race condition
 }
 
 func (n *Node) SetName(name string) {
@@ -100,7 +103,7 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 		// look-up in O(1) time versus O(n) needed to iterate over a list of methods
 		methodsHashTable := ArrayToLookupHashTable(methods)
 
-		n.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		n.mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			response := NewResponse()
@@ -155,9 +158,9 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 					// Why not place method into request type as well?
 					//		-> a lambda can support > 1 HTTP method
 					//		-> it is safer to use a server-defined method that the node has control over
-					if n.Auth.IsEndpointAuthorized(sender, body, path, r.Method) {
+					if (n.Debug && sender.Host == localhost) || n.Auth.IsEndpointAuthorized(sender, body, path, r.Method) {
 						// the request IP destination either had local or global permission
-						handler(response)
+						handler(body, response)
 					} else {
 						// the request IP destination does not have local or global permission
 						if n.Logger != nil {
@@ -168,7 +171,7 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 				} else {
 					// the endpoint does not require the destination ip of the request to have local or global
 					// permission to send messages to the Node
-					handler(response)
+					handler(body, response)
 				}
 			} else {
 				if n.Logger != nil {
@@ -193,10 +196,24 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 
 func (n *Node) Start() {
 	n.SetStatus(Running) // thread safe
-	if n.Logger != nil {
-		n.Logger.Log(n.Name, "starting up Node(%s) on %s:%d", n.Name, n.Address.Host, n.Address.Port)
-	}
-	http.ListenAndServe(n.Address.String(), n.Mux)
+
+	// TODO - if logger exists, check to see if the logger is running
+
+	n.server.Addr = n.Address.String()
+	n.server.Handler = n.mux
+	n.server.ListenAndServe()
+}
+
+func (n *Node) Shutdown() {
+	n.SetStatus(Killed) // TODO - kill HTTP server
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		// extra handling here
+		cancel()
+	}()
+
+	n.server.Shutdown(ctx)
 }
 
 func (n Node) String() string {

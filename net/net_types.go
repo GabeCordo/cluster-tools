@@ -7,15 +7,19 @@ import (
 	"sync"
 )
 
+const (
+	localhost = "127.0.0.1"
+)
+
 type Address struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`
 }
 
-type Router func(response *Response)
+type Router func(request *Request, response *Response)
 
 type Request struct {
-	Function string   `json:"lambda"`
+	Function string   `json:"function"`
 	Param    []string `json:"param"`
 	Auth     struct {
 		Signature []byte `json:"signature"`
@@ -39,8 +43,9 @@ type Node struct {
 	Auth   *Auth
 	Logger *logger.Logger
 
-	Mux   *http.ServeMux
-	Mutex sync.Mutex
+	mux    *http.ServeMux
+	server *http.Server
+	mutex  sync.Mutex
 }
 
 type Permission struct {
@@ -51,11 +56,12 @@ type Permission struct {
 }
 
 type Endpoint struct {
-	Name              string           `json:"name"`
-	PublicKey         *ecdsa.PublicKey `json:"publicKey"`
+	Name              string `json:"name"`
+	X509              string `json:"publicKey"`
+	PublicKey         *ecdsa.PublicKey
 	LastNonce         int64
-	GlobalPermissions *Permission            `json:"globalPermissions"`
-	LocalPermissions  map[string]*Permission `json:"localPermissions"`
+	GlobalPermissions Permission            `json:"globalPermissions"`
+	LocalPermissions  map[string]Permission `json:"localPermissions"`
 }
 
 type Auth struct {
