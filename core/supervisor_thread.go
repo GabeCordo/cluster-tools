@@ -16,18 +16,35 @@ func GetSupervisorInstance() *cluster.Supervisor {
 	return supervisor
 }
 
-func (supervisorThread *Supervisor) Setup() {
+func (supervisorThread *SupervisorThread) Setup() {
 	supervisorThread.accepting = true
 	GetSupervisorInstance() // create the supervisor if it doesn't exist
 }
 
-func (supervisorThread *Supervisor) Start() {
-	var request SupervisorRequest
-	for supervisorThread.accepting {
-		request = <-supervisorThread.C5 // request coming from http_server
+func (supervisorThread *SupervisorThread) Start() {
+	supervisorThread.wg.Add(1)
 
-		switch request.Action {
-		case Provision:
+	go func() {
+		for supervisorThread.accepting {
+			request := <-supervisorThread.C5 // request coming from http_server
+			supervisorThread.ProcessIncomingRequests(request)
+		}
+		supervisorThread.wg.Done()
+	}()
+	go func() {
+		for supervisorThread.accepting {
+			response := <-supervisorThread.C8
+			supervisorThread.ProcessesIncomingResponses(response)
+		}
+	}()
+
+	supervisorThread.wg.Wait()
+}
+
+func (supervisorThread *SupervisorThread) ProcessIncomingRequests(request SupervisorRequest) {
+	switch request.Action {
+	case Provision:
+		{
 			log.Printf("Provisioning cluster {%s}", request.Cluster)
 
 			clstr, cnfg, ok := supervisor.Function(request.Cluster)
@@ -42,17 +59,34 @@ func (supervisorThread *Supervisor) Start() {
 			} else {
 				m = cluster.NewCustomMonitor(*clstr, *cnfg)
 			}
-			go m.Start()
+			go func() {
+				response := m.Start()
+
+				// don't send the statistics of the cluster to the database unless an identifier has been
+				// given to the cluster for grouping purposes
+				if len(m.Config.Identifier) != 0 {
+					request := DatabaseRequest{Action: Store, Origin: Supervisor, Cluster: m.Config.Identifier, Data: response}
+					supervisorThread.C7 <- request
+				}
+			}()
 			break
-		case Teardown:
+		}
+	case Teardown:
+		{
 			// TODO - not implemented
 			break
 		}
-	}
+	default:
+		{
 
-	supervisorThread.wg.Wait()
+		}
+	}
 }
 
-func (supervisorThread *Supervisor) Teardown() {
+func (supervisorThread *SupervisorThread) ProcessesIncomingResponses(response DatabaseResponse) {
+
+}
+
+func (supervisorThread *SupervisorThread) Teardown() {
 	supervisorThread.accepting = false
 }

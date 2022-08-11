@@ -10,16 +10,18 @@ const (
 )
 
 type SupervisorRequest struct {
-	Action     SupervisorAction
-	Cluster    string
-	Parameters []string
+	Action     SupervisorAction `json:"action"`
+	Nonce      uint32           `json:"nonce"`
+	Cluster    string           `json:"cluster"`
+	Parameters []string         `json"parameters"`
 }
 
 type SupervisorResponse struct {
-	success bool
+	Nonce   uint32 `json:"nonce"`
+	Success bool   `json:"success"`
 }
 
-type Supervisor struct {
+type SupervisorThread struct {
 	Interrupt chan<- InterruptEvent // Upon completion or failure an interrupt can be raised
 
 	C5 <-chan SupervisorRequest  // Supervisor is receiving core from the http_thread
@@ -32,8 +34,8 @@ type Supervisor struct {
 	wg        sync.WaitGroup
 }
 
-func NewSupervisor(channels ...interface{}) (*Supervisor, bool) {
-	supervisor := new(Supervisor)
+func NewSupervisor(channels ...interface{}) (*SupervisorThread, bool) {
+	supervisor := new(SupervisorThread)
 	var ok bool
 
 	supervisor.Interrupt, ok = (channels[0]).(chan InterruptEvent)

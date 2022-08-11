@@ -13,9 +13,9 @@ func NewMonitor(cluster Cluster) *Monitor {
 	monitor := new(Monitor)
 
 	monitor.group = cluster
-	monitor.config = Config{10, 2, 10, 2}
-	monitor.etChannel = channel.NewManagedChannel(monitor.config.etChannelThreshold, monitor.config.etChannelGrowthFactor)
-	monitor.tlChannel = channel.NewManagedChannel(monitor.config.tlChannelThreshold, monitor.config.tlChannelGrowthFactor)
+	monitor.Config = Config{"", 10, 2, 10, 2}
+	monitor.etChannel = channel.NewManagedChannel(monitor.Config.etChannelThreshold, monitor.Config.etChannelGrowthFactor)
+	monitor.tlChannel = channel.NewManagedChannel(monitor.Config.tlChannelThreshold, monitor.Config.tlChannelGrowthFactor)
 
 	return monitor
 }
@@ -31,7 +31,7 @@ func NewCustomMonitor(cluster Cluster, config Config) *Monitor {
 	 */
 
 	monitor.group = cluster
-	monitor.config = config
+	monitor.Config = config
 	monitor.etChannel = channel.NewManagedChannel(config.etChannelThreshold, config.etChannelGrowthFactor)
 	monitor.tlChannel = channel.NewManagedChannel(config.tlChannelThreshold, config.tlChannelGrowthFactor)
 
@@ -55,7 +55,7 @@ func (m *Monitor) Start() Response {
 
 	m.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
-	response := Response{data: m.data, lapsedTime: time.Now().Sub(startTime)}
+	response := Response{Stats: m.Stats, LapsedTime: time.Now().Sub(startTime)}
 	return response
 }
 
@@ -63,21 +63,21 @@ func (m *Monitor) Runtime() {
 	for {
 		// is etChannel congested?
 		if m.etChannel.State == channel.Congested {
-			n := m.data.numProvisionedTransformRoutes
+			n := m.Stats.NumProvisionedTransformRoutes
 			for n > 0 {
 				m.Provision(Transform)
 				n--
 			}
-			m.data.numProvisionedTransformRoutes *= m.etChannel.Config.GrowthFactor
+			m.Stats.NumProvisionedTransformRoutes *= m.etChannel.Config.GrowthFactor
 		}
 		// is tlChannel congested?
 		if m.tlChannel.State == channel.Congested {
-			n := m.data.numProvisionedLoadRoutines
+			n := m.Stats.NumProvisionedLoadRoutines
 			for n > 0 {
 				m.Provision(Load)
 				n--
 			}
-			m.data.numProvisionedLoadRoutines *= m.tlChannel.Config.GrowthFactor
+			m.Stats.NumProvisionedLoadRoutines *= m.tlChannel.Config.GrowthFactor
 		}
 
 		// check if the channel is congested after DefaultMonitorRefreshDuration seconds
@@ -92,11 +92,11 @@ func (m *Monitor) Provision(segment Segment) {
 			m.group.ExtractFunc(m.etChannel.Channel)
 			break
 		case Transform: // transform
-			m.data.numProvisionedTransformRoutes++
+			m.Stats.NumProvisionedTransformRoutes++
 			m.group.TransformFunc(m.etChannel.Channel, m.tlChannel.Channel)
 			break
 		default: // load
-			m.data.numProvisionedTransformRoutes++
+			m.Stats.NumProvisionedTransformRoutes++
 			m.group.LoadFunc(m.tlChannel.Channel)
 			break
 		}

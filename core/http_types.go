@@ -1,8 +1,15 @@
 package core
 
+import "sync"
+
 // Frontend Thread
 
-type Http struct {
+const (
+	RefreshTime    = 1
+	DefaultTimeout = 5
+)
+
+type HttpThread struct {
 	Interrupt chan<- InterruptEvent // Upon completion or failure an interrupt can be raised
 
 	C1 chan<- DatabaseRequest  // Core is sending core to the Database
@@ -10,10 +17,18 @@ type Http struct {
 
 	C5 chan<- SupervisorRequest  // Core is sending core to the Database
 	C6 <-chan SupervisorResponse // Core is receiving responses from the Database
+
+	databaseResponses   map[uint32]DatabaseResponse
+	supervisorResponses map[uint32]SupervisorResponse
+
+	accepting bool
+	counter   uint32
+	mutex     sync.Mutex
+	wg        sync.WaitGroup
 }
 
-func NewHttp(channels ...interface{}) (*Http, bool) {
-	core := new(Http)
+func NewHttp(channels ...interface{}) (*HttpThread, bool) {
+	core := new(HttpThread)
 	var ok bool
 
 	core.Interrupt, ok = (channels[0]).(chan InterruptEvent)
@@ -36,6 +51,11 @@ func NewHttp(channels ...interface{}) (*Http, bool) {
 	if !ok {
 		return nil, ok
 	}
+
+	core.databaseResponses = make(map[uint32]DatabaseResponse)
+	core.supervisorResponses = make(map[uint32]SupervisorResponse)
+	core.accepting = true
+	core.counter = 0
 
 	return core, ok
 }

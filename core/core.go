@@ -46,7 +46,7 @@ func GetConfigInstance() *Config {
 	return ConfigInstance
 }
 
-func (c Config) Store() bool {
+func (c *Config) Store() bool {
 	// verify that the config file we initially loaded from has not been deleted
 	if _, err := os.Stat(c.Path); errors.Is(err, os.ErrNotExist) {
 		return false
@@ -57,7 +57,7 @@ func (c Config) Store() bool {
 		return false
 	}
 
-	err = os.WriteFile(c.Path, jsonRepOfConfig, Write)
+	err = os.WriteFile(c.Path, jsonRepOfConfig, 0666)
 	if err != nil {
 		return false
 	}
@@ -78,19 +78,19 @@ func NewCore() *Core {
 	core.interrupt = make(chan InterruptEvent)
 
 	var ok bool
-	core.httpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6)
+	core.HttpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6)
 	if !ok {
 		return nil
 	}
-	core.supervisorThread, ok = NewSupervisor(core.interrupt, core.c5, core.c6, core.c7, core.c8)
+	core.SupervisorThread, ok = NewSupervisor(core.interrupt, core.c5, core.c6, core.c7, core.c8)
 	if !ok {
 		return nil
 	}
-	core.messengerThread, ok = NewMessenger(core.interrupt, core.c3, core.c4)
+	core.MessengerThread, ok = NewMessenger(core.interrupt, core.c3, core.c4)
 	if !ok {
 		return nil
 	}
-	core.databaseThread, ok = NewDatabase(core.interrupt, core.c1, core.c2, core.c3, core.c4, core.c7, core.c8)
+	core.DatabaseThread, ok = NewDatabase(core.interrupt, core.c1, core.c2, core.c3, core.c4, core.c7, core.c8)
 	if !ok {
 		return nil
 	}
@@ -100,20 +100,20 @@ func NewCore() *Core {
 
 func (core *Core) Run() {
 	// needed in-case the proceeding core need logging or email capabilities during startup
-	core.messengerThread.Setup()
-	go core.messengerThread.Start() // event loop
+	core.MessengerThread.Setup()
+	go core.MessengerThread.Start() // event loop
 
 	// needed in-case the supervisor or http core need to populate data on startup
-	core.databaseThread.Setup()
-	go core.databaseThread.Start() // event loop
+	core.DatabaseThread.Setup()
+	go core.DatabaseThread.Start() // event loop
 
 	// we need a way to provision clusters if we are receiving core before we can
-	core.supervisorThread.Setup()
-	go core.supervisorThread.Start() // event loop
+	core.SupervisorThread.Setup()
+	go core.SupervisorThread.Start() // event loop
 
 	// the gateway to the frontend cluster should be the last startup
-	core.httpThread.Setup()
-	go core.httpThread.Start() // event loop
+	core.HttpThread.Setup()
+	go core.HttpThread.Start() // event loop
 
 	// monitor system calls being sent to the process, if the ETLFramework is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
@@ -137,16 +137,16 @@ func (core *Core) Run() {
 	}
 
 	// close the gateway, stop new core from flooding into the servers
-	core.httpThread.Teardown()
+	core.HttpThread.Teardown()
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	core.supervisorThread.Teardown()
+	core.SupervisorThread.Teardown()
 
 	// the supervisor might need to store data while finishing, close after
-	core.databaseThread.Teardown()
+	core.DatabaseThread.Teardown()
 
 	// the preceding core might need to log, or send alerts of failure during shutdown
-	core.messengerThread.Teardown()
+	core.MessengerThread.Teardown()
 }
 
 func (core *Core) Cluster(identifier string, cluster cluster.Cluster, config ...cluster.Config) {

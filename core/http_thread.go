@@ -5,6 +5,7 @@ import (
 	"ETLFramework/net"
 	"log"
 	"sync"
+	"time"
 )
 
 var (
@@ -77,7 +78,7 @@ func GetLoggerInstance() *logger.Logger {
 	return LoggerInstance
 }
 
-func (http Http) Setup() {
+func (http HttpThread) Setup() {
 	//logg = frontend.GetLoggerInstance()
 	node := GetNodeInstance()
 	// core_callbacks functions
@@ -86,12 +87,77 @@ func (http Http) Setup() {
 	node.Function("/debug", http.DebugFunction, []string{"GET", "POST", "DELETE"}, true)
 }
 
-func (http Http) Start() {
-	//go logg.LoggerEventLoop() // TODO - consider renaming this
-	//logg.Alert("core", "logging started")
-	GetNodeInstance().Start()
+func (http *HttpThread) Start() {
+	http.wg.Add(1)
+
+	go GetNodeInstance().Start()
+
+	go func() {
+		for http.accepting {
+			supervisorResponse := <-http.C6
+			http.supervisorResponses[supervisorResponse.Nonce] = supervisorResponse
+		}
+	}()
+
+	go func() {
+		for http.accepting {
+			databaseResponse := <-http.C2
+			http.databaseResponses[databaseResponse.Nonce] = databaseResponse
+		}
+	}()
+
+	http.wg.Wait()
 }
 
-func (http Http) Teardown() {
+func (http *HttpThread) Receive(module Module, nonce uint32, timeout ...float64) (any, bool) {
+	startTime := time.Now()
+	flag := false
+
+	var response any
+	for {
+		if (len(timeout) > 0) && (time.Now().Sub(startTime).Minutes() > timeout[0]) {
+			break
+		}
+
+		if module == Supervisor {
+			if value, found := http.supervisorResponses[nonce]; found {
+				response = value
+				flag = true
+				break
+			}
+		} else if module == Database {
+			if value, found := http.databaseResponses[nonce]; found {
+				response = value
+				flag = true
+				break
+			}
+		}
+
+		time.Sleep(RefreshTime * time.Millisecond)
+	}
+
+	return response, flag
+}
+
+func (http *HttpThread) Send(module Module, request any) (any, bool) {
+	http.mutex.Lock()
+	http.counter++
+
+	nonce := http.counter // make a copy of the current counter
+	if module == Supervisor {
+		req := (request).(SupervisorRequest)
+		req.Nonce = nonce
+		http.C5 <- req
+	} else if module == Database {
+		req := (request).(DatabaseRequest)
+		req.Nonce = nonce
+		http.C1 <- req
+	}
+
+	http.mutex.Unlock()
+	return http.Receive(module, nonce, DefaultTimeout)
+}
+
+func (http HttpThread) Teardown() {
 	GetNodeInstance().Shutdown()
 }

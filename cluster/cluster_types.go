@@ -28,35 +28,36 @@ type Cluster interface {
 }
 
 type Config struct {
-	etChannelThreshold    int
-	etChannelGrowthFactor int
-	tlChannelThreshold    int
-	tlChannelGrowthFactor int
+	Identifier            string `json:"identifier"`
+	etChannelThreshold    int    `json:"et-channel-threshold"`
+	etChannelGrowthFactor int    `json:"et-channel-growth-factor"`
+	tlChannelThreshold    int    `json:"tl-channel-threshold"`
+	tlChannelGrowthFactor int    `json:"tl-channel-growth-factor"`
 }
 
-type Data struct {
-	numProvisionedTransformRoutes int
-	numProvisionedLoadRoutines    int
+type Statistics struct {
+	NumProvisionedTransformRoutes int `json:"num-provisioned-transform-routes"`
+	NumProvisionedLoadRoutines    int `json:"num-provisioned-load-routines"`
 }
 
 type Monitor struct {
-	group     Cluster
-	config    Config
-	data      Data
+	group     Cluster    `json:"group"`
+	Config    Config     `json:"config"`
+	Stats     Statistics `json:"stats"`
 	etChannel *channel.ManagedChannel
 	tlChannel *channel.ManagedChannel
 	waitGroup sync.WaitGroup
 }
 
 type Response struct {
-	config     Config
-	data       Data
-	lapsedTime time.Duration
+	Config     Config        `json:"config"`
+	Stats      Statistics    `json:"stats""`
+	LapsedTime time.Duration `json:"lapsed-time"`
 }
 
 type Supervisor struct {
-	functions map[string]Cluster
-	configs   map[string]Config
+	Functions map[string]Cluster `json:"functions"`
+	Configs   map[string]Config  `json:"configs"`
 
 	mutex sync.Mutex
 }
