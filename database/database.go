@@ -12,18 +12,7 @@ func NewDatabase() *Database {
 	return db
 }
 
-func (db Database) PeakRecord(identifier string) *Record {
-	if record, found := db.Records[identifier]; found {
-		return record
-	}
-	return nil
-}
-
-func (db *Database) GetRecord(identifier string) *Record {
-	if record, found := db.Records[identifier]; found {
-		return record
-	}
-
+func (db *Database) CreateRecord(identifier string) *Record {
 	// the record does not exist and should be initialized / created
 	record := new(Record)
 	record.Entries = [MaxClusterRecordSize]Entry{}
@@ -34,10 +23,24 @@ func (db *Database) GetRecord(identifier string) *Record {
 	return record
 }
 
-func (db *Database) Store(identifier string, data cluster.Response) {
-	record := db.GetRecord(identifier)
-	record.Head++
+func (db *Database) GetRecord(identifier string) (*Record, bool) {
+	if record, found := db.Records[identifier]; found {
+		return record, true
+	} else {
+		return nil, false
+	}
+}
 
+func (db *Database) Store(identifier string, data cluster.Response) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	record, ok := db.GetRecord(identifier)
+	if !ok {
+		record = db.CreateRecord(identifier)
+	}
+
+	record.Head++
 	entry := Entry{time.Now(), data.LapsedTime, data.Stats.NumProvisionedTransformRoutes, data.Stats.NumProvisionedLoadRoutines}
 	record.Entries[record.Head] = entry
 }

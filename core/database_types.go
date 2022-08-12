@@ -10,7 +10,6 @@ type DatabaseAction uint8
 
 const (
 	Store DatabaseAction = 0
-	Peak                 = 1
 	Fetch                = 2
 )
 

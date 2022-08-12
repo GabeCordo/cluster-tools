@@ -56,39 +56,25 @@ func (db *DatabaseThread) Send(request *DatabaseRequest, response *DatabaseRespo
 }
 
 func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
+	d := GetDatabaseInstance()
+
 	switch request.Action {
 	case Store:
 		{
-			d := GetDatabaseInstance()
 			d.Store(request.Cluster, request.Data)
-
 			response := DatabaseResponse{Success: true}
-			db.Send(request, &response)
-		}
-	case Peak:
-		{
-			d := GetDatabaseInstance()
-			record := d.PeakRecord(request.Cluster)
-
-			var response DatabaseResponse
-			if record.Head == -1 {
-				response = DatabaseResponse{Success: false, Nonce: request.Nonce}
-			} else {
-				response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head]}
-			}
-
 			db.Send(request, &response)
 		}
 	case Fetch:
 		{
-			d := GetDatabaseInstance()
-			record := d.GetRecord(request.Cluster)
-
 			var response DatabaseResponse
-			if record.Head == -1 {
+
+			record, ok := d.GetRecord(request.Cluster)
+			if !ok {
 				response = DatabaseResponse{Success: false, Nonce: request.Nonce}
 			} else {
 				response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+
 			}
 
 			db.Send(request, &response)

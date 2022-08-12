@@ -1,6 +1,7 @@
 package database
 
 import (
+	"sync"
 	"time"
 )
 
@@ -22,4 +23,6 @@ type Record struct {
 
 type Database struct {
 	Records map[string]*Record `json:"records"`
+
+	mutex sync.Mutex
 }

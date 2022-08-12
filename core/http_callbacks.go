@@ -5,14 +5,14 @@ import (
 	"math/rand"
 )
 
-func (http HttpThread) ClustersFunction(request *net.Request, response *net.Response) {
+func (http *HttpThread) ClustersFunction(request *net.Request, response *net.Response) {
 	supervisorRequest := SupervisorRequest{Provision, rand.Uint32(), request.Function, request.Param}
 	http.C5 <- supervisorRequest
 
 	response.AddStatus(200, net.Success)
 }
 
-func (http HttpThread) StatisticsFunction(request *net.Request, response *net.Response) {
+func (http *HttpThread) StatisticsFunction(request *net.Request, response *net.Response) {
 	req := DatabaseRequest{Action: Fetch, Cluster: request.Function}
 
 	if value, ok := http.Send(Database, req); ok {
@@ -29,7 +29,7 @@ func (http HttpThread) StatisticsFunction(request *net.Request, response *net.Re
 	response.AddStatus(200, net.Success)
 }
 
-func (http HttpThread) DebugFunction(request *net.Request, response *net.Response) {
+func (http *HttpThread) DebugFunction(request *net.Request, response *net.Response) {
 	if request.Function == "shutdown" {
 		http.Interrupt <- Shutdown
 	} else if request.Function == "endpoints" {
