@@ -61,9 +61,12 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 	switch request.Action {
 	case Store:
 		{
-			d.Store(request.Cluster, request.Data)
-			response := DatabaseResponse{Success: true}
-			db.Send(request, &response)
+			ok := d.Store(request.Cluster, request.Data)
+			if !ok {
+				db.Send(request, &DatabaseResponse{Success: false})
+				return
+			}
+			db.Send(request, &DatabaseResponse{Success: true})
 		}
 	case Fetch:
 		{

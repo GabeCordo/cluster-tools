@@ -57,7 +57,7 @@ func (supervisorThread *SupervisorThread) ProcessIncomingRequests(request Superv
 			if cnfg == nil {
 				m = cluster.NewMonitor(*clstr)
 			} else {
-				m = cluster.NewCustomMonitor(*clstr, *cnfg)
+				m = cluster.NewCustomMonitor(*clstr, cnfg)
 			}
 			go func() {
 				response := m.Start()

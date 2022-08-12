@@ -2,25 +2,29 @@ package cluster
 
 import (
 	"ETLFramework/channel"
+	"ETLFramework/net"
 	"time"
 )
 
 const (
 	DefaultMonitorRefreshDuration = 1
+	DefaultChannelThreshold       = 10
+	DefaultChannelGrowthFactor    = 2
 )
 
 func NewMonitor(cluster Cluster) *Monitor {
 	monitor := new(Monitor)
 
 	monitor.group = cluster
-	monitor.Config = Config{"", 10, 2, 10, 2}
+	monitor.Config = NewConfig(net.EmptyString, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultChannelThreshold, DefaultChannelGrowthFactor)
+	monitor.Stats = NewStatistics(0, 0)
 	monitor.etChannel = channel.NewManagedChannel(monitor.Config.etChannelThreshold, monitor.Config.etChannelGrowthFactor)
 	monitor.tlChannel = channel.NewManagedChannel(monitor.Config.tlChannelThreshold, monitor.Config.tlChannelGrowthFactor)
 
 	return monitor
 }
 
-func NewCustomMonitor(cluster Cluster, config Config) *Monitor {
+func NewCustomMonitor(cluster Cluster, config *Config) *Monitor {
 	monitor := new(Monitor)
 
 	/**
@@ -32,13 +36,14 @@ func NewCustomMonitor(cluster Cluster, config Config) *Monitor {
 
 	monitor.group = cluster
 	monitor.Config = config
+	monitor.Stats = NewStatistics(0, 0)
 	monitor.etChannel = channel.NewManagedChannel(config.etChannelThreshold, config.etChannelGrowthFactor)
 	monitor.tlChannel = channel.NewManagedChannel(config.tlChannelThreshold, config.tlChannelGrowthFactor)
 
 	return monitor
 }
 
-func (m *Monitor) Start() Response {
+func (m *Monitor) Start() *Response {
 	m.waitGroup.Add(3)
 
 	startTime := time.Now()
@@ -55,7 +60,7 @@ func (m *Monitor) Start() Response {
 
 	m.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
-	response := Response{Stats: m.Stats, LapsedTime: time.Now().Sub(startTime)}
+	response := NewResponse(m.Config, m.Stats, time.Now().Sub(startTime))
 	return response
 }
 

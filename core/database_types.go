@@ -14,11 +14,11 @@ const (
 )
 
 type DatabaseRequest struct {
-	Action  DatabaseAction   `json:"action"`
-	Nonce   uint32           `json:"nonce"`
-	Origin  Module           `json:"origin"`
-	Cluster string           `json:"cluster"`
-	Data    cluster.Response `json:"data"`
+	Action  DatabaseAction    `json:"action"`
+	Nonce   uint32            `json:"nonce"`
+	Origin  Module            `json:"origin"`
+	Cluster string            `json:"cluster"`
+	Data    *cluster.Response `json:"data"`
 }
 
 type DatabaseResponse struct {

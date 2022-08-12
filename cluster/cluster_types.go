@@ -41,17 +41,17 @@ type Statistics struct {
 }
 
 type Monitor struct {
-	group     Cluster    `json:"group"`
-	Config    Config     `json:"config"`
-	Stats     Statistics `json:"stats"`
+	group     Cluster     `json:"group"`
+	Config    *Config     `json:"config"`
+	Stats     *Statistics `json:"stats"`
 	etChannel *channel.ManagedChannel
 	tlChannel *channel.ManagedChannel
 	waitGroup sync.WaitGroup
 }
 
 type Response struct {
-	Config     Config        `json:"config"`
-	Stats      Statistics    `json:"stats""`
+	Config     *Config       `json:"config"`
+	Stats      *Statistics   `json:"stats""`
 	LapsedTime time.Duration `json:"lapsed-time"`
 }
 

@@ -31,9 +31,13 @@ func (db *Database) GetRecord(identifier string) (*Record, bool) {
 	}
 }
 
-func (db *Database) Store(identifier string, data cluster.Response) {
+func (db *Database) Store(identifier string, data *cluster.Response) bool {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
+
+	if (data == nil) || (data.Config == nil) {
+		return false
+	}
 
 	record, ok := db.GetRecord(identifier)
 	if !ok {
@@ -43,4 +47,6 @@ func (db *Database) Store(identifier string, data cluster.Response) {
 	record.Head++
 	entry := Entry{time.Now(), data.LapsedTime, data.Stats.NumProvisionedTransformRoutes, data.Stats.NumProvisionedLoadRoutines}
 	record.Entries[record.Head] = entry
+
+	return true
 }
