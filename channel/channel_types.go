@@ -1,5 +1,7 @@
 package channel
 
+import "sync"
+
 type Status int
 
 const (
@@ -24,4 +26,7 @@ type ManagedChannel struct {
 	State   Status
 	Config  ManagedChannelConfig
 	Channel chan Message
+
+	mutex sync.Mutex
+	wg    sync.WaitGroup
 }

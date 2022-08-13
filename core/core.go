@@ -139,14 +139,30 @@ func (core *Core) Run() {
 	// close the gateway, stop new core from flooding into the servers
 	core.HttpThread.Teardown()
 
+	if GetConfigInstance().Debug {
+		log.Println("(!) http shutdown")
+	}
+
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
 	core.SupervisorThread.Teardown()
+
+	if GetConfigInstance().Debug {
+		log.Println("(!) supervisor shutdown")
+	}
 
 	// the supervisor might need to store data while finishing, close after
 	core.DatabaseThread.Teardown()
 
+	if GetConfigInstance().Debug {
+		log.Println("(!) database shutdown")
+	}
+
 	// the preceding core might need to log, or send alerts of failure during shutdown
 	core.MessengerThread.Teardown()
+
+	if GetConfigInstance().Debug {
+		log.Println("(!) messenger shutdown")
+	}
 }
 
 func (core *Core) Cluster(identifier string, cluster cluster.Cluster, config ...cluster.Config) {

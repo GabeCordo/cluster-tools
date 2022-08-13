@@ -9,11 +9,14 @@ func (msg *MessengerThread) Setup() {
 }
 
 func (msg *MessengerThread) Start() {
-	var request MessengerRequest
-
 	// as long as a teardown has not been called, continue looping
-	for msg.accepting {
-		request = <-msg.C3 // request coming from database
+
+	// request coming from database
+	for request := range msg.C3 {
+		if !msg.accepting {
+			break
+		}
+		msg.wg.Add(1)
 		msg.ProcessIncomingRequest(&request)
 	}
 
@@ -25,8 +28,11 @@ func (msg *MessengerThread) ProcessIncomingRequest(request *MessengerRequest) {
 	case Console:
 		log.Println(request.Message)
 	}
+	msg.wg.Done()
 }
 
 func (msg *MessengerThread) Teardown() {
 	msg.accepting = false
+
+	msg.wg.Wait()
 }

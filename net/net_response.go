@@ -28,9 +28,11 @@ func (r *Response) AddPair(key string, value interface{}) {
 	r.Data[key] = value
 }
 
-func (r *Response) AddStatus(httpResponseCode int, message string) {
+func (r *Response) AddStatus(httpResponseCode int, message ...string) {
 	r.Status = httpResponseCode
-	r.Data["status"] = message
+	if len(message) > 0 {
+		r.Data["description"] = message
+	}
 }
 
 func (r *Response) Send(w http.ResponseWriter) {

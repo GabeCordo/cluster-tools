@@ -9,7 +9,7 @@ func (http *HttpThread) ClustersFunction(request *net.Request, response *net.Res
 	supervisorRequest := SupervisorRequest{Provision, rand.Uint32(), request.Function, request.Param}
 	http.C5 <- supervisorRequest
 
-	response.AddStatus(200, net.Success)
+	response.AddStatus(200)
 }
 
 func (http *HttpThread) StatisticsFunction(request *net.Request, response *net.Response) {
@@ -26,12 +26,25 @@ func (http *HttpThread) StatisticsFunction(request *net.Request, response *net.R
 		response.AddPair("value", rsp.Data)
 	}
 
-	response.AddStatus(200, net.Success)
+	response.AddStatus(200)
 }
 
 func (http *HttpThread) DebugFunction(request *net.Request, response *net.Response) {
 	if request.Function == "shutdown" {
 		http.Interrupt <- Shutdown
+	} else if request.Function == "lookup" {
+		supervisor := GetSupervisorInstance()
+		if len(request.Param) == 1 {
+			if _, found := supervisor.Functions[request.Param[0]]; found {
+				// the cluster identifier exists on the node and can be called
+				response.AddStatus(200)
+			} else {
+				// the cluster identifier does NOT exist, return "not found"
+				response.AddStatus(404)
+			}
+		} else {
+			response.AddStatus(400, "missing cluster identifier")
+		}
 	} else if request.Function == "endpoints" {
 		auth := GetAuthInstance()
 
@@ -52,6 +65,13 @@ func (http *HttpThread) DebugFunction(request *net.Request, response *net.Respon
 			response.AddPair("endpoints", endpoints)
 		}
 
-		response.AddStatus(200, net.Success)
+		response.AddStatus(200)
+	} else {
+		// output system information
+		config := GetConfigInstance()
+		response.AddPair("name", config.Name)
+		response.AddPair("version", config.Version)
+
+		response.AddStatus(200)
 	}
 }
