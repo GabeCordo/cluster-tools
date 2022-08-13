@@ -2,20 +2,34 @@ package core
 
 import (
 	"ETLFramework/net"
+	"math/rand"
 )
 
-func (http Http) ClustersFunction(request *net.Request, response *net.Response) {
-	supervisorRequest := SupervisorRequest{Provision, request.Function, request.Param}
+func (http *HttpThread) ClustersFunction(request *net.Request, response *net.Response) {
+	supervisorRequest := SupervisorRequest{Provision, rand.Uint32(), request.Function, request.Param}
 	http.C5 <- supervisorRequest
 
 	response.AddStatus(200, net.Success)
 }
 
-func (http Http) StatisticsFunction(request *net.Request, response *net.Response) {
-	// TODO - not implemented
+func (http *HttpThread) StatisticsFunction(request *net.Request, response *net.Response) {
+	req := DatabaseRequest{Action: Fetch, Cluster: request.Function}
+
+	if value, ok := http.Send(Database, req); ok {
+		rsp := (value).(DatabaseResponse)
+
+		// check to see if no records have ever been created
+		if !rsp.Success {
+			response.AddStatus(200, "no cluster records exist")
+			return
+		}
+		response.AddPair("value", rsp.Data)
+	}
+
+	response.AddStatus(200, net.Success)
 }
 
-func (http Http) DebugFunction(request *net.Request, response *net.Response) {
+func (http *HttpThread) DebugFunction(request *net.Request, response *net.Response) {
 	if request.Function == "shutdown" {
 		http.Interrupt <- Shutdown
 	} else if request.Function == "endpoints" {

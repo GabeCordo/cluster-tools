@@ -18,5 +18,8 @@ ECDSA public and private keys are outputted as x509 encoded formats.
 ##### Shutdown Node
 curl -X GET http://127.0.0.1:8000/debug -H 'Content-Type: application/json' -d '{"function": "shutdown"}'
 
-##### Multiply Cluster
+##### Test Cluster
 curl -X GET http://127.0.0.1:8000/clusters -H 'Content-Type: application/json' -d '{"function": "multiply"}'
+
+##### Test Cluster Statistics
+curl -X GET http://127.0.0.1:8000/statistics -H 'Content-Type: application/json' -d '{"function": "multiply"}'

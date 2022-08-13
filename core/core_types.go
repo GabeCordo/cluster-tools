@@ -5,11 +5,20 @@ import (
 	"ETLFramework/net"
 )
 
-type InterruptEvent int8
+type InterruptEvent uint8
 
 const (
 	Shutdown InterruptEvent = 0
 	Panic                   = 1
+)
+
+type Module uint8
+
+const (
+	Http       Module = 0
+	Database          = 1
+	Supervisor        = 2
+	Messenger         = 3
 )
 
 type Thread interface {
@@ -29,10 +38,10 @@ type Config struct {
 }
 
 type Core struct {
-	httpThread       *Http
-	supervisorThread *Supervisor
-	messengerThread  *Messenger
-	databaseThread   *Database
+	HttpThread       *HttpThread
+	SupervisorThread *SupervisorThread
+	MessengerThread  *MessengerThread
+	DatabaseThread   *DatabaseThread
 
 	c1        chan DatabaseRequest
 	c2        chan DatabaseResponse

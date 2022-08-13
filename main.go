@@ -2,6 +2,7 @@ package main
 
 import (
 	"ETLFramework/channel"
+	"ETLFramework/cluster"
 	"ETLFramework/core"
 	"ETLFramework/net"
 	"crypto/ecdsa"
@@ -68,7 +69,7 @@ func main() {
 	core := core.NewCore()
 
 	m := Multiply{}
-	core.Cluster("multiply", m)
+	core.Cluster("multiply", m, cluster.Config{Identifier: "multiply"})
 
 	core.Run()
 
@@ -81,6 +82,7 @@ func HelpCommand() {
 	fmt.Println("ETLFramework")
 	fmt.Println("-h\tView helpful information about the etl service")
 	fmt.Println("-d\tEnable debug mode")
+	fmt.Println("-g\tGenerate an ECDSA x509 public and private key pair")
 }
 
 func GenerateKeyPair() {
