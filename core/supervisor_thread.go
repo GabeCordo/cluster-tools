@@ -3,6 +3,7 @@ package core
 import (
 	"ETLFramework/cluster"
 	"log"
+	"time"
 )
 
 var supervisor *cluster.Supervisor
@@ -68,12 +69,28 @@ func (supervisorThread *SupervisorThread) ProcessIncomingRequests(request Superv
 				m = cluster.NewCustomMonitor(*clstr, cnfg)
 			}
 			go func() {
-				response := m.Start()
+				var response *cluster.Response
+
+				c := make(chan struct{})
+				go func() {
+					defer close(c)
+					response = m.Start()
+				}()
+
+				go func() {
+					defer close(c)
+					for supervisorThread.accepting {
+						// block
+					}
+					<-time.After(25 * time.Second)
+				}()
+
+				<-c
 
 				// don't send the statistics of the cluster to the database unless an identifier has been
 				// given to the cluster for grouping purposes
 				if len(m.Config.Identifier) != 0 {
-					request := DatabaseRequest{Action: Store, Origin: Supervisor, Cluster: m.Config.Identifier, Data: response}
+					request := DatabaseRequest{Action: Store, Origin: Supervisor, Cluster: m.Config.Identifier, ElapsedTime: response.LapsedTime, Data: response.Stats}
 					supervisorThread.C7 <- request
 				}
 				supervisorThread.wg.Done()

@@ -4,27 +4,36 @@ import (
 	"ETLFramework/cluster"
 	"ETLFramework/database"
 	"sync"
+	"time"
 )
 
 type DatabaseAction uint8
 
 const (
-	Store DatabaseAction = 0
-	Fetch                = 2
+	Store  DatabaseAction = 0
+	Fetch                 = 2
+	Modify                = 3
+	Delete                = 4
+	State                 = 5
+	Create                = 6
 )
 
 type DatabaseRequest struct {
-	Action  DatabaseAction    `json:"action"`
-	Nonce   uint32            `json:"nonce"`
-	Origin  Module            `json:"origin"`
-	Cluster string            `json:"cluster"`
-	Data    *cluster.Response `json:"data"`
+	Action      DatabaseAction      `json:"action"`
+	Type        database.RecordType `json:"target"`
+	Nonce       uint32              `json:"nonce"`
+	Origin      Module              `json:"origin"`
+	Cluster     string              `json:"cluster"` // aka. identifier
+	Entry       int8                `json:"entry"`
+	ElapsedTime time.Duration       `json:"elapsed-time"`
+	Data        *cluster.Statistics `json:"data"`
 }
 
 type DatabaseResponse struct {
-	Nonce   uint32           `json:"nonce"`
-	Success bool             `json:"success"`
-	Data    []database.Entry `json:"data"`
+	Nonce      uint32             `json:"nonce"`
+	Success    bool               `json:"success"`
+	Statistics []database.Entry   `json:"statistics"`
+	Monitors   []database.Monitor `json:"monitors"`
 }
 
 type DatabaseThread struct {

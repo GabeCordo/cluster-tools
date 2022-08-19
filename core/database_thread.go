@@ -66,29 +66,89 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 	d := GetDatabaseInstance()
 
 	switch request.Action {
+	case Create:
+		{
+			switch request.Type {
+			case database.Monitors:
+				{
+					monitor := d.CreateMonitorRecord(request.Cluster)
+					if monitor != nil {
+						db.Send(request, &DatabaseResponse{Success: false})
+						db.wg.Done()
+						return
+					}
+					db.Send(request, &DatabaseResponse{Success: true})
+				}
+			}
+		}
 	case Store:
 		{
-			ok := d.Store(request.Cluster, request.Data)
-			if !ok {
-				db.Send(request, &DatabaseResponse{Success: false})
-				db.wg.Done()
-				return
+			switch request.Type {
+			case database.Statistics:
+				{
+					ok := d.StoreStatistic(request.Cluster, request.Data, request.ElapsedTime)
+					if !ok {
+						db.Send(request, &DatabaseResponse{Success: false})
+						db.wg.Done()
+						return
+					}
+					db.Send(request, &DatabaseResponse{Success: true})
+				}
 			}
-			db.Send(request, &DatabaseResponse{Success: true})
 		}
 	case Fetch:
 		{
-			var response DatabaseResponse
+			switch request.Type {
+			case database.Statistics:
+				{
+					var response DatabaseResponse
 
-			record, ok := d.GetRecord(request.Cluster)
-			if !ok {
-				response = DatabaseResponse{Success: false, Nonce: request.Nonce}
-			} else {
-				response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+					record, ok := d.GetStatisticRecord(request.Cluster)
+					if !ok {
+						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+					} else {
+						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Statistics: record.Entries[:record.Head+1]}
+					}
 
+					db.Send(request, &response)
+				}
+			case database.Monitors:
+				{
+					var response DatabaseResponse
+
+					record, ok := d.GetMonitorRecord(request.Cluster)
+					if !ok {
+						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+					} else {
+						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Monitors: record.Entries[:record.Head+1]}
+					}
+
+					db.Send(request, &response)
+				}
 			}
+		}
+	case Modify:
+		{
+			switch request.Type {
+			case database.Monitors:
+				{
+					pair := database.MonitorId{Identifier: request.Cluster, Id: request.Entry}
+					monitor := database.Monitor{
+						NumLoadRoutines:      request.Data.NumProvisionedLoadRoutines,
+						NumExtractRoutines:   request.Data.NumProvisionedExtractRoutines,
+						NumTransformRoutines: request.Data.NumProvisionedTransformRoutes,
+					}
 
-			db.Send(request, &response)
+					ok := d.ModifyMonitor(pair, &monitor)
+					if !ok {
+						db.Send(request, &DatabaseResponse{Success: false})
+						db.wg.Done()
+						return
+					}
+
+					db.Send(request, &DatabaseResponse{Success: true})
+				}
+			}
 		}
 	}
 	db.wg.Done()

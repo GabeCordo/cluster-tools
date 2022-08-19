@@ -10,17 +10,23 @@ const (
 	DefaultMonitorRefreshDuration = 1
 	DefaultChannelThreshold       = 10
 	DefaultChannelGrowthFactor    = 2
+	DefaultOnCrash                = DoNothing
 )
 
-func NewMonitor(cluster Cluster) *Monitor {
+func NewMonitor(cluster Cluster, mode ...OnCrash) *Monitor {
 	monitor := new(Monitor)
 
 	monitor.group = cluster
-	monitor.Config = NewConfig(net.EmptyString, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultChannelThreshold, DefaultChannelGrowthFactor)
-	monitor.Stats = NewStatistics(0, 0)
-	monitor.etChannel = channel.NewManagedChannel(monitor.Config.etChannelThreshold, monitor.Config.etChannelGrowthFactor)
-	monitor.tlChannel = channel.NewManagedChannel(monitor.Config.tlChannelThreshold, monitor.Config.tlChannelGrowthFactor)
+	monitor.Config = NewConfig(net.EmptyString, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultOnCrash)
+	monitor.Stats = NewStatistics()
+	monitor.etChannel = channel.NewManagedChannel(monitor.Config.ETChannelThreshold, monitor.Config.ETChannelGrowthFactor)
+	monitor.tlChannel = channel.NewManagedChannel(monitor.Config.TLChannelThreshold, monitor.Config.TLChannelGrowthFactor)
 
+	if len(mode) > 0 {
+		monitor.mode = mode[0]
+	} else {
+		monitor.mode = DoNothing
+	}
 	return monitor
 }
 
@@ -36,9 +42,10 @@ func NewCustomMonitor(cluster Cluster, config *Config) *Monitor {
 
 	monitor.group = cluster
 	monitor.Config = config
-	monitor.Stats = NewStatistics(0, 0)
-	monitor.etChannel = channel.NewManagedChannel(config.etChannelThreshold, config.etChannelGrowthFactor)
-	monitor.tlChannel = channel.NewManagedChannel(config.tlChannelThreshold, config.tlChannelGrowthFactor)
+	monitor.Stats = NewStatistics()
+	monitor.etChannel = channel.NewManagedChannel(config.ETChannelThreshold, config.ETChannelGrowthFactor)
+	monitor.tlChannel = channel.NewManagedChannel(config.TLChannelThreshold, config.TLChannelGrowthFactor)
+	monitor.mode = config.Mode
 
 	return monitor
 }
@@ -58,7 +65,8 @@ func (m *Monitor) Start() *Response {
 	// and requires us to provision additional nodes
 	go m.Runtime()
 
-	m.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
+	// wait for the Extract-Transform-Load (ETL) Cycle to Complete
+	m.waitGroup.Wait()
 
 	response := NewResponse(m.Config, m.Stats, time.Now().Sub(startTime))
 	return response
@@ -68,6 +76,8 @@ func (m *Monitor) Runtime() {
 	for {
 		// is etChannel congested?
 		if m.etChannel.State == channel.Congested {
+			m.Stats.NumEtThresholdBreaches++
+
 			n := m.Stats.NumProvisionedTransformRoutes
 			for n > 0 {
 				m.Provision(Transform)
@@ -77,6 +87,8 @@ func (m *Monitor) Runtime() {
 		}
 		// is tlChannel congested?
 		if m.tlChannel.State == channel.Congested {
+			m.Stats.NumTlThresholdBreaches++
+
 			n := m.Stats.NumProvisionedLoadRoutines
 			for n > 0 {
 				m.Provision(Load)
@@ -94,14 +106,15 @@ func (m *Monitor) Provision(segment Segment) {
 	go func() {
 		switch segment {
 		case Extract:
+			m.Stats.NumProvisionedExtractRoutines++
 			m.group.ExtractFunc(m.etChannel.Channel)
 			break
-		case Transform: // transform
+		case Transform:
 			m.Stats.NumProvisionedTransformRoutes++
 			m.group.TransformFunc(m.etChannel.Channel, m.tlChannel.Channel)
 			break
-		default: // load
-			m.Stats.NumProvisionedTransformRoutes++
+		default:
+			m.Stats.NumProvisionedLoadRoutines++
 			m.group.LoadFunc(m.tlChannel.Channel)
 			break
 		}
