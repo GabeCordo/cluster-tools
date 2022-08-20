@@ -56,7 +56,7 @@ func (db *DatabaseThread) Send(request *DatabaseRequest, response *DatabaseRespo
 	case Http:
 		db.C2 <- *response
 		break
-	case Supervisor:
+	case Provisioner:
 		db.C8 <- *response
 		break
 	}

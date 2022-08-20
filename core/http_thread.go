@@ -123,7 +123,7 @@ func (http *HttpThread) Receive(module Module, nonce uint32, timeout ...float64)
 			break
 		}
 
-		if module == Supervisor {
+		if module == Provisioner {
 			if value, found := http.supervisorResponses[nonce]; found {
 				response = value
 				flag = true
@@ -148,8 +148,8 @@ func (http *HttpThread) Send(module Module, request any) (any, bool) {
 	http.counter++
 
 	nonce := http.counter // make a copy of the current counter
-	if module == Supervisor {
-		req := (request).(SupervisorRequest)
+	if module == Provisioner {
+		req := (request).(ProvisionerRequest)
 		req.Nonce = nonce
 		http.C5 <- req
 	} else if module == Database {

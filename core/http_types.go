@@ -15,11 +15,14 @@ type HttpThread struct {
 	C1 chan<- DatabaseRequest  // Core is sending core to the Database
 	C2 <-chan DatabaseResponse // Core is receiving responses from the Database
 
-	C5 chan<- SupervisorRequest  // Core is sending core to the Database
-	C6 <-chan SupervisorResponse // Core is receiving responses from the Database
+	C5 chan<- ProvisionerRequest  // Core is sending core to the Database
+	C6 <-chan ProvisionerResponse // Core is receiving responses from the Database
+
+	C9  chan<- StateMachineRequest  // Core is sending requests to the state machine
+	C10 <-chan StateMachineResponse // Core is receiving responses from the state machine
 
 	databaseResponses   map[uint32]DatabaseResponse
-	supervisorResponses map[uint32]SupervisorResponse
+	supervisorResponses map[uint32]ProvisionerResponse
 
 	accepting bool
 	counter   uint32
@@ -43,17 +46,25 @@ func NewHttp(channels ...interface{}) (*HttpThread, bool) {
 	if !ok {
 		return nil, ok
 	}
-	core.C5, ok = (channels[3]).(chan SupervisorRequest)
+	core.C5, ok = (channels[3]).(chan ProvisionerRequest)
 	if !ok {
 		return nil, ok
 	}
-	core.C6, ok = (channels[4]).(chan SupervisorResponse)
+	core.C6, ok = (channels[4]).(chan ProvisionerResponse)
+	if !ok {
+		return nil, ok
+	}
+	core.C9, ok = (channels[5]).(chan StateMachineRequest)
+	if !ok {
+		return nil, ok
+	}
+	core.C10, ok = (channels[6]).(chan StateMachineResponse)
 	if !ok {
 		return nil, ok
 	}
 
 	core.databaseResponses = make(map[uint32]DatabaseResponse)
-	core.supervisorResponses = make(map[uint32]SupervisorResponse)
+	core.supervisorResponses = make(map[uint32]ProvisionerResponse)
 	core.accepting = true
 	core.counter = 0
 

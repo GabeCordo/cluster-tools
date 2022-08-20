@@ -6,7 +6,7 @@ import (
 )
 
 func (http *HttpThread) ClustersFunction(request *net.Request, response *net.Response) {
-	supervisorRequest := SupervisorRequest{Provision, rand.Uint32(), request.Function, request.Param}
+	supervisorRequest := ProvisionerRequest{Provision, rand.Uint32(), request.Function, request.Param}
 	http.C5 <- supervisorRequest
 
 	response.AddStatus(200)
@@ -33,9 +33,9 @@ func (http *HttpThread) DebugFunction(request *net.Request, response *net.Respon
 	if request.Function == "shutdown" {
 		http.Interrupt <- Shutdown
 	} else if request.Function == "lookup" {
-		supervisor := GetSupervisorInstance()
+		provisioner := GetProvisionerInstance()
 		if len(request.Param) == 1 {
-			if _, found := supervisor.Functions[request.Param[0]]; found {
+			if _, found := provisioner.Functions[request.Param[0]]; found {
 				// the cluster identifier exists on the node and can be called
 				response.AddStatus(200)
 			} else {

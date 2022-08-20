@@ -71,18 +71,22 @@ func NewCore() *Core {
 	core.c2 = make(chan DatabaseResponse)
 	core.c3 = make(chan MessengerRequest)
 	core.c4 = make(chan MessengerResponse)
-	core.c5 = make(chan SupervisorRequest)
-	core.c6 = make(chan SupervisorResponse)
+	core.c5 = make(chan ProvisionerRequest)
+	core.c6 = make(chan ProvisionerResponse)
 	core.c7 = make(chan DatabaseRequest)
 	core.c8 = make(chan DatabaseResponse)
+	core.c9 = make(chan StateMachineRequest)
+	core.c10 = make(chan StateMachineResponse)
+	core.c11 = make(chan StateMachineRequest)
+	core.c12 = make(chan StateMachineResponse)
 	core.interrupt = make(chan InterruptEvent)
 
 	var ok bool
-	core.HttpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6)
+	core.HttpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6, core.c9, core.c10)
 	if !ok {
 		return nil
 	}
-	core.SupervisorThread, ok = NewSupervisor(core.interrupt, core.c5, core.c6, core.c7, core.c8)
+	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.c5, core.c6, core.c7, core.c8, core.c11, core.c12)
 	if !ok {
 		return nil
 	}
@@ -108,8 +112,8 @@ func (core *Core) Run() {
 	go core.DatabaseThread.Start() // event loop
 
 	// we need a way to provision clusters if we are receiving core before we can
-	core.SupervisorThread.Setup()
-	go core.SupervisorThread.Start() // event loop
+	core.ProvisionerThread.Setup()
+	go core.ProvisionerThread.Start() // event loop
 
 	// the gateway to the frontend cluster should be the last startup
 	core.HttpThread.Setup()
@@ -144,7 +148,7 @@ func (core *Core) Run() {
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	core.SupervisorThread.Teardown()
+	core.ProvisionerThread.Teardown()
 
 	if GetConfigInstance().Debug {
 		log.Println("(!) supervisor shutdown")
@@ -166,10 +170,10 @@ func (core *Core) Run() {
 }
 
 func (core *Core) Cluster(identifier string, cluster cluster.Cluster, config ...cluster.Config) {
-	s := GetSupervisorInstance()
+	p := GetProvisionerInstance()
 	if len(config) > 0 {
-		s.Register(identifier, cluster, config[0])
+		p.Register(identifier, cluster, config[0])
 	} else {
-		s.Register(identifier, cluster)
+		p.Register(identifier, cluster)
 	}
 }

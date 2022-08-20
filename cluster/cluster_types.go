@@ -66,7 +66,7 @@ const (
 	TearedDown           = 3
 )
 
-type Monitor struct {
+type Supervisor struct {
 	Id        uint32      `json:"id"`
 	group     Cluster     `json:"group"`
 	Config    *Config     `json:"config"`
@@ -84,7 +84,7 @@ type Response struct {
 	LapsedTime time.Duration `json:"lapsed-time"`
 }
 
-type Supervisor struct {
+type Provisioner struct {
 	Functions map[string]Cluster `json:"functions"`
 	Configs   map[string]Config  `json:"configs"`
 

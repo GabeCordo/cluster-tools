@@ -15,10 +15,10 @@ const (
 type Module uint8
 
 const (
-	Http       Module = 0
-	Database          = 1
-	Supervisor        = 2
-	Messenger         = 3
+	Http        Module = 0
+	Database           = 1
+	Provisioner        = 2
+	Messenger          = 3
 )
 
 type Thread interface {
@@ -38,18 +38,22 @@ type Config struct {
 }
 
 type Core struct {
-	HttpThread       *HttpThread
-	SupervisorThread *SupervisorThread
-	MessengerThread  *MessengerThread
-	DatabaseThread   *DatabaseThread
+	HttpThread        *HttpThread
+	ProvisionerThread *ProvisionerThread
+	MessengerThread   *MessengerThread
+	DatabaseThread    *DatabaseThread
 
 	c1        chan DatabaseRequest
 	c2        chan DatabaseResponse
 	c3        chan MessengerRequest
 	c4        chan MessengerResponse
-	c5        chan SupervisorRequest
-	c6        chan SupervisorResponse
+	c5        chan ProvisionerRequest
+	c6        chan ProvisionerResponse
 	c7        chan DatabaseRequest
 	c8        chan DatabaseResponse
+	c9        chan StateMachineRequest
+	c10       chan StateMachineResponse
+	c11       chan StateMachineRequest
+	c12       chan StateMachineResponse
 	interrupt chan InterruptEvent
 }
