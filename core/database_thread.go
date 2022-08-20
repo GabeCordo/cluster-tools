@@ -19,24 +19,31 @@ func (db *DatabaseThread) Setup() {
 }
 
 func (db *DatabaseThread) Start() {
-	db.wg.Add(1)
-
 	go func() {
-		for db.accepting {
-			request := <-db.C1 // request from http_server
-			db.ProcessIncomingRequest(&request)
-		}
-		db.wg.Done() // only the HTTP server can call an interrupt
-	}()
-	go func() {
-		for db.accepting {
-			request := <-db.C7 // request from supervisor
+		// request from http_server
+		for request := range db.C1 {
+			if !db.accepting {
+				break
+			}
+			db.wg.Add(1)
 			db.ProcessIncomingRequest(&request)
 		}
 	}()
 	go func() {
-		for db.accepting {
-			response := <-db.C4 // responses from messenger
+		// request from supervisor
+		for request := range db.C7 {
+			if !db.accepting {
+				break
+			}
+			db.wg.Add(1)
+			db.ProcessIncomingRequest(&request)
+		}
+	}()
+	go func() {
+		for response := range db.C4 {
+			if !db.accepting {
+				break
+			}
 			db.ProcessIncomingResponse(&response)
 		}
 	}()
@@ -61,9 +68,10 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 	switch request.Action {
 	case Store:
 		{
-			ok := d.Store(request.Cluster, request.Data)
+			ok := d.Store(request.Cluster, request.Data.Stats, request.Data.LapsedTime)
 			if !ok {
 				db.Send(request, &DatabaseResponse{Success: false})
+				db.wg.Done()
 				return
 			}
 			db.Send(request, &DatabaseResponse{Success: true})
@@ -83,6 +91,8 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 			db.Send(request, &response)
 		}
 	}
+
+	db.wg.Done()
 }
 
 func (db *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {
@@ -91,4 +101,6 @@ func (db *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {
 
 func (db *DatabaseThread) Teardown() {
 	db.accepting = false
+
+	db.wg.Wait()
 }

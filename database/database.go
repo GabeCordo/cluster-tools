@@ -12,13 +12,11 @@ func NewDatabase() *Database {
 	return db
 }
 
-func (db *Database) CreateRecord(identifier string) *Record {
-	// the record does not exist and should be initialized / created
-	record := new(Record)
-	record.Entries = [MaxClusterRecordSize]Entry{}
-	record.Head = -1
+type RecordFactory func(identifier string) *Record
 
-	db.Records[identifier] = record // pass by copy of pointer
+func (db *Database) CreateRecord(identifier string) *Record {
+	record := NewRecord()
+	db.Records[identifier] = record
 
 	return record
 }
@@ -31,22 +29,27 @@ func (db *Database) GetRecord(identifier string) (*Record, bool) {
 	}
 }
 
-func (db *Database) Store(identifier string, data *cluster.Response) bool {
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-
-	if (data == nil) || (data.Config == nil) {
+func (db *Database) Store(identifier string, data *cluster.Statistics, elpased time.Duration) bool {
+	if data == nil {
 		return false
 	}
+
+	db.mutex.Lock()
 
 	record, ok := db.GetRecord(identifier)
 	if !ok {
 		record = db.CreateRecord(identifier)
 	}
 
+	db.mutex.Unlock()
+
+	record.mutex.Lock()
+
 	record.Head++
-	entry := Entry{time.Now(), data.LapsedTime, data.Stats.NumProvisionedTransformRoutes, data.Stats.NumProvisionedLoadRoutines}
+	entry := Entry{time.Now(), elpased, *data} //	make a copy of the stats
 	record.Entries[record.Head] = entry
+
+	record.mutex.Unlock()
 
 	return true
 }

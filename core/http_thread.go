@@ -93,15 +93,19 @@ func (http *HttpThread) Start() {
 	go GetNodeInstance().Start()
 
 	go func() {
-		for http.accepting {
-			supervisorResponse := <-http.C6
+		for supervisorResponse := range http.C6 {
+			if !http.accepting {
+				break
+			}
 			http.supervisorResponses[supervisorResponse.Nonce] = supervisorResponse
 		}
 	}()
 
 	go func() {
-		for http.accepting {
-			databaseResponse := <-http.C2
+		for databaseResponse := range http.C2 {
+			if !http.accepting {
+				break
+			}
 			http.databaseResponses[databaseResponse.Nonce] = databaseResponse
 		}
 	}()
@@ -158,6 +162,6 @@ func (http *HttpThread) Send(module Module, request any) (any, bool) {
 	return http.Receive(module, nonce, DefaultTimeout)
 }
 
-func (http HttpThread) Teardown() {
+func (http *HttpThread) Teardown() {
 	GetNodeInstance().Shutdown()
 }

@@ -3,6 +3,7 @@ package core
 import (
 	"ETLFramework/cluster"
 	"log"
+	"time"
 )
 
 var supervisor *cluster.Supervisor
@@ -22,20 +23,28 @@ func (supervisorThread *SupervisorThread) Setup() {
 }
 
 func (supervisorThread *SupervisorThread) Start() {
-	supervisorThread.wg.Add(1)
 
 	go func() {
-		for supervisorThread.accepting {
-			request := <-supervisorThread.C5 // request coming from http_server
+		// request coming from http_server
+		for request := range supervisorThread.C5 {
+			if !supervisorThread.accepting {
+				break
+			}
+			supervisorThread.wg.Add(1)
 			supervisorThread.ProcessIncomingRequests(request)
 		}
-		supervisorThread.wg.Done()
+
+		supervisorThread.wg.Wait()
 	}()
 	go func() {
-		for supervisorThread.accepting {
-			response := <-supervisorThread.C8
+		for response := range supervisorThread.C8 {
+			if !supervisorThread.accepting {
+				break
+			}
 			supervisorThread.ProcessesIncomingResponses(response)
 		}
+
+		supervisorThread.wg.Wait()
 	}()
 
 	supervisorThread.wg.Wait()
@@ -60,7 +69,23 @@ func (supervisorThread *SupervisorThread) ProcessIncomingRequests(request Superv
 				m = cluster.NewCustomMonitor(*clstr, cnfg)
 			}
 			go func() {
-				response := m.Start()
+				var response *cluster.Response
+
+				c := make(chan struct{})
+				go func() {
+					defer close(c)
+					response = m.Start()
+				}()
+
+				go func() {
+					defer close(c)
+					for supervisorThread.accepting {
+						// block
+					}
+					<-time.After(25 * time.Second)
+				}()
+
+				<-c
 
 				// don't send the statistics of the cluster to the database unless an identifier has been
 				// given to the cluster for grouping purposes
@@ -68,6 +93,7 @@ func (supervisorThread *SupervisorThread) ProcessIncomingRequests(request Superv
 					request := DatabaseRequest{Action: Store, Origin: Supervisor, Cluster: m.Config.Identifier, Data: response}
 					supervisorThread.C7 <- request
 				}
+				supervisorThread.wg.Done()
 			}()
 			break
 		}
@@ -89,4 +115,6 @@ func (supervisorThread *SupervisorThread) ProcessesIncomingResponses(response Da
 
 func (supervisorThread *SupervisorThread) Teardown() {
 	supervisorThread.accepting = false
+
+	supervisorThread.wg.Wait()
 }

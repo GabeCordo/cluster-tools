@@ -17,14 +17,14 @@ type DatabaseRequest struct {
 	Action  DatabaseAction    `json:"action"`
 	Nonce   uint32            `json:"nonce"`
 	Origin  Module            `json:"origin"`
-	Cluster string            `json:"cluster"`
+	Cluster string            `json:"cluster"` // aka. identifier
 	Data    *cluster.Response `json:"data"`
 }
 
 type DatabaseResponse struct {
 	Nonce   uint32           `json:"nonce"`
 	Success bool             `json:"success"`
-	Data    []database.Entry `json:"data"`
+	Data    []database.Entry `json:"statistics"`
 }
 
 type DatabaseThread struct {
