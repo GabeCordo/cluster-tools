@@ -7,55 +7,38 @@ import (
 
 func NewDatabase() *Database {
 	db := new(Database)
-
-	db.statistics = make(map[string]*StatisticRecord)
-	db.monitors = make(map[string]*MonitorRecord)
+	db.Records = make(map[string]*Record)
 
 	return db
 }
 
 type RecordFactory func(identifier string) *Record
 
-func (db *Database) CreateStatisticRecord(identifier string) *StatisticRecord {
-	record := NewStatisticsRecord()
-	db.statistics[identifier] = record
+func (db *Database) CreateRecord(identifier string) *Record {
+	record := NewRecord()
+	db.Records[identifier] = record
 
 	return record
 }
 
-func (db *Database) CreateMonitorRecord(identifier string) *MonitorRecord {
-	record := NewMonitorRecord()
-	db.monitors[identifier] = record
-
-	return record
-}
-
-func (db *Database) GetStatisticRecord(identifier string) (*StatisticRecord, bool) {
-	if record, found := db.statistics[identifier]; found {
+func (db *Database) GetRecord(identifier string) (*Record, bool) {
+	if record, found := db.Records[identifier]; found {
 		return record, true
 	} else {
 		return nil, false
 	}
 }
 
-func (db *Database) GetMonitorRecord(identifier string) (*MonitorRecord, bool) {
-	if record, found := db.monitors[identifier]; found {
-		return record, true
-	} else {
-		return nil, false
-	}
-}
-
-func (db *Database) StoreStatistic(identifier string, data *cluster.Statistics, elpased time.Duration) bool {
+func (db *Database) Store(identifier string, data *cluster.Statistics, elpased time.Duration) bool {
 	if data == nil {
 		return false
 	}
 
 	db.mutex.Lock()
 
-	record, ok := db.GetStatisticRecord(identifier)
+	record, ok := db.GetRecord(identifier)
 	if !ok {
-		record = db.CreateStatisticRecord(identifier)
+		record = db.CreateRecord(identifier)
 	}
 
 	db.mutex.Unlock()
@@ -67,54 +50,6 @@ func (db *Database) StoreStatistic(identifier string, data *cluster.Statistics, 
 	record.Entries[record.Head] = entry
 
 	record.mutex.Unlock()
-
-	return true
-}
-
-func (db *Database) StoreMonitor(identifier string, data *Monitor) int32 {
-	if data == nil {
-		return -1
-	}
-
-	db.mutex.Lock()
-
-	record, ok := db.GetMonitorRecord(identifier)
-	if !ok {
-		record = db.CreateMonitorRecord(identifier)
-	}
-
-	db.mutex.Unlock()
-
-	record.mutex.Lock()
-
-	record.Head++
-	entry := *data // make a copy of the monitor
-	record.Entries[record.Head] = entry
-
-	record.mutex.Unlock()
-
-	return interface{}(record.Head).(int32)
-}
-
-func (db *Database) ModifyMonitor(id MonitorId, data *Monitor) bool {
-	if data == nil {
-		return false
-	}
-
-	if record, found := db.monitors[id.Identifier]; found {
-		if record.Head < id.Id {
-			return false
-		}
-
-		record.mutex.Lock()
-
-		monitor := &record.Entries[id.Id] // create a pointer to the current Monitor record
-		monitor.NumTransformRoutines = data.NumTransformRoutines
-		monitor.NumExtractRoutines = data.NumExtractRoutines
-		monitor.NumLoadRoutines = data.NumLoadRoutines
-
-		record.mutex.Unlock()
-	}
 
 	return true
 }

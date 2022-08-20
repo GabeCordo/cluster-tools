@@ -90,7 +90,7 @@ func (supervisorThread *SupervisorThread) ProcessIncomingRequests(request Superv
 				// don't send the statistics of the cluster to the database unless an identifier has been
 				// given to the cluster for grouping purposes
 				if len(m.Config.Identifier) != 0 {
-					request := DatabaseRequest{Action: Store, Origin: Supervisor, Cluster: m.Config.Identifier, ElapsedTime: response.LapsedTime, Data: response.Stats}
+					request := DatabaseRequest{Action: Store, Origin: Supervisor, Cluster: m.Config.Identifier, Data: response}
 					supervisorThread.C7 <- request
 				}
 				supervisorThread.wg.Done()
