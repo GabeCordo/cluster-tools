@@ -50,61 +50,69 @@ func (provisionerThread *ProvisionerThread) Start() {
 }
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request ProvisionerRequest) {
-	switch request.Action {
-	case Provision:
-		{
+	provisionerInstance := GetProvisionerInstance()
+
+	if request.Action == Mount {
+		provisionerInstance.Mount(request.Cluster)
+		log.Printf("Mounted cluster {%s}", request.Cluster)
+		provisionerThread.wg.Done()
+	} else if request.Action == UnMount {
+		provisionerInstance.UnMount(request.Cluster)
+		log.Printf("UnMounted cluster {%s}", request.Cluster)
+		provisionerThread.wg.Done()
+	} else if request.Action == Provision {
+		if !provisionerInstance.IsMounted(request.Cluster) {
+			log.Printf("Could not provision cluster {%s}; cluster was not mounted", request.Cluster)
+			provisionerThread.wg.Done()
+			return
+		} else {
 			log.Printf("Provisioning cluster {%s}", request.Cluster)
+		}
 
-			clstr, cnfg, ok := provisioner.Function(request.Cluster)
-			if !ok {
-				log.Println("there is a corrupted cluster in the supervisor")
-				break
-			}
+		clstr, cnfg, register, ok := provisionerInstance.Function(request.Cluster)
+		if !ok {
+			log.Println("there is a corrupted cluster in the supervisor")
+			provisionerThread.wg.Done()
+			return
+		}
 
-			var m *cluster.Supervisor
-			if cnfg == nil {
-				m = cluster.NewSupervisor(*clstr)
-			} else {
-				m = cluster.NewCustomSupervisor(*clstr, cnfg)
-			}
+		var m *cluster.Supervisor
+		if cnfg == nil {
+			m = cluster.NewSupervisor(*clstr)
+		} else {
+			m = cluster.NewCustomSupervisor(*clstr, cnfg)
+		}
+		register.Register(m)
+
+		go func() {
+			var response *cluster.Response
+
+			c := make(chan struct{})
 			go func() {
-				var response *cluster.Response
-
-				c := make(chan struct{})
-				go func() {
-					defer close(c)
-					response = m.Start()
-				}()
-
-				go func() {
-					defer close(c)
-					for provisionerThread.accepting {
-						// block
-					}
-					<-time.After(25 * time.Second)
-				}()
-
-				<-c
-
-				// don't send the statistics of the cluster to the database unless an identifier has been
-				// given to the cluster for grouping purposes
-				if len(m.Config.Identifier) != 0 {
-					request := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: m.Config.Identifier, Data: response}
-					provisionerThread.C7 <- request
-				}
-				provisionerThread.wg.Done()
+				defer close(c)
+				response = m.Start()
 			}()
-			break
-		}
-	case Teardown:
-		{
-			// TODO - not implemented
-			break
-		}
-	default:
-		{
 
-		}
+			go func() {
+				defer close(c)
+				for provisionerThread.accepting {
+					// block
+				}
+				<-time.After(25 * time.Second)
+			}()
+
+			<-c
+
+			// don't send the statistics of the cluster to the database unless an identifier has been
+			// given to the cluster for grouping purposes
+			if len(m.Config.Identifier) != 0 {
+				request := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: m.Config.Identifier, Data: response}
+				provisionerThread.C7 <- request
+			}
+			provisionerThread.wg.Done()
+		}()
+	} else if request.Action == Teardown {
+		// TODO - not implemented
 	}
 }
 

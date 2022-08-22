@@ -108,3 +108,18 @@ func (m *Supervisor) Provision(segment Segment) {
 		m.waitGroup.Done() // notify the wait group a process has completed ~ if all are finished we close the monitor
 	}()
 }
+
+func (status Status) String() string {
+	switch status {
+	case UnTouched:
+		return "UnTouched"
+	case Running:
+		return "Running"
+	case Failed:
+		return "Failed"
+	case Terminated:
+		return "Terminated"
+	default:
+		return "None"
+	}
+}

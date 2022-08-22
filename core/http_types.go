@@ -18,9 +18,6 @@ type HttpThread struct {
 	C5 chan<- ProvisionerRequest  // Core is sending core to the Database
 	C6 <-chan ProvisionerResponse // Core is receiving responses from the Database
 
-	C9  chan<- StateMachineRequest  // Core is sending requests to the state machine
-	C10 <-chan StateMachineResponse // Core is receiving responses from the state machine
-
 	databaseResponses   map[uint32]DatabaseResponse
 	supervisorResponses map[uint32]ProvisionerResponse
 
@@ -51,14 +48,6 @@ func NewHttp(channels ...interface{}) (*HttpThread, bool) {
 		return nil, ok
 	}
 	core.C6, ok = (channels[4]).(chan ProvisionerResponse)
-	if !ok {
-		return nil, ok
-	}
-	core.C9, ok = (channels[5]).(chan StateMachineRequest)
-	if !ok {
-		return nil, ok
-	}
-	core.C10, ok = (channels[6]).(chan StateMachineResponse)
 	if !ok {
 		return nil, ok
 	}

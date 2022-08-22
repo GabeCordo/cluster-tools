@@ -51,9 +51,5 @@ type Core struct {
 	c6        chan ProvisionerResponse
 	c7        chan DatabaseRequest
 	c8        chan DatabaseResponse
-	c9        chan StateMachineRequest
-	c10       chan StateMachineResponse
-	c11       chan StateMachineRequest
-	c12       chan StateMachineResponse
 	interrupt chan InterruptEvent
 }

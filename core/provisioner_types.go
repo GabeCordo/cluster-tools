@@ -5,8 +5,10 @@ import "sync"
 type SupervisorAction int8
 
 const (
-	Provision SupervisorAction = 0
-	Teardown                   = 1
+	Provision SupervisorAction = iota
+	Mount
+	UnMount
+	Teardown
 )
 
 type ProvisionerRequest struct {
@@ -29,9 +31,6 @@ type ProvisionerThread struct {
 
 	C7 chan<- DatabaseRequest  // Supervisor is sending core to the database
 	C8 <-chan DatabaseResponse // Supervisor is receiving responses from the database
-
-	C11 chan<- StateMachineRequest  // Provisioner is sending an event to the StateMachine
-	C12 <-chan StateMachineResponse // Provisioner is receiving a response from the StateMachine
 
 	accepting bool
 	wg        sync.WaitGroup
@@ -58,14 +57,6 @@ func NewProvisioner(channels ...interface{}) (*ProvisionerThread, bool) {
 		return nil, ok
 	}
 	provisioner.C8, ok = (channels[4]).(chan DatabaseResponse)
-	if !ok {
-		return nil, ok
-	}
-	provisioner.C11, ok = (channels[5]).(chan StateMachineRequest)
-	if !ok {
-		return nil, ok
-	}
-	provisioner.C12, ok = (channels[6]).(chan StateMachineResponse)
 	if !ok {
 		return nil, ok
 	}

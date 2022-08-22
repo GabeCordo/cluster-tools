@@ -75,18 +75,14 @@ func NewCore() *Core {
 	core.c6 = make(chan ProvisionerResponse)
 	core.c7 = make(chan DatabaseRequest)
 	core.c8 = make(chan DatabaseResponse)
-	core.c9 = make(chan StateMachineRequest)
-	core.c10 = make(chan StateMachineResponse)
-	core.c11 = make(chan StateMachineRequest)
-	core.c12 = make(chan StateMachineResponse)
 	core.interrupt = make(chan InterruptEvent)
 
 	var ok bool
-	core.HttpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6, core.c9, core.c10)
+	core.HttpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6)
 	if !ok {
 		return nil
 	}
-	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.c5, core.c6, core.c7, core.c8, core.c11, core.c12)
+	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.c5, core.c6, core.c7, core.c8)
 	if !ok {
 		return nil
 	}
@@ -151,7 +147,7 @@ func (core *Core) Run() {
 	core.ProvisionerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(!) supervisor shutdown")
+		log.Println("(!) provisioner shutdown")
 	}
 
 	// the supervisor might need to store data while finishing, close after
