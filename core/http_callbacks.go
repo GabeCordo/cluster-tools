@@ -42,14 +42,19 @@ func (http *HttpThread) StatisticsFunction(request *net.Request, response *net.R
 	response.AddStatus(200)
 }
 
-func (http *HttpThread) DebugFunction(request *net.Request, response *net.Response) {
-	statusString := "no error"
+func (http *HttpThread) DataFunction(request *net.Request, response *net.Response) {
 	statusCode := 200
+	statusString := "no error"
 
-	if request.Function == "shutdown" {
-		http.Interrupt <- Shutdown
+	if request.Function == "mounts" {
+		provisionerInstance := GetProvisionerInstance()
+
+		mounts := provisionerInstance.Mounts()
+		for identifier, isMounted := range mounts {
+			response.AddPair(identifier, isMounted)
+		}
 	} else if request.Function == "supervisor" {
-		provisioner := GetProvisionerInstance()
+		provisionerInstance := GetProvisionerInstance()
 
 		if len(request.Param) >= 1 {
 			supervisorRequest := request.Param[0]
@@ -58,7 +63,7 @@ func (http *HttpThread) DebugFunction(request *net.Request, response *net.Respon
 				if len(request.Param) == 2 {
 					clusterIdentifier := request.Param[1]
 
-					if _, found := provisioner.RegisteredFunctions[clusterIdentifier]; found {
+					if _, found := provisionerInstance.RegisteredFunctions[clusterIdentifier]; found {
 						// the cluster identifier exists on the node and can be called
 					} else {
 						// the cluster identifier does NOT exist, return "not found"
@@ -101,6 +106,17 @@ func (http *HttpThread) DebugFunction(request *net.Request, response *net.Respon
 				}
 			}
 		}
+	}
+
+	response.AddStatus(statusCode, statusString)
+}
+
+func (http *HttpThread) DebugFunction(request *net.Request, response *net.Response) {
+	statusString := "no error"
+	statusCode := 200
+
+	if request.Function == "shutdown" {
+		http.Interrupt <- Shutdown
 	} else if request.Function == "endpoints" {
 		auth := GetAuthInstance()
 

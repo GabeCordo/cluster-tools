@@ -78,3 +78,16 @@ func (provisioner Provisioner) IsMounted(identifier string) bool {
 	_, found := provisioner.OperationalFunctions[identifier]
 	return found
 }
+
+func (provisioner Provisioner) Mounts() map[string]bool {
+	mounts := make(map[string]bool)
+	for identifier, _ := range provisioner.RegisteredFunctions {
+		mounts[identifier] = false
+	}
+	
+	for identifier, _ := range provisioner.OperationalFunctions {
+		mounts[identifier] = true
+	}
+
+	return mounts
+}

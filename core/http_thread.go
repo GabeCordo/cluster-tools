@@ -84,6 +84,7 @@ func (http HttpThread) Setup() {
 	// core_callbacks functions
 	node.Function("/clusters", http.ClustersFunction, []string{"GET"}, false)
 	node.Function("/statistics", http.StatisticsFunction, []string{"GET"}, true)
+	node.Function("/data", http.DataFunction, []string{"GET"}, true)
 	node.Function("/debug", http.DebugFunction, []string{"GET", "POST", "DELETE"}, true)
 }
 

@@ -30,8 +30,9 @@ type Request struct {
 type ResponseData map[string]interface{}
 
 type Response struct {
-	Status int          `json:"status"`
-	Data   ResponseData `json:"data"`
+	Status      int          `json:"status"`
+	Description string       `json:"description"`
+	Data        ResponseData `json:"data"`
 }
 
 type Node struct {

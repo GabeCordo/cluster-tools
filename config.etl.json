@@ -6,6 +6,9 @@
     "enabled": true,
     "folder": ""
   },
+  "auto-mount": [
+    "multiply"
+  ],
   "net": {
     "host": "127.0.0.1",
     "port": 8000

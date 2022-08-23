@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	DefaultHardTerminateTime = 30 // minutes
+)
+
 var provisioner *cluster.Provisioner
 
 func GetProvisionerInstance() *cluster.Provisioner {
@@ -19,7 +23,13 @@ func GetProvisionerInstance() *cluster.Provisioner {
 
 func (provisionerThread *ProvisionerThread) Setup() {
 	provisionerThread.accepting = true
-	GetProvisionerInstance() // create the supervisor if it doesn't exist
+	provisionerInstance := GetProvisionerInstance() // create the supervisor if it doesn't exist
+
+	// auto-mounting is supported within the ETLFramework Config; if a cluster identifier is added
+	// to the config under 'auto-mount', it is added to the map of Operational functions
+	for _, identifier := range GetConfigInstance().AutoMount {
+		provisionerInstance.Mount(identifier)
+	}
 }
 
 func (provisionerThread *ProvisionerThread) Start() {
@@ -98,7 +108,12 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 				for provisionerThread.accepting {
 					// block
 				}
-				<-time.After(25 * time.Second)
+
+				timeTillKilled := DefaultHardTerminateTime
+				if GetConfigInstance().HardTerminateTime != 0 {
+					timeTillKilled = GetConfigInstance().HardTerminateTime
+				}
+				<-time.After(time.Duration(timeTillKilled) * time.Minute)
 			}()
 
 			<-c

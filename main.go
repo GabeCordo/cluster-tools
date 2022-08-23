@@ -49,7 +49,7 @@ func (m Multiply) LoadFunc(input channel.InputChannel) {
 func main() {
 	c := core.NewCore()
 
-	m := Multiply{}
+	m := Multiply{} // A structure implementing the ETLFramework.Cluster.Cluster interface
 	c.Cluster("multiply", m, cluster.Config{Identifier: "multiply"})
 
 	if commandLine, ok := cli.NewCommandLine(c); ok {
