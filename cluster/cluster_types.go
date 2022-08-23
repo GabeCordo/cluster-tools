@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	MaxConcurrentMonitors = 24
+	MaxConcurrentSupervisors = 24
 )
 
 type Segment int8
@@ -66,8 +66,8 @@ const (
 	TearedDown           = 3
 )
 
-type Monitor struct {
-	Id        uint32      `json:"id"`
+type Supervisor struct {
+	Id        uint64      `json:"id"`
 	group     Cluster     `json:"group"`
 	Config    *Config     `json:"config"`
 	Stats     *Statistics `json:"stats"`
@@ -84,9 +84,18 @@ type Response struct {
 	LapsedTime time.Duration `json:"lapsed-time"`
 }
 
-type Supervisor struct {
-	Functions map[string]Cluster `json:"functions"`
-	Configs   map[string]Config  `json:"configs"`
+type Registry struct {
+	Supervisors map[uint64]*Supervisor
+
+	idReference uint64
+	mutex       sync.Mutex
+}
+
+type Provisioner struct {
+	RegisteredFunctions  map[string]*Cluster `json:"functions"`
+	OperationalFunctions map[string]*Cluster
+	Configs              map[string]Config    `json:"configs"`
+	Registries           map[string]*Registry `json:"registries"`
 
 	mutex sync.Mutex
 }

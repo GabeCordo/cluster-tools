@@ -15,10 +15,10 @@ const (
 type Module uint8
 
 const (
-	Http       Module = 0
-	Database          = 1
-	Supervisor        = 2
-	Messenger         = 3
+	Http        Module = 0
+	Database           = 1
+	Provisioner        = 2
+	Messenger          = 3
 )
 
 type Thread interface {
@@ -28,27 +28,29 @@ type Thread interface {
 }
 
 type Config struct {
-	Name    string        `json:"name"`
-	Version float64       `json:"version"`
-	Debug   bool          `json:"debug"`
-	Logging logger.Logger `json:"logging"`
-	Net     net.Address   `json:"net"`
-	Auth    net.Auth      `json:"auth"`
-	Path    string
+	Name              string        `json:"name"`
+	Version           float64       `json:"version"`
+	Debug             bool          `json:"debug"`
+	HardTerminateTime int           `json:"hard-terminate-time"`
+	AutoMount         []string      `json:"auto-mount"`
+	Logging           logger.Logger `json:"logging"`
+	Net               net.Address   `json:"net"`
+	Auth              net.Auth      `json:"auth"`
+	Path              string
 }
 
 type Core struct {
-	HttpThread       *HttpThread
-	SupervisorThread *SupervisorThread
-	MessengerThread  *MessengerThread
-	DatabaseThread   *DatabaseThread
+	HttpThread        *HttpThread
+	ProvisionerThread *ProvisionerThread
+	MessengerThread   *MessengerThread
+	DatabaseThread    *DatabaseThread
 
 	c1        chan DatabaseRequest
 	c2        chan DatabaseResponse
 	c3        chan MessengerRequest
 	c4        chan MessengerResponse
-	c5        chan SupervisorRequest
-	c6        chan SupervisorResponse
+	c5        chan ProvisionerRequest
+	c6        chan ProvisionerResponse
 	c7        chan DatabaseRequest
 	c8        chan DatabaseResponse
 	interrupt chan InterruptEvent
