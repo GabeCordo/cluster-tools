@@ -4,7 +4,6 @@ import (
 	"ETLFramework/logger"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -92,7 +91,7 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 	// the user should not be able to create a route that requires ECDSA or permission bitmap
 	// authentication if they have not registered an auth structure
 	if (n.Auth == nil) && auth {
-		return errors.New("cannot create a route that requires authentication with a nil auth struct")
+		panic("cannot create a route that requires authentication with a nil auth struct")
 	}
 
 	// the design pattern calls for routes to be appended before the HTTP server is started up
@@ -189,9 +188,10 @@ func (n *Node) Function(path string, handler Router, methods []string, auth bool
 			}()
 		})
 		return nil
+	} else {
+		// the developer should know that they're breaking the pattern by calling this during runtime
+		panic("Endpoints should not be added dynamically to the Node during runtime")
 	}
-	// the developer should know that they're breaking the pattern by calling this during runtime
-	return &NodeIllegalActionError{}
 }
 
 func (n *Node) Start() {

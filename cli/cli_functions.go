@@ -7,6 +7,10 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func HelpCommand() {
@@ -32,4 +36,18 @@ func GenerateKeyPair() {
 	fmt.Println(len(x509EncodedPub))
 	fmt.Println("[public]")
 	fmt.Println(net.ByteToString(x509EncodedPub))
+}
+
+func InteractiveDashboard() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigs // block until we receive an interrupt from the system
+		fmt.Println()
+		os.Exit(0)
+	}()
+
+	for {
+		fmt.Printf("time: %s\r", time.Now())
+	}
 }

@@ -43,46 +43,86 @@ func NewCustomSupervisor(cluster Cluster, config *Config) *Supervisor {
 	return supervisor
 }
 
-func (m *Supervisor) Start() *Response {
-	m.waitGroup.Add(3)
+func (supervisor *Supervisor) Event(event Event) bool {
+	supervisor.mutex.Lock()
+	defer supervisor.mutex.Unlock()
 
-	startTime := time.Now()
+	if supervisor.State == UnTouched {
+		if event == Startup {
+			supervisor.State = Running
+		} else {
+			return false
+		}
+	} else if supervisor.State == Running {
+		if event == StartProvision {
+			supervisor.State = Provisioning
+		} else if event == Error {
+			supervisor.State = Failed
+		} else if event == TearedDown {
+			supervisor.State = Terminated
+		} else {
+			return false
+		}
+	} else if supervisor.State == Provisioning {
+		if event == EndProvision {
+			supervisor.State = Running
+		} else if event == Error {
+			supervisor.State = Failed
+		} else {
+			return false
+		}
+	} else if (supervisor.State == Failed) || (supervisor.State == Terminated) {
+		return false
+	}
+
+	return true // represents a boolean ~ hasStateChanged?
+}
+
+func (supervisor *Supervisor) Start() *Response {
+	supervisor.Event(Startup)
+	defer supervisor.Event(TearedDown)
+
+	supervisor.waitGroup.Add(3)
+
+	supervisor.StartTime = time.Now()
 
 	// start creating the default frontend goroutines
-	m.Provision(Extract)
-	m.Provision(Transform)
-	m.Provision(Load)
+	supervisor.Provision(Extract)
+	supervisor.Provision(Transform)
+	supervisor.Provision(Load)
 	// end creating the default frontend goroutines
 
 	// every N seconds we should check if the etChannel or tlChannel is congested
 	// and requires us to provision additional nodes
-	go m.Runtime()
+	go supervisor.Runtime()
 
-	m.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
+	supervisor.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
-	response := NewResponse(m.Config, m.Stats, time.Now().Sub(startTime))
+	response := NewResponse(supervisor.Config, supervisor.Stats, time.Now().Sub(supervisor.StartTime))
 	return response
 }
 
-func (m *Supervisor) Runtime() {
+func (supervisor *Supervisor) Runtime() {
 	for {
 		// is etChannel congested?
-		if m.etChannel.State == channel.Congested {
-			n := m.Stats.NumProvisionedTransformRoutes
+		if supervisor.etChannel.State == channel.Congested {
+			supervisor.Stats.NumEtThresholdBreaches++
+			n := supervisor.Stats.NumProvisionedTransformRoutes
 			for n > 0 {
-				m.Provision(Transform)
+				supervisor.Provision(Transform)
 				n--
 			}
-			m.Stats.NumProvisionedTransformRoutes *= m.etChannel.Config.GrowthFactor
+			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.etChannel.Config.GrowthFactor
 		}
 		// is tlChannel congested?
-		if m.tlChannel.State == channel.Congested {
-			n := m.Stats.NumProvisionedLoadRoutines
+		if supervisor.tlChannel.State == channel.Congested {
+			supervisor.Stats.NumTlThresholdBreaches++
+			n := supervisor.Stats.NumProvisionedLoadRoutines
 			for n > 0 {
-				m.Provision(Load)
+				supervisor.Provision(Load)
 				n--
 			}
-			m.Stats.NumProvisionedLoadRoutines *= m.tlChannel.Config.GrowthFactor
+			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.tlChannel.Config.GrowthFactor
 		}
 
 		// check if the channel is congested after DefaultMonitorRefreshDuration seconds
@@ -90,22 +130,26 @@ func (m *Supervisor) Runtime() {
 	}
 }
 
-func (m *Supervisor) Provision(segment Segment) {
+func (supervisor *Supervisor) Provision(segment Segment) {
+	supervisor.Event(StartProvision)
+	defer supervisor.Event(EndProvision)
+
 	go func() {
 		switch segment {
 		case Extract:
-			m.group.ExtractFunc(m.etChannel.Channel)
+			supervisor.Stats.NumProvisionedExtractRoutines++
+			supervisor.group.ExtractFunc(supervisor.etChannel.Channel)
 			break
 		case Transform: // transform
-			m.Stats.NumProvisionedTransformRoutes++
-			m.group.TransformFunc(m.etChannel.Channel, m.tlChannel.Channel)
+			supervisor.Stats.NumProvisionedTransformRoutes++
+			supervisor.group.TransformFunc(supervisor.etChannel.Channel, supervisor.tlChannel.Channel)
 			break
 		default: // load
-			m.Stats.NumProvisionedTransformRoutes++
-			m.group.LoadFunc(m.tlChannel.Channel)
+			supervisor.Stats.NumProvisionedLoadRoutines++
+			supervisor.group.LoadFunc(supervisor.tlChannel.Channel)
 			break
 		}
-		m.waitGroup.Done() // notify the wait group a process has completed ~ if all are finished we close the monitor
+		supervisor.waitGroup.Done() // notify the wait group a process has completed ~ if all are finished we close the monitor
 	}()
 }
 
@@ -115,6 +159,8 @@ func (status Status) String() string {
 		return "UnTouched"
 	case Running:
 		return "Running"
+	case Provisioning:
+		return "Provisioning"
 	case Failed:
 		return "Failed"
 	case Terminated:

@@ -3,7 +3,6 @@ package core
 import (
 	"ETLFramework/cluster"
 	"log"
-	"time"
 )
 
 const (
@@ -86,13 +85,13 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 			return
 		}
 
-		var m *cluster.Supervisor
+		var supervisor *cluster.Supervisor
 		if cnfg == nil {
-			m = cluster.NewSupervisor(*clstr)
+			supervisor = cluster.NewSupervisor(*clstr)
 		} else {
-			m = cluster.NewCustomSupervisor(*clstr, cnfg)
+			supervisor = cluster.NewCustomSupervisor(*clstr, cnfg)
 		}
-		register.Register(m)
+		register.Register(supervisor)
 
 		go func() {
 			var response *cluster.Response
@@ -100,28 +99,31 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 			c := make(chan struct{})
 			go func() {
 				defer close(c)
-				response = m.Start()
+				response = supervisor.Start()
 			}()
 
-			go func() {
-				defer close(c)
-				for provisionerThread.accepting {
-					// block
-				}
-
-				timeTillKilled := DefaultHardTerminateTime
-				if GetConfigInstance().HardTerminateTime != 0 {
-					timeTillKilled = GetConfigInstance().HardTerminateTime
-				}
-				<-time.After(time.Duration(timeTillKilled) * time.Minute)
-			}()
+			// DEPRECIATED BLOCK (NOTE: NO DEADLOCK HANDLING)
+			//
+			//go func() {
+			//	defer close(c)
+			//	for provisionerThread.accepting {
+			//		// block
+			//	}
+			//
+			//	timeTillKilled := DefaultHardTerminateTime
+			//	if GetConfigInstance().HardTerminateTime != 0 {
+			//		timeTillKilled = GetConfigInstance().HardTerminateTime
+			//	}
+			//	<-time.After(time.Duration(timeTillKilled) * time.Minute)
+			//}()
+			//
 
 			<-c
 
 			// don't send the statistics of the cluster to the database unless an identifier has been
 			// given to the cluster for grouping purposes
-			if len(m.Config.Identifier) != 0 {
-				request := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: m.Config.Identifier, Data: response}
+			if len(supervisor.Config.Identifier) != 0 {
+				request := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
 				provisionerThread.C7 <- request
 			}
 			provisionerThread.wg.Done()

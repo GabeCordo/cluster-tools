@@ -29,6 +29,9 @@ func (cli *CommandLine) Run() {
 		} else if args[i] == "-g" || args[i] == "--generate-key" {
 			GenerateKeyPair()
 			return
+		} else if args[i] == "-i" || args[i] == "--interactive" {
+			InteractiveDashboard()
+			return
 		}
 	}
 	// stop reading cli arguments

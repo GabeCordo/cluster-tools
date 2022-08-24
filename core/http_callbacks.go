@@ -77,7 +77,7 @@ func (http *HttpThread) DataFunction(request *net.Request, response *net.Respons
 				if len(request.Param) >= 2 {
 					clusterIdentifier := request.Param[1]
 
-					registry, found := provisioner.Registries[clusterIdentifier]
+					registry, found := provisionerInstance.Registries[clusterIdentifier]
 					if found {
 						if len(request.Param) == 3 {
 							supervisorId := request.Param[2]
@@ -103,6 +103,63 @@ func (http *HttpThread) DataFunction(request *net.Request, response *net.Respons
 				} else {
 					statusCode = 400
 					statusString = "missing cluster identifier"
+				}
+			} else {
+				// display all relevant information about the supervisor
+				if len(request.Param) == 2 {
+					clusterIdentifier := request.Param[0]
+					registry, ok := provisionerInstance.Registries[clusterIdentifier]
+					if ok {
+						supervisorIdStr := request.Param[1]
+						supervisorId, err := strconv.ParseUint(supervisorIdStr, 10, 64)
+						if err == nil {
+							supervisor, ok := registry.GetSupervisor(supervisorId)
+							if ok {
+								response.AddPair("id", supervisor.Id)
+								response.AddPair("state", supervisor.State.String())
+								response.AddPair("num-e-routines", supervisor.Stats.NumProvisionedExtractRoutines)
+								response.AddPair("num-t-routines", supervisor.Stats.NumProvisionedTransformRoutes)
+								response.AddPair("num-l-routines", supervisor.Stats.NumProvisionedLoadRoutines)
+								response.AddPair("num-et-breaches", supervisor.Stats.NumEtThresholdBreaches)
+								response.AddPair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
+							} else {
+								statusCode = 400
+								statusString = net.BadArgument
+							}
+						} else {
+							statusCode = 400
+							statusString = net.BadArgument
+						}
+					} else {
+						statusCode = 400
+						statusString = net.BadArgument
+					}
+				} else if len(request.Param) == 1 {
+					clusterIdentifier := request.Param[0]
+					registry, ok := provisionerInstance.Registries[clusterIdentifier]
+					if ok {
+						output := make(map[uint64]map[string]any)
+						for id, supervisor := range registry.Supervisors {
+							record := make(map[string]any)
+
+							record["id"] = supervisor.Id
+							record["state"] = supervisor.State.String()
+							record["num-e-routines"] = supervisor.Stats.NumProvisionedExtractRoutines
+							record["num-t-routines"] = supervisor.Stats.NumProvisionedTransformRoutes
+							record["num-l-routines"] = supervisor.Stats.NumProvisionedLoadRoutines
+							record["num-et-breaches"] = supervisor.Stats.NumEtThresholdBreaches
+							record["num-tl-breaches"] = supervisor.Stats.NumTlThresholdBreaches
+
+							output[id] = record
+						}
+						response.AddPair("supervisors", output)
+					} else {
+						statusCode = 400
+						statusString = net.BadArgument
+					}
+				} else {
+					statusCode = 400
+					statusString = net.SyntaxMismatch
 				}
 			}
 		}
