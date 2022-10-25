@@ -1,9 +1,9 @@
 package net
 
 import (
-	"ETLFramework/logger"
 	"context"
 	"encoding/json"
+	"etl/components/logger"
 	"io"
 	"net/http"
 	"time"

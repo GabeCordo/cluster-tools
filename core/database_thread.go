@@ -1,7 +1,7 @@
 package core
 
 import (
-	"ETLFramework/database"
+	"etl/components/database"
 )
 
 var DatabaseInstance *database.Database

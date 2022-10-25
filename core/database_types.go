@@ -1,8 +1,8 @@
 package core
 
 import (
-	"ETLFramework/cluster"
-	"ETLFramework/database"
+	"etl/components/cluster"
+	"etl/components/database"
 	"sync"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ETLFramework/core"
+	"etl/core"
 	"testing"
 )
 

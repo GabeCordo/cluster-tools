@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ETLFramework/channel"
-	"ETLFramework/cluster"
+	"etl/channel"
+	"etl/cluster"
 	"log"
 	"testing"
 )

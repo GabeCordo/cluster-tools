@@ -1,7 +1,7 @@
 package core
 
 import (
-	"ETLFramework/net"
+	"etl/net"
 	"math/rand"
 	"strconv"
 )

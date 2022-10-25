@@ -1,7 +1,7 @@
 package core
 
 import (
-	"ETLFramework/cluster"
+	"etl/components/cluster"
 	"log"
 )
 
@@ -24,7 +24,7 @@ func (provisionerThread *ProvisionerThread) Setup() {
 	provisionerThread.accepting = true
 	provisionerInstance := GetProvisionerInstance() // create the supervisor if it doesn't exist
 
-	// auto-mounting is supported within the ETLFramework Config; if a cluster identifier is added
+	// auto-mounting is supported within the etl Config; if a cluster identifier is added
 	// to the config under 'auto-mount', it is added to the map of Operational functions
 	for _, identifier := range GetConfigInstance().AutoMount {
 		provisionerInstance.Mount(identifier)

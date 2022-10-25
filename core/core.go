@@ -1,9 +1,9 @@
 package core
 
 import (
-	"ETLFramework/cluster"
 	"encoding/json"
 	"errors"
+	"etl/components/cluster"
 	"log"
 	"os"
 	"os/signal"
@@ -115,7 +115,7 @@ func (core *Core) Run() {
 	core.HttpThread.Setup()
 	go core.HttpThread.Start() // event loop
 
-	// monitor system calls being sent to the process, if the ETLFramework is being
+	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
 	// requiring us to cleanly close the application without risking the loss of data
 	sigs := make(chan os.Signal, 1)

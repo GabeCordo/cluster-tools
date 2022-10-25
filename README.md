@@ -22,10 +22,10 @@ using the *config.etl.json file*.
 ```go
 c := core.NewCore()
 
-m := Multiply{} 	// A structure implementing the ETLFramework.Cluster.Cluster interface
+m := Multiply{} 	// A structure implementing the etl.Cluster.Cluster interface
 c.Cluster("multiply", m, cluster.Config{Identifier: "multiply"})
 
-c.Run()	 // Starts the ETLFramework
+c.Run()	 // Starts the etl
 ```
 
 #### What is a Cluster?

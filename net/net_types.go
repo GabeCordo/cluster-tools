@@ -1,8 +1,8 @@
 package net
 
 import (
-	"ETLFramework/logger"
 	"crypto/ecdsa"
+	"etl/components/logger"
 	"net/http"
 	"sync"
 )
@@ -67,5 +67,5 @@ type Endpoint struct {
 
 type Auth struct {
 	Trusted map[string]*Endpoint `json:"trusted"`
-	Mutex   sync.Mutex           `json:"mutex"`
+	Mutex   sync.Mutex
 }

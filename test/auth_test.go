@@ -1,11 +1,11 @@
 package main
 
 import (
-	"ETLFramework/net"
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"etl/net"
 	"fmt"
 	"net/http"
 	"testing"

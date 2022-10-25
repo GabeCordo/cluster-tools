@@ -1,8 +1,7 @@
 package core
 
 import (
-	"ETLFramework/logger"
-	"ETLFramework/net"
+	"etl/net"
 )
 
 type InterruptEvent uint8
@@ -28,14 +27,13 @@ type Thread interface {
 }
 
 type Config struct {
-	Name              string        `json:"name"`
-	Version           float64       `json:"version"`
-	Debug             bool          `json:"debug"`
-	HardTerminateTime int           `json:"hard-terminate-time"`
-	AutoMount         []string      `json:"auto-mount"`
-	Logging           logger.Logger `json:"logging"`
-	Net               net.Address   `json:"net"`
-	Auth              net.Auth      `json:"auth"`
+	Name              string      `json:"name"`
+	Version           float64     `json:"version"`
+	Debug             bool        `json:"debug"`
+	HardTerminateTime int         `json:"hard-terminate-time"`
+	AutoMount         []string    `json:"auto-mount"`
+	Net               net.Address `json:"net"`
+	Auth              net.Auth    `json:"auth"`
 	Path              string
 }
 

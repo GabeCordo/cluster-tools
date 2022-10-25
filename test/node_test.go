@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ETLFramework/net"
+	"etl/net"
 	"fmt"
 	"net/http"
 	"testing"
@@ -15,7 +15,7 @@ const (
 	WaitForServerStart = 1000 * time.Millisecond
 )
 
-/*? Routing Functions */
+/*? Routing Commands */
 
 func index(request *net.Request, response *net.Response) {
 	response.AddStatus(http.StatusOK, SuccessMessage)

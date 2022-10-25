@@ -1,8 +1,8 @@
 package core
 
 import (
-	"ETLFramework/logger"
-	"ETLFramework/net"
+	"etl/components/logger"
+	"etl/net"
 	"log"
 	"sync"
 	"time"
@@ -62,7 +62,8 @@ func GetLoggerInstance() *logger.Logger {
 	defer loggerLock.Unlock()
 
 	if LoggerInstance == nil {
-		LoggerInstance = &GetConfigInstance().Logging
+		// TODO - allow the logger to be customized
+		LoggerInstance = logger.NewLogger(ConfigInstance.Path, logger.Verbose, logger.NewInterval(0, 10))
 
 		// we may not contain a JSON mapping of the logging queue, meaning a nil
 		// value will hold its place that can raise an error
