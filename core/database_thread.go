@@ -1,7 +1,7 @@
 package core
 
 import (
-	"etl/components/database"
+	"github.com/GabeCordo/etl/components/database"
 )
 
 var DatabaseInstance *database.Database

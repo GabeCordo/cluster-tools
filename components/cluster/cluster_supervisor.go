@@ -1,8 +1,8 @@
 package cluster
 
 import (
-	"etl/components/channel"
-	"etl/net"
+	"github.com/GabeCordo/etl/components/channel"
+	"github.com/GabeCordo/fack"
 	"time"
 )
 
@@ -16,7 +16,7 @@ func NewSupervisor(cluster Cluster) *Supervisor {
 	supervisor := new(Supervisor)
 
 	supervisor.group = cluster
-	supervisor.Config = NewConfig(net.EmptyString, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultChannelThreshold, DefaultChannelGrowthFactor, DoNothing)
+	supervisor.Config = NewConfig(fack.EmptyString, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultChannelThreshold, DefaultChannelGrowthFactor, DoNothing)
 	supervisor.Stats = NewStatistics()
 	supervisor.etChannel = channel.NewManagedChannel(supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
 	supervisor.tlChannel = channel.NewManagedChannel(supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)

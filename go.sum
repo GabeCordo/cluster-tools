@@ -1,2 +1,4 @@
 github.com/GabeCordo/commandline v0.1.0 h1:kwX+VjjYGZDXwaKBa7e6CGafklW7+0Fl9MT3wb8nhYM=
 github.com/GabeCordo/commandline v0.1.0/go.mod h1:5gUm5ty3oOwajuWTqwH2pL7MbmlJPsnICaTKsnW5nuo=
+github.com/GabeCordo/fack v0.1.2 h1:xF1O78Svf0O4Gs3P743MNspdYayaN8nI3G0pNkieDrQ=
+github.com/GabeCordo/fack v0.1.2/go.mod h1:gswPD1Ow2onkjUcNa3WVbnJDJ+hHytS3Bjmdab4fRtk=

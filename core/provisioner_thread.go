@@ -1,7 +1,7 @@
 package core
 
 import (
-	"etl/components/cluster"
+	"github.com/GabeCordo/etl/components/cluster"
 	"log"
 )
 

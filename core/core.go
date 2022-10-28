@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 	"errors"
-	"etl/components/cluster"
+	"github.com/GabeCordo/etl/components/cluster"
 	"log"
 	"os"
 	"os/signal"

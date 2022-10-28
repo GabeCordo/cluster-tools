@@ -1,7 +1,6 @@
 package main
 
 import (
-	"etl/core"
 	"fmt"
 	"github.com/GabeCordo/commandline"
 	"os"
@@ -14,10 +13,10 @@ func Version(commandLine *commandline.CommandLine) string {
 	return "ETLFramework Version " + strVersion + " " + strTimeNow
 }
 
-func InitializeFolders() (utils.Path, utils.Path) {
+func InitializeFolders() (commandline.Path, commandline.Path) {
 
 	executablePathStr, _ := os.Executable()
-	executablePath := utils.EmptyPath().Dir(executablePathStr)
+	executablePath := commandline.EmptyPath().Dir(executablePathStr)
 
 	dataFolderPath := executablePath.Dir(".data")
 
@@ -34,17 +33,16 @@ func InitializeFolders() (utils.Path, utils.Path) {
 	return dataFolderPath, templateFolderPath
 }
 
-func TemplateFolderPath() Path {
+func TemplateFolderPath() commandline.Path {
 	executablePath, _ := os.Executable()
-	return EmptyPath().Dir(executablePath).Dir(".bin").Dir(".templates")
+	return commandline.EmptyPath().Dir(executablePath).Dir(".bin").Dir(".templates")
 }
 
 func main() {
 
-	dataFolderPath, templateFolderPath := InitializeFolders()
+	//dataFolderPath, templateFolderPath := InitializeFolders()
 
-	c := core.NewCore()
-	if commandLine, ok := cli.NewCommandLine(c); ok {
+	if commandLine := commandline.NewCommandLine(); commandLine != nil {
 
 		commandLine.AddCommand([]string{"version"}, VersionCommand{"version"})
 

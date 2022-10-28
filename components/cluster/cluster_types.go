@@ -1,7 +1,7 @@
 package cluster
 
 import (
-	"etl/components/channel"
+	"github.com/GabeCordo/etl/components/channel"
 	"sync"
 	"time"
 )

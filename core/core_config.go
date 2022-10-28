@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/GabeCordo/fack"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,8 +18,8 @@ func NewConfig(name string) *Config {
 
 	config.Name = name
 	config.Version = 1.0
-	config.Net.Port = 8080
-	config.Net.Host = "127.0.0.1"
+	config.Net.Port(8080)
+	config.Net.Host(fack.Localhost)
 
 	return config
 }

@@ -1,8 +1,8 @@
 package core
 
 import (
-	"etl/components/cluster"
-	"etl/components/database"
+	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl/components/database"
 	"sync"
 )
 

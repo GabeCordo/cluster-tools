@@ -1,67 +1,76 @@
 package core
 
 import (
-	"etl/net"
+	"github.com/GabeCordo/fack"
+	"github.com/GabeCordo/fack/rpc"
 	"math/rand"
 	"strconv"
 )
 
-func (http *HttpThread) ClustersFunction(request *net.Request, response *net.Response) {
-	if len(request.Param) > 1 {
-		response.AddStatus(400)
+// TODO - fix rpc to request conversion
+
+func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Response) {
+	rpcRequest := request.(rpc.Request)
+
+	if len(rpcRequest.Param) > 1 {
+		response.SetStatus(400)
 		return
 	}
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: request.Param[0], Parameters: request.Param}
-	if request.Function == "provision" {
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: rpcRequest.Param[0], Parameters: rpcRequest.Param}
+	if rpcRequest.Function == "provision" {
 		provisionerThreadRequest.Action = Provision
-	} else if request.Function == "mount" {
+	} else if rpcRequest.Function == "mount" {
 		provisionerThreadRequest.Action = Mount
-	} else if request.Function == "unmount" {
+	} else if rpcRequest.Function == "unmount" {
 		provisionerThreadRequest.Action = UnMount
 	}
 
 	http.C5 <- provisionerThreadRequest
-	response.AddStatus(200)
+	response.SetStatus(200)
 }
 
-func (http *HttpThread) StatisticsFunction(request *net.Request, response *net.Response) {
-	req := DatabaseRequest{Action: Fetch, Cluster: request.Function}
+func (http *HttpThread) StatisticsFunction(request fack.Request, response fack.Response) {
+	rpcRequest := request.(rpc.Request)
+
+	req := DatabaseRequest{Action: Fetch, Cluster: rpcRequest.Function}
 
 	if value, ok := http.Send(Database, req); ok {
 		rsp := (value).(DatabaseResponse)
 
 		// check to see if no records have ever been created
 		if !rsp.Success {
-			response.AddStatus(200, "no cluster records exist")
+			response.SetStatus(200).SetDescription("no cluster records exist")
 			return
 		}
-		response.AddPair("value", rsp.Data)
+		response.Pair("value", rsp.Data)
 	}
 
-	response.AddStatus(200)
+	response.SetStatus(200)
 }
 
-func (http *HttpThread) DataFunction(request *net.Request, response *net.Response) {
+func (http *HttpThread) DataFunction(request fack.Request, response fack.Response) {
+	rpcRequest := request.(rpc.Request)
+
 	statusCode := 200
 	statusString := "no error"
 
-	if request.Function == "mounts" {
+	if rpcRequest.Function == "mounts" {
 		provisionerInstance := GetProvisionerInstance()
 
 		mounts := provisionerInstance.Mounts()
 		for identifier, isMounted := range mounts {
-			response.AddPair(identifier, isMounted)
+			response.Pair(identifier, isMounted)
 		}
-	} else if request.Function == "supervisor" {
+	} else if rpcRequest.Function == "supervisor" {
 		provisionerInstance := GetProvisionerInstance()
 
-		if len(request.Param) >= 1 {
-			supervisorRequest := request.Param[0]
+		if len(rpcRequest.Param) >= 1 {
+			supervisorRequest := rpcRequest.Param[0]
 
 			if supervisorRequest == "lookup" {
-				if len(request.Param) == 2 {
-					clusterIdentifier := request.Param[1]
+				if len(rpcRequest.Param) == 2 {
+					clusterIdentifier := rpcRequest.Param[1]
 
 					if _, found := provisionerInstance.RegisteredFunctions[clusterIdentifier]; found {
 						// the cluster identifier exists on the node and can be called
@@ -74,18 +83,18 @@ func (http *HttpThread) DataFunction(request *net.Request, response *net.Respons
 					statusString = "missing cluster identifier"
 				}
 			} else if supervisorRequest == "state" {
-				if len(request.Param) >= 2 {
-					clusterIdentifier := request.Param[1]
+				if len(rpcRequest.Param) >= 2 {
+					clusterIdentifier := rpcRequest.Param[1]
 
 					registry, found := provisionerInstance.Registries[clusterIdentifier]
 					if found {
-						if len(request.Param) == 3 {
-							supervisorId := request.Param[2]
+						if len(rpcRequest.Param) == 3 {
+							supervisorId := rpcRequest.Param[2]
 
 							id, _ := strconv.ParseUint(supervisorId, 10, 32)
 							supervisor, found := registry.GetSupervisor(id)
 							if found {
-								response.AddPair("state", supervisor.State.String())
+								response.Pair("state", supervisor.State.String())
 							} else {
 								statusCode = 400
 								statusString = "unknown supervisor id"
@@ -93,7 +102,7 @@ func (http *HttpThread) DataFunction(request *net.Request, response *net.Respons
 						} else {
 							for _, supervisor := range registry.Supervisors {
 								id := strconv.FormatUint(supervisor.Id, 10)
-								response.AddPair(id, supervisor.State.String())
+								response.Pair(id, supervisor.State.String())
 							}
 						}
 					} else {
@@ -106,36 +115,36 @@ func (http *HttpThread) DataFunction(request *net.Request, response *net.Respons
 				}
 			} else {
 				// display all relevant information about the supervisor
-				if len(request.Param) == 2 {
-					clusterIdentifier := request.Param[0]
+				if len(rpcRequest.Param) == 2 {
+					clusterIdentifier := rpcRequest.Param[0]
 					registry, ok := provisionerInstance.Registries[clusterIdentifier]
 					if ok {
-						supervisorIdStr := request.Param[1]
+						supervisorIdStr := rpcRequest.Param[1]
 						supervisorId, err := strconv.ParseUint(supervisorIdStr, 10, 64)
 						if err == nil {
 							supervisor, ok := registry.GetSupervisor(supervisorId)
 							if ok {
-								response.AddPair("id", supervisor.Id)
-								response.AddPair("state", supervisor.State.String())
-								response.AddPair("num-e-routines", supervisor.Stats.NumProvisionedExtractRoutines)
-								response.AddPair("num-t-routines", supervisor.Stats.NumProvisionedTransformRoutes)
-								response.AddPair("num-l-routines", supervisor.Stats.NumProvisionedLoadRoutines)
-								response.AddPair("num-et-breaches", supervisor.Stats.NumEtThresholdBreaches)
-								response.AddPair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
+								response.Pair("id", supervisor.Id)
+								response.Pair("state", supervisor.State.String())
+								response.Pair("num-e-routines", supervisor.Stats.NumProvisionedExtractRoutines)
+								response.Pair("num-t-routines", supervisor.Stats.NumProvisionedTransformRoutes)
+								response.Pair("num-l-routines", supervisor.Stats.NumProvisionedLoadRoutines)
+								response.Pair("num-et-breaches", supervisor.Stats.NumEtThresholdBreaches)
+								response.Pair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
 							} else {
 								statusCode = 400
-								statusString = net.BadArgument
+								statusString = rpc.BadArgument
 							}
 						} else {
 							statusCode = 400
-							statusString = net.BadArgument
+							statusString = rpc.BadArgument
 						}
 					} else {
 						statusCode = 400
-						statusString = net.BadArgument
+						statusString = rpc.BadArgument
 					}
-				} else if len(request.Param) == 1 {
-					clusterIdentifier := request.Param[0]
+				} else if len(rpcRequest.Param) == 1 {
+					clusterIdentifier := rpcRequest.Param[0]
 					registry, ok := provisionerInstance.Registries[clusterIdentifier]
 					if ok {
 						output := make(map[uint64]map[string]any)
@@ -152,53 +161,55 @@ func (http *HttpThread) DataFunction(request *net.Request, response *net.Respons
 
 							output[id] = record
 						}
-						response.AddPair("supervisors", output)
+						response.Pair("supervisors", output)
 					} else {
 						statusCode = 400
-						statusString = net.BadArgument
+						statusString = rpc.BadArgument
 					}
 				} else {
 					statusCode = 400
-					statusString = net.SyntaxMismatch
+					statusString = rpc.SyntaxMismatch
 				}
 			}
 		}
 	}
 
-	response.AddStatus(statusCode, statusString)
+	response.SetStatus(statusCode).SetDescription(statusString)
 }
 
-func (http *HttpThread) DebugFunction(request *net.Request, response *net.Response) {
+func (http *HttpThread) DebugFunction(request fack.Request, response fack.Response) {
+	rpcRequest := request.(rpc.Request)
+
 	statusString := "no error"
 	statusCode := 200
 
-	if request.Function == "shutdown" {
+	if rpcRequest.Function == "shutdown" {
 		http.Interrupt <- Shutdown
-	} else if request.Function == "endpoints" {
+	} else if rpcRequest.Function == "endpoints" {
 		auth := GetAuthInstance()
 
-		if len(request.Param) == 1 {
-			endpointIdentifier := request.Param[0]
+		if len(rpcRequest.Param) == 1 {
+			endpointIdentifier := rpcRequest.Param[0]
 			if endpoint, found := auth.Trusted[endpointIdentifier]; found {
-				response.AddPair("localPermission", endpoint.LocalPermissions)
-				response.AddPair("globalPermission", endpoint.GlobalPermissions)
+				response.Pair("localPermission", endpoint.LocalPermissions)
+				response.Pair("globalPermission", endpoint.GlobalPermissions)
 			} else {
 				statusCode = 400
-				statusString = net.BadArgument
+				statusString = rpc.BadArgument
 			}
 		} else {
 			var endpoints []string
 			for key, _ := range auth.Trusted {
 				endpoints = append(endpoints, key)
 			}
-			response.AddPair("endpoints", endpoints)
+			response.Pair("endpoints", endpoints)
 		}
 	} else {
 		// output system information
 		config := GetConfigInstance()
-		response.AddPair("name", config.Name)
-		response.AddPair("version", config.Version)
+		response.Pair("name", config.Name)
+		response.Pair("version", config.Version)
 	}
 
-	response.AddStatus(statusCode, statusString)
+	response.SetStatus(statusCode).SetDescription(statusString)
 }
