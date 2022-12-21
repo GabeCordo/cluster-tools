@@ -16,3 +16,6 @@
 
 # Goland dependencies (pulling will throw an error if this is being tracked)
 .idea/
+
+# Ignore the go sum, the developer should be responsible for calling tidy
+go.sum
