@@ -10,7 +10,7 @@ import (
 // TODO - fix rpc to request conversion
 
 func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(rpc.Request)
+	rpcRequest := request.(*rpc.Request)
 
 	if len(rpcRequest.Param) > 1 {
 		response.SetStatus(400)
@@ -31,7 +31,7 @@ func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Res
 }
 
 func (http *HttpThread) StatisticsFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(rpc.Request)
+	rpcRequest := request.(*rpc.Request)
 
 	req := DatabaseRequest{Action: Fetch, Cluster: rpcRequest.Function}
 
@@ -50,7 +50,7 @@ func (http *HttpThread) StatisticsFunction(request fack.Request, response fack.R
 }
 
 func (http *HttpThread) DataFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(rpc.Request)
+	rpcRequest := request.(*rpc.Request)
 
 	statusCode := 200
 	statusString := "no error"
@@ -178,7 +178,7 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 }
 
 func (http *HttpThread) DebugFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(rpc.Request)
+	rpcRequest := request.(*rpc.Request)
 
 	statusString := "no error"
 	statusCode := 200

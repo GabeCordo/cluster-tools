@@ -25,7 +25,7 @@ func GetNodeInstance() *rpc.Node {
 
 	if NodeInstance == nil {
 		config := GetConfigInstance()
-		NodeInstance = rpc.NewNode(config.Net, config.Debug, GetAuthInstance()) // TODO - re-add the logger at a later date
+		NodeInstance = rpc.NewNode(&config.Net, config.Debug, GetAuthInstance()) // TODO - re-add the logger at a later date
 		NodeInstance.Name(config.Name)
 	}
 

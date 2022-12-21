@@ -1,7 +1,7 @@
 package template
 
 import (
-	"fmt"
+	"log"
 	"time"
 )
 
@@ -32,7 +32,7 @@ func Process(raw []byte, match map[string]string) []byte {
 				} else if replacement, found := match[identifier]; found {
 					processedString += replacement
 				} else {
-					fmt.Println("warning: unknown identifier (" + identifier + ")")
+					log.Println("warning: unknown identifier (" + identifier + ")")
 				}
 
 				identifier = EmptyIdentifier

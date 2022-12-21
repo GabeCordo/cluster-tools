@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+func RootEtlFolder() string {
+	executableFilePath, _ := os.Executable()
+	return executableFilePath[:len(executableFilePath)-10] // remove "/build/etl" from the end of the path
+}
+
 func Version(commandLine *commandline.CommandLine) string {
 	strVersion := fmt.Sprintf("%.2f", commandLine.Config.Version)
 	strTimeNow := time.Now().Format("Mon Jan _2 15:04:05 MST 2006")
@@ -42,14 +47,15 @@ func main() {
 
 	//dataFolderPath, templateFolderPath := InitializeFolders()
 
-	if commandLine := commandline.NewCommandLine(); commandLine != nil {
+	profilePath := commandline.EmptyPath().Dir(RootEtlFolder()).File("config.cli.json")
+	if commandLine := commandline.NewCommandLine(profilePath); commandLine != nil {
 
 		commandLine.AddCommand([]string{"version"}, VersionCommand{"version"})
 
 		// cli core commands
 		commandLine.AddCommand([]string{"key"}, GenerateKeyPairCommand{"keys"})
 		commandLine.AddCommand([]string{"project"}, CreateProjectCommand{"create-project"})
-		commandLine.AddCommand([]string{"cluster"}, CreateClusterCommand{"create-cluster"})
+		commandLine.AddCommand([]string{"cluster"}, ClusterCommand{"cluster"})
 		commandLine.AddCommand([]string{"profile"}, ProfileCommand{"create-profile"})
 
 		//local project interaction
