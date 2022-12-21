@@ -2,14 +2,32 @@
 
 ### CLI Parameters
 
-#### -h --help
+#### help
 Provides descriptions for available parameters.
 
-#### -d --debug
+#### debug
 Provides verbose output for the starter script.
 
-#### -g --generate-key
-ECDSA public and private keys are outputted as x509 encoded formats.
+#### key
+Generated ECDSA public and private keys are outputted as x509 encoded formats.
+
+#### create project <name>
+Creates a new ETL project associated with the <name> parameter.
+
+#### create cluster <name>
+Creates a new cluster source and test file associated with the <name> parameter.
+
+##### Conditions
+<name> must start with a capital letter
+
+#### delete cluster <name>
+Deletes a cluster source and test file
+
+#### Conditions
+<name> must be an existing cluster
+
+#### show cluster
+Displays all clusters associated with the project with respective date-created, developer, and contact metadata.
 
 ---
 
