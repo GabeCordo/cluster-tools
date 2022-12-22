@@ -1,70 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"github.com/GabeCordo/commandline"
-	"os"
-	"time"
+	"github.com/GabeCordo/etl/client"
 )
-
-func RootEtlFolder() string {
-	executableFilePath, _ := os.Executable()
-	return executableFilePath[:len(executableFilePath)-10] // remove "/build/etl" from the end of the path
-}
-
-func Version(commandLine *commandline.CommandLine) string {
-	strVersion := fmt.Sprintf("%.2f", commandLine.Config.Version)
-	strTimeNow := time.Now().Format("Mon Jan _2 15:04:05 MST 2006")
-	return "ETLFramework Version " + strVersion + " " + strTimeNow
-}
-
-func InitializeFolders() (commandline.Path, commandline.Path) {
-
-	executablePathStr, _ := os.Executable()
-	executablePath := commandline.EmptyPath().Dir(executablePathStr)
-
-	dataFolderPath := executablePath.Dir(".data")
-
-	if dataFolderPath.DoesNotExist() {
-		dataFolderPath.MkDir()
-	}
-
-	templateFolderPath := executablePath.BackDir().Dir("..templates")
-
-	if templateFolderPath.DoesNotExist() {
-		panic("template path missing")
-	}
-
-	return dataFolderPath, templateFolderPath
-}
-
-func TemplateFolderPath() commandline.Path {
-	executablePath, _ := os.Executable()
-	return commandline.EmptyPath().Dir(executablePath).Dir(".bin").Dir(".templates")
-}
 
 func main() {
 
 	//dataFolderPath, templateFolderPath := InitializeFolders()
 
-	profilePath := commandline.EmptyPath().Dir(RootEtlFolder()).File("config.cli.json")
+	profilePath := commandline.EmptyPath().Dir(client.RootEtlFolder()).File("config.cli.json")
 	if commandLine := commandline.NewCommandLine(profilePath); commandLine != nil {
 
-		commandLine.AddCommand([]string{"version"}, VersionCommand{"version"})
+		commandLine.AddCommand([]string{"version"}, client.VersionCommand{"version"})
 
 		// cli core commands
-		commandLine.AddCommand([]string{"key"}, GenerateKeyPairCommand{"keys"})
-		commandLine.AddCommand([]string{"project"}, CreateProjectCommand{"create-project"})
-		commandLine.AddCommand([]string{"cluster"}, ClusterCommand{"cluster"})
-		commandLine.AddCommand([]string{"profile"}, ProfileCommand{"create-profile"})
+		commandLine.AddCommand([]string{"key"}, client.GenerateKeyPairCommand{"keys"})
+		commandLine.AddCommand([]string{"project"}, client.CreateProjectCommand{"create-project"})
+		commandLine.AddCommand([]string{"cluster"}, client.ClusterCommand{"cluster"})
+		commandLine.AddCommand([]string{"profile"}, client.ProfileCommand{"create-profile"})
 
 		//local project interaction
-		commandLine.AddCommand([]string{"deploy"}, DeployCommand{"deploy"})
+		commandLine.AddCommand([]string{"deploy"}, client.DeployCommand{"deploy"})
+		commandLine.AddCommand([]string{"mount"}, client.MountCommand{"mount"})
 
 		// remote project interaction
 
 		// remote project observation (not complete)
-		commandLine.AddCommand([]string{"i", "interactive"}, InteractiveDashboardCommand{"dashboard"})
+		commandLine.AddCommand([]string{"i", "interactive"}, client.InteractiveDashboardCommand{"dashboard"})
 
 		commandLine.Run()
 	}

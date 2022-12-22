@@ -11,23 +11,38 @@ Provides verbose output for the starter script.
 #### key
 Generated ECDSA public and private keys are outputted as x509 encoded formats.
 
-#### create project <name>
+### project 
+
+#### 1. create project [project-name]
 Creates a new ETL project associated with the <name> parameter.
 
-#### create cluster <name>
+#### 2. show project
+Displays all the projects created on the local system
+
+### cluster
+
+#### 1. create cluster [cluster-name]
 Creates a new cluster source and test file associated with the <name> parameter.
 
-##### Conditions
-<name> must start with a capital letter
-
-#### delete cluster <name>
+#### 2. delete cluster [cluster-name]
 Deletes a cluster source and test file
 
-#### Conditions
-<name> must be an existing cluster
-
-#### show cluster
+#### 3. show cluster
 Displays all clusters associated with the project with respective date-created, developer, and contact metadata.
+
+### deploy
+Runs the default entrypoint into the etl project.
+
+### mount
+
+#### 1. create mount [cluster-name]
+Adds a cluster to the automount list in the config. When deployed, anyone with permission will be able to invoke the cluster.
+
+#### 2. delete mount [cluster-name]
+Removes a cluster from the automount list in the config. When deployed, the cluster will need to be manually mounted before it can be invoked over RPC.
+
+#### 3. show mount
+Shows a list of clusters that are automount in the project.
 
 ---
 
