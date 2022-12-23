@@ -15,11 +15,11 @@ import (
 // CREATE PROJECT COMMAND START
 
 type CreateProjectCommand struct {
-	PubicName string
+	PublicName string
 }
 
 func (cproj CreateProjectCommand) Name() string {
-	return cproj.PubicName
+	return cproj.PublicName
 }
 
 func (cproj CreateProjectCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
@@ -65,7 +65,7 @@ func (cproj CreateProjectCommand) CreateProject(cl *commandline.CommandLine) com
 		"module %s\n\ngo %s\n",
 		projectName,
 		runtime.Version()[2:])
-	dependencies := []string{"github.com/GabeCordo/commandline v0.1.1", "github.com/GabeCordo/fack v0.1.2"}
+	dependencies := []string{"github.com/GabeCordo/commandline v0.1.2", "github.com/GabeCordo/fack v0.1.2"}
 	if len(dependencies) > 0 {
 		stringRepOfModFile += "\nrequire("
 
@@ -142,7 +142,7 @@ func (cproj CreateProjectCommand) CreateProject(cl *commandline.CommandLine) com
 
 	// ADD THE PROJECT TO THE GLOBAL CLI CONFIG
 
-	projectsConfigFilePath := commandline.EmptyPath().Dir(RootEtlFolder()).File("projects.etl.json")
+	projectsConfigFilePath := EtlClientFile()
 	if projectsConfigFilePath.DoesNotExist() {
 		fmt.Println("the etl install is corrupted, you are missing a projects.elt.json file")
 		return true
@@ -165,7 +165,7 @@ func (cproj CreateProjectCommand) CreateProject(cl *commandline.CommandLine) com
 
 func (cproj CreateProjectCommand) DeleteProject(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	projectsConfigFilePath := commandline.EmptyPath().Dir(RootEtlFolder()).File("projects.etl.json")
+	projectsConfigFilePath := EtlClientFile()
 	if projectsConfigFilePath.DoesNotExist() {
 		fmt.Println("the etl install is corrupted, you are missing a projects.elt.json file")
 		return true
@@ -206,7 +206,7 @@ func (cproj CreateProjectCommand) DeleteProject(cl *commandline.CommandLine) com
 
 func (cproj CreateProjectCommand) ShowProjects(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	projectsConfigFilePath := commandline.EmptyPath().Dir(RootEtlFolder()).File("projects.etl.json")
+	projectsConfigFilePath := EtlClientFile()
 	if projectsConfigFilePath.DoesNotExist() {
 		fmt.Println("the etl install is corrupted, you are missing a projects.elt.json file")
 		return true

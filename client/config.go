@@ -13,7 +13,8 @@ type Project struct {
 }
 
 type Config struct {
-	Projects []Project `json:"projects"`
+	DefaultKeyIdentifier string    `json:"default-key-identifier"`
+	Projects             []Project `json:"projects"`
 }
 
 func NewConfig() *Config {

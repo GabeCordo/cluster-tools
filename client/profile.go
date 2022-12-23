@@ -48,7 +48,7 @@ func (pc ProfileCommand) Run(cl *commandline.CommandLine) commandline.TerminateO
 		}
 		cl.Config.UserProfile.Email = line[:len(line)-1] // remove the delim
 
-		cliConfigPath := commandline.EmptyPath().File("config.cli.json")
+		cliConfigPath := CliConfigFile()
 		cl.Config.ToJson(cliConfigPath) // push the JSON update to the local file
 	} else if cl.Flags.Show {
 		if (len(cl.Config.UserProfile.FirstName) == 0) && (len(cl.Config.UserProfile.LastName) == 0) && (len(cl.Config.UserProfile.Email) == 0) {
