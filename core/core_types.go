@@ -37,6 +37,19 @@ type Config struct {
 	Path              string
 }
 
+func (c *Config) Safe() *Config {
+	if c.AutoMount == nil {
+		c.AutoMount = make([]string, 0)
+	}
+
+	//if c.Net == nil {
+	//	c.Net = fack.NewAddress(fack.Localhost)
+	//
+	//}
+
+	return c
+}
+
 type Core struct {
 	HttpThread        *HttpThread
 	ProvisionerThread *ProvisionerThread
