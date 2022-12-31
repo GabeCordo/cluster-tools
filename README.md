@@ -1,52 +1,6 @@
 # ETLFramework
 A software orchestration framework for extract-transform-load process deployment and scaling. Developers can write and link custom ETL functions for data processing, that will be provisioned and scaled according to data velocity and processing demand made by the deployed functions. In production, ETL functions can be provisioned manually (or by script) through function calls over RPC using the "fast backend" framework. ETL processes can be mounted or unmounted depending on whether the administrator wishes to allow RPC calls to provision new instances of the ETL process.
 
-### CLI Parameters
-
-#### help
-Provides descriptions for available parameters.
-
-#### debug
-Provides verbose output for the starter script.
-
-#### key
-Generated ECDSA public and private keys are outputted as x509 encoded formats.
-
-### project 
-
-#### 1. create project [project-name]
-Creates a new ETL project associated with the <name> parameter.
-
-#### 2. show project
-Displays all the projects created on the local system
-
-### cluster
-
-#### 1. create cluster [cluster-name]
-Creates a new cluster source and test file associated with the <name> parameter.
-
-#### 2. delete cluster [cluster-name]
-Deletes a cluster source and test file
-
-#### 3. show cluster
-Displays all clusters associated with the project with respective date-created, developer, and contact metadata.
-
-### deploy
-Runs the default entrypoint into the etl project.
-
-### mount
-
-#### 1. create mount [cluster-name]
-Adds a cluster to the automount list in the config. When deployed, anyone with permission will be able to invoke the cluster.
-
-#### 2. delete mount [cluster-name]
-Removes a cluster from the automount list in the config. When deployed, the cluster will need to be manually mounted before it can be invoked over RPC.
-
-#### 3. show mount
-Shows a list of clusters that are automount in the project.
-
----
-
 ### Common Questions
 
 #### What is the ETLFramework Core?
