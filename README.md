@@ -3,14 +3,47 @@ A software orchestration framework for extract-transform-load process deployment
 
 ### CLI Parameters
 
-#### -h --help
+#### help
 Provides descriptions for available parameters.
 
-#### -d --debug
+#### debug
 Provides verbose output for the starter script.
 
-#### -g --generate-key
-ECDSA public and private keys are outputted as x509 encoded formats.
+#### key
+Generated ECDSA public and private keys are outputted as x509 encoded formats.
+
+### project 
+
+#### 1. create project [project-name]
+Creates a new ETL project associated with the <name> parameter.
+
+#### 2. show project
+Displays all the projects created on the local system
+
+### cluster
+
+#### 1. create cluster [cluster-name]
+Creates a new cluster source and test file associated with the <name> parameter.
+
+#### 2. delete cluster [cluster-name]
+Deletes a cluster source and test file
+
+#### 3. show cluster
+Displays all clusters associated with the project with respective date-created, developer, and contact metadata.
+
+### deploy
+Runs the default entrypoint into the etl project.
+
+### mount
+
+#### 1. create mount [cluster-name]
+Adds a cluster to the automount list in the config. When deployed, anyone with permission will be able to invoke the cluster.
+
+#### 2. delete mount [cluster-name]
+Removes a cluster from the automount list in the config. When deployed, the cluster will need to be manually mounted before it can be invoked over RPC.
+
+#### 3. show mount
+Shows a list of clusters that are automount in the project.
 
 ---
 
@@ -23,10 +56,10 @@ using the *config.etl.json file*.
 ```go
 c := core.NewCore()
 
-m := Multiply{} 	// A structure implementing the ETLFramework.Cluster.Cluster interface
+m := Multiply{} 	// A structure implementing the etl.Cluster.Cluster interface
 c.Cluster("multiply", m, cluster.Config{Identifier: "multiply"})
 
-c.Run()	 // Starts the ETLFramework
+c.Run()	 // Starts the etl
 ```
 
 #### What is a Cluster?

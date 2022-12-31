@@ -1,8 +1,7 @@
 package core
 
 import (
-	"ETLFramework/logger"
-	"ETLFramework/net"
+	"github.com/GabeCordo/fack"
 )
 
 type InterruptEvent uint8
@@ -28,15 +27,27 @@ type Thread interface {
 }
 
 type Config struct {
-	Name              string        `json:"name"`
-	Version           float64       `json:"version"`
-	Debug             bool          `json:"debug"`
-	HardTerminateTime int           `json:"hard-terminate-time"`
-	AutoMount         []string      `json:"auto-mount"`
-	Logging           logger.Logger `json:"logging"`
-	Net               net.Address   `json:"net"`
-	Auth              net.Auth      `json:"auth"`
+	Name              string       `json:"name"`
+	Version           float64      `json:"version"`
+	Debug             bool         `json:"debug"`
+	HardTerminateTime int          `json:"hard-terminate-time"`
+	AutoMount         []string     `json:"auto-mount"`
+	Net               fack.Address `json:"net"`
+	Auth              fack.Auth    `json:"auth"`
 	Path              string
+}
+
+func (c *Config) Safe() *Config {
+	if c.AutoMount == nil {
+		c.AutoMount = make([]string, 0)
+	}
+
+	//if c.Net == nil {
+	//	c.Net = fack.NewAddress(fack.Localhost)
+	//
+	//}
+
+	return c
 }
 
 type Core struct {

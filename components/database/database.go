@@ -1,7 +1,7 @@
 package database
 
 import (
-	"ETLFramework/cluster"
+	"github.com/GabeCordo/etl/components/cluster"
 	"time"
 )
 

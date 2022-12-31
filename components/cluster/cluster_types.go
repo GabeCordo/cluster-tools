@@ -1,7 +1,7 @@
 package cluster
 
 import (
-	"ETLFramework/channel"
+	"github.com/GabeCordo/etl/components/channel"
 	"sync"
 	"time"
 )
@@ -51,19 +51,23 @@ const (
 type Status uint8
 
 const (
-	UnTouched  Status = 0
-	Running           = 1
-	Failed            = 2
-	Terminated        = 3
+	UnTouched    Status = 0
+	Running             = 1
+	Provisioning        = 2
+	Failed              = 4
+	Terminated          = 5
 )
 
 type Event uint8
 
 const (
 	Startup        Event = 0
-	Provisioning         = 1
-	TeardownCalled       = 2
-	TearedDown           = 3
+	StartProvision       = 1
+	EndProvision         = 2
+	Error                = 3
+	TearedDown           = 4
+	StartReport          = 5
+	EndReport            = 6
 )
 
 type Supervisor struct {
@@ -73,9 +77,13 @@ type Supervisor struct {
 	Stats     *Statistics `json:"stats"`
 	State     Status      `json:"status"`
 	mode      OnCrash     `json:"on-crash"`
+	StartTime time.Time   `json:"start-time"`
+
 	etChannel *channel.ManagedChannel
 	tlChannel *channel.ManagedChannel
+
 	waitGroup sync.WaitGroup
+	mutex     sync.Mutex
 }
 
 type Response struct {

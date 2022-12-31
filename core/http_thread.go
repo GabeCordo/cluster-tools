@@ -1,16 +1,17 @@
 package core
 
 import (
-	"ETLFramework/logger"
-	"ETLFramework/net"
+	"github.com/GabeCordo/etl/components/logger"
+	"github.com/GabeCordo/fack"
+	"github.com/GabeCordo/fack/rpc"
 	"log"
 	"sync"
 	"time"
 )
 
 var (
-	NodeInstance      *net.Node
-	AuthInstance      *net.Auth
+	NodeInstance      *rpc.Node
+	AuthInstance      *fack.Auth
 	LoggerInstance    *logger.Logger
 	commonLoggerPaths = [...]string{"/logs"}
 	nodeLock          = &sync.Mutex{}
@@ -18,20 +19,20 @@ var (
 	loggerLock        = &sync.Mutex{}
 )
 
-func GetNodeInstance() *net.Node {
+func GetNodeInstance() *rpc.Node {
 	nodeLock.Lock()
 	defer nodeLock.Unlock()
 
 	if NodeInstance == nil {
 		config := GetConfigInstance()
-		NodeInstance = net.NewNode(config.Net, config.Debug, GetAuthInstance()) // TODO - re-add the logger at a later date
-		NodeInstance.Name = config.Name
+		NodeInstance = rpc.NewNode(&config.Net, config.Debug, GetAuthInstance()) // TODO - re-add the logger at a later date
+		NodeInstance.Name(config.Name)
 	}
 
 	return NodeInstance
 }
 
-func GetAuthInstance() *net.Auth {
+func GetAuthInstance() *fack.Auth {
 	authLock.Lock()
 	defer authLock.Unlock()
 
@@ -41,7 +42,7 @@ func GetAuthInstance() *net.Auth {
 		// the config may not define a map of trusted endpoints leaving the
 		// Trusted field as a nil value that cannot be used
 		if AuthInstance.Trusted == nil {
-			AuthInstance.Trusted = make(map[string]*net.Endpoint)
+			AuthInstance.Trusted = make(map[string]*fack.Endpoint)
 		}
 
 		// ECDSA public keys are stored as an uint64 representation of bytes
@@ -62,7 +63,8 @@ func GetLoggerInstance() *logger.Logger {
 	defer loggerLock.Unlock()
 
 	if LoggerInstance == nil {
-		LoggerInstance = &GetConfigInstance().Logging
+		// TODO - allow the logger to be customized
+		LoggerInstance = logger.NewLogger(ConfigInstance.Path, logger.Verbose, logger.NewInterval(0, 10))
 
 		// we may not contain a JSON mapping of the logging queue, meaning a nil
 		// value will hold its place that can raise an error
@@ -82,10 +84,10 @@ func (http HttpThread) Setup() {
 	//logg = frontend.GetLoggerInstance()
 	node := GetNodeInstance()
 	// core_callbacks functions
-	node.Function("/clusters", http.ClustersFunction, []string{"GET"}, false)
-	node.Function("/statistics", http.StatisticsFunction, []string{"GET"}, true)
-	node.Function("/data", http.DataFunction, []string{"GET"}, true)
-	node.Function("/debug", http.DebugFunction, []string{"GET", "POST", "DELETE"}, true)
+	node.Function("/clusters", http.ClustersFunction).Method(fack.GET)
+	node.Function("/statistics", http.StatisticsFunction).Method(fack.GET)                             // debug true
+	node.Function("/data", http.DataFunction).Method(fack.GET)                                         // debug true
+	node.Function("/debug", http.DebugFunction).Method(fack.GET).Method(fack.POST).Method(fack.DELETE) // debug true
 }
 
 func (http *HttpThread) Start() {

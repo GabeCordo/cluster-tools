@@ -31,8 +31,8 @@ type ILogger interface {
 }
 
 type Logger struct {
-	Folder   string      `json:"folder"`
-	Style    LogOutput   `json:"style"`
-	LogQueue chan string `json:"queue"`
+	Folder   string    `json:"folder"`
+	Style    LogOutput `json:"style"`
+	LogQueue chan string
 	Interval LogInterval `json:"interval"`
 }
