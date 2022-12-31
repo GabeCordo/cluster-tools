@@ -18,8 +18,8 @@ func NewConfig(name string) *Config {
 
 	config.Name = name
 	config.Version = 1.0
-	config.Net.Port(8080)
-	config.Net.Host(fack.Localhost)
+	config.Net.SetPort(8000)           // default
+	config.Net.SetHost(fack.Localhost) // default
 
 	return config
 }
@@ -39,9 +39,15 @@ func (config Config) ToJson(path string) {
 }
 
 func JSONToETLConfig(config *Config, path string) error {
+	if _, err := os.Stat(path); err != nil {
+		// file does not exist
+		log.Println(err)
+		return err
+	}
+
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		// file does not exist
+		// error reading the file
 		log.Println(err)
 		return err
 	}

@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	commonConfigPaths = [...]string{"config.etl.json", "/config/config.etl.json", "../config.etl.json", "../config/config.etl.json"}
+	commonConfigPaths = [...]string{"config.etl.json", "/config/config.etl.json"}
 	configLock        = &sync.Mutex{}
 	ConfigInstance    *Config
 )
@@ -22,7 +23,7 @@ func GetConfigInstance() *Config {
 	defer configLock.Unlock()
 
 	if ConfigInstance == nil {
-		ConfigInstance = new(Config)
+		ConfigInstance = NewConfig("test")
 
 		// multiple locations to store the config file are supported by default
 		// iterate over each one until a config is found. If by the end of the
@@ -34,6 +35,8 @@ func GetConfigInstance() *Config {
 				ConfigInstance.Path = commonConfigPaths[i] // the path we found the config for future reference
 				configFound = true
 				break
+			} else {
+				fmt.Println("not found")
 			}
 		}
 
@@ -102,18 +105,30 @@ func (core *Core) Run() {
 	// needed in-case the proceeding core need logging or email capabilities during startup
 	core.MessengerThread.Setup()
 	go core.MessengerThread.Start() // event loop
+	if GetConfigInstance().Debug {
+		log.Println("(+) Messenger Thread Started")
+	}
 
 	// needed in-case the supervisor or http core need to populate data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
+	if GetConfigInstance().Debug {
+		log.Println("(+) Database Thread Started")
+	}
 
 	// we need a way to provision clusters if we are receiving core before we can
 	core.ProvisionerThread.Setup()
 	go core.ProvisionerThread.Start() // event loop
+	if GetConfigInstance().Debug {
+		log.Println("(+) Provisioner Thread Started")
+	}
 
 	// the gateway to the frontend cluster should be the last startup
 	core.HttpThread.Setup()
 	go core.HttpThread.Start() // event loop
+	if GetConfigInstance().Debug {
+		log.Println("(+) RPC Thread Started")
+	}
 
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
@@ -140,28 +155,28 @@ func (core *Core) Run() {
 	core.HttpThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(!) http shutdown")
+		log.Println("(-) http shutdown")
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
 	core.ProvisionerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(!) provisioner shutdown")
+		log.Println("(-) provisioner shutdown")
 	}
 
 	// the supervisor might need to store data while finishing, close after
 	core.DatabaseThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(!) database shutdown")
+		log.Println("(-) database shutdown")
 	}
 
 	// the preceding core might need to log, or send alerts of failure during shutdown
 	core.MessengerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(!) messenger shutdown")
+		log.Println("(-) messenger shutdown")
 	}
 }
 
