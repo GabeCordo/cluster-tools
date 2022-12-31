@@ -1,6 +1,23 @@
 # ETLFramework
 A software orchestration framework for extract-transform-load process deployment and scaling. Developers can write and link custom ETL functions for data processing, that will be provisioned and scaled according to data velocity and processing demand made by the deployed functions. In production, ETL functions can be provisioned manually (or by script) through function calls over RPC using the "fast backend" framework. ETL processes can be mounted or unmounted depending on whether the administrator wishes to allow RPC calls to provision new instances of the ETL process.
 
+### Features
+
+1. Config for persistent and configurable data
+2. Auth endpoints can be dynamically added to the system upon startup through the config
+3. Dynamic provisioning of cluster functions
+4. Statistics and Usage data storage for clusters called during the session
+5. Clean Teardown
+   - even if the system has a SIGINT called or has been requested to shutdown, the system will not complete until every started ETL process completes
+6. Deadlock avoidance with ETL clusters
+   - as it stands, if a cluster is in deadlock and the system must wait for it to complete before terminating, the system will never shutdown
+7. Guarantee that all queues are cleaned up + processed before completion
+8. Dynamic provisioning of Clusters over RPC
+9. Static Mounting of Clusters
+   - before a Cluster can be used, it must be marked as "mounted" in the config files. This is to avoid newly added functions (that may be under review) being automatically deployed into production.
+11. Mounting and Demounting Clusters for Use During Runtime
+   - in the case that a Cluster is triggering errors or runtime issues, it may be dismounted such that it cannot be invoked further.
+
 ### Common Questions
 
 #### What is the ETLFramework Core?
