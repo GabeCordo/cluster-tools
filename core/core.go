@@ -130,6 +130,25 @@ func (core *Core) Run() {
 		log.Println("(+) RPC Thread Started")
 	}
 
+	// output all the static mounts on the system
+	config := GetConfigInstance()
+	numOfMountedClusters := len(config.AutoMount)
+
+	output := "(!) Statically Mounted Cluster"
+	if numOfMountedClusters > 1 {
+		output += "s"
+	}
+	output += " [ "
+
+	for idx, cluster := range config.AutoMount {
+		output += cluster
+		if idx == numOfMountedClusters {
+			output += ", "
+		}
+	}
+	output += " ]"
+	log.Println(output)
+
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
 	// requiring us to cleanly close the application without risking the loss of data
