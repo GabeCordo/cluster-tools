@@ -147,7 +147,11 @@ func (core *Core) Run() {
 		}
 	}
 	output += " ]"
-	log.Println(output)
+
+	// only output the statically mounted clusters if the debug tag is enabled
+	if GetConfigInstance().Debug {
+		log.Println(output)
+	}
 
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
