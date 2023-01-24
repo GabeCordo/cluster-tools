@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"log"
 )
@@ -24,7 +25,9 @@ func (provisionerThread *ProvisionerThread) Setup() {
 	provisionerThread.accepting = true
 	provisionerInstance := GetProvisionerInstance() // create the supervisor if it doesn't exist
 
-	// auto-mounting is supported within the etl Config; if a cluster identifier is added
+	GetProvisionerMemoryInstance() // create the instance
+
+	// auto-mounting is supported within the etl Config; if a cluster Identifier is added
 	// to the config under 'auto-mount', it is added to the map of Operational functions
 	for _, identifier := range GetConfigInstance().AutoMount {
 		provisionerInstance.Mount(identifier)
@@ -49,7 +52,17 @@ func (provisionerThread *ProvisionerThread) Start() {
 			if !provisionerThread.accepting {
 				break
 			}
-			provisionerThread.ProcessesIncomingResponses(response)
+			provisionerThread.ProcessesIncomingDatabaseResponses(response)
+		}
+
+		provisionerThread.wg.Wait()
+	}()
+	go func() {
+		for response := range provisionerThread.C10 {
+			if !provisionerThread.accepting {
+				break
+			}
+			provisionerThread.ProcessIncomingCacheResponses(response)
 		}
 
 		provisionerThread.wg.Wait()
@@ -102,25 +115,9 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 				response = supervisor.Start()
 			}()
 
-			// DEPRECIATED BLOCK (NOTE: NO DEADLOCK HANDLING)
-			//
-			//go func() {
-			//	defer close(c)
-			//	for provisionerThread.accepting {
-			//		// block
-			//	}
-			//
-			//	timeTillKilled := DefaultHardTerminateTime
-			//	if GetConfigInstance().HardTerminateTime != 0 {
-			//		timeTillKilled = GetConfigInstance().HardTerminateTime
-			//	}
-			//	<-time.After(time.Duration(timeTillKilled) * time.Minute)
-			//}()
-			//
-
 			<-c
 
-			// don't send the statistics of the cluster to the database unless an identifier has been
+			// don't send the statistics of the cluster to the database unless an Identifier has been
 			// given to the cluster for grouping purposes
 			if len(supervisor.Config.Identifier) != 0 {
 				request := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
@@ -133,8 +130,14 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 	}
 }
 
-func (provisionerThread *ProvisionerThread) ProcessesIncomingResponses(response DatabaseResponse) {
+func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {
+	GetProvisionerMemoryInstance().database.Store(response.Nonce, response)
+}
 
+func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {
+	GetProvisionerMemoryInstance().cache.Store(response.Nonce, response)
+	fmt.Printf("received nonce: %d\n", response.Nonce)
+	fmt.Println(GetProvisionerMemoryInstance().cache.Load(response.Nonce))
 }
 
 func (provisionerThread *ProvisionerThread) Teardown() {

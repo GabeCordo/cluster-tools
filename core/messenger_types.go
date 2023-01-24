@@ -9,14 +9,14 @@ const (
 )
 
 type MessengerRequest struct {
-	Action     MessengerAction `json:"action"`
-	Nonce      uint32          `json:"nonce"`
+	Action     MessengerAction `json:"Action"`
+	Nonce      uint32          `json:"Nonce"`
 	Message    string          `json:"message"`
 	Parameters []string        `json:"parameters"`
 }
 
 type MessengerResponse struct {
-	Nonce uint32 `json:"nonce"`
+	Nonce uint32 `json:"Nonce"`
 }
 
 type MessengerThread struct {

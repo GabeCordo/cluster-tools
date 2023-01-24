@@ -55,14 +55,17 @@ type Core struct {
 	ProvisionerThread *ProvisionerThread
 	MessengerThread   *MessengerThread
 	DatabaseThread    *DatabaseThread
+	CacheThread       *CacheThread
 
-	c1        chan DatabaseRequest
-	c2        chan DatabaseResponse
-	c3        chan MessengerRequest
-	c4        chan MessengerResponse
-	c5        chan ProvisionerRequest
-	c6        chan ProvisionerResponse
-	c7        chan DatabaseRequest
-	c8        chan DatabaseResponse
+	C1        chan DatabaseRequest
+	C2        chan DatabaseResponse
+	C3        chan MessengerRequest
+	C4        chan MessengerResponse
+	C5        chan ProvisionerRequest
+	C6        chan ProvisionerResponse
+	C7        chan DatabaseRequest
+	C8        chan DatabaseResponse
+	C9        chan CacheRequest
+	C10       chan CacheResponse
 	interrupt chan InterruptEvent
 }

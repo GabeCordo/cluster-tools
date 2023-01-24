@@ -14,16 +14,16 @@ const (
 )
 
 type DatabaseRequest struct {
-	Action  DatabaseAction    `json:"action"`
-	Nonce   uint32            `json:"nonce"`
+	Action  DatabaseAction    `json:"Action"`
+	Nonce   uint32            `json:"Nonce"`
 	Origin  Module            `json:"origin"`
-	Cluster string            `json:"cluster"` // aka. identifier
-	Data    *cluster.Response `json:"data"`
+	Cluster string            `json:"cluster"` // aka. Identifier
+	Data    *cluster.Response `json:"Data"`
 }
 
 type DatabaseResponse struct {
-	Nonce   uint32           `json:"nonce"`
-	Success bool             `json:"success"`
+	Nonce   uint32           `json:"Nonce"`
+	Success bool             `json:"Success"`
 	Data    []database.Entry `json:"statistics"`
 }
 

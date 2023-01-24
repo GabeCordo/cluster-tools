@@ -70,30 +70,36 @@ func (c *Config) Store() bool {
 func NewCore() *Core {
 	core := new(Core)
 
-	core.c1 = make(chan DatabaseRequest)
-	core.c2 = make(chan DatabaseResponse)
-	core.c3 = make(chan MessengerRequest)
-	core.c4 = make(chan MessengerResponse)
-	core.c5 = make(chan ProvisionerRequest)
-	core.c6 = make(chan ProvisionerResponse)
-	core.c7 = make(chan DatabaseRequest)
-	core.c8 = make(chan DatabaseResponse)
+	core.C1 = make(chan DatabaseRequest)
+	core.C2 = make(chan DatabaseResponse)
+	core.C3 = make(chan MessengerRequest)
+	core.C4 = make(chan MessengerResponse)
+	core.C5 = make(chan ProvisionerRequest)
+	core.C6 = make(chan ProvisionerResponse)
+	core.C7 = make(chan DatabaseRequest)
+	core.C8 = make(chan DatabaseResponse)
+	core.C9 = make(chan CacheRequest)
+	core.C10 = make(chan CacheResponse)
 	core.interrupt = make(chan InterruptEvent)
 
 	var ok bool
-	core.HttpThread, ok = NewHttp(core.interrupt, core.c1, core.c2, core.c5, core.c6)
+	core.HttpThread, ok = NewHttp(core.interrupt, core.C1, core.C2, core.C5, core.C6)
 	if !ok {
 		return nil
 	}
-	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.c5, core.c6, core.c7, core.c8)
+	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C9, core.C10)
 	if !ok {
 		return nil
 	}
-	core.MessengerThread, ok = NewMessenger(core.interrupt, core.c3, core.c4)
+	core.MessengerThread, ok = NewMessenger(core.interrupt, core.C3, core.C4)
 	if !ok {
 		return nil
 	}
-	core.DatabaseThread, ok = NewDatabase(core.interrupt, core.c1, core.c2, core.c3, core.c4, core.c7, core.c8)
+	core.DatabaseThread, ok = NewDatabase(core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C7, core.C8)
+	if !ok {
+		return nil
+	}
+	core.CacheThread, ok = NewCacheThread(core.interrupt, core.C9, core.C10)
 	if !ok {
 		return nil
 	}
@@ -109,7 +115,7 @@ func (core *Core) Run() {
 		log.Println("(+) Messenger Thread Started")
 	}
 
-	// needed in-case the supervisor or http core need to populate data on startup
+	// needed in-case the supervisor or http core need to populate Data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if GetConfigInstance().Debug {
@@ -121,6 +127,13 @@ func (core *Core) Run() {
 	go core.ProvisionerThread.Start() // event loop
 	if GetConfigInstance().Debug {
 		log.Println("(+) Provisioner Thread Started")
+	}
+
+	// if we chain requests, we should have a way to save that Data for re-use
+	core.CacheThread.Setup()
+	go core.CacheThread.Start()
+	if GetConfigInstance().Debug {
+		log.Println("(+) Cache Thread Started")
 	}
 
 	// the gateway to the frontend cluster should be the last startup
@@ -155,7 +168,7 @@ func (core *Core) Run() {
 
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
-	// requiring us to cleanly close the application without risking the loss of data
+	// requiring us to cleanly close the application without risking the loss of Data
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -188,7 +201,14 @@ func (core *Core) Run() {
 		log.Println("(-) provisioner shutdown")
 	}
 
-	// the supervisor might need to store data while finishing, close after
+	// we won't need the cache if the cluster thread is shutdown, the Data is useless, shutdown
+	core.CacheThread.Teardown()
+
+	if GetConfigInstance().Debug {
+		log.Println("(-) cache shutdown")
+	}
+
+	// the supervisor might need to store Data while finishing, close after
 	core.DatabaseThread.Teardown()
 
 	if GetConfigInstance().Debug {

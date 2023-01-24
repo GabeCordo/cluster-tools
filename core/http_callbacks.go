@@ -73,14 +73,14 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 					clusterIdentifier := rpcRequest.Param[1]
 
 					if _, found := provisionerInstance.RegisteredFunctions[clusterIdentifier]; found {
-						// the cluster identifier exists on the node and can be called
+						// the cluster Identifier exists on the node and can be called
 					} else {
-						// the cluster identifier does NOT exist, return "not found"
+						// the cluster Identifier does NOT exist, return "not found"
 						statusCode = 404
 					}
 				} else {
 					statusCode = 400
-					statusString = "missing cluster identifier"
+					statusString = "missing cluster Identifier"
 				}
 			} else if supervisorRequest == "state" {
 				if len(rpcRequest.Param) >= 2 {
@@ -107,11 +107,11 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 						}
 					} else {
 						statusCode = 400
-						statusString = "unknown cluster identifier"
+						statusString = "unknown cluster Identifier"
 					}
 				} else {
 					statusCode = 400
-					statusString = "missing cluster identifier"
+					statusString = "missing cluster Identifier"
 				}
 			} else {
 				// display all relevant information about the supervisor

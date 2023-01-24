@@ -12,15 +12,26 @@ const (
 )
 
 type ProvisionerRequest struct {
-	Action     SupervisorAction `json:"action"`
-	Nonce      uint32           `json:"nonce"`
+	Action     SupervisorAction `json:"Action"`
+	Nonce      uint32           `json:"Nonce"`
 	Cluster    string           `json:"cluster"`
 	Parameters []string         `json"parameters"`
 }
 
 type ProvisionerResponse struct {
-	Nonce   uint32 `json:"nonce"`
-	Success bool   `json:"success"`
+	Nonce   uint32 `json:"Nonce"`
+	Success bool   `json:"Success"`
+}
+
+type ProvisionerMemory struct {
+	database sync.Map // uint32 => DatabaseResponse
+	cache    sync.Map // uint32 => CacheResponse
+}
+
+func NewProvisionerResponses() *ProvisionerMemory {
+	provisionerResponses := new(ProvisionerMemory)
+
+	return provisionerResponses
 }
 
 type ProvisionerThread struct {
@@ -31,6 +42,9 @@ type ProvisionerThread struct {
 
 	C7 chan<- DatabaseRequest  // Supervisor is sending core to the database
 	C8 <-chan DatabaseResponse // Supervisor is receiving responses from the database
+
+	C9  chan<- CacheRequest  // Provisioner is sending requests to the cache
+	C10 <-chan CacheResponse // Provisioner is receiving responses from the CacheThread
 
 	accepting bool
 	wg        sync.WaitGroup
@@ -57,6 +71,14 @@ func NewProvisioner(channels ...interface{}) (*ProvisionerThread, bool) {
 		return nil, ok
 	}
 	provisioner.C8, ok = (channels[4]).(chan DatabaseResponse)
+	if !ok {
+		return nil, ok
+	}
+	provisioner.C9, ok = (channels[5]).(chan CacheRequest)
+	if !ok {
+		return nil, ok
+	}
+	provisioner.C10, ok = (channels[6]).(chan CacheResponse)
 	if !ok {
 		return nil, ok
 	}
