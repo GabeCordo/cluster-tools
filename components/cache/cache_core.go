@@ -54,8 +54,9 @@ func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
 }
 
 func (cache *Cache) Get(identifier string) (any, bool) {
+	// todo ~ lot's of type casting could be optimized
 	if data, found := cache.records.Load(identifier); found && !(data).(Record).IsExpired() {
-		return (data).(Record), true
+		return (data).(Record).data, true
 	} else {
 		return nil, false
 	}

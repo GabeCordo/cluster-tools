@@ -41,7 +41,7 @@ func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 	promise := NewCacheResponsePromise()
 
 	requestNonce := rand.Uint32()
-	helper.core.C9 <- CacheRequest{Action: SaveInCache, Identifier: identifier, Nonce: requestNonce, ExpiresIn: DefaultTimeout}
+	helper.core.C9 <- CacheRequest{Action: LoadFromCache, Identifier: identifier, Nonce: requestNonce, ExpiresIn: DefaultTimeout}
 	promise.nonce = requestNonce
 	promise.wg.Add(1)
 

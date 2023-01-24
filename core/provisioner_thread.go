@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"log"
 )
@@ -136,8 +135,6 @@ func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(r
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {
 	GetProvisionerMemoryInstance().cache.Store(response.Nonce, response)
-	fmt.Printf("received nonce: %d\n", response.Nonce)
-	fmt.Println(GetProvisionerMemoryInstance().cache.Load(response.Nonce))
 }
 
 func (provisionerThread *ProvisionerThread) Teardown() {
