@@ -24,7 +24,13 @@ func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 	promise := NewCacheResponsePromise()
 
 	requestNonce := rand.Uint32()
-	helper.core.C9 <- CacheRequest{Action: SaveInCache, Data: data, Nonce: requestNonce, ExpiresIn: DefaultTimeout}
+	var expiry float64
+	if GetConfigInstance().Cache.Expiry != 0.0 {
+		expiry = GetConfigInstance().Cache.Expiry
+	} else {
+		expiry = DefaultTimeout
+	}
+	helper.core.C9 <- CacheRequest{Action: SaveInCache, Data: data, Nonce: requestNonce, ExpiresIn: expiry}
 	promise.nonce = requestNonce
 	promise.wg.Add(1)
 

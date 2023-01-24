@@ -11,6 +11,10 @@ func (record Record) IsExpired() bool {
 
 func (cache *Cache) Save(data any, expiry ...float64) string {
 
+	if cache.numOfRecords == cache.maxAllowedRecords {
+		return fack.EmptyString
+	}
+
 	var record Record
 	if len(expiry) == 1 {
 		record = Record{data, time.Now(), expiry[0]}
@@ -29,6 +33,8 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 	}
 
 	cache.records.Store(identifier, record)
+	cache.numOfRecords++
+
 	return identifier
 }
 
@@ -60,6 +66,7 @@ func (cache *Cache) Remove(identifier string) {
 	if _, found := cache.records.Load(identifier); found {
 		cache.records.Delete(identifier)
 	}
+	cache.numOfRecords--
 }
 
 func (cache *Cache) Clean() {
@@ -70,6 +77,7 @@ func (cache *Cache) Clean() {
 
 		if record.IsExpired() {
 			cache.records.Delete(identifier)
+			cache.numOfRecords--
 		}
 
 		return false // stop iteration

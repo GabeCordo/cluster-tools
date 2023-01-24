@@ -27,14 +27,18 @@ type Thread interface {
 }
 
 type Config struct {
-	Name              string       `json:"name"`
-	Version           float64      `json:"version"`
-	Debug             bool         `json:"debug"`
-	HardTerminateTime int          `json:"hard-terminate-time"`
-	AutoMount         []string     `json:"auto-mount"`
-	Net               fack.Address `json:"net"`
-	Auth              fack.Auth    `json:"auth"`
-	Path              string
+	Name              string   `json:"name"`
+	Version           float64  `json:"version"`
+	Debug             bool     `json:"debug"`
+	HardTerminateTime int      `json:"hard-terminate-time"`
+	AutoMount         []string `json:"auto-mount"`
+	Cache             struct {
+		Expiry  float64 `json:"expire-in"`
+		MaxSize uint32  `json:"max-size"`
+	} `json:"cache"`
+	Net  fack.Address `json:"net"`
+	Auth fack.Auth    `json:"auth"`
+	Path string
 }
 
 func (c *Config) Safe() *Config {
