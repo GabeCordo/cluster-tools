@@ -2,16 +2,26 @@ package cache
 
 import (
 	"github.com/GabeCordo/fack"
+	"log"
 	"time"
 )
 
-func (record Record) IsExpired() bool {
-	return time.Now().Sub(record.created).Minutes() > record.expiry
-}
+const (
+	DefaultCacheRecordIdentifierSize = 15
+)
 
 func (cache *Cache) Save(data any, expiry ...float64) string {
 
+	// if the system is being run on a low-memory machine, it
+	// is important that the cache does not grow too large and
+	// take away resources from the os or other etl processes.
 	if cache.numOfRecords == cache.maxAllowedRecords {
+		// send a warning to the developer that notifies them that they are likely
+		// abusing the cache, it is a short-term data storage for inter-cluster
+		// communication. If they just have too many clusters using the cache, it
+		// might indicate that they need to increase the ram on their production environment
+		log.Println("(warning) cache miss, increase the maximum number of records allowed.")
+		log.Println("[ increasing the maximum records on low-ram machines will degrade performance, be careful ]")
 		return fack.EmptyString
 	}
 
@@ -24,15 +34,17 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 
 	var identifier string
 	for {
-		identifier = fack.GenerateRandomString(6)
-		if _, found := cache.records.Load(identifier); found {
-			continue
-		} else {
+		identifier = fack.GenerateRandomString(DefaultCacheRecordIdentifierSize)
+
+		// in the odd case the cache identifier already exists, try again until we find a unique id
+		// Note: this should not hit as records (should) consistently be deleted
+		if _, found := cache.records.Load(identifier); !found {
 			break
 		}
 	}
 
 	cache.records.Store(identifier, record)
+	// the numOfRecords will be used to track whether the cache reaches its maximum size
 	cache.numOfRecords++
 
 	return identifier
@@ -46,20 +58,33 @@ func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
 		record.data = data
 		record.created = time.Now()
 
+		// if we are provided with a new expiry time, use that, else re-use the old one
+		if len(expiry) == 1 {
+			record.expiry = expiry[0]
+		}
+
 		cache.records.Store(identifier, record)
 		return true
 	} else {
+		// no record exists with that identifier, there's nothing to "swap"
 		return false
 	}
 }
 
+// Get
+// todo ~ lot's of type casting could be optimized
 func (cache *Cache) Get(identifier string) (any, bool) {
-	// todo ~ lot's of type casting could be optimized
+
+	// requirements for a get operation:
+	// 1) identifier exists
+	// 2) record expiry has not been hit
 	if data, found := cache.records.Load(identifier); found && !(data).(Record).IsExpired() {
-		return (data).(Record).data, true
+		return (data).(Record).data, true // valid
 	} else {
-		return nil, false
+		return nil, false // not found or expired
 	}
+
+	// no affect to the record count
 }
 
 func (cache *Cache) Remove(identifier string) {
@@ -67,9 +92,15 @@ func (cache *Cache) Remove(identifier string) {
 	if _, found := cache.records.Load(identifier); found {
 		cache.records.Delete(identifier)
 	}
+
+	// one less record in the cache, "release" that space for another record
 	cache.numOfRecords--
 }
 
+// Clean
+// This function is left upto the developer to invoke for performance reasons.
+// Allows Developers to remove all expired records in one "sweep" to avoid
+// hitting expired records when calling the Cache.Get() function.
 func (cache *Cache) Clean() {
 
 	cache.records.Range(func(key any, value any) bool {
@@ -78,9 +109,11 @@ func (cache *Cache) Clean() {
 
 		if record.IsExpired() {
 			cache.records.Delete(identifier)
+
+			// one less record in the cache, "release" that space for another record
 			cache.numOfRecords--
 		}
 
-		return false // stop iteration
+		return false // returning false stops iteration in the Range function
 	})
 }
