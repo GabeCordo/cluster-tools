@@ -11,6 +11,8 @@ const (
 )
 
 func (cache *Cache) Save(data any, expiry ...float64) string {
+	cache.m.Lock()
+	defer cache.m.Unlock()
 
 	// if the system is being run on a low-memory machine, it
 	// is important that the cache does not grow too large and
@@ -51,6 +53,8 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 }
 
 func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
+	cache.m.Lock()
+	defer cache.m.Unlock()
 
 	if value, found := cache.records.Load(identifier); found {
 		record := (value).(Record)
@@ -74,6 +78,8 @@ func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
 // Get
 // todo ~ lot's of type casting could be optimized
 func (cache *Cache) Get(identifier string) (any, bool) {
+	cache.m.RLock()
+	defer cache.m.RUnlock()
 
 	// requirements for a get operation:
 	// 1) identifier exists
@@ -88,6 +94,8 @@ func (cache *Cache) Get(identifier string) (any, bool) {
 }
 
 func (cache *Cache) Remove(identifier string) {
+	cache.m.Lock()
+	defer cache.m.Unlock()
 
 	if _, found := cache.records.Load(identifier); found {
 		cache.records.Delete(identifier)
@@ -102,6 +110,8 @@ func (cache *Cache) Remove(identifier string) {
 // Allows Developers to remove all expired records in one "sweep" to avoid
 // hitting expired records when calling the Cache.Get() function.
 func (cache *Cache) Clean() {
+	cache.m.Lock()
+	defer cache.m.Unlock()
 
 	cache.records.Range(func(key any, value any) bool {
 		identifier := (key).(string)

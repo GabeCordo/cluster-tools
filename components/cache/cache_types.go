@@ -21,6 +21,8 @@ type Cache struct {
 
 	maxAllowedRecords uint32
 	numOfRecords      uint32
+
+	m sync.RWMutex
 }
 
 func NewCache(maxAllowedRecords ...uint32) *Cache {
