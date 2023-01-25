@@ -32,7 +32,7 @@ func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 	requestNonce := rand.Uint32()
 	helper.core.C9 <- CacheRequest{Action: SaveInCache, Data: data, Nonce: requestNonce, ExpiresIn: expiry}
 
-	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseHook(requestNonce)
+	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseEventListener(requestNonce)
 	promise := NewCacheResponsePromise(requestNonce, responseChannel)
 
 	return promise
@@ -43,7 +43,7 @@ func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 	requestNonce := rand.Uint32()
 	helper.core.C9 <- CacheRequest{Action: LoadFromCache, Identifier: identifier, Nonce: requestNonce}
 
-	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseHook(requestNonce)
+	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseEventListener(requestNonce)
 	promise := NewCacheResponsePromise(requestNonce, responseChannel)
 
 	return promise

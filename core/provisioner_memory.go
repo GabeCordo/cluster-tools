@@ -23,7 +23,7 @@ func GetProvisionerMemoryInstance() *ProvisionerMemory {
 	return provisionerMemory
 }
 
-func (memory ProvisionerMemory) CreateCacheResponseHook(nonce uint32) chan CacheResponse {
+func (memory ProvisionerMemory) CreateCacheResponseEventListener(nonce uint32) chan CacheResponse {
 	memory.cacheMutex.Lock()
 	defer memory.cacheMutex.Unlock()
 
@@ -33,11 +33,13 @@ func (memory ProvisionerMemory) CreateCacheResponseHook(nonce uint32) chan Cache
 	return channel
 }
 
-func (memory ProvisionerMemory) LinkCacheResponse(nonce uint32, record CacheResponse) {
+func (memory ProvisionerMemory) SendCacheResponseEvent(nonce uint32, record CacheResponse) {
 	memory.cacheMutex.RLock()
 	defer memory.cacheMutex.RUnlock()
 
 	if channel, found := memory.cacheResponses[nonce]; found {
 		channel <- record
 	}
+
+	delete(memory.cacheResponses, nonce)
 }

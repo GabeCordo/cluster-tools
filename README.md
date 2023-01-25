@@ -93,6 +93,108 @@ the cluster to stop further provisioning.
 
 ---
 
+### ETLHelper
+The ETLHelper is a structure containing useful functions for interacting with components of the ETL Framework dynamically.
+
+
+The ETLHelper must be passed a pointer to an ETLCore on initialization. This means that an ETLHelper can also be used to interact
+with more than one ETLCore.
+```go
+    etl := core.NewCore()
+    helper := core.NewHelper(etl)
+```
+
+
+#### Cache
+The ETL Framework has a built-in solution for caching intermediate data that is used in a chain of sequential ETL clusters.
+This is an alternative to loading and storing data in an external database solution that introduces networking errors and latency.
+
+##### Ensuring the Cache is Enabled
+When starting up the ETL Framework on debug mode, you should see a system log notifying you that the cache thread has started.
+
+```2023/01/25 12:37:45 (+) Cache Thread Started```
+
+##### Cache Lifetime
+Cache data is intended for short lifetime storage. This is to handle that the cache resides in system memory (which is usually limited) and
+that permanent or long-term storage of data should be left to other database solutions.
+
+**By Default Cache Records Have a Lifetime of 1 Minute**
+
+###### Modifying the Cache Lifetime
+The ETLConfig contains am "expire-in" field which specifies how many minutes should pass before a record is automatically removed from the cache.
+
+```json
+{
+   "cache": {
+      "expire-in": 1
+   }
+}
+```
+
+##### Cache Memory Usage
+The cache resides in the system memory which means that the storage capabilities are highly limited versus traditional
+database solutions that use disk storage. It is important we keep track of the number of cached values we store on the
+ETL Cache in case developers don't realize how much data their clusters are generating, or it is being misused as a black
+box for data storage.
+
+**By Default Cache Records Have a Limit of 1000 Records**
+If we have records storing 1MB of data, that is already using 1GB of system memory if maxed out.
+
+###### Modifying the Memory Usage
+The ETLConfig contains a "max-size" field in the "cache" section to change the max number of records allowed.
+
+```json
+{
+   "cache": {
+      "max-size": 1000
+   }
+}
+```
+
+##### Cache Functions
+The following are callable functions that provide access to the ETLCache thread.
+
+###### CachePromise
+All functions called to the ETLCache return an ETLCachePromise, an event listener connected to the Cache, that can
+block execution until a response is received. *It is important to note that messages sent to and from the cache are asynchronous, meaning
+that the response can be anywhere from instantaneous to one-hundred microseconds.
+
+- Calling **Wait()** on a CachePromise blocks execution until a response is received from the ETLCache. Wait() will return an
+ETLCacheResponse message which can be used to understand what is stored in the cache.
+
+```go
+type CacheResponse struct {
+	Identifier string
+	Nonce      uint32
+	Data       any
+	Success    bool
+}
+```
+
+###### SaveToCache(*data* **any**)
+Pass data of any type to be stored locally in the cache. The *CacheResponse* received will contain an **Identifier** assigned by the cache to pull data from the *LoadFromCache* function.
+
+###### LoadFromCache(*identifier* **string**)
+Pull data from the cache using the **Identifier** received when storing the data to the cache. The *CacheResponse* received will contain a **Data** value from the local storage. 
+
+- If the data has expired, the **Success** field in the *CacheResponse* object will be **False** 
+
+##### Cache Example
+
+```go
+   etl := core.NewCore()
+    helper := core.NewHelper(etl)
+   
+   /
+   promise := helper.SaveToCache("test data")
+   response := promise.Wait()
+   
+   promise = helper.LoadFromCache(response.Identifier)
+   response = promise.Wait()
+```
+
+---
+
 ### HTTP Curl Interaction
 
 #### Endpoints

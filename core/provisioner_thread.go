@@ -135,7 +135,7 @@ func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(r
 }
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {
-	GetProvisionerMemoryInstance().LinkCacheResponse(response.Nonce, response)
+	GetProvisionerMemoryInstance().SendCacheResponseEvent(response.Nonce, response)
 }
 
 func (provisionerThread *ProvisionerThread) Teardown() {

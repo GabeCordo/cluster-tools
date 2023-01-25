@@ -29,7 +29,7 @@ func (promise CacheResponsePromise) Wait() (CacheResponse, bool) {
 
 	go func() {
 		time.Sleep(DefaultCacheWaitTimeInMilliseconds * time.Millisecond)
-		GetProvisionerMemoryInstance().LinkCacheResponse(promise.nonce, CacheResponse{Success: false})
+		GetProvisionerMemoryInstance().SendCacheResponseEvent(promise.nonce, CacheResponse{Success: false})
 	}()
 
 	response = <-promise.channel
