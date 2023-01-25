@@ -23,17 +23,6 @@ type ProvisionerResponse struct {
 	Success bool   `json:"Success"`
 }
 
-type ProvisionerMemory struct {
-	database sync.Map // uint32 => DatabaseResponse
-	cache    sync.Map // uint32 => CacheResponse
-}
-
-func NewProvisionerResponses() *ProvisionerMemory {
-	provisionerResponses := new(ProvisionerMemory)
-
-	return provisionerResponses
-}
-
 type ProvisionerThread struct {
 	Interrupt chan<- InterruptEvent // Upon completion or failure an interrupt can be raised
 

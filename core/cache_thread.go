@@ -39,6 +39,8 @@ func (cache *CacheThread) Start() {
 			GetCacheInstance().Clean()
 		}
 	}()
+
+	cache.wg.Wait()
 }
 
 func (cache *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
@@ -66,7 +68,12 @@ func (cache CacheThread) ProcessSaveRequest(request *CacheRequest) {
 
 func (cache CacheThread) ProcessLoadRequest(request *CacheRequest) {
 	cacheData, isFoundAndNotExpired := GetCacheInstance().Get(request.Identifier)
-	cache.C10 <- CacheResponse{Identifier: request.Identifier, Data: cacheData, Nonce: request.Nonce, Success: isFoundAndNotExpired}
+	cache.C10 <- CacheResponse{
+		Identifier: request.Identifier,
+		Data:       cacheData,
+		Nonce:      request.Nonce,
+		Success:    isFoundAndNotExpired && (cacheData != nil),
+	}
 }
 
 func (cache *CacheThread) Teardown() {

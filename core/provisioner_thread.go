@@ -130,11 +130,12 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 }
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {
-	GetProvisionerMemoryInstance().database.Store(response.Nonce, response)
+	// TODO - implement
+	// GetProvisionerMemoryInstance().LoadDatabaseResponse(response.Nonce, response)
 }
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {
-	GetProvisionerMemoryInstance().cache.Store(response.Nonce, response)
+	GetProvisionerMemoryInstance().LinkCacheResponse(response.Nonce, response)
 }
 
 func (provisionerThread *ProvisionerThread) Teardown() {
