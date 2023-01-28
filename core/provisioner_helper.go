@@ -20,6 +20,10 @@ func NewHelper(core *Core) *Helper {
 	return helper
 }
 
+func (helper Helper) IsDebugEnabled() bool {
+	return GetConfigInstance().Debug
+}
+
 func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 
 	var expiry float64
