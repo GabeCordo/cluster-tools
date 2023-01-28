@@ -151,15 +151,10 @@ func (core *Core) Run() {
 	if numOfMountedClusters > 1 {
 		output += "s"
 	}
-	output += " [ "
 
-	for idx, cluster := range config.AutoMount {
-		output += cluster
-		if idx == numOfMountedClusters {
-			output += ", "
-		}
+	for _, cluster := range config.AutoMount {
+		fmt.Printf("\t\t\t- %s\n", cluster)
 	}
-	output += " ]"
 
 	// only output the statically mounted clusters if the debug tag is enabled
 	if GetConfigInstance().Debug {

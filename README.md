@@ -226,8 +226,29 @@ curl -X GET http://127.0.0.1:8000/debug -H 'Content-Type: application/json' -d '
 
 ##### Test Cluster
 
+###### Get Cluster Running State
+curl -X GET http://127.0.0.1:8000/data -H 'Content-Type: application/json' -d '{"function": "supervisor", "param":["state", "vector"]}'
+
+Expected Output
+```json
+{"status":200,"description":"no error","data":{"1":"Terminated"}}
+```
+
+###### Lookup Cluster
+curl -X GET http://127.0.0.1:8000/data -H 'Content-Type: application/json' -d '{"function": "supervisor", "param":["lookup", "vector"]}'
+
+Expected Output
+```json
+{"status":200,"description":"no error"}
+```
+
 ###### View Mounted and Unmounted Clusters
 curl -X GET http://127.0.0.1:8000/data -H 'Content-Type: application/json' -d '{"function": "mounts"}'
+
+Expected Output
+```json
+{"status":200,"description":"no error","data":{"vector":true}}
+```
 
 ###### Mount Cluster
 curl -X GET http://127.0.0.1:8000/clusters -H 'Content-Type: application/json' -d '{"function": "mount", "param":["multiply"]}'
@@ -238,5 +259,10 @@ curl -X GET http://127.0.0.1:8000/clusters -H 'Content-Type: application/json' -
 ###### Provision Cluster
 curl -X GET http://127.0.0.1:8000/clusters -H 'Content-Type: application/json' -d '{"function": "provision", "param":["multiply"]}'
 
-##### Test Cluster Statistics
-curl -X GET http://127.0.0.1:8000/statistics -H 'Content-Type: application/json' -d '{"function": "multiply", "param":["multiply"]}'
+##### Cluster Statistics
+curl -X GET http://127.0.0.1:8000/statistics -H 'Content-Type: application/json' -d '{"function": "first-pass"}'
+
+Expected Output
+```json
+{"status":200,"data":{"value":[{"timestamp":"2023-01-28T12:43:12.289353-05:00","elapsed":6640546675,"statistics":{"num-provisioned-extract-routines":1,"num-provisioned-transform-routes":1,"num-provisioned-load-routines":1,"num-et-threshold-breaches":0,"num-tl-threshold-breaches":0}}]}}
+```
