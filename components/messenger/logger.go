@@ -10,7 +10,7 @@ import (
 
 func GenerateFileName(endpoint string) (name string) {
 	currTime := time.Now()
-	currTimeStr := currTime.Format("2006:01:02_14:04:05")
+	currTimeStr := currTime.Format("2006_01_02_14_04_05")
 
 	name = fmt.Sprintf("%s_%s.log", endpoint, currTimeStr)
 	return name
@@ -19,6 +19,7 @@ func GenerateFileName(endpoint string) (name string) {
 func SaveToFile(dirPath, endpoint string, logs []string) bool {
 
 	if _, err := os.Stat(dirPath); err != nil {
+		log.Println(err)
 		log.Println("warning: cannot save logs to file, the save directory doesn't exist")
 		return false
 	}
@@ -28,7 +29,6 @@ func SaveToFile(dirPath, endpoint string, logs []string) bool {
 
 	file, err := path.Create()
 	if err != nil {
-		log.Println(err)
 		return false
 	}
 	defer file.Close()
