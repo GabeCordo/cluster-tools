@@ -1,6 +1,8 @@
 # ETLFramework
 A software orchestration framework for extract-transform-load process deployment and scaling. Developers can write and link custom ETL functions for data processing, that will be provisioned and scaled according to data velocity and processing demand made by the deployed functions. In production, ETL functions can be provisioned manually (or by script) through function calls over RPC using the "fast backend" framework. ETL processes can be mounted or unmounted depending on whether the administrator wishes to allow RPC calls to provision new instances of the ETL process.
 
+```tested on windows 10, macos, and ubuntu```
+
 ### Features
 
 1. Config for persistent and configurable data
@@ -192,6 +194,81 @@ Pull data from the cache using the **Identifier** received when storing the data
    promise = helper.LoadFromCache(response.Identifier)
    response = promise.Wait()
 ```
+
+---
+
+##### Messenger
+The messenger thread adds functionality to handle output *logging* and *status emails* when running clusters. 
+
+The traditional way to handle these events in GoLang might be to use the *log* or *fmt* libraries which will allow you
+to output information to the terminal in real time. This works for development but at scale when one to many clusters
+can be running at the same time, having them all compete to output to the console tends to be messy and confusing. **As
+such, this is intended as a solution for logging and tracking clusters in deployment as the *log* or *fmt* libraries
+will allow you to see real time outputs from your cluster.**
+
+The **CoreHelper** structure that can also be used to [assist with caching](), also provides functionality to send Log,
+Warning, or Fatal messages that will be handled when the cluster is completed.
+
+##### Helper.Log
+```go
+   helper.Log("cluster_name", "message")    // output: [2023-02-21 16:04:17][-] message
+```
+
+##### Helper.Warning
+```go
+   helper.Warning("cluster_name", "message")    // [2023-02-21 16:04:17][?] message
+```
+
+##### Helper.Fatal
+```go
+   helper.Fatal("cluster_name", "message")  // [2023-02-21 16:04:17][!] message
+```
+
+###### Logging
+```ideal for all clusters in prodution```
+Ensure that the **enable-logging** flag is set in the elt configuration file, along with a valid path to a directory
+you want the log files to be saved to under the **logging/directory** fields.
+
+###### SMTP
+```ideal for crucial clusters in produciton```
+Ensure that the **enable-smtp** flag is set to true in the etl configuration file. An **endpoint** represents your
+SMTP provider, in our example bellow this is gmail. Credentials are your authentication to send emails over the 
+endpoint you have provided.
+
+For any cluster that you wish to receive emails for upon completion, you must create a new key to array mapping that
+represents a list of emails you wish to receive an update, based on the name of a cluster.
+
+```json
+{
+   ...
+   "messenger": {
+      "logging": {
+         "directory": "<path-to-directory>"
+      },
+      "enable-logging": false,
+      "smtp": {
+         "endpoint": {
+            "host": "smtp.gmail.com",
+            "port": "587"
+         },
+         "credentials": {
+            "email": "<your-automated-gmail-address>",
+            "password": "<gmail-app-password>"
+         },
+         "subscribers": {
+            "<cluster-id>": [
+               "<registered-email-1>",
+               "<registered-email-2>"
+            ]
+         }
+      },
+      "enable-smtp": false
+   },
+   ...
+}
+```
+
+
 
 ---
 

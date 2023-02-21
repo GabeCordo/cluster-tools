@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/GabeCordo/etl/components/messenger"
 	"github.com/GabeCordo/fack"
 )
 
@@ -36,6 +37,18 @@ type Config struct {
 		Expiry  float64 `json:"expire-in"`
 		MaxSize uint32  `json:"max-size"`
 	} `json:"cache"`
+	Messenger struct {
+		LogFiles struct {
+			Directory string `json:"directory"`
+		} `json:"logging,omitempty"`
+		EnableLogging bool `json:"enable-logging"`
+		Smtp          struct {
+			Endpoint    messenger.Endpoint    `json:"endpoint"`
+			Credentials messenger.Credentials `json:"credentials"`
+			Subscribers map[string][]string   `json:"subscribers"`
+		} `json:"smtp,omitempty"`
+		EnableSmtp bool `json:"enable-smtp"`
+	} `json:"messenger"`
 	Net  fack.Address `json:"net"`
 	Auth fack.Auth    `json:"auth"`
 	Path string
@@ -45,11 +58,6 @@ func (c *Config) Safe() *Config {
 	if c.AutoMount == nil {
 		c.AutoMount = make([]string, 0)
 	}
-
-	//if c.Net == nil {
-	//	c.Net = fack.NewAddress(fack.Localhost)
-	//
-	//}
 
 	return c
 }
@@ -71,5 +79,6 @@ type Core struct {
 	C8        chan DatabaseResponse
 	C9        chan CacheRequest
 	C10       chan CacheResponse
+	C11       chan MessengerRequest
 	interrupt chan InterruptEvent
 }

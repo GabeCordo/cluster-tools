@@ -80,6 +80,7 @@ func NewCore() *Core {
 	core.C8 = make(chan DatabaseResponse)
 	core.C9 = make(chan CacheRequest)
 	core.C10 = make(chan CacheResponse)
+	core.C11 = make(chan MessengerRequest)
 	core.interrupt = make(chan InterruptEvent)
 
 	var ok bool
@@ -87,11 +88,11 @@ func NewCore() *Core {
 	if !ok {
 		return nil
 	}
-	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C9, core.C10)
+	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C9, core.C10, core.C11)
 	if !ok {
 		return nil
 	}
-	core.MessengerThread, ok = NewMessenger(core.interrupt, core.C3, core.C4)
+	core.MessengerThread, ok = NewMessenger(core.interrupt, core.C3, core.C4, core.C11)
 	if !ok {
 		return nil
 	}

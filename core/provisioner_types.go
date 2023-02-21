@@ -35,6 +35,8 @@ type ProvisionerThread struct {
 	C9  chan<- CacheRequest  // Provisioner is sending requests to the cache
 	C10 <-chan CacheResponse // Provisioner is receiving responses from the CacheThread
 
+	C11 chan<- MessengerRequest // Provisioner is sending request to the messenger
+
 	accepting bool
 	wg        sync.WaitGroup
 }
@@ -68,6 +70,10 @@ func NewProvisioner(channels ...interface{}) (*ProvisionerThread, bool) {
 		return nil, ok
 	}
 	provisioner.C10, ok = (channels[6]).(chan CacheResponse)
+	if !ok {
+		return nil, ok
+	}
+	provisioner.C11, ok = (channels[7]).(chan MessengerRequest)
 	if !ok {
 		return nil, ok
 	}

@@ -52,3 +52,21 @@ func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 
 	return promise
 }
+
+func (helper Helper) Log(cluster, message string) {
+
+	requestNonce := rand.Uint32()
+	helper.core.C11 <- MessengerRequest{Action: Log, Cluster: cluster, Message: message, Nonce: requestNonce}
+}
+
+func (helper Helper) Warning(cluster, message string) {
+
+	requestNonce := rand.Uint32()
+	helper.core.C11 <- MessengerRequest{Action: Warning, Cluster: cluster, Message: message, Nonce: requestNonce}
+}
+
+func (helper Helper) Fatal(cluster, message string) {
+
+	requestNonce := rand.Uint32()
+	helper.core.C11 <- MessengerRequest{Action: Fatal, Cluster: cluster, Message: message, Nonce: requestNonce}
+}

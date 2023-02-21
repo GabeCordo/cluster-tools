@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/GabeCordo/etl/components/cluster"
 	"log"
+	"time"
 )
 
 const (
@@ -114,14 +115,35 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 				response = supervisor.Start()
 			}()
 
+			// block until the supervisor completes
 			<-c
 
 			// don't send the statistics of the cluster to the database unless an Identifier has been
 			// given to the cluster for grouping purposes
 			if len(supervisor.Config.Identifier) != 0 {
-				request := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
-				provisionerThread.C7 <- request
+				// saves statistics to the database thread
+				dbRequest := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
+				provisionerThread.C7 <- dbRequest
+
+				// sends a completion message to the messenger thread to write to a log file or send an email regarding completion
+				msgRequest := MessengerRequest{Action: Close, Cluster: supervisor.Config.Identifier}
+				provisionerThread.C11 <- msgRequest
+
+				// provide the console with output indicating that the cluster has completed
+				// we already provide output when a cluster is provisioned, so it completes the state
+				if GetConfigInstance().Debug {
+					duration := time.Now().Sub(supervisor.StartTime)
+					log.Printf("Cluster transformations complete, took %dhr %dm %ds {%s}\n",
+						int(duration.Hours()),
+						int(duration.Minutes()),
+						int(duration.Seconds()),
+						supervisor.Config.Identifier,
+					)
+				}
 			}
+
+			// let the provisioner thread decrement the semaphore otherwise we will be stuck in deadlock waiting for
+			// the provisioned cluster to complete before allowing the etl-framework to shut down
 			provisionerThread.wg.Done()
 		}()
 	} else if request.Action == Teardown {
