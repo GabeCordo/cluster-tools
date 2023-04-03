@@ -79,6 +79,19 @@ In theory, each channel has an infinite runtime until an operator has made a req
 shutdown interrupt, each Cluster will have 30 minutes to finish executing before being terminated. If this value does not fit your defined
 scope, it can be modified in the *config.etl.json* under the "hard-terminate-time" flag as an integer representation of minutes.
 
+#### Where Should I Put My Config?
+
+Instead of requiring you to explicitly specify the path of the ETLFramework config file, it looks in standard locations
+where operating systems typically support application dependant configuration files.
+
+| Platform |                Path                |
+|:--------:|:----------------------------------:|
+|   any    |         ./etl.config.json          |
+|  macos   |      /opt/etl/etl.config.json      |
+|  linux   |      /etc/etl/config.etl.json      |
+| windows  | %PROGRAMDATA%/etl/config.etl.json  |
+
+
 ### Provisioning a Cluster
 
 #### What is Mounting?
