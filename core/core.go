@@ -13,9 +13,14 @@ import (
 )
 
 var (
-	commonConfigPaths = [...]string{"config.etl.json", "/config/config.etl.json"}
-	configLock        = &sync.Mutex{}
-	ConfigInstance    *Config
+	commonConfigPaths = [...]string{
+		"config.etl.json",
+		"/opt/etl/config.etl.json",
+		"/etc/etl/config.etl.json",
+		"%PROGRAMDATA%/etl/config.etl.json",
+	}
+	configLock     = &sync.Mutex{}
+	ConfigInstance *Config
 )
 
 func GetConfigInstance() *Config {
