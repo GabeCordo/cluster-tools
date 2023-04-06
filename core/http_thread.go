@@ -10,13 +10,12 @@ import (
 )
 
 var (
-	NodeInstance      *rpc.Node
-	AuthInstance      *fack.Auth
-	LoggerInstance    *logger.Logger
-	commonLoggerPaths = [...]string{"/logs"}
-	nodeLock          = &sync.Mutex{}
-	authLock          = &sync.Mutex{}
-	loggerLock        = &sync.Mutex{}
+	NodeInstance   *rpc.Node
+	AuthInstance   *fack.Auth
+	LoggerInstance *logger.Logger
+	nodeLock       = &sync.Mutex{}
+	authLock       = &sync.Mutex{}
+	loggerLock     = &sync.Mutex{}
 )
 
 func GetNodeInstance() *rpc.Node {

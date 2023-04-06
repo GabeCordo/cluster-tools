@@ -74,20 +74,54 @@ func (provisioner *Provisioner) UnMount(identifier string) bool {
 	return true
 }
 
-func (provisioner Provisioner) IsMounted(identifier string) bool {
+func (provisioner *Provisioner) IsMounted(identifier string) bool {
 	_, found := provisioner.OperationalFunctions[identifier]
 	return found
 }
 
-func (provisioner Provisioner) Mounts() map[string]bool {
+func (provisioner *Provisioner) Mounts() map[string]bool {
 	mounts := make(map[string]bool)
 	for identifier, _ := range provisioner.RegisteredFunctions {
 		mounts[identifier] = false
 	}
-	
+
 	for identifier, _ := range provisioner.OperationalFunctions {
 		mounts[identifier] = true
 	}
 
 	return mounts
+}
+
+func (provisioner *Provisioner) DoesClusterExist(clusterIdentifier string) bool {
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
+
+	_, found := provisioner.Registries[clusterIdentifier]
+	return found
+}
+
+func (provisioner *Provisioner) GetRegistry(clusterIdentifier string) (registry *Registry, found bool) {
+
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
+
+	if registry, found := provisioner.Registries[clusterIdentifier]; found {
+		return registry, true
+	} else {
+		return nil, false
+	}
+}
+
+func (provisioner *Provisioner) GetRegistries() (registries []IdentifierRegistryPair) {
+
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
+
+	registries = make([]IdentifierRegistryPair, 0)
+
+	for identifier, registry := range provisioner.Registries {
+		registries = append(registries, IdentifierRegistryPair{Identifier: identifier, Registry: registry})
+	}
+
+	return registries
 }

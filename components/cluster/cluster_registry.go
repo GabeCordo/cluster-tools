@@ -11,12 +11,18 @@ func NewRegistry() *Registry {
 	return registry
 }
 
-func (registry Registry) Exists(id uint64) bool {
+func (registry *Registry) Exists(id uint64) bool {
+	registry.mutex.RLock()
+	defer registry.mutex.RUnlock()
+
 	_, found := registry.Supervisors[id]
 	return found
 }
 
 func (registry *Registry) UnRegister(id uint64) bool {
+	registry.mutex.Lock()
+	defer registry.mutex.Unlock()
+
 	if _, found := registry.Supervisors[id]; !found {
 		return false
 	}
@@ -53,9 +59,25 @@ func (registry *Registry) Register(supervisor *Supervisor) (uint64, bool) {
 }
 
 func (registry *Registry) GetSupervisor(id uint64) (*Supervisor, bool) {
+	registry.mutex.RLock()
+	defer registry.mutex.RUnlock()
+
 	if registry.Exists(id) {
 		return registry.Supervisors[id], true
 	} else {
 		return nil, false
 	}
+}
+
+func (registry *Registry) GetSupervisors() []*Supervisor {
+	registry.mutex.RLock()
+	defer registry.mutex.RUnlock()
+
+	supervisors := make([]*Supervisor, 0)
+
+	for _, supervisor := range registry.Supervisors {
+		supervisors = append(supervisors, supervisor)
+	}
+
+	return supervisors
 }

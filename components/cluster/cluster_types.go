@@ -92,11 +92,16 @@ type Response struct {
 	LapsedTime time.Duration `json:"lapsed-time"`
 }
 
+type IdentifierRegistryPair struct {
+	Identifier string
+	Registry   *Registry
+}
+
 type Registry struct {
 	Supervisors map[uint64]*Supervisor
 
 	idReference uint64
-	mutex       sync.Mutex
+	mutex       sync.RWMutex
 }
 
 type Provisioner struct {

@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/GabeCordo/fack"
 	"github.com/GabeCordo/fack/rpc"
+	"log"
 	"math/rand"
 	"strconv"
 )
@@ -12,7 +13,9 @@ import (
 func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Response) {
 	rpcRequest := request.(*rpc.Request)
 
-	if len(rpcRequest.Param) > 1 {
+	log.Println(rpcRequest.Param)
+
+	if len(rpcRequest.Param) != 1 {
 		response.SetStatus(400)
 		return
 	}
@@ -68,11 +71,11 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 		if len(rpcRequest.Param) >= 1 {
 			supervisorRequest := rpcRequest.Param[0]
 
-			if supervisorRequest == "lookup" {
+			if supervisorRequest == "exists" {
 				if len(rpcRequest.Param) == 2 {
 					clusterIdentifier := rpcRequest.Param[1]
 
-					if _, found := provisionerInstance.RegisteredFunctions[clusterIdentifier]; found {
+					if found := provisionerInstance.DoesClusterExist(clusterIdentifier); found {
 						// the cluster Identifier exists on the node and can be called
 					} else {
 						// the cluster Identifier does NOT exist, return "not found"
@@ -83,10 +86,12 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 					statusString = "missing cluster Identifier"
 				}
 			} else if supervisorRequest == "state" {
+
+				// output the state based on a single cluster, else, all of them
 				if len(rpcRequest.Param) >= 2 {
 					clusterIdentifier := rpcRequest.Param[1]
 
-					registry, found := provisionerInstance.Registries[clusterIdentifier]
+					registry, found := provisionerInstance.GetRegistry(clusterIdentifier)
 					if found {
 						if len(rpcRequest.Param) == 3 {
 							supervisorId := rpcRequest.Param[2]
@@ -110,68 +115,79 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 						statusString = "unknown cluster Identifier"
 					}
 				} else {
-					statusCode = 400
-					statusString = "missing cluster Identifier"
+
+					registries := provisionerInstance.GetRegistries()
+
+					for _, pair := range registries {
+						response.Pair(pair.Identifier, pair.Registry)
+					}
 				}
-			} else {
+			} else if supervisorRequest == "lookup" {
 				// display all relevant information about the supervisor
-				if len(rpcRequest.Param) == 2 {
-					clusterIdentifier := rpcRequest.Param[0]
-					registry, ok := provisionerInstance.Registries[clusterIdentifier]
-					if ok {
-						supervisorIdStr := rpcRequest.Param[1]
-						supervisorId, err := strconv.ParseUint(supervisorIdStr, 10, 64)
-						if err == nil {
-							supervisor, ok := registry.GetSupervisor(supervisorId)
-							if ok {
-								response.Pair("id", supervisor.Id)
-								response.Pair("state", supervisor.State.String())
-								response.Pair("num-e-routines", supervisor.Stats.NumProvisionedExtractRoutines)
-								response.Pair("num-t-routines", supervisor.Stats.NumProvisionedTransformRoutes)
-								response.Pair("num-l-routines", supervisor.Stats.NumProvisionedLoadRoutines)
-								response.Pair("num-et-breaches", supervisor.Stats.NumEtThresholdBreaches)
-								response.Pair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
+				if len(rpcRequest.Param) >= 2 {
+
+					clusterIdentifier := rpcRequest.Param[1]
+
+					if registry, found := provisionerInstance.GetRegistry(clusterIdentifier); found {
+
+						// lookup a cluster identifier
+						if len(rpcRequest.Param) >= 3 {
+
+							supervisorIdStr := rpcRequest.Param[2]
+
+							supervisorId, err := strconv.ParseUint(supervisorIdStr, 10, 64)
+							if err == nil {
+								supervisor, ok := registry.GetSupervisor(supervisorId)
+								if ok {
+									response.Pair("id", supervisor.Id)
+									response.Pair("state", supervisor.State.String())
+									response.Pair("num-e-routines", supervisor.Stats.NumProvisionedExtractRoutines)
+									response.Pair("num-t-routines", supervisor.Stats.NumProvisionedTransformRoutes)
+									response.Pair("num-l-routines", supervisor.Stats.NumProvisionedLoadRoutines)
+									response.Pair("num-et-breaches", supervisor.Stats.NumEtThresholdBreaches)
+									response.Pair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
+								} else {
+									statusCode = 400
+									statusString = rpc.BadArgument
+								}
 							} else {
 								statusCode = 400
 								statusString = rpc.BadArgument
 							}
+
 						} else {
-							statusCode = 400
-							statusString = rpc.BadArgument
+							output := make(map[uint64]map[string]any)
+							for _, supervisor := range registry.GetSupervisors() {
+								record := make(map[string]any)
+
+								record["id"] = supervisor.Id
+								record["state"] = supervisor.State.String()
+								record["num-e-routines"] = supervisor.Stats.NumProvisionedExtractRoutines
+								record["num-t-routines"] = supervisor.Stats.NumProvisionedTransformRoutes
+								record["num-l-routines"] = supervisor.Stats.NumProvisionedLoadRoutines
+								record["num-et-breaches"] = supervisor.Stats.NumEtThresholdBreaches
+								record["num-tl-breaches"] = supervisor.Stats.NumTlThresholdBreaches
+
+								output[supervisor.Id] = record
+							}
+							response.Pair("supervisors", output)
 						}
 					} else {
-						statusCode = 400
-						statusString = rpc.BadArgument
-					}
-				} else if len(rpcRequest.Param) == 1 {
-					clusterIdentifier := rpcRequest.Param[0]
-					registry, ok := provisionerInstance.Registries[clusterIdentifier]
-					if ok {
-						output := make(map[uint64]map[string]any)
-						for id, supervisor := range registry.Supervisors {
-							record := make(map[string]any)
-
-							record["id"] = supervisor.Id
-							record["state"] = supervisor.State.String()
-							record["num-e-routines"] = supervisor.Stats.NumProvisionedExtractRoutines
-							record["num-t-routines"] = supervisor.Stats.NumProvisionedTransformRoutes
-							record["num-l-routines"] = supervisor.Stats.NumProvisionedLoadRoutines
-							record["num-et-breaches"] = supervisor.Stats.NumEtThresholdBreaches
-							record["num-tl-breaches"] = supervisor.Stats.NumTlThresholdBreaches
-
-							output[id] = record
-						}
-						response.Pair("supervisors", output)
-					} else {
-						statusCode = 400
-						statusString = rpc.BadArgument
+						statusCode = 404
+						statusString = "cluster id doesn't exist"
 					}
 				} else {
 					statusCode = 400
 					statusString = rpc.SyntaxMismatch
 				}
 			}
+		} else {
+			statusCode = 400
+			statusString = rpc.SyntaxMismatch
 		}
+	} else {
+		statusCode = 400
+		statusString = rpc.SyntaxMismatch
 	}
 
 	response.SetStatus(statusCode).SetDescription(statusString)
@@ -198,7 +214,7 @@ func (http *HttpThread) DebugFunction(request fack.Request, response fack.Respon
 				statusString = rpc.BadArgument
 			}
 		} else {
-			var endpoints []string
+			endpoints := make([]string, 0)
 			for key, _ := range auth.Trusted {
 				endpoints = append(endpoints, key)
 			}
