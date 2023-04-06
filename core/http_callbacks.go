@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/GabeCordo/fack"
 	"github.com/GabeCordo/fack/rpc"
-	"log"
 	"math/rand"
 	"strconv"
 )
@@ -12,8 +11,6 @@ import (
 
 func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Response) {
 	rpcRequest := request.(*rpc.Request)
-
-	log.Println(rpcRequest.Param)
 
 	if len(rpcRequest.Param) != 1 {
 		response.SetStatus(400)
