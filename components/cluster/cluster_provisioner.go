@@ -30,8 +30,8 @@ func (provisioner *Provisioner) Register(function string, cluster Cluster, confi
 }
 
 func (provisioner *Provisioner) Function(identifier string) (*Cluster, *Config, *Registry, bool) {
-	provisioner.mutex.Lock()
-	defer provisioner.mutex.Unlock()
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
 
 	if _, found := provisioner.OperationalFunctions[identifier]; !found {
 		return nil, nil, nil, false
@@ -75,11 +75,17 @@ func (provisioner *Provisioner) UnMount(identifier string) bool {
 }
 
 func (provisioner *Provisioner) IsMounted(identifier string) bool {
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
+
 	_, found := provisioner.OperationalFunctions[identifier]
 	return found
 }
 
 func (provisioner *Provisioner) Mounts() map[string]bool {
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
+
 	mounts := make(map[string]bool)
 	for identifier, _ := range provisioner.RegisteredFunctions {
 		mounts[identifier] = false
@@ -93,17 +99,16 @@ func (provisioner *Provisioner) Mounts() map[string]bool {
 }
 
 func (provisioner *Provisioner) DoesClusterExist(clusterIdentifier string) bool {
-	provisioner.mutex.Lock()
-	defer provisioner.mutex.Unlock()
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
 
 	_, found := provisioner.Registries[clusterIdentifier]
 	return found
 }
 
 func (provisioner *Provisioner) GetRegistry(clusterIdentifier string) (registry *Registry, found bool) {
-
-	provisioner.mutex.Lock()
-	defer provisioner.mutex.Unlock()
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
 
 	if registry, found := provisioner.Registries[clusterIdentifier]; found {
 		return registry, true
@@ -113,9 +118,8 @@ func (provisioner *Provisioner) GetRegistry(clusterIdentifier string) (registry 
 }
 
 func (provisioner *Provisioner) GetRegistries() (registries []IdentifierRegistryPair) {
-
-	provisioner.mutex.Lock()
-	defer provisioner.mutex.Unlock()
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
 
 	registries = make([]IdentifierRegistryPair, 0)
 

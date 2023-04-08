@@ -83,7 +83,7 @@ type Supervisor struct {
 	tlChannel *channel.ManagedChannel
 
 	waitGroup sync.WaitGroup
-	mutex     sync.Mutex
+	mutex     sync.RWMutex
 }
 
 type Response struct {
@@ -110,5 +110,5 @@ type Provisioner struct {
 	Configs              map[string]Config    `json:"configs"`
 	Registries           map[string]*Registry `json:"registries"`
 
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }

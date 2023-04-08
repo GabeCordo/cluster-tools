@@ -114,6 +114,7 @@ func (supervisor *Supervisor) Runtime() {
 			}
 			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.etChannel.Config.GrowthFactor
 		}
+
 		// is tlChannel congested?
 		if supervisor.tlChannel.State == channel.Congested {
 			supervisor.Stats.NumTlThresholdBreaches++

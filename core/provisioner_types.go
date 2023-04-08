@@ -19,8 +19,10 @@ type ProvisionerRequest struct {
 }
 
 type ProvisionerResponse struct {
-	Nonce   uint32 `json:"Nonce"`
-	Success bool   `json:"Success"`
+	Nonce        uint32 `json:"nonce"`
+	Success      bool   `json:"success"`
+	Cluster      string `json:"cluster"`
+	SupervisorId uint64 `json:"supervisor-id"`
 }
 
 type ProvisionerThread struct {

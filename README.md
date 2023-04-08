@@ -3,6 +3,8 @@ A software orchestration framework for extract-transform-load process deployment
 
 ```tested on windows 10, macos, and ubuntu```
 
+![example.png](.bin%2Fexample.png)
+
 ### Features
 
 1. Config for persistent and configurable data

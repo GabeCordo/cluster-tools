@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/logger"
+	"github.com/GabeCordo/etl/components/utils"
 	"github.com/GabeCordo/fack"
 	"github.com/GabeCordo/fack/rpc"
 	"log"
@@ -17,6 +18,17 @@ var (
 	authLock       = &sync.Mutex{}
 	loggerLock     = &sync.Mutex{}
 )
+
+var (
+	provisionerResponseTable *utils.ResponseTable
+)
+
+func GetProvisionerResponseTable() *utils.ResponseTable {
+	if provisionerResponseTable == nil {
+		provisionerResponseTable = utils.NewResponseTable()
+	}
+	return provisionerResponseTable
+}
 
 func GetNodeInstance() *rpc.Node {
 	nodeLock.Lock()
@@ -99,7 +111,7 @@ func (http *HttpThread) Start() {
 			if !http.accepting {
 				break
 			}
-			http.supervisorResponses[supervisorResponse.Nonce] = supervisorResponse
+			GetProvisionerResponseTable().Write(supervisorResponse.Nonce, supervisorResponse)
 		}
 	}()
 

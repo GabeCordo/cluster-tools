@@ -5,6 +5,7 @@ import (
 	"github.com/GabeCordo/fack/rpc"
 	"math/rand"
 	"strconv"
+	"time"
 )
 
 // TODO - fix rpc to request conversion
@@ -27,7 +28,30 @@ func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Res
 	}
 
 	http.C5 <- provisionerThreadRequest
-	response.SetStatus(200)
+
+	timeout := false
+	var provisionerResponse ProvisionerResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+			timeout = true
+			break
+		}
+
+		if responseEntry, found := GetProvisionerResponseTable().Lookup(provisionerThreadRequest.Nonce); found {
+			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			break
+		}
+	}
+
+	if timeout {
+		response.SetStatus(400)
+	} else {
+		response.Pair("cluster", provisionerResponse.Cluster)
+		response.Pair("supervisor-id", provisionerResponse.SupervisorId)
+		response.SetStatus(200)
+	}
 }
 
 func (http *HttpThread) StatisticsFunction(request fack.Request, response fack.Response) {
@@ -145,11 +169,11 @@ func (http *HttpThread) DataFunction(request fack.Request, response fack.Respons
 									response.Pair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
 								} else {
 									statusCode = 400
-									statusString = rpc.BadArgument
+									statusString = "supervisor id does not exist"
 								}
 							} else {
 								statusCode = 400
-								statusString = rpc.BadArgument
+								statusString = "supervisor id is an integer, given other type"
 							}
 
 						} else {

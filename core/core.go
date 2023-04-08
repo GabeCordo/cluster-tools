@@ -5,11 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+)
+
+const (
+	Version string = "v0.1.9-alpha"
 )
 
 var (
@@ -114,57 +119,68 @@ func NewCore() *Core {
 }
 
 func (core *Core) Run() {
+
+	fmt.Println("   ___    _____    _")
+	fmt.Println("  | __|  |_   _|  | |")
+	fmt.Println("  | _|     | |    | |__")
+	fmt.Println("  |___|   _|_|_   |____|")
+	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
+	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
+	fmt.Println("[+] " + utils.Purple + " Extract Transform Load Framework " + utils.Reset + Version)
+	fmt.Println("[+]" + utils.Purple + " by Stockmint 2022-23" + utils.Reset)
+	fmt.Println()
+
 	// needed in-case the proceeding core need logging or email capabilities during startup
 	core.MessengerThread.Setup()
 	go core.MessengerThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println("(+) Messenger Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " Messenger Thread Started")
 	}
 
 	// needed in-case the supervisor or http core need to populate Data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println("(+) Database Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " Database Thread Started")
 	}
 
 	// we need a way to provision clusters if we are receiving core before we can
 	core.ProvisionerThread.Setup()
 	go core.ProvisionerThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println("(+) Provisioner Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " Provisioner Thread Started")
 	}
 
 	// if we chain requests, we should have a way to save that Data for re-use
 	core.CacheThread.Setup()
 	go core.CacheThread.Start()
 	if GetConfigInstance().Debug {
-		log.Println("(+) Cache Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " Cache Thread Started")
 	}
 
 	// the gateway to the frontend cluster should be the last startup
 	core.HttpThread.Setup()
 	go core.HttpThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println("(+) RPC Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " RPC Thread Started")
 	}
 
 	// output all the static mounts on the system
 	config := GetConfigInstance()
 	numOfMountedClusters := len(config.AutoMount)
 
-	output := "(!) Statically Mounted Cluster"
+	output := utils.Purple + "(!)" + utils.Reset + " Statically Mounted Cluster"
 	if numOfMountedClusters > 1 {
 		output += "s"
-	}
-
-	for _, cluster := range config.AutoMount {
-		fmt.Printf("\t\t\t- %s\n", cluster)
 	}
 
 	// only output the statically mounted clusters if the debug tag is enabled
 	if GetConfigInstance().Debug {
 		log.Println(output)
+	}
+
+	for _, cluster := range config.AutoMount {
+		fmt.Printf("\t\t\t- %s\n", cluster)
 	}
 
 	// monitor system calls being sent to the process, if the etl is being
@@ -181,10 +197,10 @@ func (core *Core) Run() {
 	// error or end-state has been reached by the application
 	switch <-core.interrupt {
 	case Panic:
-		log.Println("(IO) encountered panic")
+		log.Println(utils.Red + "(IO)" + utils.Reset + " encountered panic")
 		break
 	default: // shutdown
-		log.Println("(IO) shutting down")
+		log.Println(utils.Red + "(IO)" + utils.Reset + " shutting down")
 		break
 	}
 
@@ -192,35 +208,35 @@ func (core *Core) Run() {
 	core.HttpThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(-) http shutdown")
+		log.Println(utils.Red + "(-)" + utils.Reset + " http shutdown")
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
 	core.ProvisionerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(-) provisioner shutdown")
+		log.Println(utils.Red + "(-)" + utils.Reset + " provisioner shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the Data is useless, shutdown
 	core.CacheThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(-) cache shutdown")
+		log.Println(utils.Red + "(-)" + utils.Reset + " cache shutdown")
 	}
 
 	// the supervisor might need to store Data while finishing, close after
 	core.DatabaseThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(-) database shutdown")
+		log.Println(utils.Red + "(-)" + utils.Reset + " database shutdown")
 	}
 
 	// the preceding core might need to log, or send alerts of failure during shutdown
 	core.MessengerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println("(-) messenger shutdown")
+		log.Println(utils.Red + "(-)" + utils.Reset + " messenger shutdown")
 	}
 }
 

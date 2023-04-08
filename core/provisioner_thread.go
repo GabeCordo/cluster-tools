@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"time"
 )
@@ -42,6 +43,8 @@ func (provisionerThread *ProvisionerThread) Start() {
 				break
 			}
 			provisionerThread.wg.Add(1)
+
+			// if this doesn't spawn its own thread we will be left waiting
 			provisionerThread.ProcessIncomingRequests(request)
 		}
 
@@ -52,6 +55,8 @@ func (provisionerThread *ProvisionerThread) Start() {
 			if !provisionerThread.accepting {
 				break
 			}
+
+			// if this doesn't spawn its own thread we will be left waiting
 			provisionerThread.ProcessesIncomingDatabaseResponses(response)
 		}
 
@@ -62,6 +67,8 @@ func (provisionerThread *ProvisionerThread) Start() {
 			if !provisionerThread.accepting {
 				break
 			}
+
+			// if this doesn't spawn its own thread we can be left waiting
 			provisionerThread.ProcessIncomingCacheResponses(response)
 		}
 
@@ -76,35 +83,48 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 
 	if request.Action == Mount {
 		provisionerInstance.Mount(request.Cluster)
-		log.Printf("Mounted cluster {%s}", request.Cluster)
+		log.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.Cluster, utils.Reset)
 		provisionerThread.wg.Done()
 	} else if request.Action == UnMount {
 		provisionerInstance.UnMount(request.Cluster)
-		log.Printf("UnMounted cluster {%s}", request.Cluster)
+		log.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.Cluster, utils.Reset)
 		provisionerThread.wg.Done()
 	} else if request.Action == Provision {
 		if !provisionerInstance.IsMounted(request.Cluster) {
-			log.Printf("Could not provision cluster {%s}; cluster was not mounted", request.Cluster)
+			log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.Cluster, utils.Reset)
 			provisionerThread.wg.Done()
 			return
 		} else {
-			log.Printf("Provisioning cluster {%s}", request.Cluster)
+			log.Printf("%s[%s]%s Provisioning cluster\n", utils.Green, request.Cluster, utils.Reset)
 		}
 
 		clstr, cnfg, register, ok := provisionerInstance.Function(request.Cluster)
 		if !ok {
-			log.Println("there is a corrupted cluster in the supervisor")
+			log.Printf("%s[%s]%s There is a corrupted cluster in the supervisor\n", utils.Green, request.Cluster, utils.Reset)
 			provisionerThread.wg.Done()
 			return
 		}
 
 		var supervisor *cluster.Supervisor
 		if cnfg == nil {
+			log.Printf("%s[%s]%s initializing cluster supervisor\n", utils.Green, request.Cluster, utils.Reset)
 			supervisor = cluster.NewSupervisor(*clstr)
 		} else {
+			log.Printf("%s[%s]%s initializing cluster supervisor from config\n", utils.Green, request.Cluster, utils.Reset)
 			supervisor = cluster.NewCustomSupervisor(*clstr, cnfg)
 		}
+		log.Printf("%s[%s]%s registering supervisor(%d) to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisor.Id, request.Cluster)
 		register.Register(supervisor)
+		log.Printf("%s[%s]%s supervisor(%d) registered to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisor.Id, request.Cluster)
+
+		provisionerThread.C6 <- ProvisionerResponse{
+			Nonce:        request.Nonce,
+			Success:      true,
+			Cluster:      request.Cluster,
+			SupervisorId: supervisor.Id,
+		}
+
+		log.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.Cluster, utils.Reset)
 
 		go func() {
 			var response *cluster.Response
@@ -133,11 +153,15 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 				// we already provide output when a cluster is provisioned, so it completes the state
 				if GetConfigInstance().Debug {
 					duration := time.Now().Sub(supervisor.StartTime)
-					log.Printf("Cluster transformations complete, took %dhr %dm %ds {%s}\n",
+					log.Printf("%s[%s]%s Cluster transformations complete, took %dhr %dm %ds %dms %dus\n",
+						utils.Green,
+						supervisor.Config.Identifier,
+						utils.Reset,
 						int(duration.Hours()),
 						int(duration.Minutes()),
 						int(duration.Seconds()),
-						supervisor.Config.Identifier,
+						int(duration.Milliseconds()),
+						int(duration.Microseconds()),
 					)
 				}
 			}

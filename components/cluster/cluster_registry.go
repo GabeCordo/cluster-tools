@@ -1,6 +1,8 @@
 package cluster
 
-import "math"
+import (
+	"math"
+)
 
 func NewRegistry() *Registry {
 	registry := new(Registry)
@@ -25,14 +27,16 @@ func (registry *Registry) UnRegister(id uint64) bool {
 
 	if _, found := registry.Supervisors[id]; !found {
 		return false
+	} else {
+		delete(registry.Supervisors, id)
+		return true
 	}
-	delete(registry.Supervisors, id)
-	return true
 }
 
 func (registry *Registry) GetNextUsableId() uint64 {
+
 	registry.mutex.Lock()
-	registry.mutex.Unlock()
+	defer registry.mutex.Unlock()
 
 	if (registry.idReference + 1) >= math.MaxUint32 {
 		registry.idReference = 0
@@ -49,7 +53,7 @@ func (registry *Registry) Register(supervisor *Supervisor) (uint64, bool) {
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	if registry.Exists(id) {
+	if _, found := registry.Supervisors[id]; found {
 		return 0, false
 	} else {
 		supervisor.Id = id
@@ -62,8 +66,8 @@ func (registry *Registry) GetSupervisor(id uint64) (*Supervisor, bool) {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()
 
-	if registry.Exists(id) {
-		return registry.Supervisors[id], true
+	if supervisor, found := registry.Supervisors[id]; found {
+		return supervisor, true
 	} else {
 		return nil, false
 	}
