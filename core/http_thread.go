@@ -152,7 +152,8 @@ func (httpThread *HttpThread) Start() {
 			if !httpThread.accepting {
 				break
 			}
-			httpThread.databaseResponses[databaseResponse.Nonce] = databaseResponse
+			fmt.Println(databaseResponse)
+			GetDatabaseResponseTable().Write(databaseResponse.Nonce, databaseResponse)
 		}
 	}()
 

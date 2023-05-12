@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 )
@@ -55,9 +56,11 @@ func (db *DatabaseThread) Start() {
 func (db *DatabaseThread) Send(request *DatabaseRequest, response *DatabaseResponse) {
 	switch request.Origin {
 	case Http:
+		fmt.Println("sent response to Http")
 		db.C2 <- *response
 		break
 	case Provisioner:
+		fmt.Println("sent response to Provisioner")
 		db.C8 <- *response
 		break
 	}
@@ -74,13 +77,14 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 				{
 					configData := (request.Data).(cluster.Config)
 					isOk := d.StoreClusterConfig(configData)
-					db.Send(request, &DatabaseResponse{Success: isOk})
+					fmt.Println(isOk)
+					db.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			case database.Statistic:
 				{
 					statisticsData := (request.Data).(*cluster.Response)
 					isOk := d.StoreUsageRecord(request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
-					db.Send(request, &DatabaseResponse{Success: isOk})
+					db.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			}
 		}
@@ -91,12 +95,16 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 			switch request.Type {
 			case database.Config:
 				{
+					fmt.Println("getting config")
+
 					config, ok := d.GetClusterConfig(request.Cluster)
 					if !ok {
 						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
 					} else {
 						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
 					}
+
+					db.Send(request, &response)
 				}
 			case database.Statistic:
 				{

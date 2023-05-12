@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 	"math/rand"
@@ -118,14 +119,18 @@ func (HttpThread *HttpThread) GetConfig(clusterName string) (config cluster.Conf
 	if timeout || !databaseResponse.Success {
 		return cluster.Config{}, false
 	} else {
-		return (databaseResponse.Data).(cluster.Config), true
+		return *(databaseResponse.Data).(*cluster.Config), true
 	}
 }
 
 func (HttpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) {
 
-	databaseRequest := DatabaseRequest{Action: Fetch, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
+	fmt.Println(config)
+
+	databaseRequest := DatabaseRequest{Action: Store, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
 	HttpThread.C1 <- databaseRequest
+
+	fmt.Println(databaseRequest)
 
 	timeout := false
 	var databaseResponse DatabaseResponse
@@ -143,7 +148,7 @@ func (HttpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) 
 		}
 	}
 
-	return timeout || !databaseResponse.Success
+	return timeout || databaseResponse.Success
 }
 
 /**

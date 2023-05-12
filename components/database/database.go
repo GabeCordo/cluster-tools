@@ -8,7 +8,7 @@ import (
 func NewDatabase() *Database {
 	db := new(Database)
 	db.Records = make(map[string]*Record)
-
+	db.Configs = make(map[string]cluster.Config)
 	return db
 }
 
