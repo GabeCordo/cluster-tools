@@ -162,7 +162,7 @@ func (core *Core) Run() {
 	core.HttpThread.Setup()
 	go core.HttpThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " RPC Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " HTTP API Thread Started")
 	}
 
 	// output all the static mounts on the system

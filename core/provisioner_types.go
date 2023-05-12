@@ -15,7 +15,7 @@ type ProvisionerRequest struct {
 	Action     SupervisorAction `json:"Action"`
 	Nonce      uint32           `json:"Nonce"`
 	Cluster    string           `json:"cluster"`
-	Parameters []string         `json"parameters"`
+	Parameters []string         `json:"parameters"`
 }
 
 type ProvisionerResponse struct {

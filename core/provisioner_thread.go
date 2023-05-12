@@ -176,8 +176,7 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 }
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {
-	// TODO - implement
-	// GetProvisionerMemoryInstance().LoadDatabaseResponse(response.Nonce, response)
+	GetDatabaseMemoryInstance().SendDatabaseResponseEvent(response.Nonce, response)
 }
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {

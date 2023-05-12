@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 )
 
@@ -68,27 +69,47 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 	switch request.Action {
 	case Store:
 		{
-			ok := d.Store(request.Cluster, request.Data.Stats, request.Data.LapsedTime)
-			if !ok {
-				db.Send(request, &DatabaseResponse{Success: false})
-				db.wg.Done()
-				return
+			switch request.Type {
+			case database.Config:
+				{
+					configData := (request.Data).(cluster.Config)
+					isOk := d.StoreClusterConfig(configData)
+					db.Send(request, &DatabaseResponse{Success: isOk})
+				}
+			case database.Statistic:
+				{
+					statisticsData := (request.Data).(*cluster.Response)
+					isOk := d.StoreUsageRecord(request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
+					db.Send(request, &DatabaseResponse{Success: isOk})
+				}
 			}
-			db.Send(request, &DatabaseResponse{Success: true})
 		}
 	case Fetch:
 		{
 			var response DatabaseResponse
 
-			record, ok := d.GetRecord(request.Cluster)
-			if !ok {
-				response = DatabaseResponse{Success: false, Nonce: request.Nonce}
-			} else {
-				response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+			switch request.Type {
+			case database.Config:
+				{
+					config, ok := d.GetClusterConfig(request.Cluster)
+					if !ok {
+						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+					} else {
+						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
+					}
+				}
+			case database.Statistic:
+				{
+					record, ok := d.GetUsageRecord(request.Cluster)
+					if !ok {
+						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+					} else {
+						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+					}
 
+					db.Send(request, &response)
+				}
 			}
-
-			db.Send(request, &response)
 		}
 	}
 

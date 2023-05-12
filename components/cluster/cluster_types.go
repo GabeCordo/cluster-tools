@@ -56,6 +56,7 @@ const (
 	Provisioning        = 2
 	Failed              = 4
 	Terminated          = 5
+	Unknown             = 6
 )
 
 type Event uint8
@@ -70,6 +71,13 @@ const (
 	EndReport            = 6
 )
 
+type SupervisorData struct {
+	Id        uint64    `json:"id"`
+	State     Status    `json:"state"`
+	Mode      OnCrash   `json:"on-crash"`
+	StartTime time.Time `json:"start-time"`
+}
+
 type Supervisor struct {
 	Id        uint64      `json:"id"`
 	group     Cluster     `json:"group"`
@@ -78,6 +86,18 @@ type Supervisor struct {
 	State     Status      `json:"status"`
 	mode      OnCrash     `json:"on-crash"`
 	StartTime time.Time   `json:"start-time"`
+
+	etChannel *channel.ManagedChannel
+	tlChannel *channel.ManagedChannel
+
+	waitGroup sync.WaitGroup
+	mutex     sync.RWMutex
+}
+
+type SupervisorV2 struct {
+	Data   SupervisorData `json:"data"`
+	Config *Config        `json:"config"`
+	Stats  *Statistics    `json:"stats"`
 
 	etChannel *channel.ManagedChannel
 	tlChannel *channel.ManagedChannel

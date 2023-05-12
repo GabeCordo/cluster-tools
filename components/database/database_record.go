@@ -9,6 +9,6 @@ func NewRecord() *Record {
 	return record
 }
 
-func (r Record) Empty() bool {
+func (r *Record) Empty() bool {
 	return r.Head == -1
 }

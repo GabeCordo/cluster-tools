@@ -19,6 +19,7 @@ const (
 	Database           = 1
 	Provisioner        = 2
 	Messenger          = 3
+	Cache              = 4
 )
 
 type Thread interface {

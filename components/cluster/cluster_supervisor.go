@@ -154,6 +154,10 @@ func (supervisor *Supervisor) Provision(segment Segment) {
 	}()
 }
 
+func (supervisor *Supervisor) Data() {
+
+}
+
 func (status Status) String() string {
 	switch status {
 	case UnTouched:

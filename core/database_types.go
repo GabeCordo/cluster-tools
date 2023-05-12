@@ -1,7 +1,6 @@
 package core
 
 import (
-	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 	"sync"
 )
@@ -9,22 +8,24 @@ import (
 type DatabaseAction uint8
 
 const (
-	Store DatabaseAction = 0
-	Fetch                = 2
+	Store  DatabaseAction = 0
+	Fetch                 = 2
+	Delete                = 3
 )
 
 type DatabaseRequest struct {
 	Action  DatabaseAction    `json:"Action"`
 	Nonce   uint32            `json:"Nonce"`
 	Origin  Module            `json:"origin"`
+	Type    database.DataType `json:"type"`
 	Cluster string            `json:"cluster"` // aka. Identifier
-	Data    *cluster.Response `json:"Data"`
+	Data    any               `json:"data"`    // *cluster.Response `json:"Data"`
 }
 
 type DatabaseResponse struct {
-	Nonce   uint32           `json:"Nonce"`
-	Success bool             `json:"Success"`
-	Data    []database.Entry `json:"statistics"`
+	Nonce   uint32 `json:"Nonce"`
+	Success bool   `json:"Success"`
+	Data    any    `json:"statistics"` // []database.Entry or cluster.Config
 }
 
 type DatabaseThread struct {
