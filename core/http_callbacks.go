@@ -159,6 +159,35 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 }
 
+func (httpThread *HttpThread) statisticCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	if r.Method == "GET" {
+
+		clusterName, clusterNameFound := urlMapping["cluster"]
+		if clusterNameFound {
+			statistics, found := httpThread.FindStatistics(clusterName[0])
+			if found {
+				bytes, err := json.Marshal(statistics)
+				if err == nil {
+					if _, err = w.Write(bytes); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
 type DebugJSONBody struct {
 	Action string `json:"action"`
 }

@@ -9,6 +9,7 @@ const (
 	Mount
 	UnMount
 	Teardown
+	ProvisionerPing
 )
 
 type ProvisionerRequest struct {

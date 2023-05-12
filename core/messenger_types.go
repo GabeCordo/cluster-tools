@@ -9,6 +9,7 @@ const (
 	Warning
 	Fatal
 	Close
+	MessengerPing
 )
 
 type MessengerRequest struct {

@@ -66,10 +66,16 @@ func (msg *MessengerThread) Start() {
 func (msg *MessengerThread) ProcessIncomingRequest(request *MessengerRequest) {
 	if request.Action == Close {
 		msg.ProcessCloseLogRequest(request)
+	} else if request.Action == MessengerPing {
+		msg.ProcessMessengerPing(request)
 	} else {
 		msg.ProcessConsoleRequest(request)
 	}
 	msg.wg.Done()
+}
+
+func (msg *MessengerThread) ProcessMessengerPing(request *MessengerRequest) {
+
 }
 
 func (msg *MessengerThread) ProcessConsoleRequest(request *MessengerRequest) {

@@ -8,6 +8,7 @@ const (
 	SaveInCache CacheAction = iota
 	LoadFromCache
 	WipeCache
+	PingCache
 )
 
 type CacheRequest struct {

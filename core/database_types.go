@@ -8,9 +8,10 @@ import (
 type DatabaseAction uint8
 
 const (
-	Store  DatabaseAction = 0
-	Fetch                 = 2
-	Delete                = 3
+	Store        DatabaseAction = 0
+	Fetch                       = 2
+	Delete                      = 3
+	DatabasePing                = 4
 )
 
 type DatabaseRequest struct {

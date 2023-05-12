@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
+	"log"
 )
 
 var DatabaseInstance *database.Database
@@ -119,9 +120,22 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 				}
 			}
 		}
+	case DatabasePing:
+		{
+			db.ProcessDatabasePing(request)
+		}
 	}
 
 	db.wg.Done()
+}
+
+func (db *DatabaseThread) ProcessDatabasePing(request *DatabaseRequest) {
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_database] received ping over C1")
+	}
+
+	db.C3 <- MessengerRequest{Action: MessengerPing}
 }
 
 func (db *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {

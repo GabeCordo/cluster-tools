@@ -172,7 +172,13 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 		}()
 	} else if request.Action == Teardown {
 		// TODO - not implemented
+	} else if request.Action == ProvisionerPing {
+		provisionerThread.ProcessPingProvisionerRequest(&request)
 	}
+}
+
+func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *ProvisionerRequest) {
+
 }
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {

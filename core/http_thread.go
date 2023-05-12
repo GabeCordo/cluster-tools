@@ -117,6 +117,10 @@ func (httpThread *HttpThread) Setup() {
 		httpThread.supervisorCallback(w, r)
 	})
 
+	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
+		httpThread.statisticCallback(w, r)
+	})
+
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		httpThread.configCallback(w, r)
 	})

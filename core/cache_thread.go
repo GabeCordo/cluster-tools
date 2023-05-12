@@ -48,6 +48,8 @@ func (cache *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
 		cache.ProcessSaveRequest(request)
 	} else if request.Action == LoadFromCache {
 		cache.ProcessLoadRequest(request)
+	} else if request.Action == PingCache {
+		cache.ProcessPingCache(request)
 	}
 
 	cache.wg.Done()
@@ -74,6 +76,10 @@ func (cache CacheThread) ProcessLoadRequest(request *CacheRequest) {
 		Nonce:      request.Nonce,
 		Success:    isFoundAndNotExpired && (cacheData != nil),
 	}
+}
+
+func (cache CacheThread) ProcessPingCache(request *CacheRequest) {
+	
 }
 
 func (cache *CacheThread) Teardown() {

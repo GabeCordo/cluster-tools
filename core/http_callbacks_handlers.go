@@ -95,10 +95,10 @@ func (httpThread *HttpThread) SupervisorLookup(clusterId string, supervisorId ui
  * Config Request Handlers
  */
 
-func (HttpThread *HttpThread) GetConfig(clusterName string) (config cluster.Config, found bool) {
+func (httpThread *HttpThread) GetConfig(clusterName string) (config cluster.Config, found bool) {
 
 	databaseRequest := DatabaseRequest{Action: Fetch, Type: database.Config, Nonce: rand.Uint32(), Cluster: clusterName}
-	HttpThread.C1 <- databaseRequest
+	httpThread.C1 <- databaseRequest
 
 	timeout := false
 	var databaseResponse DatabaseResponse
@@ -123,12 +123,12 @@ func (HttpThread *HttpThread) GetConfig(clusterName string) (config cluster.Conf
 	}
 }
 
-func (HttpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) {
+func (httpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) {
 
 	fmt.Println(config)
 
 	databaseRequest := DatabaseRequest{Action: Store, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
-	HttpThread.C1 <- databaseRequest
+	httpThread.C1 <- databaseRequest
 
 	fmt.Println(databaseRequest)
 
@@ -149,6 +149,38 @@ func (HttpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) 
 	}
 
 	return timeout || databaseResponse.Success
+}
+
+/**
+ * Statistics Request Handlers
+ */
+
+func (httpThread *HttpThread) FindStatistics(clusterName string) (entries []database.Entry, found bool) {
+
+	databaseRequest := DatabaseRequest{Action: Fetch, Type: database.Statistic, Nonce: rand.Uint32(), Cluster: clusterName}
+	httpThread.C1 <- databaseRequest
+
+	timeout := false
+	var databaseResponse DatabaseResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+			timeout = true
+			break
+		}
+
+		if responseEntry, found := GetDatabaseResponseTable().Lookup(databaseRequest.Nonce); found {
+			databaseResponse = (responseEntry).(DatabaseResponse)
+			break
+		}
+	}
+
+	if timeout || !databaseResponse.Success {
+		return nil, false
+	} else {
+		return (databaseResponse.Data).([]database.Entry), true
+	}
 }
 
 /**
