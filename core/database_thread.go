@@ -1,7 +1,12 @@
 package core
 
 import (
+	"fmt"
+	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
+	"log"
+	"math/rand"
+	"time"
 )
 
 var DatabaseInstance *database.Database
@@ -14,93 +19,166 @@ func GetDatabaseInstance() *database.Database {
 	return DatabaseInstance
 }
 
-func (db *DatabaseThread) Setup() {
-	db.accepting = true
+func (databaseThread *DatabaseThread) Setup() {
+	databaseThread.accepting = true
 }
 
-func (db *DatabaseThread) Start() {
+func (databaseThread *DatabaseThread) Start() {
 	go func() {
 		// request from http_server
-		for request := range db.C1 {
-			if !db.accepting {
+		for request := range databaseThread.C1 {
+			if !databaseThread.accepting {
 				break
 			}
-			db.wg.Add(1)
-			db.ProcessIncomingRequest(&request)
+			databaseThread.wg.Add(1)
+			databaseThread.ProcessIncomingRequest(&request)
 		}
 	}()
 	go func() {
 		// request from supervisor
-		for request := range db.C7 {
-			if !db.accepting {
+		for request := range databaseThread.C7 {
+			if !databaseThread.accepting {
 				break
 			}
-			db.wg.Add(1)
-			db.ProcessIncomingRequest(&request)
+			databaseThread.wg.Add(1)
+			databaseThread.ProcessIncomingRequest(&request)
 		}
 	}()
 	go func() {
-		for response := range db.C4 {
-			if !db.accepting {
+		for response := range databaseThread.C4 {
+			if !databaseThread.accepting {
 				break
 			}
-			db.ProcessIncomingResponse(&response)
+			databaseThread.ProcessIncomingResponse(&response)
 		}
 	}()
 
-	db.wg.Wait()
+	databaseThread.wg.Wait()
 }
 
-func (db *DatabaseThread) Send(request *DatabaseRequest, response *DatabaseResponse) {
+func (databaseThread *DatabaseThread) Send(request *DatabaseRequest, response *DatabaseResponse) {
 	switch request.Origin {
 	case Http:
-		db.C2 <- *response
+		databaseThread.C2 <- *response
 		break
 	case Provisioner:
-		db.C8 <- *response
+		databaseThread.C8 <- *response
 		break
 	}
 }
 
-func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
+func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 	d := GetDatabaseInstance()
 
 	switch request.Action {
-	case Store:
+	case DatabaseStore:
 		{
-			ok := d.Store(request.Cluster, request.Data.Stats, request.Data.LapsedTime)
-			if !ok {
-				db.Send(request, &DatabaseResponse{Success: false})
-				db.wg.Done()
-				return
+			switch request.Type {
+			case database.Config:
+				{
+					configData := (request.Data).(cluster.Config)
+					isOk := d.StoreClusterConfig(configData)
+					databaseThread.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
+				}
+			case database.Statistic:
+				{
+					statisticsData := (request.Data).(*cluster.Response)
+					isOk := d.StoreUsageRecord(request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
+					databaseThread.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
+				}
 			}
-			db.Send(request, &DatabaseResponse{Success: true})
 		}
-	case Fetch:
+	case DatabaseFetch:
 		{
 			var response DatabaseResponse
 
-			record, ok := d.GetRecord(request.Cluster)
-			if !ok {
-				response = DatabaseResponse{Success: false, Nonce: request.Nonce}
-			} else {
-				response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+			switch request.Type {
+			case database.Config:
+				{
+					fmt.Println("getting config")
 
+					config, ok := d.GetClusterConfig(request.Cluster)
+					if !ok {
+						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+					} else {
+						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
+					}
+
+					databaseThread.Send(request, &response)
+				}
+			case database.Statistic:
+				{
+					record, ok := d.GetUsageRecord(request.Cluster)
+					if !ok {
+						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+					} else {
+						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+					}
+
+					databaseThread.Send(request, &response)
+				}
 			}
-
-			db.Send(request, &response)
+		}
+	case DatabaseUpperPing:
+		{
+			databaseThread.ProcessDatabaseUpperPing(request)
+		}
+	case DatabaseLowerPing:
+		{
+			databaseThread.ProcessDatabaseLowerPing(request)
 		}
 	}
 
-	db.wg.Done()
+	databaseThread.wg.Done()
 }
 
-func (db *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {
+func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *DatabaseRequest) {
 
+	if GetConfigInstance().Debug {
+		log.Println("[etl_database] received ping over C1")
+	}
+
+	messengerPingRequest := MessengerRequest{Action: MessengerUpperPing, Nonce: rand.Uint32()}
+	databaseThread.C3 <- messengerPingRequest
+
+	messengerTimeout := false
+	var messengerResponse *MessengerResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			messengerTimeout = true
+			break
+		}
+
+		if responseEntry, found := databaseThread.messengerResponseTable.Lookup(messengerPingRequest.Nonce); found {
+			messengerResponse = (responseEntry).(*MessengerResponse)
+			break
+		}
+	}
+
+	if GetConfigInstance().Debug && (!messengerTimeout || messengerResponse.Success) {
+		log.Println("[etl_database] received ping over C4")
+	}
+
+	databaseThread.C2 <- DatabaseResponse{Nonce: request.Nonce, Success: messengerTimeout || messengerResponse.Success}
 }
 
-func (db *DatabaseThread) Teardown() {
-	db.accepting = false
+func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *DatabaseRequest) {
 
-	db.wg.Wait()
+	if GetConfigInstance().Debug {
+		log.Println("[etl_database] received ping over C7")
+	}
+
+	databaseThread.C8 <- DatabaseResponse{Nonce: request.Nonce, Success: true}
+}
+
+func (databaseThread *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {
+	databaseThread.messengerResponseTable.Write(response.Nonce, response)
+}
+
+func (databaseThread *DatabaseThread) Teardown() {
+	databaseThread.accepting = false
+
+	databaseThread.wg.Wait()
 }

@@ -5,10 +5,11 @@ import "sync"
 type MessengerAction uint8
 
 const (
-	Log MessengerAction = iota
-	Warning
-	Fatal
-	Close
+	MessengerLog MessengerAction = iota
+	MessengerWarning
+	MessengerFatal
+	MessengerClose
+	MessengerUpperPing
 )
 
 type MessengerRequest struct {
@@ -20,7 +21,8 @@ type MessengerRequest struct {
 }
 
 type MessengerResponse struct {
-	Nonce uint32 `json:"Nonce"`
+	Nonce   uint32 `json:"Nonce"`
+	Success bool   `json:"Success"`
 }
 
 type MessengerThread struct {

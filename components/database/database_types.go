@@ -11,6 +11,13 @@ const (
 	Empty                = -1
 )
 
+type DataType uint8
+
+const (
+	Statistic DataType = 0
+	Config             = 1
+)
+
 type Entry struct {
 	Timestamp time.Time          `json:"timestamp"`
 	Elapsed   time.Duration      `json:"elapsed"`
@@ -25,7 +32,8 @@ type Record struct {
 }
 
 type Database struct {
-	Records map[string]*Record `json:"record"`
+	Records map[string]*Record        `json:"record"`
+	Configs map[string]cluster.Config `json:"configs"`
 
 	mutex sync.Mutex
 }

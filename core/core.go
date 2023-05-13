@@ -42,7 +42,12 @@ func GetConfigInstance() *Config {
 		for i := range commonConfigPaths {
 			err := JSONToETLConfig(ConfigInstance, commonConfigPaths[i])
 			if err == nil {
-				ConfigInstance.Path = commonConfigPaths[i] // the path we found the config for future reference
+				// the path we found the config for future reference
+				ConfigInstance.Path = commonConfigPaths[i]
+				// if the MaxWaitForResponse is not set, then simply default to 2.0
+				if ConfigInstance.MaxWaitForResponse == 0 {
+					ConfigInstance.MaxWaitForResponse = 2
+				}
 				configFound = true
 				break
 			} else {
@@ -126,8 +131,8 @@ func (core *Core) Run() {
 	fmt.Println("  |___|   _|_|_   |____|")
 	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
 	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
-	fmt.Println("[+] " + utils.Purple + " Extract Transform Load Framework " + utils.Reset + Version)
-	fmt.Println("[+]" + utils.Purple + " by Stockmint 2022-23" + utils.Reset)
+	fmt.Println("[+] " + utils.Purple + "Extract Transform Load Framework " + utils.Reset + Version)
+	fmt.Println("[+]" + utils.Purple + " by Gabriel Cordovado 2022-23" + utils.Reset)
 	fmt.Println()
 
 	// needed in-case the proceeding core need logging or email capabilities during startup
@@ -162,7 +167,7 @@ func (core *Core) Run() {
 	core.HttpThread.Setup()
 	go core.HttpThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " RPC Thread Started")
+		log.Println(utils.Purple + "(+)" + utils.Reset + " HTTP API Thread Started")
 	}
 
 	// output all the static mounts on the system

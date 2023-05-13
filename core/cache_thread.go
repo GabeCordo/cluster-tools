@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/cache"
+	"log"
 	"time"
 )
 
@@ -14,47 +15,54 @@ func GetCacheInstance() *cache.Cache {
 	return CacheInstance
 }
 
-func (cache *CacheThread) Setup() {
-	cache.accepting = true
+func (cacheThread *CacheThread) Setup() {
+	cacheThread.accepting = true
 }
 
-func (cache *CacheThread) Start() {
+func (cacheThread *CacheThread) Start() {
 	go func() {
 		// request from http_server
-		for request := range cache.C9 {
-			if !cache.accepting {
+		for request := range cacheThread.C9 {
+			if !cacheThread.accepting {
 				break
 			}
-			cache.wg.Add(1)
-			cache.ProcessIncomingRequest(&request)
+			cacheThread.wg.Add(1)
+			cacheThread.ProcessIncomingRequest(&request)
 		}
 	}()
 
 	go func() {
-		// cleaning the cache of expired records
-		for cache.accepting {
+		// cleaning the cacheThread of expired records
+		for cacheThread.accepting {
 			time.Sleep(1 * time.Minute)
-			// every minute, attempt to clean the cache by removing any records that
+			// every minute, attempt to clean the cacheThread by removing any records that
 			// may have expired since we last checked
 			GetCacheInstance().Clean()
 		}
 	}()
 
-	cache.wg.Wait()
+	cacheThread.wg.Wait()
 }
 
-func (cache *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
-	if request.Action == SaveInCache {
-		cache.ProcessSaveRequest(request)
-	} else if request.Action == LoadFromCache {
-		cache.ProcessLoadRequest(request)
+func (cacheThread *CacheThread) Send(response *CacheResponse) {
+
+	cacheThread.C10 <- *response
+}
+
+func (cacheThread *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
+	if request.Action == CacheSaveIn {
+		cacheThread.ProcessSaveRequest(request)
+	} else if request.Action == CacheLoadFrom {
+		cacheThread.ProcessLoadRequest(request)
+	} else if request.Action == CacheLowerPing {
+		cacheThread.ProcessPingCache(request)
 	}
 
-	cache.wg.Done()
+	cacheThread.wg.Done()
 }
 
 // ProcessSaveRequest will insert or override an existing cache record
-func (cache CacheThread) ProcessSaveRequest(request *CacheRequest) {
+func (cacheThread *CacheThread) ProcessSaveRequest(request *CacheRequest) {
 	var response CacheResponse
 	if _, found := GetCacheInstance().Get(request.Identifier); found {
 		GetCacheInstance().Swap(request.Identifier, request.Data, request.ExpiresIn)
@@ -63,12 +71,12 @@ func (cache CacheThread) ProcessSaveRequest(request *CacheRequest) {
 		newIdentifier := GetCacheInstance().Save(request.Data, request.ExpiresIn)
 		response = CacheResponse{Identifier: newIdentifier, Data: nil, Nonce: request.Nonce, Success: true}
 	}
-	cache.C10 <- response
+	cacheThread.C10 <- response
 }
 
-func (cache CacheThread) ProcessLoadRequest(request *CacheRequest) {
+func (cacheThread *CacheThread) ProcessLoadRequest(request *CacheRequest) {
 	cacheData, isFoundAndNotExpired := GetCacheInstance().Get(request.Identifier)
-	cache.C10 <- CacheResponse{
+	cacheThread.C10 <- CacheResponse{
 		Identifier: request.Identifier,
 		Data:       cacheData,
 		Nonce:      request.Nonce,
@@ -76,6 +84,15 @@ func (cache CacheThread) ProcessLoadRequest(request *CacheRequest) {
 	}
 }
 
-func (cache *CacheThread) Teardown() {
-	cache.accepting = false
+func (cacheThread *CacheThread) ProcessPingCache(request *CacheRequest) {
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_cache] received ping over C9")
+	}
+
+	cacheThread.C10 <- CacheResponse{Nonce: request.Nonce, Success: true}
+}
+
+func (cacheThread *CacheThread) Teardown() {
+	cacheThread.accepting = false
 }

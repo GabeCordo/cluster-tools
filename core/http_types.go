@@ -1,6 +1,11 @@
 package core
 
-import "sync"
+import (
+	"context"
+	"github.com/GabeCordo/etl/components/utils"
+	"net/http"
+	"sync"
+)
 
 // Frontend Thread
 
@@ -20,6 +25,13 @@ type HttpThread struct {
 
 	databaseResponses   map[uint32]DatabaseResponse
 	supervisorResponses map[uint32]ProvisionerResponse
+
+	provisionerResponseTable *utils.ResponseTable
+	databaseResponseTable    *utils.ResponseTable
+
+	server    *http.Server
+	mux       *http.ServeMux
+	cancelCtx context.CancelFunc
 
 	accepting bool
 	counter   uint32
@@ -54,6 +66,12 @@ func NewHttp(channels ...interface{}) (*HttpThread, bool) {
 
 	core.databaseResponses = make(map[uint32]DatabaseResponse)
 	core.supervisorResponses = make(map[uint32]ProvisionerResponse)
+
+	core.provisionerResponseTable = utils.NewResponseTable()
+	core.databaseResponseTable = utils.NewResponseTable()
+
+	core.server = new(http.Server)
+
 	core.accepting = true
 	core.counter = 0
 

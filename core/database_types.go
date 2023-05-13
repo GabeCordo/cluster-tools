@@ -1,30 +1,34 @@
 package core
 
 import (
-	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
+	"github.com/GabeCordo/etl/components/utils"
 	"sync"
 )
 
 type DatabaseAction uint8
 
 const (
-	Store DatabaseAction = 0
-	Fetch                = 2
+	DatabaseStore DatabaseAction = iota
+	DatabaseFetch
+	DatabaseDelete
+	DatabaseUpperPing
+	DatabaseLowerPing
 )
 
 type DatabaseRequest struct {
 	Action  DatabaseAction    `json:"Action"`
 	Nonce   uint32            `json:"Nonce"`
 	Origin  Module            `json:"origin"`
+	Type    database.DataType `json:"type"`
 	Cluster string            `json:"cluster"` // aka. Identifier
-	Data    *cluster.Response `json:"Data"`
+	Data    any               `json:"data"`    // *cluster.Response `json:"Data"`
 }
 
 type DatabaseResponse struct {
-	Nonce   uint32           `json:"Nonce"`
-	Success bool             `json:"Success"`
-	Data    []database.Entry `json:"statistics"`
+	Nonce   uint32 `json:"Nonce"`
+	Success bool   `json:"Success"`
+	Data    any    `json:"statistics"` // []database.Entry or cluster.Config
 }
 
 type DatabaseThread struct {
@@ -38,6 +42,8 @@ type DatabaseThread struct {
 
 	C7 <-chan DatabaseRequest  // Database is receiving core from the Supervisor
 	C8 chan<- DatabaseResponse // Database is sending responses to the Supervisor
+
+	messengerResponseTable *utils.ResponseTable
 
 	accepting bool
 	wg        sync.WaitGroup
@@ -75,6 +81,8 @@ func NewDatabase(channels ...interface{}) (*DatabaseThread, bool) {
 	if !ok {
 		return nil, ok
 	}
+
+	database.messengerResponseTable = utils.NewResponseTable()
 
 	return database, ok
 }

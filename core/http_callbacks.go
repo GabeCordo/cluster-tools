@@ -1,252 +1,223 @@
 package core
 
 import (
-	"github.com/GabeCordo/fack"
-	"github.com/GabeCordo/fack/rpc"
-	"math/rand"
+	"encoding/json"
+	"fmt"
+	"github.com/GabeCordo/etl/components/cluster"
+	"log"
+	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
 
-// TODO - fix rpc to request conversion
+type JSONResponse struct {
+	Status      int    `json:"status"`
+	Description string `json:"description"`
+	Data        any    `json:"data"`
+}
 
-func (http *HttpThread) ClustersFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(*rpc.Request)
+type ClusterConfigJSONBody struct {
+	Cluster string `json:"cluster"`
+	Mounted bool   `json:"mounted"`
+}
 
-	if len(rpcRequest.Param) != 1 {
-		response.SetStatus(400)
+func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Request) {
+
+	request := &ClusterConfigJSONBody{}
+	err := json.NewDecoder(r.Body).Decode(request)
+	if (r.Method != "GET") && (err != nil) {
+		fmt.Println("bad")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: rpcRequest.Param[0], Parameters: rpcRequest.Param}
-	if rpcRequest.Function == "provision" {
-		provisionerThreadRequest.Action = Provision
-	} else if rpcRequest.Function == "mount" {
-		provisionerThreadRequest.Action = Mount
-	} else if rpcRequest.Function == "unmount" {
-		provisionerThreadRequest.Action = UnMount
-	}
-
-	http.C5 <- provisionerThreadRequest
-
-	timeout := false
-	var provisionerResponse ProvisionerResponse
-
-	timestamp := time.Now()
-	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
-			timeout = true
-			break
-		}
-
-		if responseEntry, found := GetProvisionerResponseTable().Lookup(provisionerThreadRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
-			break
-		}
-	}
-
-	if timeout {
-		response.SetStatus(400)
-	} else {
-		response.Pair("cluster", provisionerResponse.Cluster)
-		response.Pair("supervisor-id", provisionerResponse.SupervisorId)
-		response.SetStatus(200)
-	}
-}
-
-func (http *HttpThread) StatisticsFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(*rpc.Request)
-
-	req := DatabaseRequest{Action: Fetch, Cluster: rpcRequest.Function}
-
-	if value, ok := http.Send(Database, req); ok {
-		rsp := (value).(DatabaseResponse)
-
-		// check to see if no records have ever been created
-		if !rsp.Success {
-			response.SetStatus(200).SetDescription("no cluster records exist")
-			return
-		}
-		response.Pair("value", rsp.Data)
-	}
-
-	response.SetStatus(200)
-}
-
-func (http *HttpThread) DataFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(*rpc.Request)
-
-	statusCode := 200
-	statusString := "no error"
-
-	if rpcRequest.Function == "mounts" {
-		provisionerInstance := GetProvisionerInstance()
-
-		mounts := provisionerInstance.Mounts()
-		for identifier, isMounted := range mounts {
-			response.Pair(identifier, isMounted)
-		}
-	} else if rpcRequest.Function == "supervisor" {
-		provisionerInstance := GetProvisionerInstance()
-
-		if len(rpcRequest.Param) >= 1 {
-			supervisorRequest := rpcRequest.Param[0]
-
-			if supervisorRequest == "exists" {
-				if len(rpcRequest.Param) == 2 {
-					clusterIdentifier := rpcRequest.Param[1]
-
-					if found := provisionerInstance.DoesClusterExist(clusterIdentifier); found {
-						// the cluster Identifier exists on the node and can be called
-					} else {
-						// the cluster Identifier does NOT exist, return "not found"
-						statusCode = 404
-					}
-				} else {
-					statusCode = 400
-					statusString = "missing cluster Identifier"
-				}
-			} else if supervisorRequest == "state" {
-
-				// output the state based on a single cluster, else, all of them
-				if len(rpcRequest.Param) >= 2 {
-					clusterIdentifier := rpcRequest.Param[1]
-
-					registry, found := provisionerInstance.GetRegistry(clusterIdentifier)
-					if found {
-						if len(rpcRequest.Param) == 3 {
-							supervisorId := rpcRequest.Param[2]
-
-							id, _ := strconv.ParseUint(supervisorId, 10, 32)
-							supervisor, found := registry.GetSupervisor(id)
-							if found {
-								response.Pair("state", supervisor.State.String())
-							} else {
-								statusCode = 400
-								statusString = "unknown supervisor id"
-							}
-						} else {
-							for _, supervisor := range registry.Supervisors {
-								id := strconv.FormatUint(supervisor.Id, 10)
-								response.Pair(id, supervisor.State.String())
-							}
-						}
-					} else {
-						statusCode = 400
-						statusString = "unknown cluster Identifier"
-					}
-				} else {
-
-					registries := provisionerInstance.GetRegistries()
-
-					for _, pair := range registries {
-						response.Pair(pair.Identifier, pair.Registry)
-					}
-				}
-			} else if supervisorRequest == "lookup" {
-				// display all relevant information about the supervisor
-				if len(rpcRequest.Param) >= 2 {
-
-					clusterIdentifier := rpcRequest.Param[1]
-
-					if registry, found := provisionerInstance.GetRegistry(clusterIdentifier); found {
-
-						// lookup a cluster identifier
-						if len(rpcRequest.Param) >= 3 {
-
-							supervisorIdStr := rpcRequest.Param[2]
-
-							supervisorId, err := strconv.ParseUint(supervisorIdStr, 10, 64)
-							if err == nil {
-								supervisor, ok := registry.GetSupervisor(supervisorId)
-								if ok {
-									response.Pair("id", supervisor.Id)
-									response.Pair("state", supervisor.State.String())
-									response.Pair("num-e-routines", supervisor.Stats.NumProvisionedExtractRoutines)
-									response.Pair("num-t-routines", supervisor.Stats.NumProvisionedTransformRoutes)
-									response.Pair("num-l-routines", supervisor.Stats.NumProvisionedLoadRoutines)
-									response.Pair("num-et-breaches", supervisor.Stats.NumEtThresholdBreaches)
-									response.Pair("num-tl-breaches", supervisor.Stats.NumTlThresholdBreaches)
-								} else {
-									statusCode = 400
-									statusString = "supervisor id does not exist"
-								}
-							} else {
-								statusCode = 400
-								statusString = "supervisor id is an integer, given other type"
-							}
-
-						} else {
-							output := make(map[uint64]map[string]any)
-							for _, supervisor := range registry.GetSupervisors() {
-								record := make(map[string]any)
-
-								record["id"] = supervisor.Id
-								record["state"] = supervisor.State.String()
-								record["num-e-routines"] = supervisor.Stats.NumProvisionedExtractRoutines
-								record["num-t-routines"] = supervisor.Stats.NumProvisionedTransformRoutes
-								record["num-l-routines"] = supervisor.Stats.NumProvisionedLoadRoutines
-								record["num-et-breaches"] = supervisor.Stats.NumEtThresholdBreaches
-								record["num-tl-breaches"] = supervisor.Stats.NumTlThresholdBreaches
-
-								output[supervisor.Id] = record
-							}
-							response.Pair("supervisors", output)
-						}
-					} else {
-						statusCode = 404
-						statusString = "cluster id doesn't exist"
-					}
-				} else {
-					statusCode = 400
-					statusString = rpc.SyntaxMismatch
-				}
+	if r.Method == "GET" {
+		if cluster, success := httpThread.ClusterList(); success {
+			bytes, _ := json.Marshal(cluster)
+			if _, err := w.Write(bytes); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
 			}
 		} else {
-			statusCode = 400
-			statusString = rpc.SyntaxMismatch
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	} else if r.Method == "PUT" {
+		if request.Mounted {
+			httpThread.ClusterMount(request.Cluster)
+		} else {
+			httpThread.ClusterUnMount(request.Cluster)
 		}
 	} else {
-		statusCode = 400
-		statusString = rpc.SyntaxMismatch
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	response.SetStatus(statusCode).SetDescription(statusString)
 }
 
-func (http *HttpThread) DebugFunction(request fack.Request, response fack.Response) {
-	rpcRequest := request.(*rpc.Request)
+type SupervisorConfigJSONBody struct {
+	//Action     string `json:"action"`
+	//Scope      string `json:"scope"`
+	Cluster    string `json:"cluster"`
+	Supervisor uint64 `json:"id"`
+}
 
-	statusString := "no error"
-	statusCode := 200
+type SupervisorProvisionJSONResponse struct {
+	Cluster    string `json:"cluster"`
+	Supervisor uint64 `json:"id"`
+}
 
-	if rpcRequest.Function == "shutdown" {
-		http.Interrupt <- Shutdown
-	} else if rpcRequest.Function == "endpoints" {
-		auth := GetAuthInstance()
+func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
 
-		if len(rpcRequest.Param) == 1 {
-			endpointIdentifier := rpcRequest.Param[0]
-			if endpoint, found := auth.Trusted[endpointIdentifier]; found {
-				response.Pair("localPermission", endpoint.LocalPermissions)
-				response.Pair("globalPermission", endpoint.GlobalPermissions)
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	var request SupervisorConfigJSONBody
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if (r.Method != "GET") && (err != nil) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if r.Method == "GET" {
+
+		clusterName, foundClusterName := urlMapping["cluster"]
+		supervisorIdStr, foundSupervisorId := urlMapping["id"]
+
+		if !foundSupervisorId || !foundClusterName {
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			if supervisorId, err := strconv.ParseUint(supervisorIdStr[0], 10, 64); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
 			} else {
-				statusCode = 400
-				statusString = rpc.BadArgument
+				if supervisor, found := httpThread.SupervisorLookup(clusterName[0], supervisorId); found {
+					bytes, _ := json.Marshal(supervisor)
+					if _, err := w.Write(bytes); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+				} else {
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}
+		}
+	} else if r.Method == "POST" {
+		if supervisorId, success := httpThread.ClusterProvision(request.Cluster); success {
+			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
+			bytes, _ := json.Marshal(response)
+			if _, err := w.Write(bytes); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
 			}
 		} else {
-			endpoints := make([]string, 0)
-			for key, _ := range auth.Trusted {
-				endpoints = append(endpoints, key)
-			}
-			response.Pair("endpoints", endpoints)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		// output system information
-		config := GetConfigInstance()
-		response.Pair("name", config.Name)
-		response.Pair("version", config.Version)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	request := &cluster.Config{}
+	err := json.NewDecoder(r.Body).Decode(request)
+	if (r.Method != "GET") && (err != nil) {
+		fmt.Println("bad")
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	response.SetStatus(statusCode).SetDescription(statusString)
+	if r.Method == "GET" {
+
+		log.Println("Config Get")
+
+		clusterName, foundClusterName := urlMapping["cluster"]
+		if foundClusterName {
+			if config, found := httpThread.GetConfig(clusterName[0]); found {
+				bytes, _ := json.Marshal(config)
+				if _, err := w.Write(bytes); err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+	} else if r.Method == "POST" {
+
+		isOk := httpThread.StoreConfig(*request)
+		if !isOk {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+
+}
+
+func (httpThread *HttpThread) statisticCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	if r.Method == "GET" {
+
+		clusterName, clusterNameFound := urlMapping["cluster"]
+		if clusterNameFound {
+			statistics, found := httpThread.FindStatistics(clusterName[0])
+			if found {
+				bytes, err := json.Marshal(statistics)
+				if err == nil {
+					if _, err = w.Write(bytes); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+type DebugJSONBody struct {
+	Action string `json:"action"`
+}
+
+type DebugJSONResponse struct {
+	Duration time.Duration `json:"time-elapsed"`
+	Success  bool          `json:"success"`
+}
+
+func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Request) {
+
+	var request DebugJSONBody
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if r.Method == "POST" {
+		if request.Action == "shutdown" {
+			httpThread.ShutdownNode(request)
+		} else if request.Action == "ping" {
+			startTime := time.Now()
+			success := httpThread.PingNodeChannels()
+			response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
+			bytes, err := json.Marshal(response)
+			if err == nil {
+				if _, err := w.Write(bytes); err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 }
