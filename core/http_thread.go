@@ -2,114 +2,24 @@ package core
 
 import (
 	"context"
-	"fmt"
-	"github.com/GabeCordo/etl/components/logger"
-	"github.com/GabeCordo/etl/components/utils"
-	"github.com/GabeCordo/fack"
-	"github.com/GabeCordo/fack/rpc"
 	"net/http"
-	"sync"
 	"time"
 )
 
-var (
-	NodeInstance   *rpc.Node
-	AuthInstance   *fack.Auth
-	LoggerInstance *logger.Logger
-	nodeLock       = &sync.Mutex{}
-	authLock       = &sync.Mutex{}
-	loggerLock     = &sync.Mutex{}
-)
-
-var (
-	provisionerResponseTable *utils.ResponseTable
-	databaseResponseTable    *utils.ResponseTable
-)
-
-func GetProvisionerResponseTable() *utils.ResponseTable {
-	if provisionerResponseTable == nil {
-		provisionerResponseTable = utils.NewResponseTable()
-	}
-	return provisionerResponseTable
-}
-
-func GetDatabaseResponseTable() *utils.ResponseTable {
-	if databaseResponseTable == nil {
-		databaseResponseTable = utils.NewResponseTable()
-	}
-	return databaseResponseTable
-}
-
-//
-//func GetNodeInstance() *rpc.Node {
-//	nodeLock.Lock()
-//	defer nodeLock.Unlock()
-//
-//	if NodeInstance == nil {
-//		config := GetConfigInstance()
-//		NodeInstance = rpc.NewNode(&config.Net, config.Debug, GetAuthInstance()) // TODO - re-add the logger at a later date
-//		NodeInstance.Name(config.Name)
-//	}
-//
-//	return NodeInstance
-//}
-//
-//func GetAuthInstance() *fack.Auth {
-//	authLock.Lock()
-//	defer authLock.Unlock()
-//
-//	if AuthInstance == nil {
-//		AuthInstance = &GetConfigInstance().Auth
-//
-//		// the config may not define a map of trusted endpoints leaving the
-//		// Trusted field as a nil value that cannot be used
-//		if AuthInstance.Trusted == nil {
-//			AuthInstance.Trusted = make(map[string]*fack.Endpoint)
-//		}
-//
-//		// ECDSA public keys are stored as an uint64 representation of bytes
-//		// to ease the process of copying + storing keys - convert to the ECDSA structure
-//		for trusted, endpoint := range AuthInstance.Trusted {
-//			_, ok := endpoint.GetPublicKey() // populates the PublicKey structure using the uint64 bytes
-//			if !ok {
-//				log.Println("failed to generate ECDSA key for trusted " + trusted)
-//			}
-//		}
-//	}
-//
-//	return AuthInstance
-//}
-//
-//func GetLoggerInstance() *logger.Logger {
-//	loggerLock.Lock()
-//	defer loggerLock.Unlock()
-//
-//	if LoggerInstance == nil {
-//		// TODO - allow the logger to be customized
-//		LoggerInstance = logger.NewLogger(ConfigInstance.Path, logger.Verbose, logger.NewInterval(0, 10))
-//
-//		// we may not contain a JSON mapping of the logging queue, meaning a nil
-//		// value will hold its place that can raise an error
-//		if LoggerInstance.LogQueue == nil {
-//			LoggerInstance.LogQueue = make(chan string)
-//		}
-//
-//		if len(LoggerInstance.Folder) == 0 {
-//			LoggerInstance.Folder = "/logs" // TODO - implement a platform specific way to create logs
-//		}
-//	}
-//
-//	return LoggerInstance
-//}
-
-const keyServerAddr = "serverAddr"
+//var (
+//	NodeInstance   *rpc.Node
+//	AuthInstance   *fack.Auth
+//	LoggerInstance *logger.Logger
+//	nodeLock       = &sync.Mutex{}
+//	authLock       = &sync.Mutex{}
+//	loggerLock     = &sync.Mutex{}
+//)
 
 func (httpThread *HttpThread) Setup() {
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/cluster", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("test")
 		httpThread.clusterCallback(w, r)
 	})
 
@@ -147,7 +57,7 @@ func (httpThread *HttpThread) Start() {
 			if !httpThread.accepting {
 				break
 			}
-			GetProvisionerResponseTable().Write(supervisorResponse.Nonce, supervisorResponse)
+			httpThread.provisionerResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
 		}
 	}()
 
@@ -156,8 +66,7 @@ func (httpThread *HttpThread) Start() {
 			if !httpThread.accepting {
 				break
 			}
-			fmt.Println(databaseResponse)
-			GetDatabaseResponseTable().Write(databaseResponse.Nonce, databaseResponse)
+			httpThread.databaseResponseTable.Write(databaseResponse.Nonce, databaseResponse)
 		}
 	}()
 

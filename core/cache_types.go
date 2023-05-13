@@ -5,10 +5,10 @@ import "sync"
 type CacheAction uint8
 
 const (
-	SaveInCache CacheAction = iota
-	LoadFromCache
-	WipeCache
-	PingCache
+	CacheSaveIn CacheAction = iota
+	CacheLoadFrom
+	CacheWipe
+	CacheLowerPing
 )
 
 type CacheRequest struct {

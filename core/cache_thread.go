@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/cache"
+	"log"
 	"time"
 )
 
@@ -44,11 +45,11 @@ func (cache *CacheThread) Start() {
 }
 
 func (cache *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
-	if request.Action == SaveInCache {
+	if request.Action == CacheSaveIn {
 		cache.ProcessSaveRequest(request)
-	} else if request.Action == LoadFromCache {
+	} else if request.Action == CacheLoadFrom {
 		cache.ProcessLoadRequest(request)
-	} else if request.Action == PingCache {
+	} else if request.Action == CacheLowerPing {
 		cache.ProcessPingCache(request)
 	}
 
@@ -78,8 +79,13 @@ func (cache CacheThread) ProcessLoadRequest(request *CacheRequest) {
 	}
 }
 
-func (cache CacheThread) ProcessPingCache(request *CacheRequest) {
-	
+func (cache *CacheThread) ProcessPingCache(request *CacheRequest) {
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_cache] received ping over C9")
+	}
+
+	cache.C10 <- CacheResponse{Nonce: request.Nonce, Success: true}
 }
 
 func (cache *CacheThread) Teardown() {

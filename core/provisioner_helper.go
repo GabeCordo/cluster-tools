@@ -34,7 +34,7 @@ func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 	}
 
 	requestNonce := rand.Uint32()
-	helper.core.C9 <- CacheRequest{Action: SaveInCache, Data: data, Nonce: requestNonce, ExpiresIn: expiry}
+	helper.core.C9 <- CacheRequest{Action: CacheSaveIn, Data: data, Nonce: requestNonce, ExpiresIn: expiry}
 
 	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseEventListener(requestNonce)
 	promise := NewCacheResponsePromise(requestNonce, responseChannel)
@@ -45,7 +45,7 @@ func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 
 	requestNonce := rand.Uint32()
-	helper.core.C9 <- CacheRequest{Action: LoadFromCache, Identifier: identifier, Nonce: requestNonce}
+	helper.core.C9 <- CacheRequest{Action: CacheLoadFrom, Identifier: identifier, Nonce: requestNonce}
 
 	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseEventListener(requestNonce)
 	promise := NewCacheResponsePromise(requestNonce, responseChannel)
@@ -56,17 +56,17 @@ func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 func (helper Helper) Log(cluster, message string) {
 
 	requestNonce := rand.Uint32()
-	helper.core.C11 <- MessengerRequest{Action: Log, Cluster: cluster, Message: message, Nonce: requestNonce}
+	helper.core.C11 <- MessengerRequest{Action: MessengerLog, Cluster: cluster, Message: message, Nonce: requestNonce}
 }
 
 func (helper Helper) Warning(cluster, message string) {
 
 	requestNonce := rand.Uint32()
-	helper.core.C11 <- MessengerRequest{Action: Warning, Cluster: cluster, Message: message, Nonce: requestNonce}
+	helper.core.C11 <- MessengerRequest{Action: MessengerWarning, Cluster: cluster, Message: message, Nonce: requestNonce}
 }
 
 func (helper Helper) Fatal(cluster, message string) {
 
 	requestNonce := rand.Uint32()
-	helper.core.C11 <- MessengerRequest{Action: Fatal, Cluster: cluster, Message: message, Nonce: requestNonce}
+	helper.core.C11 <- MessengerRequest{Action: MessengerFatal, Cluster: cluster, Message: message, Nonce: requestNonce}
 }

@@ -1,15 +1,18 @@
 package core
 
-import "sync"
+import (
+	"github.com/GabeCordo/etl/components/utils"
+	"sync"
+)
 
 type SupervisorAction int8
 
 const (
-	Provision SupervisorAction = iota
-	Mount
-	UnMount
-	Teardown
-	ProvisionerPing
+	ProvisionerProvision SupervisorAction = iota
+	ProvisionerMount
+	ProvisionerUnMount
+	ProvisionerTeardown
+	ProvisionerLowerPing
 )
 
 type ProvisionerRequest struct {
@@ -39,6 +42,9 @@ type ProvisionerThread struct {
 	C10 <-chan CacheResponse // Provisioner is receiving responses from the CacheThread
 
 	C11 chan<- MessengerRequest // Provisioner is sending request to the messenger
+
+	databaseResponseTable *utils.ResponseTable
+	cacheResponseTable    *utils.ResponseTable
 
 	accepting bool
 	wg        sync.WaitGroup
@@ -80,6 +86,9 @@ func NewProvisioner(channels ...interface{}) (*ProvisionerThread, bool) {
 	if !ok {
 		return nil, ok
 	}
+
+	provisioner.databaseResponseTable = utils.NewResponseTable()
+	provisioner.cacheResponseTable = utils.NewResponseTable()
 
 	return provisioner, ok
 }

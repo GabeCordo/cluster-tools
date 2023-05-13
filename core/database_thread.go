@@ -5,6 +5,8 @@ import (
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 	"log"
+	"math/rand"
+	"time"
 )
 
 var DatabaseInstance *database.Database
@@ -71,14 +73,13 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 	d := GetDatabaseInstance()
 
 	switch request.Action {
-	case Store:
+	case DatabaseStore:
 		{
 			switch request.Type {
 			case database.Config:
 				{
 					configData := (request.Data).(cluster.Config)
 					isOk := d.StoreClusterConfig(configData)
-					fmt.Println(isOk)
 					db.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			case database.Statistic:
@@ -89,7 +90,7 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 				}
 			}
 		}
-	case Fetch:
+	case DatabaseFetch:
 		{
 			var response DatabaseResponse
 
@@ -120,26 +121,62 @@ func (db *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
 				}
 			}
 		}
-	case DatabasePing:
+	case DatabaseUpperPing:
 		{
-			db.ProcessDatabasePing(request)
+			db.ProcessDatabaseUpperPing(request)
+		}
+	case DatabaseLowerPing:
+		{
+			db.ProcessDatabaseLowerPing(request)
 		}
 	}
 
 	db.wg.Done()
 }
 
-func (db *DatabaseThread) ProcessDatabasePing(request *DatabaseRequest) {
+func (db *DatabaseThread) ProcessDatabaseUpperPing(request *DatabaseRequest) {
 
 	if GetConfigInstance().Debug {
 		log.Println("[etl_database] received ping over C1")
 	}
 
-	db.C3 <- MessengerRequest{Action: MessengerPing}
+	messengerPingRequest := MessengerRequest{Action: MessengerUpperPing, Nonce: rand.Uint32()}
+	db.C3 <- messengerPingRequest
+
+	messengerTimeout := false
+	var messengerResponse *MessengerResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+			messengerTimeout = true
+			break
+		}
+
+		if responseEntry, found := db.messengerResponseTable.Lookup(messengerPingRequest.Nonce); found {
+			messengerResponse = (responseEntry).(*MessengerResponse)
+			break
+		}
+	}
+
+	if GetConfigInstance().Debug && (!messengerTimeout || messengerResponse.Success) {
+		log.Println("[etl_database] received ping over C4")
+	}
+
+	db.C2 <- DatabaseResponse{Nonce: request.Nonce, Success: messengerTimeout || messengerResponse.Success}
+}
+
+func (db *DatabaseThread) ProcessDatabaseLowerPing(request *DatabaseRequest) {
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_database] received ping over C7")
+	}
+
+	db.C8 <- DatabaseResponse{Nonce: request.Nonce, Success: true}
 }
 
 func (db *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {
-
+	db.messengerResponseTable.Write(response.Nonce, response)
 }
 
 func (db *DatabaseThread) Teardown() {

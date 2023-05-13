@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"github.com/GabeCordo/etl/components/utils"
 	"net/http"
 	"sync"
 )
@@ -24,6 +25,9 @@ type HttpThread struct {
 
 	databaseResponses   map[uint32]DatabaseResponse
 	supervisorResponses map[uint32]ProvisionerResponse
+
+	provisionerResponseTable *utils.ResponseTable
+	databaseResponseTable    *utils.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
@@ -62,6 +66,9 @@ func NewHttp(channels ...interface{}) (*HttpThread, bool) {
 
 	core.databaseResponses = make(map[uint32]DatabaseResponse)
 	core.supervisorResponses = make(map[uint32]ProvisionerResponse)
+
+	core.provisionerResponseTable = utils.NewResponseTable()
+	core.databaseResponseTable = utils.NewResponseTable()
 
 	core.server = new(http.Server)
 

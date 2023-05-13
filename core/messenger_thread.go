@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/messenger"
+	"log"
 )
 
 var messengerInstance *messenger.Messenger
@@ -64,27 +65,34 @@ func (msg *MessengerThread) Start() {
 }
 
 func (msg *MessengerThread) ProcessIncomingRequest(request *MessengerRequest) {
-	if request.Action == Close {
+	
+	if request.Action == MessengerClose {
 		msg.ProcessCloseLogRequest(request)
-	} else if request.Action == MessengerPing {
+	} else if request.Action == MessengerUpperPing {
 		msg.ProcessMessengerPing(request)
 	} else {
 		msg.ProcessConsoleRequest(request)
 	}
+
 	msg.wg.Done()
 }
 
 func (msg *MessengerThread) ProcessMessengerPing(request *MessengerRequest) {
 
+	if GetConfigInstance().Debug {
+		log.Println("[etl_messenger] received ping over C3")
+	}
+
+	msg.C4 <- MessengerResponse{Nonce: request.Nonce, Success: true}
 }
 
 func (msg *MessengerThread) ProcessConsoleRequest(request *MessengerRequest) {
 	messengerInstance := GetMessengerInstance()
 
 	var priority messenger.MessagePriority
-	if request.Action == Log {
+	if request.Action == MessengerLog {
 		priority = messenger.Log
-	} else if request.Action == Warning {
+	} else if request.Action == MessengerWarning {
 		priority = messenger.Warning
 	} else {
 		priority = messenger.Fatal

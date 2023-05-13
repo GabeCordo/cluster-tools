@@ -2,16 +2,18 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/database"
+	"github.com/GabeCordo/etl/components/utils"
 	"sync"
 )
 
 type DatabaseAction uint8
 
 const (
-	Store        DatabaseAction = 0
-	Fetch                       = 2
-	Delete                      = 3
-	DatabasePing                = 4
+	DatabaseStore DatabaseAction = iota
+	DatabaseFetch
+	DatabaseDelete
+	DatabaseUpperPing
+	DatabaseLowerPing
 )
 
 type DatabaseRequest struct {
@@ -40,6 +42,8 @@ type DatabaseThread struct {
 
 	C7 <-chan DatabaseRequest  // Database is receiving core from the Supervisor
 	C8 chan<- DatabaseResponse // Database is sending responses to the Supervisor
+
+	messengerResponseTable *utils.ResponseTable
 
 	accepting bool
 	wg        sync.WaitGroup
@@ -77,6 +81,8 @@ func NewDatabase(channels ...interface{}) (*DatabaseThread, bool) {
 	if !ok {
 		return nil, ok
 	}
+
+	database.messengerResponseTable = utils.NewResponseTable()
 
 	return database, ok
 }

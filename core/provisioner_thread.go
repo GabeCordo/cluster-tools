@@ -4,6 +4,7 @@ import (
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -81,15 +82,15 @@ func (provisionerThread *ProvisionerThread) Start() {
 func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request ProvisionerRequest) {
 	provisionerInstance := GetProvisionerInstance()
 
-	if request.Action == Mount {
+	if request.Action == ProvisionerMount {
 		provisionerInstance.Mount(request.Cluster)
 		log.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.Cluster, utils.Reset)
 		provisionerThread.wg.Done()
-	} else if request.Action == UnMount {
+	} else if request.Action == ProvisionerUnMount {
 		provisionerInstance.UnMount(request.Cluster)
 		log.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.Cluster, utils.Reset)
 		provisionerThread.wg.Done()
-	} else if request.Action == Provision {
+	} else if request.Action == ProvisionerProvision {
 		if !provisionerInstance.IsMounted(request.Cluster) {
 			log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.Cluster, utils.Reset)
 			provisionerThread.wg.Done()
@@ -142,11 +143,11 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 			// given to the cluster for grouping purposes
 			if len(supervisor.Config.Identifier) != 0 {
 				// saves statistics to the database thread
-				dbRequest := DatabaseRequest{Action: Store, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
+				dbRequest := DatabaseRequest{Action: DatabaseStore, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
 				provisionerThread.C7 <- dbRequest
 
 				// sends a completion message to the messenger thread to write to a log file or send an email regarding completion
-				msgRequest := MessengerRequest{Action: Close, Cluster: supervisor.Config.Identifier}
+				msgRequest := MessengerRequest{Action: MessengerClose, Cluster: supervisor.Config.Identifier}
 				provisionerThread.C11 <- msgRequest
 
 				// provide the console with output indicating that the cluster has completed
@@ -170,23 +171,89 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request Prov
 			// the provisioned cluster to complete before allowing the etl-framework to shut down
 			provisionerThread.wg.Done()
 		}()
-	} else if request.Action == Teardown {
+	} else if request.Action == ProvisionerTeardown {
 		// TODO - not implemented
-	} else if request.Action == ProvisionerPing {
+	} else if request.Action == ProvisionerLowerPing {
 		provisionerThread.ProcessPingProvisionerRequest(&request)
 	}
 }
 
 func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *ProvisionerRequest) {
 
+	if GetConfigInstance().Debug {
+		log.Println("[etl_provisioner] received ping over C5")
+	}
+
+	databaseRequest := DatabaseRequest{Action: DatabaseLowerPing, Nonce: rand.Uint32()}
+	provisionerThread.C7 <- databaseRequest
+
+	databasePingTimeout := false
+	var databaseResponse DatabaseResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+			databasePingTimeout = true
+			break
+		}
+
+		if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
+			databaseResponse = (responseEntry).(DatabaseResponse)
+			break
+		}
+	}
+
+	if databasePingTimeout || !databaseResponse.Success {
+		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_provisioner] received ping over C8")
+	}
+
+	cacheRequest := CacheRequest{Action: CacheLowerPing, Nonce: rand.Uint32()}
+	provisionerThread.C9 <- cacheRequest
+
+	cachePingTimeout := false
+	var cacheResponse CacheResponse
+
+	timestamp2 := time.Now()
+	for {
+		if time.Now().Sub(timestamp2).Seconds() > 2.0 {
+			cachePingTimeout = true
+			break
+		}
+
+		if response, found := provisionerThread.cacheResponseTable.Lookup(cacheRequest.Nonce); found {
+			cacheResponse = (response).(CacheResponse)
+			break
+		}
+	}
+
+	if cachePingTimeout || !cacheResponse.Success {
+		log.Println("[etl_provisioner] failed to receive ping over C10")
+		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_provisioner] received ping over C10")
+	}
+
+	provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: true}
+
+	provisionerThread.wg.Done()
 }
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {
-	GetDatabaseMemoryInstance().SendDatabaseResponseEvent(response.Nonce, response)
+	provisionerThread.databaseResponseTable.Write(response.Nonce, response)
 }
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {
-	GetProvisionerMemoryInstance().SendCacheResponseEvent(response.Nonce, response)
+	provisionerThread.cacheResponseTable.Write(response.Nonce, response)
 }
 
 func (provisionerThread *ProvisionerThread) Teardown() {

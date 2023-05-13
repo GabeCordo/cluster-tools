@@ -8,13 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
-
-type ApiHandler struct{}
-
-func (api ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("test")
-}
 
 type JSONResponse struct {
 	Status      int    `json:"status"`
@@ -192,6 +187,11 @@ type DebugJSONBody struct {
 	Action string `json:"action"`
 }
 
+type DebugJSONResponse struct {
+	Duration time.Duration `json:"time-elapsed"`
+	Success  bool          `json:"success"`
+}
+
 func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Request) {
 
 	var request DebugJSONBody
@@ -204,6 +204,18 @@ func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Reque
 	if r.Method == "POST" {
 		if request.Action == "shutdown" {
 			httpThread.ShutdownNode(request)
+		} else if request.Action == "ping" {
+			startTime := time.Now()
+			success := httpThread.PingNodeChannels()
+			response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
+			bytes, err := json.Marshal(response)
+			if err == nil {
+				if _, err := w.Write(bytes); err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 		}
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)

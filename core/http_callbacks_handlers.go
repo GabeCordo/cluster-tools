@@ -1,9 +1,9 @@
 package core
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
+	"log"
 	"math/rand"
 	"time"
 )
@@ -14,7 +14,7 @@ import (
 
 func (httpThread *HttpThread) ClusterMount(cluster string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: Mount}
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerMount}
 	httpThread.C5 <- provisionerThreadRequest
 
 	return true
@@ -22,7 +22,7 @@ func (httpThread *HttpThread) ClusterMount(cluster string) (success bool) {
 
 func (httpThread *HttpThread) ClusterUnMount(cluster string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: UnMount}
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerUnMount}
 	httpThread.C5 <- provisionerThreadRequest
 
 	return true
@@ -30,7 +30,7 @@ func (httpThread *HttpThread) ClusterUnMount(cluster string) (success bool) {
 
 func (httpThread *HttpThread) ClusterProvision(cluster string) (supervisorId uint64, success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: Provision}
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerProvision}
 	httpThread.C5 <- provisionerThreadRequest
 
 	timeout := false
@@ -43,7 +43,7 @@ func (httpThread *HttpThread) ClusterProvision(cluster string) (supervisorId uin
 			break
 		}
 
-		if responseEntry, found := GetProvisionerResponseTable().Lookup(provisionerThreadRequest.Nonce); found {
+		if responseEntry, found := httpThread.provisionerResponseTable.Lookup(provisionerThreadRequest.Nonce); found {
 			provisionerResponse = (responseEntry).(ProvisionerResponse)
 			break
 		}
@@ -97,7 +97,7 @@ func (httpThread *HttpThread) SupervisorLookup(clusterId string, supervisorId ui
 
 func (httpThread *HttpThread) GetConfig(clusterName string) (config cluster.Config, found bool) {
 
-	databaseRequest := DatabaseRequest{Action: Fetch, Type: database.Config, Nonce: rand.Uint32(), Cluster: clusterName}
+	databaseRequest := DatabaseRequest{Action: DatabaseFetch, Type: database.Config, Nonce: rand.Uint32(), Cluster: clusterName}
 	httpThread.C1 <- databaseRequest
 
 	timeout := false
@@ -110,7 +110,7 @@ func (httpThread *HttpThread) GetConfig(clusterName string) (config cluster.Conf
 			break
 		}
 
-		if responseEntry, found := GetDatabaseResponseTable().Lookup(databaseRequest.Nonce); found {
+		if responseEntry, found := httpThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
 			databaseResponse = (responseEntry).(DatabaseResponse)
 			break
 		}
@@ -125,12 +125,8 @@ func (httpThread *HttpThread) GetConfig(clusterName string) (config cluster.Conf
 
 func (httpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) {
 
-	fmt.Println(config)
-
-	databaseRequest := DatabaseRequest{Action: Store, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
+	databaseRequest := DatabaseRequest{Action: DatabaseStore, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
 	httpThread.C1 <- databaseRequest
-
-	fmt.Println(databaseRequest)
 
 	timeout := false
 	var databaseResponse DatabaseResponse
@@ -142,7 +138,7 @@ func (httpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) 
 			break
 		}
 
-		if responseEntry, found := GetDatabaseResponseTable().Lookup(databaseRequest.Nonce); found {
+		if responseEntry, found := httpThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
 			databaseResponse = (responseEntry).(DatabaseResponse)
 			break
 		}
@@ -157,7 +153,7 @@ func (httpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) 
 
 func (httpThread *HttpThread) FindStatistics(clusterName string) (entries []database.Entry, found bool) {
 
-	databaseRequest := DatabaseRequest{Action: Fetch, Type: database.Statistic, Nonce: rand.Uint32(), Cluster: clusterName}
+	databaseRequest := DatabaseRequest{Action: DatabaseFetch, Type: database.Statistic, Nonce: rand.Uint32(), Cluster: clusterName}
 	httpThread.C1 <- databaseRequest
 
 	timeout := false
@@ -170,7 +166,7 @@ func (httpThread *HttpThread) FindStatistics(clusterName string) (entries []data
 			break
 		}
 
-		if responseEntry, found := GetDatabaseResponseTable().Lookup(databaseRequest.Nonce); found {
+		if responseEntry, found := httpThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
 			databaseResponse = (responseEntry).(DatabaseResponse)
 			break
 		}
@@ -191,4 +187,63 @@ func (httpThread *HttpThread) ShutdownNode(body DebugJSONBody) (response []byte,
 	httpThread.Interrupt <- Shutdown
 
 	return nil, true
+}
+
+func (httpThread *HttpThread) PingNodeChannels() (success bool) {
+
+	databasePingRequest := DatabaseRequest{Action: DatabaseUpperPing, Nonce: rand.Uint32()}
+	httpThread.C1 <- databasePingRequest
+
+	databaseTimeout := false
+	var databaseResponse DatabaseResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+			databaseTimeout = true
+			break
+		}
+
+		if responseEntry, found := httpThread.databaseResponseTable.Lookup(databasePingRequest.Nonce); found {
+			databaseResponse = (responseEntry).(DatabaseResponse)
+			break
+		}
+	}
+
+	if databaseTimeout || !databaseResponse.Success {
+		return false
+	}
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_http] received ping over C2")
+	}
+
+	provisionerPingRequest := ProvisionerRequest{Action: ProvisionerLowerPing, Nonce: rand.Uint32()}
+	httpThread.C5 <- provisionerPingRequest
+
+	provisionerTimeout := false
+	var provisionerResponse ProvisionerResponse
+
+	timestamp2 := time.Now()
+	for {
+		if time.Now().Sub(timestamp2).Seconds() > 2.0 {
+			provisionerTimeout = true
+			break
+		}
+
+		if responseEntry, found := httpThread.provisionerResponseTable.Lookup(provisionerPingRequest.Nonce); found {
+			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			break
+		}
+	}
+
+	if provisionerTimeout || !provisionerResponse.Success {
+		return false
+	}
+
+	if GetConfigInstance().Debug {
+		log.Println("[etl_provisioner] received ping over C6")
+	}
+
+	return true
 }
