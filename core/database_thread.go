@@ -146,7 +146,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *Database
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			messengerTimeout = true
 			break
 		}

@@ -38,7 +38,7 @@ func (httpThread *HttpThread) ClusterProvision(cluster string) (supervisorId uin
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			timeout = true
 			break
 		}
@@ -105,7 +105,7 @@ func (httpThread *HttpThread) GetConfig(clusterName string) (config cluster.Conf
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			timeout = true
 			break
 		}
@@ -133,7 +133,7 @@ func (httpThread *HttpThread) StoreConfig(config cluster.Config) (success bool) 
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			timeout = true
 			break
 		}
@@ -161,7 +161,7 @@ func (httpThread *HttpThread) FindStatistics(clusterName string) (entries []data
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			timeout = true
 			break
 		}
@@ -199,7 +199,7 @@ func (httpThread *HttpThread) PingNodeChannels() (success bool) {
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			databaseTimeout = true
 			break
 		}
@@ -226,7 +226,7 @@ func (httpThread *HttpThread) PingNodeChannels() (success bool) {
 
 	timestamp2 := time.Now()
 	for {
-		if time.Now().Sub(timestamp2).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp2).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			provisionerTimeout = true
 			break
 		}

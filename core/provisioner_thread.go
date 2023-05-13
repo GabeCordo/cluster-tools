@@ -108,7 +108,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			databasePingTimeout = true
 			break
 		}
@@ -137,7 +137,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 
 	timestamp2 := time.Now()
 	for {
-		if time.Now().Sub(timestamp2).Seconds() > 2.0 {
+		if time.Now().Sub(timestamp2).Seconds() > GetConfigInstance().MaxWaitForResponse {
 			cachePingTimeout = true
 			break
 		}

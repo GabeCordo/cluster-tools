@@ -42,7 +42,12 @@ func GetConfigInstance() *Config {
 		for i := range commonConfigPaths {
 			err := JSONToETLConfig(ConfigInstance, commonConfigPaths[i])
 			if err == nil {
-				ConfigInstance.Path = commonConfigPaths[i] // the path we found the config for future reference
+				// the path we found the config for future reference
+				ConfigInstance.Path = commonConfigPaths[i]
+				// if the MaxWaitForResponse is not set, then simply default to 2.0
+				if ConfigInstance.MaxWaitForResponse == 0 {
+					ConfigInstance.MaxWaitForResponse = 2
+				}
 				configFound = true
 				break
 			} else {
