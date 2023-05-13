@@ -126,8 +126,8 @@ func (core *Core) Run() {
 	fmt.Println("  |___|   _|_|_   |____|")
 	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
 	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
-	fmt.Println("[+] " + utils.Purple + " Extract Transform Load Framework " + utils.Reset + Version)
-	fmt.Println("[+]" + utils.Purple + " by Stockmint 2022-23" + utils.Reset)
+	fmt.Println("[+] " + utils.Purple + "Extract Transform Load Framework " + utils.Reset + Version)
+	fmt.Println("[+]" + utils.Purple + " by Gabriel Cordovado 2022-23" + utils.Reset)
 	fmt.Println()
 
 	// needed in-case the proceeding core need logging or email capabilities during startup

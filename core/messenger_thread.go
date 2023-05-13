@@ -32,61 +32,66 @@ func GetMessengerInstance() *messenger.Messenger {
 	return messengerInstance
 }
 
-func (msg *MessengerThread) Setup() {
-	msg.accepting = true
+func (messengerThread *MessengerThread) Setup() {
+	messengerThread.accepting = true
 }
 
-func (msg *MessengerThread) Start() {
+func (messengerThread *MessengerThread) Start() {
 	// as long as a teardown has not been called, continue looping
 
 	go func() {
 		// request coming from database
-		for request := range msg.C3 {
-			if !msg.accepting {
+		for request := range messengerThread.C3 {
+			if !messengerThread.accepting {
 				break
 			}
-			msg.wg.Add(1)
-			msg.ProcessIncomingRequest(&request)
+			messengerThread.wg.Add(1)
+			messengerThread.ProcessIncomingRequest(&request)
 		}
 	}()
 
 	go func() {
 		// request coming from provisioner
-		for request := range msg.C11 {
-			if !msg.accepting {
+		for request := range messengerThread.C11 {
+			if !messengerThread.accepting {
 				break
 			}
-			msg.wg.Add(1)
-			msg.ProcessIncomingRequest(&request)
+			messengerThread.wg.Add(1)
+			messengerThread.ProcessIncomingRequest(&request)
 		}
 	}()
 
-	msg.wg.Wait()
+	messengerThread.wg.Wait()
 }
 
-func (msg *MessengerThread) ProcessIncomingRequest(request *MessengerRequest) {
-	
+func (messengerThread *MessengerThread) Send(module Module, response *MessengerResponse) {
+
+	messengerThread.C4 <- *response
+}
+
+func (messengerThread *MessengerThread) ProcessIncomingRequest(request *MessengerRequest) {
+
 	if request.Action == MessengerClose {
-		msg.ProcessCloseLogRequest(request)
+		messengerThread.ProcessCloseLogRequest(request)
 	} else if request.Action == MessengerUpperPing {
-		msg.ProcessMessengerPing(request)
+		messengerThread.ProcessMessengerPing(request)
 	} else {
-		msg.ProcessConsoleRequest(request)
+		messengerThread.ProcessConsoleRequest(request)
 	}
 
-	msg.wg.Done()
+	messengerThread.wg.Done()
 }
 
-func (msg *MessengerThread) ProcessMessengerPing(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessMessengerPing(request *MessengerRequest) {
 
 	if GetConfigInstance().Debug {
 		log.Println("[etl_messenger] received ping over C3")
 	}
 
-	msg.C4 <- MessengerResponse{Nonce: request.Nonce, Success: true}
+	messengerThread.C4 <- MessengerResponse{Nonce: request.Nonce, Success: true}
 }
 
-func (msg *MessengerThread) ProcessConsoleRequest(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessConsoleRequest(request *MessengerRequest) {
 	messengerInstance := GetMessengerInstance()
 
 	var priority messenger.MessagePriority
@@ -101,13 +106,13 @@ func (msg *MessengerThread) ProcessConsoleRequest(request *MessengerRequest) {
 	messengerInstance.Log(request.Cluster, request.Message, priority)
 }
 
-func (msg *MessengerThread) ProcessCloseLogRequest(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessCloseLogRequest(request *MessengerRequest) {
 	messenger := GetMessengerInstance()
 	messenger.Complete(request.Cluster)
 }
 
-func (msg *MessengerThread) Teardown() {
-	msg.accepting = false
+func (messengerThread *MessengerThread) Teardown() {
+	messengerThread.accepting = false
 
-	msg.wg.Wait()
+	messengerThread.wg.Wait()
 }
