@@ -12,14 +12,16 @@ import (
 )
 
 type JSONResponse struct {
-	Status      int    `json:"status"`
-	Description string `json:"description"`
-	Data        any    `json:"data"`
+	Status      int    `json:"status,omitempty"`
+	Description string `json:"description,omitempty"`
+	Data        any    `json:"data,omitempty"`
 }
 
 type ClusterConfigJSONBody struct {
-	Cluster string `json:"cluster"`
-	Mounted bool   `json:"mounted"`
+	Cluster     string  `json:"cluster"`
+	Version     float64 `json:"version,omitempty"`
+	Mounted     bool    `json:"mounted"`
+	DynamicPath string  `json:"dynamic-path,omitempty"`
 }
 
 func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +35,8 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 	}
 
 	if r.Method == "GET" {
-		if cluster, success := httpThread.ClusterList(); success {
-			bytes, _ := json.Marshal(cluster)
+		if clusterList, success := ClusterList(); success {
+			bytes, _ := json.Marshal(clusterList)
 			if _, err := w.Write(bytes); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
@@ -43,9 +45,25 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 		}
 	} else if r.Method == "PUT" {
 		if request.Mounted {
-			httpThread.ClusterMount(request.Cluster)
+			ClusterMount(httpThread.C5, request.Cluster)
 		} else {
-			httpThread.ClusterUnMount(request.Cluster)
+			ClusterUnMount(httpThread.C5, request.Cluster)
+		}
+	} else if r.Method == "POST" {
+		success, description := DynamicallyRegisterCluster(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster, request.DynamicPath)
+		if !success {
+			response := &JSONResponse{Description: description}
+			bytes, _ := json.Marshal(response)
+			if _, err := w.Write(bytes); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+		}
+	} else if r.Method == "DELETE" {
+		success := DynamicallyDeleteCluster(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster)
+		if !success {
+			w.WriteHeader(http.StatusNotFound)
 		}
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -53,15 +71,14 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 }
 
 type SupervisorConfigJSONBody struct {
-	//Action     string `json:"action"`
-	//Scope      string `json:"scope"`
 	Cluster    string `json:"cluster"`
-	Supervisor uint64 `json:"id"`
+	Config     string `json:"config"`
+	Supervisor uint64 `json:"id,omitempty"`
 }
 
 type SupervisorProvisionJSONResponse struct {
-	Cluster    string `json:"cluster"`
-	Supervisor uint64 `json:"id"`
+	Cluster    string `json:"cluster,omitempty"`
+	Supervisor uint64 `json:"id,omitempty"`
 }
 
 func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +103,7 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 			if supervisorId, err := strconv.ParseUint(supervisorIdStr[0], 10, 64); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 			} else {
-				if supervisor, found := httpThread.SupervisorLookup(clusterName[0], supervisorId); found {
+				if supervisor, found := SupervisorLookup(clusterName[0], supervisorId); found {
 					bytes, _ := json.Marshal(supervisor)
 					if _, err := w.Write(bytes); err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +114,7 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 			}
 		}
 	} else if r.Method == "POST" {
-		if supervisorId, success := httpThread.ClusterProvision(request.Cluster); success {
+		if supervisorId, success := SupervisorProvision(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster); success {
 			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
 			bytes, _ := json.Marshal(response)
 			if _, err := w.Write(bytes); err != nil {
@@ -129,7 +146,7 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 		clusterName, foundClusterName := urlMapping["cluster"]
 		if foundClusterName {
-			if config, found := httpThread.GetConfig(clusterName[0]); found {
+			if config, found := GetConfigFromDatabase(httpThread.C1, httpThread.databaseResponseTable, clusterName[0]); found {
 				bytes, _ := json.Marshal(config)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -143,11 +160,16 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 	} else if r.Method == "POST" {
 
-		isOk := httpThread.StoreConfig(*request)
+		isOk := StoreConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, *request)
+		if !isOk {
+			w.WriteHeader(http.StatusConflict)
+		}
+
+	} else if r.Method == "PUT" {
+		isOk := ReplaceConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, *request)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -162,7 +184,7 @@ func (httpThread *HttpThread) statisticCallback(w http.ResponseWriter, r *http.R
 
 		clusterName, clusterNameFound := urlMapping["cluster"]
 		if clusterNameFound {
-			statistics, found := httpThread.FindStatistics(clusterName[0])
+			statistics, found := FindStatistics(httpThread.C1, httpThread.databaseResponseTable, clusterName[0])
 			if found {
 				bytes, err := json.Marshal(statistics)
 				if err == nil {
@@ -203,10 +225,10 @@ func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Reque
 
 	if r.Method == "POST" {
 		if request.Action == "shutdown" {
-			httpThread.ShutdownNode(request)
+			ShutdownNode(httpThread.Interrupt)
 		} else if request.Action == "ping" {
 			startTime := time.Now()
-			success := httpThread.PingNodeChannels()
+			success := PingNodeChannels(httpThread.C1, httpThread.databaseResponseTable, httpThread.C5, httpThread.provisionerResponseTable)
 			response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
 			bytes, err := json.Marshal(response)
 			if err == nil {

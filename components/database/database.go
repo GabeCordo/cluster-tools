@@ -68,6 +68,20 @@ func (db *Database) StoreClusterConfig(config cluster.Config) bool {
 	return true
 }
 
+func (db *Database) ReplaceClusterConfig(config cluster.Config) bool {
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	if _, found := db.Configs[config.Identifier]; !found {
+		return false
+	}
+
+	db.Configs[config.Identifier] = config
+
+	return true
+}
+
 func (db *Database) GetClusterConfig(cluster string) (config *cluster.Config, found bool) {
 
 	if config, found := db.Configs[cluster]; !found {

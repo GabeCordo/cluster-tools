@@ -1,7 +1,8 @@
-package cluster
+package supervisor
 
 import (
 	"github.com/GabeCordo/etl/components/channel"
+	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/fack"
 	"time"
 )
@@ -12,19 +13,26 @@ const (
 	DefaultChannelGrowthFactor    = 2
 )
 
-func NewSupervisor(cluster Cluster) *Supervisor {
+func NewSupervisor(clusterImplementation cluster.Cluster) *Supervisor {
 	supervisor := new(Supervisor)
 
-	supervisor.group = cluster
-	supervisor.Config = NewConfig(fack.EmptyString, DefaultChannelThreshold, DefaultChannelGrowthFactor, DefaultChannelThreshold, DefaultChannelGrowthFactor, DoNothing)
-	supervisor.Stats = NewStatistics()
+	supervisor.group = clusterImplementation
+	supervisor.Config = cluster.Config{
+		fack.EmptyString,
+		DefaultChannelThreshold,
+		DefaultChannelGrowthFactor,
+		DefaultChannelThreshold,
+		DefaultChannelGrowthFactor,
+		DefaultChannelGrowthFactor,
+	}
+	supervisor.Stats = cluster.NewStatistics()
 	supervisor.etChannel = channel.NewManagedChannel(supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
 	supervisor.tlChannel = channel.NewManagedChannel(supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
 
 	return supervisor
 }
 
-func NewCustomSupervisor(cluster Cluster, config *Config) *Supervisor {
+func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.Config) *Supervisor {
 	supervisor := new(Supervisor)
 
 	/**
@@ -34,9 +42,9 @@ func NewCustomSupervisor(cluster Cluster, config *Config) *Supervisor {
 	 *       that "self improves" if the output of the monitor is looped back
 	 */
 
-	supervisor.group = cluster
+	supervisor.group = clusterImplementation
 	supervisor.Config = config
-	supervisor.Stats = NewStatistics()
+	supervisor.Stats = cluster.NewStatistics()
 	supervisor.etChannel = channel.NewManagedChannel(config.ETChannelThreshold, config.ETChannelGrowthFactor)
 	supervisor.tlChannel = channel.NewManagedChannel(config.TLChannelThreshold, config.TLChannelGrowthFactor)
 
@@ -78,7 +86,7 @@ func (supervisor *Supervisor) Event(event Event) bool {
 	return true // represents a boolean ~ hasStateChanged?
 }
 
-func (supervisor *Supervisor) Start() *Response {
+func (supervisor *Supervisor) Start() *cluster.Response {
 	supervisor.Event(Startup)
 	defer supervisor.Event(TearedDown)
 
@@ -87,9 +95,9 @@ func (supervisor *Supervisor) Start() *Response {
 	supervisor.StartTime = time.Now()
 
 	// start creating the default frontend goroutines
-	supervisor.Provision(Extract)
-	supervisor.Provision(Transform)
-	supervisor.Provision(Load)
+	supervisor.Provision(cluster.Extract)
+	supervisor.Provision(cluster.Transform)
+	supervisor.Provision(cluster.Load)
 	// end creating the default frontend goroutines
 
 	// every N seconds we should check if the etChannel or tlChannel is congested
@@ -98,7 +106,7 @@ func (supervisor *Supervisor) Start() *Response {
 
 	supervisor.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
-	response := NewResponse(supervisor.Config, supervisor.Stats, time.Now().Sub(supervisor.StartTime))
+	response := cluster.NewResponse(supervisor.Config, supervisor.Stats, time.Now().Sub(supervisor.StartTime))
 	return response
 }
 
@@ -109,7 +117,7 @@ func (supervisor *Supervisor) Runtime() {
 			supervisor.Stats.NumEtThresholdBreaches++
 			n := supervisor.Stats.NumProvisionedTransformRoutes
 			for n > 0 {
-				supervisor.Provision(Transform)
+				supervisor.Provision(cluster.Transform)
 				n--
 			}
 			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.etChannel.Config.GrowthFactor
@@ -120,7 +128,7 @@ func (supervisor *Supervisor) Runtime() {
 			supervisor.Stats.NumTlThresholdBreaches++
 			n := supervisor.Stats.NumProvisionedLoadRoutines
 			for n > 0 {
-				supervisor.Provision(Load)
+				supervisor.Provision(cluster.Load)
 				n--
 			}
 			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.tlChannel.Config.GrowthFactor
@@ -131,17 +139,17 @@ func (supervisor *Supervisor) Runtime() {
 	}
 }
 
-func (supervisor *Supervisor) Provision(segment Segment) {
+func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 	supervisor.Event(StartProvision)
 	defer supervisor.Event(EndProvision)
 
 	go func() {
 		switch segment {
-		case Extract:
+		case cluster.Extract:
 			supervisor.Stats.NumProvisionedExtractRoutines++
 			supervisor.group.ExtractFunc(supervisor.etChannel.Channel)
 			break
-		case Transform: // transform
+		case cluster.Transform: // transform
 			supervisor.Stats.NumProvisionedTransformRoutes++
 			supervisor.group.TransformFunc(supervisor.etChannel.Channel, supervisor.tlChannel.Channel)
 			break

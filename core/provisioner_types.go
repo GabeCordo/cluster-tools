@@ -9,6 +9,8 @@ type SupervisorAction int8
 
 const (
 	ProvisionerProvision SupervisorAction = iota
+	ProvisionerDynamicLoad
+	ProvisionerDynamicDelete
 	ProvisionerMount
 	ProvisionerUnMount
 	ProvisionerTeardown
@@ -19,13 +21,17 @@ type ProvisionerRequest struct {
 	Action     SupervisorAction `json:"Action"`
 	Nonce      uint32           `json:"Nonce"`
 	Cluster    string           `json:"cluster"`
-	Parameters []string         `json:"parameters"`
+	Mount      bool             `json:"mount,omitempty"`
+	Config     string           `json:"config,omitempty"`
+	Path       string           `json:"path,omitempty"`
+	Parameters []string         `json:"parameters,omitempty"`
 }
 
 type ProvisionerResponse struct {
 	Nonce        uint32 `json:"nonce"`
 	Success      bool   `json:"success"`
 	Cluster      string `json:"cluster"`
+	Description  string `json:"description"`
 	SupervisorId uint64 `json:"supervisor-id"`
 }
 

@@ -11,6 +11,7 @@ type DatabaseAction uint8
 const (
 	DatabaseStore DatabaseAction = iota
 	DatabaseFetch
+	DatabaseReplace
 	DatabaseDelete
 	DatabaseUpperPing
 	DatabaseLowerPing

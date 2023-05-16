@@ -30,6 +30,7 @@ func (databaseThread *DatabaseThread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
+			request.Origin = Http
 			databaseThread.wg.Add(1)
 			databaseThread.ProcessIncomingRequest(&request)
 		}
@@ -40,6 +41,7 @@ func (databaseThread *DatabaseThread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
+			request.Origin = Provisioner
 			databaseThread.wg.Add(1)
 			databaseThread.ProcessIncomingRequest(&request)
 		}
@@ -118,6 +120,14 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 					databaseThread.Send(request, &response)
 				}
 			}
+		}
+	case DatabaseReplace:
+		{
+			config := (request.Data).(cluster.Config)
+			success := d.ReplaceClusterConfig(config)
+			response := DatabaseResponse{Success: success, Nonce: request.Nonce}
+
+			databaseThread.Send(request, &response)
 		}
 	case DatabaseUpperPing:
 		{

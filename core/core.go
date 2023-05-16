@@ -246,10 +246,12 @@ func (core *Core) Run() {
 }
 
 func (core *Core) Cluster(identifier string, cluster cluster.Cluster, config ...cluster.Config) {
+
 	p := GetProvisionerInstance()
-	if len(config) > 0 {
-		p.Register(identifier, cluster, config[0])
-	} else {
-		p.Register(identifier, cluster)
+	p.Register(identifier, cluster)
+
+	if len(config) == 1 {
+		d := GetDatabaseInstance()
+		d.StoreClusterConfig(config[0])
 	}
 }

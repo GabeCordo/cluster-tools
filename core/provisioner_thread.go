@@ -1,10 +1,15 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl/components/provisioner"
+	"github.com/GabeCordo/etl/components/supervisor"
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"math/rand"
+	"plugin"
+	"strings"
 	"time"
 )
 
@@ -12,14 +17,14 @@ const (
 	DefaultHardTerminateTime = 30 // minutes
 )
 
-var provisioner *cluster.Provisioner
+var provisionerInstance *provisioner.Provisioner
 
-func GetProvisionerInstance() *cluster.Provisioner {
+func GetProvisionerInstance() *provisioner.Provisioner {
 
-	if provisioner == nil {
-		provisioner = cluster.NewProvisioner()
+	if provisionerInstance == nil {
+		provisionerInstance = provisioner.NewProvisioner()
 	}
-	return provisioner
+	return provisionerInstance
 }
 
 func (provisionerThread *ProvisionerThread) Setup() {
@@ -91,6 +96,10 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *Pro
 		// TODO - not implemented
 	} else if request.Action == ProvisionerLowerPing {
 		provisionerThread.ProcessPingProvisionerRequest(request)
+	} else if request.Action == ProvisionerDynamicLoad {
+		provisionerThread.ProcessDynamicClusterLoad(request)
+	} else if request.Action == ProvisionerDynamicDelete {
+		provisionerThread.ProcessDynamicClusterDelete(request)
 	}
 }
 
@@ -192,70 +201,76 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 
 	if !provisionerInstance.IsMounted(request.Cluster) {
 		log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.Cluster, utils.Reset)
+		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	} else {
 		log.Printf("%s[%s]%s Provisioning cluster\n", utils.Green, request.Cluster, utils.Reset)
 	}
 
-	clstr, cnfg, register, ok := provisionerInstance.Function(request.Cluster)
+	clusterInstance, registerInstance, ok := provisionerInstance.Function(request.Cluster)
 	if !ok {
 		log.Printf("%s[%s]%s There is a corrupted cluster in the supervisor\n", utils.Green, request.Cluster, utils.Reset)
+		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
 
-	var supervisor *cluster.Supervisor
-	if cnfg == nil {
-		log.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.Cluster, utils.Reset)
-		supervisor = cluster.NewSupervisor(*clstr)
+	var lookupConfig string
+	if request.Config == "" {
+		lookupConfig = request.Config
 	} else {
-		log.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.Cluster, utils.Reset)
-		supervisor = cluster.NewCustomSupervisor(*clstr, cnfg)
+		lookupConfig = request.Cluster
 	}
-	log.Printf("%s[%s]%s Registering supervisor(%d) to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisor.Id, request.Cluster)
-	register.Register(supervisor)
-	log.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisor.Id, request.Cluster)
+
+	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, lookupConfig)
+
+	fmt.Println(configFound)
+
+	var supervisorInstance *supervisor.Supervisor
+	if configFound {
+		log.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.Cluster, utils.Reset)
+		supervisorInstance = supervisor.NewCustomSupervisor(clusterInstance, config)
+	} else {
+		log.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.Cluster, utils.Reset)
+		supervisorInstance = supervisor.NewSupervisor(clusterInstance)
+	}
+
+	log.Printf("%s[%s]%s Registering supervisor(%d) to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisorInstance.Id, request.Cluster)
+	registerInstance.Register(supervisorInstance)
+	log.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisorInstance.Id, request.Cluster)
 
 	provisionerThread.C6 <- ProvisionerResponse{
 		Nonce:        request.Nonce,
 		Success:      true,
 		Cluster:      request.Cluster,
-		SupervisorId: supervisor.Id,
+		SupervisorId: supervisorInstance.Id,
 	}
 
 	log.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.Cluster, utils.Reset)
 
 	go func() {
-		var response *cluster.Response
-
-		c := make(chan struct{})
-		go func() {
-			defer close(c)
-			response = supervisor.Start()
-		}()
-
 		// block until the supervisor completes
-		<-c
+		response := supervisorInstance.Start()
 
 		// don't send the statistics of the cluster to the database unless an Identifier has been
 		// given to the cluster for grouping purposes
-		if len(supervisor.Config.Identifier) != 0 {
+		if len(supervisorInstance.Config.Identifier) != 0 {
 			// saves statistics to the database thread
-			dbRequest := DatabaseRequest{Action: DatabaseStore, Origin: Provisioner, Cluster: supervisor.Config.Identifier, Data: response}
+			dbRequest := DatabaseRequest{Action: DatabaseStore, Origin: Provisioner, Cluster: supervisorInstance.Config.Identifier, Data: response}
 			provisionerThread.C7 <- dbRequest
 
 			// sends a completion message to the messenger thread to write to a log file or send an email regarding completion
-			msgRequest := MessengerRequest{Action: MessengerClose, Cluster: supervisor.Config.Identifier}
+			msgRequest := MessengerRequest{Action: MessengerClose, Cluster: supervisorInstance.Config.Identifier}
 			provisionerThread.C11 <- msgRequest
 
 			// provide the console with output indicating that the cluster has completed
 			// we already provide output when a cluster is provisioned, so it completes the state
 			if GetConfigInstance().Debug {
-				duration := time.Now().Sub(supervisor.StartTime)
+				duration := time.Now().Sub(supervisorInstance.StartTime)
 				log.Printf("%s[%s]%s Cluster transformations complete, took %dhr %dm %ds %dms %dus\n",
 					utils.Green,
-					supervisor.Config.Identifier,
+					supervisorInstance.Config.Identifier,
 					utils.Reset,
 					int(duration.Hours()),
 					int(duration.Minutes()),
@@ -270,6 +285,74 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		// the provisioned cluster to complete before allowing the etl-framework to shut down
 		provisionerThread.wg.Done()
 	}()
+}
+
+func (provisionerThread *ProvisionerThread) ProcessDynamicClusterLoad(request *ProvisionerRequest) {
+
+	response := ProvisionerResponse{Nonce: request.Nonce}
+	if (len(request.Path) == 0) || (len(request.Cluster) == 0) {
+		response.Success = false
+		response.Description = "missing dynamic path or cluster identifier"
+		provisionerThread.wg.Done()
+		return
+	}
+
+	if _, _, found := GetProvisionerInstance().Function(request.Cluster); found {
+		response.Success = false
+		response.Description = "a cluster with that identifier already exists"
+		provisionerThread.C6 <- response
+		provisionerThread.wg.Done()
+		return
+	}
+
+	dynamicClusterPlugin, err := plugin.Open(request.Path)
+	if err != nil {
+		response.Description = err.Error()
+		response.Success = false
+		provisionerThread.C6 <- response
+		provisionerThread.wg.Done()
+		return
+	}
+
+	symbol, err := dynamicClusterPlugin.Lookup(request.Cluster)
+	if err != nil {
+		response.Description = err.Error()
+		response.Success = false
+		provisionerThread.C6 <- response
+		provisionerThread.wg.Done()
+		return
+	}
+
+	dynamicallyLoadedCluster := symbol.(cluster.Cluster)
+
+	GetProvisionerInstance().Register(strings.ToLower(request.Cluster), dynamicallyLoadedCluster)
+
+	log.Printf("[provisioner] dynamically registered cluster %s\n", request.Cluster)
+
+	if request.Mount {
+		GetProvisionerInstance().Mount(strings.ToLower(request.Cluster))
+		log.Printf("[provisioner] dynamically mounted cluster %s\n", request.Cluster)
+	}
+
+	response.Success = true
+	provisionerThread.C6 <- response
+
+	provisionerThread.wg.Done()
+}
+
+func (provisionerThread *ProvisionerThread) ProcessDynamicClusterDelete(request *ProvisionerRequest) {
+
+	success := GetProvisionerInstance().UnRegister(request.Cluster)
+
+	if GetConfigInstance().Debug && success {
+		log.Printf("[provisioner] un-registered cluster %s\n", request.Cluster)
+	} else if GetConfigInstance().Debug {
+		log.Printf("[provisioner] failed to un-registered cluster %s\n", request.Cluster)
+	}
+
+	provisionerThread.C6 <- ProvisionerResponse{Success: success, Nonce: request.Nonce}
+
+	provisionerThread.wg.Done()
 }
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {
