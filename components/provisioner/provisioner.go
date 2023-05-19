@@ -8,8 +8,6 @@ import (
 func NewProvisioner() *Provisioner {
 	provisioner := new(Provisioner)
 
-	provisioner.RegisteredFunctions = make(map[string]cluster.Cluster)
-	provisioner.OperationalFunctions = make(map[string]*cluster.Cluster)
 	provisioner.Registries = make(map[string]*supervisor.Registry)
 
 	return provisioner
@@ -19,13 +17,11 @@ func (provisioner *Provisioner) Register(function string, cluster cluster.Cluste
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	if _, found := provisioner.RegisteredFunctions[function]; found {
+	if _, found := provisioner.Registries[function]; found {
 		return false
 	}
 
-	provisioner.RegisteredFunctions[function] = cluster
-
-	provisioner.Registries[function] = supervisor.NewRegistry()
+	provisioner.Registries[function] = supervisor.NewRegistry(function, cluster)
 
 	return true
 }
@@ -34,31 +30,22 @@ func (provisioner *Provisioner) UnRegister(function string) bool {
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	if _, found := provisioner.RegisteredFunctions[function]; !found {
-		return false
-	}
-
-	delete(provisioner.RegisteredFunctions, function)
-
-	if _, found := provisioner.OperationalFunctions[function]; found {
-		delete(provisioner.OperationalFunctions, function)
+	if registry, found := provisioner.Registries[function]; found {
+		registry.Event(cluster.Delete)
 	}
 
 	return true
 }
 
-func (provisioner *Provisioner) Function(identifier string) (cluster.Cluster, *supervisor.Registry, bool) {
+func (provisioner *Provisioner) Function(identifier string) (cluster.Cluster, bool) {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	if _, found := provisioner.OperationalFunctions[identifier]; !found {
-		return nil, nil, false
+	if registry, found := provisioner.Registries[identifier]; found && registry.IsMounted() {
+		return registry.GetClusterImplementation(), true
+	} else {
+		return nil, false
 	}
-
-	clusterInstance := provisioner.OperationalFunctions[identifier]
-	registryInstance := provisioner.Registries[identifier]
-
-	return *clusterInstance, registryInstance, true
 }
 
 func (provisioner *Provisioner) Mount(identifier string) bool {
@@ -66,37 +53,31 @@ func (provisioner *Provisioner) Mount(identifier string) bool {
 	defer provisioner.mutex.Unlock()
 
 	// if the function has already been mounted and is in an operational state, we don't need to do anything
-	if _, found := provisioner.OperationalFunctions[identifier]; found {
-		return true
-	}
-
 	// if the function is not mounted, but exists as a registered function, mount it so that it can be provisioned
-	if clusterInstance, found := provisioner.RegisteredFunctions[identifier]; found {
-		provisioner.OperationalFunctions[identifier] = &clusterInstance
+	if registry, found := provisioner.Registries[identifier]; found {
+		registry.Event(cluster.Mount)
+		return true
 	} else {
 		return false
 	}
-
-	return true
 }
 
 func (provisioner *Provisioner) UnMount(identifier string) bool {
 
-	if _, found := provisioner.OperationalFunctions[identifier]; !found {
+	if registry, found := provisioner.Registries[identifier]; found {
+		registry.Event(cluster.UnMount)
+		return true
+	} else {
 		return false
 	}
-
-	delete(provisioner.OperationalFunctions, identifier)
-
-	return true
 }
 
 func (provisioner *Provisioner) IsMounted(identifier string) bool {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	_, found := provisioner.OperationalFunctions[identifier]
-	return found
+	registry, found := provisioner.Registries[identifier]
+	return found && registry.IsMounted()
 }
 
 func (provisioner *Provisioner) Mounts() map[string]bool {
@@ -104,12 +85,8 @@ func (provisioner *Provisioner) Mounts() map[string]bool {
 	defer provisioner.mutex.RUnlock()
 
 	mounts := make(map[string]bool)
-	for identifier := range provisioner.RegisteredFunctions {
-		mounts[identifier] = false
-	}
-
-	for identifier := range provisioner.OperationalFunctions {
-		mounts[identifier] = true
+	for identifier, registry := range provisioner.Registries {
+		mounts[identifier] = registry.IsMounted()
 	}
 
 	return mounts
@@ -127,11 +104,8 @@ func (provisioner *Provisioner) GetRegistry(clusterIdentifier string) (registryI
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	if registryInstance, found := provisioner.Registries[clusterIdentifier]; found {
-		return registryInstance, true
-	} else {
-		return nil, false
-	}
+	registryInstance, found = provisioner.Registries[clusterIdentifier]
+	return registryInstance, found
 }
 
 func (provisioner *Provisioner) GetRegistries() (registries []supervisor.IdentifierRegistryPair) {

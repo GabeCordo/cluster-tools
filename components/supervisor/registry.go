@@ -1,39 +1,25 @@
 package supervisor
 
 import (
+	"github.com/GabeCordo/etl/components/cluster"
 	"math"
 )
 
-func NewRegistry() *Registry {
+func NewRegistry(clusterName string, clusterImplementation cluster.Cluster) *Registry {
 	registry := new(Registry)
 
-	registry.Supervisors = make(map[uint64]*Supervisor)
+	registry.supervisors = make(map[uint64]*Supervisor)
 	registry.idReference = 0
+
+	registry.identifier = clusterName
+	registry.implementation = clusterImplementation
+	registry.status = cluster.UnMounted
+	registry.mounted = false
 
 	return registry
 }
 
-func (registry *Registry) Exists(id uint64) bool {
-	registry.mutex.RLock()
-	defer registry.mutex.RUnlock()
-
-	_, found := registry.Supervisors[id]
-	return found
-}
-
-func (registry *Registry) UnRegister(id uint64) bool {
-	registry.mutex.Lock()
-	defer registry.mutex.Unlock()
-
-	if _, found := registry.Supervisors[id]; !found {
-		return false
-	} else {
-		delete(registry.Supervisors, id)
-		return true
-	}
-}
-
-func (registry *Registry) GetNextUsableId() uint64 {
+func (registry *Registry) getNextUsableId() uint64 {
 
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
@@ -47,26 +33,42 @@ func (registry *Registry) GetNextUsableId() uint64 {
 	return registry.idReference
 }
 
-func (registry *Registry) Register(supervisor *Supervisor) (uint64, bool) {
-	id := registry.GetNextUsableId()
+func (registry *Registry) SupervisorExists(id uint64) bool {
+	registry.mutex.RLock()
+	defer registry.mutex.RUnlock()
+
+	_, found := registry.supervisors[id]
+	return found
+}
+
+func (registry *Registry) IsMounted() bool {
+	return registry.mounted
+}
+
+func (registry *Registry) CreateSupervisor(config ...cluster.Config) *Supervisor {
+
+	id := registry.getNextUsableId()
 
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	if _, found := registry.Supervisors[id]; found {
-		return 0, false
+	var supervisor *Supervisor
+	if len(config) > 0 {
+		supervisor = NewCustomSupervisor(registry.implementation, config[0])
 	} else {
-		supervisor.Id = id
-		registry.Supervisors[id] = supervisor
-		return id, true
+		supervisor = NewSupervisor(registry.identifier, registry.implementation)
 	}
+	supervisor.Id = id
+
+	registry.supervisors[id] = supervisor
+	return supervisor
 }
 
 func (registry *Registry) GetSupervisor(id uint64) (*Supervisor, bool) {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()
 
-	if supervisor, found := registry.Supervisors[id]; found {
+	if supervisor, found := registry.supervisors[id]; found {
 		return supervisor, true
 	} else {
 		return nil, false
@@ -79,9 +81,51 @@ func (registry *Registry) GetSupervisors() []*Supervisor {
 
 	supervisors := make([]*Supervisor, 0)
 
-	for _, supervisor := range registry.Supervisors {
+	for _, supervisor := range registry.supervisors {
 		supervisors = append(supervisors, supervisor)
 	}
 
 	return supervisors
+}
+
+func (registry *Registry) GetClusterImplementation() cluster.Cluster {
+
+	return registry.implementation
+}
+
+func (registry *Registry) Event(event Event) *Registry {
+	switch registry.status {
+	case cluster.UnMounted:
+		{
+			switch event {
+			case cluster.Mount:
+				{
+					registry.mounted = true
+					registry.status = cluster.Mounted
+				}
+			case cluster.Delete:
+				{
+					registry.mounted = false
+					registry.status = cluster.MarkedForDeletion
+				}
+			}
+		}
+	case cluster.Mounted:
+		{
+			switch event {
+			case cluster.UnMounted:
+				{
+					registry.mounted = false
+					registry.status = cluster.UnMounted
+				}
+			case cluster.Delete:
+				{
+					registry.mounted = false
+					registry.status = cluster.MarkedForDeletion
+				}
+			}
+		}
+	}
+
+	return registry
 }

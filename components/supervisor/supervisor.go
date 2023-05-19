@@ -1,25 +1,28 @@
 package supervisor
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/channel"
 	"github.com/GabeCordo/etl/components/cluster"
-	"github.com/GabeCordo/fack"
 	"time"
 )
 
 const (
+	DefaultNumberOfClusters       = 1
 	DefaultMonitorRefreshDuration = 1
 	DefaultChannelThreshold       = 10
 	DefaultChannelGrowthFactor    = 2
 )
 
-func NewSupervisor(clusterImplementation cluster.Cluster) *Supervisor {
+func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster) *Supervisor {
 	supervisor := new(Supervisor)
 
 	supervisor.group = clusterImplementation
 	supervisor.Config = cluster.Config{
-		fack.EmptyString,
+		clusterName,
 		DefaultChannelThreshold,
+		DefaultNumberOfClusters,
+		DefaultNumberOfClusters,
 		DefaultChannelGrowthFactor,
 		DefaultChannelThreshold,
 		DefaultChannelGrowthFactor,
@@ -86,18 +89,34 @@ func (supervisor *Supervisor) Event(event Event) bool {
 	return true // represents a boolean ~ hasStateChanged?
 }
 
-func (supervisor *Supervisor) Start() *cluster.Response {
+func (supervisor *Supervisor) Start() (response *cluster.Response) {
 	supervisor.Event(Startup)
 	defer supervisor.Event(TearedDown)
-
-	supervisor.waitGroup.Add(3)
+	defer func() {
+		if r := recover(); r != nil {
+			response = cluster.NewResponse(
+				supervisor.Config,
+				supervisor.Stats,
+				time.Now().Sub(supervisor.StartTime),
+				true,
+			)
+		}
+	}()
 
 	supervisor.StartTime = time.Now()
 
 	// start creating the default frontend goroutines
 	supervisor.Provision(cluster.Extract)
-	supervisor.Provision(cluster.Transform)
-	supervisor.Provision(cluster.Load)
+	supervisor.waitGroup.Add(1)
+
+	for i := 0; i < supervisor.Config.StartWithNTransformClusters; i++ {
+		supervisor.Provision(cluster.Transform)
+		supervisor.waitGroup.Add(1)
+	}
+	for i := 0; i < supervisor.Config.StartWithNLoadClusters; i++ {
+		supervisor.Provision(cluster.Load)
+		supervisor.waitGroup.Add(1)
+	}
 	// end creating the default frontend goroutines
 
 	// every N seconds we should check if the etChannel or tlChannel is congested
@@ -106,7 +125,13 @@ func (supervisor *Supervisor) Start() *cluster.Response {
 
 	supervisor.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
-	response := cluster.NewResponse(supervisor.Config, supervisor.Stats, time.Now().Sub(supervisor.StartTime))
+	response = cluster.NewResponse(
+		supervisor.Config,
+		supervisor.Stats,
+		time.Now().Sub(supervisor.StartTime),
+		false,
+	)
+
 	return response
 }
 
@@ -162,8 +187,9 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 	}()
 }
 
-func (supervisor *Supervisor) Data() {
-
+func (supervisor *Supervisor) Print() {
+	fmt.Printf("Id: %d\n", supervisor.Id)
+	fmt.Printf("Cluster: %s\n", supervisor.Config.Identifier)
 }
 
 func (status Status) String() string {

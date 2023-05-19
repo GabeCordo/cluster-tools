@@ -3,13 +3,13 @@ package core
 import (
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl/components/database"
 	"github.com/GabeCordo/etl/components/provisioner"
 	"github.com/GabeCordo/etl/components/supervisor"
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"math/rand"
 	"plugin"
-	"strings"
 	"time"
 )
 
@@ -177,7 +177,10 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *Provisi
 
 	GetProvisionerInstance().Mount(request.Cluster)
 
-	if GetConfigInstance().Debug {
+	success := GetProvisionerInstance().IsMounted(request.Cluster)
+	provisionerThread.C6 <- ProvisionerResponse{Success: success, Nonce: request.Nonce}
+
+	if GetConfigInstance().Debug && success {
 		log.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.Cluster, utils.Reset)
 	}
 
@@ -188,7 +191,10 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *Provi
 
 	GetProvisionerInstance().UnMount(request.Cluster)
 
-	if GetConfigInstance().Debug {
+	success := !GetProvisionerInstance().IsMounted(request.Cluster)
+	provisionerThread.C6 <- ProvisionerResponse{Success: success, Nonce: request.Nonce}
+
+	if GetConfigInstance().Debug && success {
 		log.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.Cluster, utils.Reset)
 	}
 
@@ -208,7 +214,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		log.Printf("%s[%s]%s Provisioning cluster\n", utils.Green, request.Cluster, utils.Reset)
 	}
 
-	clusterInstance, registerInstance, ok := provisionerInstance.Function(request.Cluster)
+	_, ok := provisionerInstance.Function(request.Cluster)
 	if !ok {
 		log.Printf("%s[%s]%s There is a corrupted cluster in the supervisor\n", utils.Green, request.Cluster, utils.Reset)
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
@@ -216,28 +222,35 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		return
 	}
 
-	var lookupConfig string
+	// if the operator does not specify a config to use, the system shall use the cluster identifier name
+	// to find a default config that should be located in the database thread
 	if request.Config == "" {
-		lookupConfig = request.Config
-	} else {
-		lookupConfig = request.Cluster
+		request.Config = request.Cluster
 	}
 
-	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, lookupConfig)
-
+	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.Config)
+	config.Print()
 	fmt.Println(configFound)
+	if !configFound {
+		// the config was either never created or deleted from the database.
+		// INSTEAD of continuing, the node should inform the user that the client cannot use the config they want
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Description: "config not found", Nonce: request.Nonce}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	registryInstance, _ := provisionerInstance.GetRegistry(request.Cluster)
 
 	var supervisorInstance *supervisor.Supervisor
 	if configFound {
 		log.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.Cluster, utils.Reset)
-		supervisorInstance = supervisor.NewCustomSupervisor(clusterInstance, config)
+		config.Print()
+		supervisorInstance = registryInstance.CreateSupervisor(config)
 	} else {
 		log.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.Cluster, utils.Reset)
-		supervisorInstance = supervisor.NewSupervisor(clusterInstance)
+		supervisorInstance = registryInstance.CreateSupervisor()
 	}
 
-	log.Printf("%s[%s]%s Registering supervisor(%d) to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisorInstance.Id, request.Cluster)
-	registerInstance.Register(supervisorInstance)
 	log.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisorInstance.Id, request.Cluster)
 
 	provisionerThread.C6 <- ProvisionerResponse{
@@ -250,7 +263,9 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 	log.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.Cluster, utils.Reset)
 
 	go func() {
+
 		// block until the supervisor completes
+		supervisorInstance.Print()
 		response := supervisorInstance.Start()
 
 		// don't send the statistics of the cluster to the database unless an Identifier has been
@@ -297,7 +312,7 @@ func (provisionerThread *ProvisionerThread) ProcessDynamicClusterLoad(request *P
 		return
 	}
 
-	if _, _, found := GetProvisionerInstance().Function(request.Cluster); found {
+	if _, found := GetProvisionerInstance().Function(request.Cluster); found {
 		response.Success = false
 		response.Description = "a cluster with that identifier already exists"
 		provisionerThread.C6 <- response
@@ -325,13 +340,49 @@ func (provisionerThread *ProvisionerThread) ProcessDynamicClusterLoad(request *P
 
 	dynamicallyLoadedCluster := symbol.(cluster.Cluster)
 
-	GetProvisionerInstance().Register(strings.ToLower(request.Cluster), dynamicallyLoadedCluster)
+	GetProvisionerInstance().Register(request.Cluster, dynamicallyLoadedCluster)
 
 	log.Printf("[provisioner] dynamically registered cluster %s\n", request.Cluster)
 
 	if request.Mount {
-		GetProvisionerInstance().Mount(strings.ToLower(request.Cluster))
+		GetProvisionerInstance().Mount(request.Cluster)
 		log.Printf("[provisioner] dynamically mounted cluster %s\n", request.Cluster)
+	}
+
+	databaseRequest := DatabaseRequest{Action: DatabaseStore, Type: database.Config, Cluster: request.Cluster, Data: cluster.Config{
+		Identifier:                  request.Cluster,
+		Mode:                        cluster.DoNothing,
+		StartWithNTransformClusters: 1,
+		StartWithNLoadClusters:      1,
+		ETChannelThreshold:          1,
+		ETChannelGrowthFactor:       2,
+		TLChannelThreshold:          1,
+		TLChannelGrowthFactor:       2,
+	}}
+
+	provisionerThread.C7 <- databaseRequest
+
+	timeout := false
+	var databaseResponse DatabaseResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			timeout = true
+			break
+		}
+
+		if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
+			databaseResponse = (responseEntry).(DatabaseResponse)
+			break
+		}
+	}
+
+	if timeout || !databaseResponse.Success {
+		response.Success = false
+		provisionerThread.C6 <- response
+		provisionerThread.wg.Done()
+		return
 	}
 
 	response.Success = true

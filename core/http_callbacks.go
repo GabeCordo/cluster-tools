@@ -45,12 +45,18 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 		}
 	} else if r.Method == "PUT" {
 		if request.Mounted {
-			ClusterMount(httpThread.C5, request.Cluster)
+			success := ClusterMount(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster)
+			if !success {
+				w.WriteHeader(http.StatusNotFound)
+			}
 		} else {
-			ClusterUnMount(httpThread.C5, request.Cluster)
+			success := ClusterUnMount(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster)
+			if !success {
+				w.WriteHeader(http.StatusNotFound)
+			}
 		}
 	} else if r.Method == "POST" {
-		success, description := DynamicallyRegisterCluster(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster, request.DynamicPath)
+		success, description := DynamicallyRegisterCluster(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster, request.DynamicPath, request.Mounted)
 		if !success {
 			response := &JSONResponse{Description: description}
 			bytes, _ := json.Marshal(response)
@@ -114,14 +120,15 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 			}
 		}
 	} else if r.Method == "POST" {
-		if supervisorId, success := SupervisorProvision(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster); success {
+		if supervisorId, success, description := SupervisorProvision(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster, request.Config); success {
 			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
 			bytes, _ := json.Marshal(response)
 			if _, err := w.Write(bytes); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(description))
 		}
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)

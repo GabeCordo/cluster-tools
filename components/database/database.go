@@ -15,6 +15,10 @@ func NewDatabase() *Database {
 type RecordFactory func(identifier string) *Record
 
 func (db *Database) CreateUsageRecord(identifier string) *Record {
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	record := NewRecord()
 	db.Records[identifier] = record
 
@@ -22,6 +26,10 @@ func (db *Database) CreateUsageRecord(identifier string) *Record {
 }
 
 func (db *Database) GetUsageRecord(identifier string) (*Record, bool) {
+
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+
 	if record, found := db.Records[identifier]; found {
 		return record, true
 	} else {
@@ -34,14 +42,10 @@ func (db *Database) StoreUsageRecord(identifier string, data *cluster.Statistics
 		return false
 	}
 
-	db.mutex.Lock()
-
 	record, ok := db.GetUsageRecord(identifier)
 	if !ok {
 		record = db.CreateUsageRecord(identifier)
 	}
-
-	db.mutex.Unlock()
 
 	record.mutex.Lock()
 
@@ -83,6 +87,9 @@ func (db *Database) ReplaceClusterConfig(config cluster.Config) bool {
 }
 
 func (db *Database) GetClusterConfig(cluster string) (config *cluster.Config, found bool) {
+
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
 
 	if config, found := db.Configs[cluster]; !found {
 		return nil, false

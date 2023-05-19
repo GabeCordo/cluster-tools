@@ -86,25 +86,57 @@ func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable 
 	return timeout || databaseResponse.Success
 }
 
-func ClusterMount(pipe chan<- ProvisionerRequest, cluster string) (success bool) {
+func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string) (success bool) {
 
 	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerMount}
 	pipe <- provisionerThreadRequest
 
-	return true
+	timeout := false
+	var provisionerResponse ProvisionerResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			timeout = true
+			break
+		}
+
+		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
+			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			break
+		}
+	}
+
+	return !timeout && provisionerResponse.Success
 }
 
-func ClusterUnMount(pipe chan<- ProvisionerRequest, cluster string) (success bool) {
+func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string) (success bool) {
 
 	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerUnMount}
 	pipe <- provisionerThreadRequest
 
-	return true
+	timeout := false
+	var provisionerResponse ProvisionerResponse
+
+	timestamp := time.Now()
+	for {
+		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			timeout = true
+			break
+		}
+
+		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
+			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			break
+		}
+	}
+
+	return !timeout && provisionerResponse.Success
 }
 
-func DynamicallyRegisterCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName, sharedObjectPath string) (success bool, description string) {
+func DynamicallyRegisterCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName, sharedObjectPath string, mount bool) (success bool, description string) {
 
-	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicLoad, Nonce: rand.Uint32(), Cluster: clusterName, Path: sharedObjectPath}
+	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicLoad, Nonce: rand.Uint32(), Cluster: clusterName, Path: sharedObjectPath, Mount: mount}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -150,7 +182,7 @@ func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *uti
 	return timeout || provisionerResponse.Success
 }
 
-func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string, config ...string) (supervisorId uint64, success bool) {
+func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string, config ...string) (supervisorId uint64, success bool, description string) {
 
 	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerProvision}
 	if len(config) > 0 {
@@ -175,9 +207,9 @@ func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.Re
 	}
 
 	if timeout {
-		return 0, false
+		return 0, false, provisionerResponse.Description
 	} else {
-		return provisionerResponse.SupervisorId, true
+		return provisionerResponse.SupervisorId, provisionerResponse.Success, provisionerResponse.Description
 	}
 }
 

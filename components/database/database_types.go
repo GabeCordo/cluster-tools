@@ -28,12 +28,12 @@ type Record struct {
 	Entries [MaxClusterRecordSize]Entry `json:"entries"` // IMMUTABLE
 	Head    int8                        `json:"head"`
 
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 type Database struct {
 	Records map[string]*Record        `json:"record"`
 	Configs map[string]cluster.Config `json:"configs"`
 
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }

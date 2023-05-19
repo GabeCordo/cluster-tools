@@ -184,8 +184,8 @@ func (core *Core) Run() {
 		log.Println(output)
 	}
 
-	for _, cluster := range config.AutoMount {
-		fmt.Printf("\t\t\t- %s\n", cluster)
+	for _, clusterName := range config.AutoMount {
+		fmt.Printf("\t\t\t- %s\n", clusterName)
 	}
 
 	// monitor system calls being sent to the process, if the etl is being
