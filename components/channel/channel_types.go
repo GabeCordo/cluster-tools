@@ -1,13 +1,17 @@
 package channel
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type Status int
 
 const (
-	Empty     Status = 0
-	Healthy          = 1
-	Congested        = 2
+	Empty Status = iota
+	Idle
+	Healthy
+	Congested
 )
 
 type Message any
@@ -23,9 +27,14 @@ type ManagedChannelConfig struct {
 }
 
 type ManagedChannel struct {
-	State   Status
-	Config  ManagedChannelConfig
-	Channel chan Message
+	name string
+
+	state    Status
+	config   ManagedChannelConfig
+	Channel  chan Message
+	lastPush time.Time
+
+	channelFinished bool
 
 	mutex sync.Mutex
 	wg    sync.WaitGroup

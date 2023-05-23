@@ -34,7 +34,7 @@ func (provisionerThread *ProvisionerThread) Setup() {
 
 	GetProvisionerMemoryInstance() // create the instance
 
-	// auto-mounting is supported within the etl Config; if a cluster Identifier is added
+	// auto-mounting is supported within the etl config; if a cluster Identifier is added
 	// to the config under 'auto-mount', it is added to the map of Operational functions
 	for _, identifier := range GetConfigInstance().AutoMount {
 		provisionerInstance.Mount(identifier)

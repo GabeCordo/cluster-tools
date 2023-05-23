@@ -21,9 +21,9 @@ const (
 )
 
 type Cluster interface {
-	ExtractFunc(output channel.OutputChannel)
-	TransformFunc(input channel.InputChannel, output channel.OutputChannel)
-	LoadFunc(input channel.InputChannel)
+	ExtractFunc(c *channel.ManagedChannel)
+	TransformFunc(in channel.Message) (out channel.Message)
+	LoadFunc(in channel.Message)
 }
 
 type Config struct {
@@ -43,6 +43,7 @@ type Statistics struct {
 	NumProvisionedLoadRoutines    int `json:"num-provisioned-load-routines"`
 	NumEtThresholdBreaches        int `json:"num-et-threshold-breaches"`
 	NumTlThresholdBreaches        int `json:"num-tl-threshold-breaches"`
+	NumOfDataProcessed            int `json:"num-of-data-units-processed"`
 }
 
 type Status uint8

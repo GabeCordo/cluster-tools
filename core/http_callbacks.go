@@ -149,7 +149,7 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 	if r.Method == "GET" {
 
-		log.Println("Config Get")
+		log.Println("config Get")
 
 		clusterName, foundClusterName := urlMapping["cluster"]
 		if foundClusterName {

@@ -29,8 +29,8 @@ func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster) *S
 		DefaultChannelGrowthFactor,
 	}
 	supervisor.Stats = cluster.NewStatistics()
-	supervisor.etChannel = channel.NewManagedChannel(supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
-	supervisor.tlChannel = channel.NewManagedChannel(supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
+	supervisor.etChannel = channel.NewManagedChannel("etChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
+	supervisor.tlChannel = channel.NewManagedChannel("tlChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
 
 	return supervisor
 }
@@ -48,8 +48,8 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.C
 	supervisor.group = clusterImplementation
 	supervisor.Config = config
 	supervisor.Stats = cluster.NewStatistics()
-	supervisor.etChannel = channel.NewManagedChannel(config.ETChannelThreshold, config.ETChannelGrowthFactor)
-	supervisor.tlChannel = channel.NewManagedChannel(config.TLChannelThreshold, config.TLChannelGrowthFactor)
+	supervisor.etChannel = channel.NewManagedChannel("etChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor)
+	supervisor.tlChannel = channel.NewManagedChannel("tlChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor)
 
 	return supervisor
 }
@@ -91,9 +91,13 @@ func (supervisor *Supervisor) Event(event Event) bool {
 
 func (supervisor *Supervisor) Start() (response *cluster.Response) {
 	supervisor.Event(Startup)
+
 	defer supervisor.Event(TearedDown)
+
 	defer func() {
+		// has the user defined function crashed during runtime?
 		if r := recover(); r != nil {
+			// yes => return a response that identifies that the cluster crashed
 			response = cluster.NewResponse(
 				supervisor.Config,
 				supervisor.Stats,
@@ -105,19 +109,20 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 
 	supervisor.StartTime = time.Now()
 
-	// start creating the default frontend goroutines
+	//// start creating the default frontend goroutines
 	supervisor.Provision(cluster.Extract)
-	supervisor.waitGroup.Add(1)
 
+	// the config specifies the number of transform functions to start running in parallel
 	for i := 0; i < supervisor.Config.StartWithNTransformClusters; i++ {
 		supervisor.Provision(cluster.Transform)
-		supervisor.waitGroup.Add(1)
 	}
+
+	// the config specifies the number of load functions to start running in parallel
 	for i := 0; i < supervisor.Config.StartWithNLoadClusters; i++ {
 		supervisor.Provision(cluster.Load)
-		supervisor.waitGroup.Add(1)
 	}
-	// end creating the default frontend goroutines
+
+	//// end creating the default frontend goroutines
 
 	// every N seconds we should check if the etChannel or tlChannel is congested
 	// and requires us to provision additional nodes
@@ -137,26 +142,30 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 
 func (supervisor *Supervisor) Runtime() {
 	for {
+		supervisor.etChannel.GetState()
+
 		// is etChannel congested?
-		if supervisor.etChannel.State == channel.Congested {
+		if supervisor.etChannel.GetState() == channel.Congested {
 			supervisor.Stats.NumEtThresholdBreaches++
 			n := supervisor.Stats.NumProvisionedTransformRoutes
 			for n > 0 {
 				supervisor.Provision(cluster.Transform)
 				n--
 			}
-			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.etChannel.Config.GrowthFactor
+			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.etChannel.GetGrowthFactor()
 		}
 
+		supervisor.tlChannel.GetState()
+
 		// is tlChannel congested?
-		if supervisor.tlChannel.State == channel.Congested {
+		if supervisor.tlChannel.GetState() == channel.Congested {
 			supervisor.Stats.NumTlThresholdBreaches++
 			n := supervisor.Stats.NumProvisionedLoadRoutines
 			for n > 0 {
 				supervisor.Provision(cluster.Load)
 				n--
 			}
-			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.tlChannel.Config.GrowthFactor
+			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.tlChannel.GetGrowthFactor()
 		}
 
 		// check if the channel is congested after DefaultMonitorRefreshDuration seconds
@@ -171,20 +180,42 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 	go func() {
 		switch segment {
 		case cluster.Extract:
-			supervisor.Stats.NumProvisionedExtractRoutines++
-			supervisor.group.ExtractFunc(supervisor.etChannel.Channel)
-			break
-		case cluster.Transform: // transform
-			supervisor.Stats.NumProvisionedTransformRoutes++
-			supervisor.group.TransformFunc(supervisor.etChannel.Channel, supervisor.tlChannel.Channel)
-			break
-		default: // load
-			supervisor.Stats.NumProvisionedLoadRoutines++
-			supervisor.group.LoadFunc(supervisor.tlChannel.Channel)
-			break
+			{
+				supervisor.Stats.NumProvisionedExtractRoutines++
+				supervisor.group.ExtractFunc(supervisor.etChannel)
+			}
+		case cluster.Transform:
+			{
+				supervisor.Stats.NumProvisionedTransformRoutes++
+				supervisor.tlChannel.AddListener()
+
+				for request := range supervisor.etChannel.Channel {
+					supervisor.etChannel.Pull()
+					data := supervisor.group.TransformFunc(request)
+					supervisor.tlChannel.Push(data)
+				}
+
+				supervisor.tlChannel.ListenerDone()
+			}
+		case cluster.Load:
+			{
+				supervisor.Stats.NumProvisionedLoadRoutines++
+
+				for request := range supervisor.tlChannel.Channel {
+					supervisor.Stats.NumOfDataProcessed++
+					supervisor.tlChannel.Pull()
+					supervisor.group.LoadFunc(request)
+				}
+			}
 		}
-		supervisor.waitGroup.Done() // notify the wait group a process has completed ~ if all are finished we close the monitor
+
+		// notify the wait group a process has completed ~ if all are finished we close the monitor
+		supervisor.waitGroup.Done()
 	}()
+
+	// a new function (E, T, or L) is provisioned
+	// we should inform the wait group that the supervisor isn't finished until the wg is done
+	supervisor.waitGroup.Add(1)
 }
 
 func (supervisor *Supervisor) Print() {
@@ -192,7 +223,7 @@ func (supervisor *Supervisor) Print() {
 	fmt.Printf("Cluster: %s\n", supervisor.Config.Identifier)
 }
 
-func (status Status) String() string {
+func (status Status) ToString() string {
 	switch status {
 	case UnTouched:
 		return "UnTouched"

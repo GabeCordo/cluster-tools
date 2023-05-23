@@ -7,6 +7,7 @@ func NewStatistics() *Statistics {
 	stats.NumProvisionedLoadRoutines = 0
 	stats.NumTlThresholdBreaches = 0
 	stats.NumEtThresholdBreaches = 0
+	stats.NumOfDataProcessed = 0
 
 	return stats
 }
