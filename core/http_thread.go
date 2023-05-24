@@ -2,22 +2,18 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 )
 
-//var (
-//	NodeInstance   *rpc.Node
-//	AuthInstance   *fack.Auth
-//	LoggerInstance *logger.Logger
-//	nodeLock       = &sync.Mutex{}
-//	authLock       = &sync.Mutex{}
-//	loggerLock     = &sync.Mutex{}
-//)
-
 func (httpThread *HttpThread) Setup() {
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("/module", func(w http.ResponseWriter, r *http.Request) {
+		httpThread.moduleCallback(w, r)
+	})
 
 	mux.HandleFunc("/cluster", func(w http.ResponseWriter, r *http.Request) {
 		httpThread.clusterCallback(w, r)
@@ -46,7 +42,8 @@ func (httpThread *HttpThread) Start() {
 	httpThread.wg.Add(1)
 
 	go func(thread *HttpThread) {
-		err := http.ListenAndServe(GetConfigInstance().Net.ToString(), httpThread.mux)
+		net := GetConfigInstance().Net
+		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
 		if err != nil {
 			thread.Interrupt <- Panic
 		}

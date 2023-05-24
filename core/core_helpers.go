@@ -86,9 +86,9 @@ func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable 
 	return timeout || databaseResponse.Success
 }
 
-func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string) (success bool) {
+func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, module, cluster string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerMount}
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), ModuleName: module, ClusterName: cluster, Action: ProvisionerMount}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -110,9 +110,9 @@ func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 	return !timeout && provisionerResponse.Success
 }
 
-func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string) (success bool) {
+func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, module, cluster string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerUnMount}
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), ModuleName: module, ClusterName: cluster, Action: ProvisionerUnMount}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -136,7 +136,7 @@ func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 
 func DynamicallyRegisterCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName, sharedObjectPath string, mount bool) (success bool, description string) {
 
-	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicLoad, Nonce: rand.Uint32(), Cluster: clusterName, Path: sharedObjectPath, Mount: mount}
+	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicLoad, Nonce: rand.Uint32(), ClusterName: clusterName, ModulePath: sharedObjectPath, Mount: mount}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -160,7 +160,7 @@ func DynamicallyRegisterCluster(pipe chan<- ProvisionerRequest, responseTable *u
 
 func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicDelete, Nonce: rand.Uint32(), Cluster: clusterName}
+	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicDelete, Nonce: rand.Uint32(), ClusterName: clusterName}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -182,9 +182,9 @@ func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *uti
 	return timeout || provisionerResponse.Success
 }
 
-func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, cluster string, config ...string) (supervisorId uint64, success bool, description string) {
+func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, module, cluster string, config ...string) (supervisorId uint64, success bool, description string) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), Cluster: cluster, Action: ProvisionerProvision}
+	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), ModuleName: module, ClusterName: cluster, Action: ProvisionerProvision}
 	if len(config) > 0 {
 		provisionerThreadRequest.Config = config[0]
 	}
@@ -213,13 +213,18 @@ func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.Re
 	}
 }
 
-func ClusterList() (clusters map[string]bool, success bool) {
+func ClusterList(moduleName string) (clusters map[string]bool, success bool) {
 
 	provisionerInstance := GetProvisionerInstance()
 
 	clusters = make(map[string]bool, 0)
 
-	mounts := provisionerInstance.Mounts()
+	moduleWrapper, found := provisionerInstance.GetModule(moduleName)
+	if !found {
+		return nil, false
+	}
+
+	mounts := moduleWrapper.GetClusters()
 	for identifier, isMounted := range mounts {
 		clusters[identifier] = isMounted
 	}
@@ -227,16 +232,26 @@ func ClusterList() (clusters map[string]bool, success bool) {
 	return clusters, true
 }
 
-func SupervisorLookup(clusterId string, supervisorId uint64) (supervisorInstance *supervisor.Supervisor, success bool) {
+func SupervisorLookup(moduleName, clusterName string, supervisorId uint64) (supervisorInstance *supervisor.Supervisor, success bool) {
 
 	provisionerInstance := GetProvisionerInstance()
 
-	clusterRegistry, found := provisionerInstance.GetRegistry(clusterId)
+	moduleWrapper, found := provisionerInstance.GetModule(moduleName)
 	if !found {
 		return nil, false
 	}
 
-	return clusterRegistry.GetSupervisor(supervisorId)
+	clusterWrapper, found := moduleWrapper.GetCluster(clusterName)
+	if !found {
+		return nil, false
+	}
+
+	supervisorInstance, found = clusterWrapper.FindSupervisor(supervisorId)
+	if !found {
+		return nil, false
+	}
+
+	return supervisorInstance, found
 }
 
 func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTable, clusterName string) (entries []database.Entry, found bool) {
@@ -329,4 +344,29 @@ func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable
 	}
 
 	return true
+}
+
+func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, modulePath string) (success bool, description string) {
+
+	request := ProvisionerRequest{Action: ProvisionerModuleLoad, Nonce: rand.Uint32(), ModulePath: modulePath}
+	pipe <- request
+
+	provisionerTimeout := false
+	var provisionerResponse ProvisionerResponse
+
+	timestamp2 := time.Now()
+	for {
+		if time.Now().Sub(timestamp2).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			provisionerTimeout = true
+			break
+		}
+
+		if responseEntry, found := responseTable.Lookup(request.Nonce); found {
+			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			break
+		}
+	}
+
+	success = !provisionerTimeout && provisionerResponse.Success
+	return success, provisionerResponse.Description
 }

@@ -22,10 +22,10 @@ func (mc *ManagedChannel) Push(data Message) {
 
 	// see if we are hitting a threshold and the successive function is
 	// getting overloaded with data units
-	if (mc.config.Size + 1) >= mc.config.Threshold {
+	if (mc.size + 1) >= mc.config.Threshold {
 		mc.state = Congested
 	}
-	mc.config.Size++
+	mc.size++
 	mc.lastPush = time.Now()
 	mc.Channel <- data
 }
@@ -34,11 +34,11 @@ func (mc *ManagedChannel) Done() {
 	close(mc.Channel)
 }
 
-func (mc *ManagedChannel) AddListener() {
+func (mc *ManagedChannel) AddProducer() {
 	mc.wg.Add(1)
 }
 
-func (mc *ManagedChannel) ListenerDone() {
+func (mc *ManagedChannel) ProducerDone() {
 
 	mc.wg.Done()
 
@@ -54,18 +54,18 @@ func (mc *ManagedChannel) ListenerDone() {
 }
 
 func (mc *ManagedChannel) Pull() {
-	mc.config.Size--
+	mc.size--
 }
 
 func (mc *ManagedChannel) GetState() Status {
 
-	if mc.config.Size == 0 {
+	if mc.size == 0 {
 		if time.Now().Sub(mc.lastPush).Seconds() > 3 {
 			mc.state = Idle
 		} else {
 			mc.state = Empty
 		}
-	} else if mc.config.Size > mc.config.Threshold {
+	} else if mc.size > mc.config.Threshold {
 		mc.state = Congested
 	} else {
 		mc.state = Healthy
@@ -80,5 +80,5 @@ func (mc *ManagedChannel) GetGrowthFactor() int {
 }
 
 func (mc *ManagedChannel) ToString() string {
-	return fmt.Sprintf("[%s][%s][Size: %d]\n", mc.name, mc.state.ToString(), mc.config.Size)
+	return fmt.Sprintf("[%s][%s][Size: %d]\n", mc.name, mc.state.ToString(), mc.size)
 }

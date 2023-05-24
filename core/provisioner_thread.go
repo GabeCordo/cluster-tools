@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
+	"github.com/GabeCordo/etl/components/module"
 	"github.com/GabeCordo/etl/components/provisioner"
 	"github.com/GabeCordo/etl/components/supervisor"
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"math/rand"
-	"plugin"
 	"time"
 )
 
@@ -30,15 +30,7 @@ func GetProvisionerInstance() *provisioner.Provisioner {
 func (provisionerThread *ProvisionerThread) Setup() {
 
 	provisionerThread.accepting = true
-	provisionerInstance := GetProvisionerInstance() // create the supervisor if it doesn't exist
-
-	GetProvisionerMemoryInstance() // create the instance
-
-	// auto-mounting is supported within the etl config; if a cluster Identifier is added
-	// to the config under 'auto-mount', it is added to the map of Operational functions
-	for _, identifier := range GetConfigInstance().AutoMount {
-		provisionerInstance.Mount(identifier)
-	}
+	GetProvisionerInstance() // create the supervisor if it doesn't exist
 }
 
 func (provisionerThread *ProvisionerThread) Start() {
@@ -96,11 +88,82 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *Pro
 		// TODO - not implemented
 	} else if request.Action == ProvisionerLowerPing {
 		provisionerThread.ProcessPingProvisionerRequest(request)
-	} else if request.Action == ProvisionerDynamicLoad {
-		provisionerThread.ProcessDynamicClusterLoad(request)
-	} else if request.Action == ProvisionerDynamicDelete {
-		provisionerThread.ProcessDynamicClusterDelete(request)
+	} else if request.Action == ProvisionerModuleLoad {
+		provisionerThread.RegisterModule(request)
 	}
+}
+
+func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerRequest) {
+
+	log.Printf("registering module at %s\n", request.ModulePath)
+
+	remoteModule, err := module.NewRemoteModule(request.ModulePath)
+	if err != nil {
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "cannot find remote module"}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	moduleInstance, err := remoteModule.Get()
+	if err != nil {
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "module built with older version"}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	success := GetProvisionerInstance().AddModule(moduleInstance)
+	if !success {
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not add module"}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	for _, export := range moduleInstance.Config.Exports {
+
+		request := DatabaseRequest{
+			Action:  DatabaseStore,
+			Nonce:   rand.Uint32(),
+			Origin:  Provisioner,
+			Type:    database.Config,
+			Cluster: export.Cluster,
+			Data: cluster.Config{
+				Identifier:                  export.Cluster,
+				Mode:                        export.Config.OnCrash,
+				StartWithNLoadClusters:      export.Config.Static.LFunctions,
+				StartWithNTransformClusters: export.Config.Static.TFunctions,
+				ETChannelThreshold:          export.Config.Dynamic.TFunction.Threshold,
+				ETChannelGrowthFactor:       export.Config.Dynamic.TFunction.GrowthFactor,
+				TLChannelThreshold:          export.Config.Dynamic.LFunction.Threshold,
+				TLChannelGrowthFactor:       export.Config.Dynamic.LFunction.GrowthFactor,
+			},
+		}
+		provisionerThread.C7 <- request
+
+		timeout := false
+		var response DatabaseResponse
+
+		timestamp := time.Now()
+		for {
+			if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+				timeout = true
+				break
+			}
+
+			if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(request.Nonce); found {
+				response = (responseEntry).(DatabaseResponse)
+				break
+			}
+		}
+
+		if timeout || !response.Success {
+			provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not save config"}
+			provisionerThread.wg.Done()
+			return
+		}
+	}
+
+	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce, Description: "module registered"}
+	provisionerThread.wg.Done()
 }
 
 func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *ProvisionerRequest) {
@@ -175,29 +238,79 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 
 func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *ProvisionerRequest) {
 
-	GetProvisionerInstance().Mount(request.Cluster)
-
-	success := GetProvisionerInstance().IsMounted(request.Cluster)
-	provisionerThread.C6 <- ProvisionerResponse{Success: success, Nonce: request.Nonce}
-
-	if GetConfigInstance().Debug && success {
-		log.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.Cluster, utils.Reset)
+	moduleWrapper, found := GetProvisionerInstance().GetModule(request.ModuleName)
+	if !found {
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+		provisionerThread.wg.Done()
+		return
 	}
 
+	if !moduleWrapper.IsMounted() {
+		moduleWrapper.Mount()
+
+		if GetConfigInstance().Debug {
+			log.Printf("%s[%s]%s Mounted module\n", utils.Green, request.ModuleName, utils.Reset)
+		}
+	}
+
+	if request.ClusterName != "" {
+		clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
+
+		if !found {
+			provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+			provisionerThread.wg.Done()
+			return
+		}
+
+		if !clusterWrapper.IsMounted() {
+			clusterWrapper.Mount()
+
+			if GetConfigInstance().Debug {
+				log.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
+			}
+		}
+	}
+
+	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce}
 	provisionerThread.wg.Done()
 }
 
 func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *ProvisionerRequest) {
 
-	GetProvisionerInstance().UnMount(request.Cluster)
-
-	success := !GetProvisionerInstance().IsMounted(request.Cluster)
-	provisionerThread.C6 <- ProvisionerResponse{Success: success, Nonce: request.Nonce}
-
-	if GetConfigInstance().Debug && success {
-		log.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.Cluster, utils.Reset)
+	moduleWrapper, found := GetProvisionerInstance().GetModule(request.ModuleName)
+	if !found {
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+		provisionerThread.wg.Done()
+		return
 	}
 
+	if moduleWrapper.IsMounted() {
+		moduleWrapper.UnMount()
+
+		if GetConfigInstance().Debug {
+			log.Printf("%s[%s]%s UnMounted module\n", utils.Green, request.ModuleName, utils.Reset)
+		}
+	}
+
+	if request.ClusterName != "" {
+		clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
+
+		if !found {
+			provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+			provisionerThread.wg.Done()
+			return
+		}
+
+		if clusterWrapper.IsMounted() {
+			clusterWrapper.UnMount()
+
+			if GetConfigInstance().Debug {
+				log.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
+			}
+		}
+	}
+
+	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce}
 	provisionerThread.wg.Done()
 }
 
@@ -205,27 +318,38 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 
 	provisionerInstance := GetProvisionerInstance()
 
-	if !provisionerInstance.IsMounted(request.Cluster) {
-		log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.Cluster, utils.Reset)
+	moduleWrapper, found := provisionerInstance.GetModule(request.ModuleName)
+
+	if !found {
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
-	} else {
-		log.Printf("%s[%s]%s Provisioning cluster\n", utils.Green, request.Cluster, utils.Reset)
 	}
 
-	_, ok := provisionerInstance.Function(request.Cluster)
-	if !ok {
-		log.Printf("%s[%s]%s There is a corrupted cluster in the supervisor\n", utils.Green, request.Cluster, utils.Reset)
+	if !moduleWrapper.IsMounted() {
+		log.Printf("%s[%s]%s Could not provision cluster; it's module was not mounted\n", utils.Green, request.ModuleName, utils.Reset)
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
+
+	fmt.Println(moduleWrapper)
+
+	clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
+
+	if !found && !clusterWrapper.IsMounted() {
+		log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.ClusterName, utils.Reset)
+		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	log.Printf("%s[%s]%s Provisioning cluster in module %s\n", utils.Green, request.ClusterName, utils.Reset, request.ModuleName)
 
 	// if the operator does not specify a config to use, the system shall use the cluster identifier name
 	// to find a default config that should be located in the database thread
 	if request.Config == "" {
-		request.Config = request.Cluster
+		request.Config = request.ClusterName
 	}
 
 	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.Config)
@@ -239,28 +363,26 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		return
 	}
 
-	registryInstance, _ := provisionerInstance.GetRegistry(request.Cluster)
-
 	var supervisorInstance *supervisor.Supervisor
 	if configFound {
-		log.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.Cluster, utils.Reset)
+		log.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.ClusterName, utils.Reset)
 		config.Print()
-		supervisorInstance = registryInstance.CreateSupervisor(config)
+		supervisorInstance = clusterWrapper.CreateSupervisor(config)
 	} else {
-		log.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.Cluster, utils.Reset)
-		supervisorInstance = registryInstance.CreateSupervisor()
+		log.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.ClusterName, utils.Reset)
+		supervisorInstance = clusterWrapper.CreateSupervisor()
 	}
 
-	log.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.Cluster, utils.Reset, supervisorInstance.Id, request.Cluster)
+	log.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.ClusterName, utils.Reset, supervisorInstance.Id, request.ClusterName)
 
 	provisionerThread.C6 <- ProvisionerResponse{
 		Nonce:        request.Nonce,
 		Success:      true,
-		Cluster:      request.Cluster,
+		Cluster:      request.ClusterName,
 		SupervisorId: supervisorInstance.Id,
 	}
 
-	log.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.Cluster, utils.Reset)
+	log.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.ClusterName, utils.Reset)
 
 	go func() {
 
@@ -300,110 +422,6 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		// the provisioned cluster to complete before allowing the etl-framework to shut down
 		provisionerThread.wg.Done()
 	}()
-}
-
-func (provisionerThread *ProvisionerThread) ProcessDynamicClusterLoad(request *ProvisionerRequest) {
-
-	response := ProvisionerResponse{Nonce: request.Nonce}
-	if (len(request.Path) == 0) || (len(request.Cluster) == 0) {
-		response.Success = false
-		response.Description = "missing dynamic path or cluster identifier"
-		provisionerThread.wg.Done()
-		return
-	}
-
-	if _, found := GetProvisionerInstance().Function(request.Cluster); found {
-		response.Success = false
-		response.Description = "a cluster with that identifier already exists"
-		provisionerThread.C6 <- response
-		provisionerThread.wg.Done()
-		return
-	}
-
-	dynamicClusterPlugin, err := plugin.Open(request.Path)
-	if err != nil {
-		response.Description = err.Error()
-		response.Success = false
-		provisionerThread.C6 <- response
-		provisionerThread.wg.Done()
-		return
-	}
-
-	symbol, err := dynamicClusterPlugin.Lookup(request.Cluster)
-	if err != nil {
-		response.Description = err.Error()
-		response.Success = false
-		provisionerThread.C6 <- response
-		provisionerThread.wg.Done()
-		return
-	}
-
-	dynamicallyLoadedCluster := symbol.(cluster.Cluster)
-
-	GetProvisionerInstance().Register(request.Cluster, dynamicallyLoadedCluster)
-
-	log.Printf("[provisioner] dynamically registered cluster %s\n", request.Cluster)
-
-	if request.Mount {
-		GetProvisionerInstance().Mount(request.Cluster)
-		log.Printf("[provisioner] dynamically mounted cluster %s\n", request.Cluster)
-	}
-
-	databaseRequest := DatabaseRequest{Action: DatabaseStore, Type: database.Config, Cluster: request.Cluster, Data: cluster.Config{
-		Identifier:                  request.Cluster,
-		Mode:                        cluster.DoNothing,
-		StartWithNTransformClusters: 1,
-		StartWithNLoadClusters:      1,
-		ETChannelThreshold:          1,
-		ETChannelGrowthFactor:       2,
-		TLChannelThreshold:          1,
-		TLChannelGrowthFactor:       2,
-	}}
-
-	provisionerThread.C7 <- databaseRequest
-
-	timeout := false
-	var databaseResponse DatabaseResponse
-
-	timestamp := time.Now()
-	for {
-		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
-			timeout = true
-			break
-		}
-
-		if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
-			break
-		}
-	}
-
-	if timeout || !databaseResponse.Success {
-		response.Success = false
-		provisionerThread.C6 <- response
-		provisionerThread.wg.Done()
-		return
-	}
-
-	response.Success = true
-	provisionerThread.C6 <- response
-
-	provisionerThread.wg.Done()
-}
-
-func (provisionerThread *ProvisionerThread) ProcessDynamicClusterDelete(request *ProvisionerRequest) {
-
-	success := GetProvisionerInstance().UnRegister(request.Cluster)
-
-	if GetConfigInstance().Debug && success {
-		log.Printf("[provisioner] un-registered cluster %s\n", request.Cluster)
-	} else if GetConfigInstance().Debug {
-		log.Printf("[provisioner] failed to un-registered cluster %s\n", request.Cluster)
-	}
-
-	provisionerThread.C6 <- ProvisionerResponse{Success: success, Nonce: request.Nonce}
-
-	provisionerThread.wg.Done()
 }
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {

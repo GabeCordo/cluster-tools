@@ -182,20 +182,29 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 		case cluster.Extract:
 			{
 				supervisor.Stats.NumProvisionedExtractRoutines++
-				supervisor.group.ExtractFunc(supervisor.etChannel)
+				oneWayChannel, _ := channel.NewOneWayManagedChannel(supervisor.etChannel)
+
+				supervisor.etChannel.AddProducer()
+				supervisor.group.ExtractFunc(oneWayChannel)
+				supervisor.etChannel.ProducerDone()
 			}
 		case cluster.Transform:
 			{
 				supervisor.Stats.NumProvisionedTransformRoutes++
-				supervisor.tlChannel.AddListener()
+				supervisor.tlChannel.AddProducer()
 
 				for request := range supervisor.etChannel.Channel {
 					supervisor.etChannel.Pull()
+
+					if i, ok := (supervisor.group).(cluster.VerifiableET); ok && !i.VerifyETFunction(request) {
+						continue
+					}
+
 					data := supervisor.group.TransformFunc(request)
 					supervisor.tlChannel.Push(data)
 				}
 
-				supervisor.tlChannel.ListenerDone()
+				supervisor.tlChannel.ProducerDone()
 			}
 		case cluster.Load:
 			{
@@ -204,6 +213,11 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 				for request := range supervisor.tlChannel.Channel {
 					supervisor.Stats.NumOfDataProcessed++
 					supervisor.tlChannel.Pull()
+
+					if i, ok := (supervisor.group).(cluster.VerifiableTL); ok && !i.VerifyTLFunction(request) {
+						continue
+					}
+
 					supervisor.group.LoadFunc(request)
 				}
 			}

@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/messenger"
-	"github.com/GabeCordo/fack"
 )
 
 type InterruptEvent uint8
@@ -29,38 +28,32 @@ type Thread interface {
 }
 
 type Config struct {
-	Name               string   `json:"name"`
-	Version            float64  `json:"version"`
-	Debug              bool     `json:"debug"`
-	HardTerminateTime  int      `json:"hard-terminate-time"`
-	MaxWaitForResponse float64  `json:"max-wait-for-response"`
-	AutoMount          []string `json:"auto-mount"`
+	Name               string  `yaml:"name"`
+	Version            float64 `yaml:"version"`
+	Debug              bool    `yaml:"debug"`
+	HardTerminateTime  int     `yaml:"hard-terminate-time"`
+	MaxWaitForResponse float64 `yaml:"max-wait-for-response"`
 	Cache              struct {
-		Expiry  float64 `json:"expire-in"`
-		MaxSize uint32  `json:"max-size"`
-	} `json:"cache"`
+		Expiry  float64 `yaml:"expire-in"`
+		MaxSize uint32  `yaml:"max-size"`
+	} `yaml:"cache"`
 	Messenger struct {
 		LogFiles struct {
-			Directory string `json:"directory"`
-		} `json:"logging,omitempty"`
-		EnableLogging bool `json:"enable-logging"`
+			Directory string `yaml:"directory"`
+		} `yaml:"logging,omitempty"`
+		EnableLogging bool `yaml:"enable-logging"`
 		Smtp          struct {
-			Endpoint    messenger.Endpoint    `json:"endpoint"`
-			Credentials messenger.Credentials `json:"credentials"`
-			Subscribers map[string][]string   `json:"subscribers"`
+			Endpoint    messenger.Endpoint    `yaml:"endpoint"`
+			Credentials messenger.Credentials `yaml:"credentials"`
+			Subscribers map[string][]string   `yaml:"subscribers"`
 		} `json:"smtp,omitempty"`
-		EnableSmtp bool `json:"enable-smtp"`
+		EnableSmtp bool `yaml:"enable-smtp"`
 	} `json:"messenger"`
-	Net  fack.Address `json:"net"`
+	Net struct {
+		Host string `yaml:"host"`
+		Port int    `yaml:"port"`
+	} `yaml:"net"`
 	Path string
-}
-
-func (c *Config) Safe() *Config {
-	if c.AutoMount == nil {
-		c.AutoMount = make([]string, 0)
-	}
-
-	return c
 }
 
 type Core struct {

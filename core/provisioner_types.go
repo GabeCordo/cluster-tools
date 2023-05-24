@@ -5,10 +5,11 @@ import (
 	"sync"
 )
 
-type SupervisorAction int8
+type ProvisionerAction int8
 
 const (
-	ProvisionerProvision SupervisorAction = iota
+	ProvisionerProvision ProvisionerAction = iota
+	ProvisionerModuleLoad
 	ProvisionerDynamicLoad
 	ProvisionerDynamicDelete
 	ProvisionerMount
@@ -18,13 +19,13 @@ const (
 )
 
 type ProvisionerRequest struct {
-	Action     SupervisorAction `json:"Action"`
-	Nonce      uint32           `json:"Nonce"`
-	Cluster    string           `json:"cluster"`
-	Mount      bool             `json:"mount,omitempty"`
-	Config     string           `json:"config,omitempty"`
-	Path       string           `json:"path,omitempty"`
-	Parameters []string         `json:"parameters,omitempty"`
+	Action      ProvisionerAction `json:"Action"`
+	Nonce       uint32            `json:"Nonce"`
+	ModuleName  string            `json:"Module"`
+	ClusterName string            `json:"cluster"`
+	Mount       bool              `json:"mount,omitempty"`
+	Config      string            `json:"config,omitempty"`
+	ModulePath  string            `json:"path,omitempty"`
 }
 
 type ProvisionerResponse struct {

@@ -2,14 +2,42 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 )
+
+type ModuleRequestBody struct {
+	ModulePath string `json:"path"`
+}
+
+func (httpThread *HttpThread) moduleCallback(w http.ResponseWriter, r *http.Request) {
+
+	request := &ModuleRequestBody{}
+	err := json.NewDecoder(r.Body).Decode(request)
+	if (r.Method != "GET") && (err != nil) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if r.Method == "GET" {
+		provisioner := GetProvisionerInstance()
+		modules := provisioner.GetModules()
+		bytes, _ := json.Marshal(modules)
+		w.Write(bytes)
+	} else if r.Method == "POST" {
+		if success, description := RegisterModule(httpThread.C5, httpThread.provisionerResponseTable, request.ModulePath); !success {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(description))
+		}
+	} else if r.Method == "DELETE" {
+
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
 
 type JSONResponse struct {
 	Status      int    `json:"status,omitempty"`
@@ -18,58 +46,46 @@ type JSONResponse struct {
 }
 
 type ClusterConfigJSONBody struct {
-	Cluster     string  `json:"cluster"`
-	Version     float64 `json:"version,omitempty"`
-	Mounted     bool    `json:"mounted"`
-	DynamicPath string  `json:"dynamic-path,omitempty"`
+	Module  string `json:"module"`
+	Cluster string `json:"cluster"`
+	Mounted bool   `json:"mounted"`
 }
 
 func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Request) {
 
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
 	request := &ClusterConfigJSONBody{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if (r.Method != "GET") && (err != nil) {
-		fmt.Println("bad")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if r.Method == "GET" {
-		if clusterList, success := ClusterList(); success {
-			bytes, _ := json.Marshal(clusterList)
-			if _, err := w.Write(bytes); err != nil {
+		if moduleName, foundModuleName := urlMapping["module"]; foundModuleName {
+			if clusterList, success := ClusterList(moduleName[0]); success {
+				bytes, _ := json.Marshal(clusterList)
+				if _, err := w.Write(bytes); err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 		}
 	} else if r.Method == "PUT" {
 		if request.Mounted {
-			success := ClusterMount(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster)
+			success := ClusterMount(httpThread.C5, httpThread.provisionerResponseTable, request.Module, request.Cluster)
 			if !success {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			success := ClusterUnMount(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster)
+			success := ClusterUnMount(httpThread.C5, httpThread.provisionerResponseTable, request.Module, request.Cluster)
 			if !success {
 				w.WriteHeader(http.StatusNotFound)
 			}
-		}
-	} else if r.Method == "POST" {
-		success, description := DynamicallyRegisterCluster(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster, request.DynamicPath, request.Mounted)
-		if !success {
-			response := &JSONResponse{Description: description}
-			bytes, _ := json.Marshal(response)
-			if _, err := w.Write(bytes); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			} else {
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		}
-	} else if r.Method == "DELETE" {
-		success := DynamicallyDeleteCluster(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster)
-		if !success {
-			w.WriteHeader(http.StatusNotFound)
 		}
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -77,6 +93,7 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 }
 
 type SupervisorConfigJSONBody struct {
+	Module     string `json:"module"`
 	Cluster    string `json:"cluster"`
 	Config     string `json:"config"`
 	Supervisor uint64 `json:"id,omitempty"`
@@ -101,15 +118,16 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 	if r.Method == "GET" {
 
 		clusterName, foundClusterName := urlMapping["cluster"]
+		moduleName, foundModuleName := urlMapping["module"]
 		supervisorIdStr, foundSupervisorId := urlMapping["id"]
 
-		if !foundSupervisorId || !foundClusterName {
+		if !foundSupervisorId || !foundClusterName || !foundModuleName {
 			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			if supervisorId, err := strconv.ParseUint(supervisorIdStr[0], 10, 64); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 			} else {
-				if supervisor, found := SupervisorLookup(clusterName[0], supervisorId); found {
+				if supervisor, found := SupervisorLookup(moduleName[0], clusterName[0], supervisorId); found {
 					bytes, _ := json.Marshal(supervisor)
 					if _, err := w.Write(bytes); err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
@@ -120,7 +138,7 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 			}
 		}
 	} else if r.Method == "POST" {
-		if supervisorId, success, description := SupervisorProvision(httpThread.C5, httpThread.provisionerResponseTable, request.Cluster, request.Config); success {
+		if supervisorId, success, description := SupervisorProvision(httpThread.C5, httpThread.provisionerResponseTable, request.Module, request.Cluster, request.Config); success {
 			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
 			bytes, _ := json.Marshal(response)
 			if _, err := w.Write(bytes); err != nil {
@@ -142,14 +160,11 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 	request := &cluster.Config{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if (r.Method != "GET") && (err != nil) {
-		fmt.Println("bad")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if r.Method == "GET" {
-
-		log.Println("config Get")
 
 		clusterName, foundClusterName := urlMapping["cluster"]
 		if foundClusterName {

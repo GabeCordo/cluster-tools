@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl/components/provisioner"
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"os"
@@ -19,10 +20,10 @@ const (
 
 var (
 	commonConfigPaths = [...]string{
-		"config.etl.json",
-		"/opt/etl/config.etl.json",
-		"/etc/etl/config.etl.json",
-		"%PROGRAMDATA%/etl/config.etl.json",
+		"config.etl.yaml",
+		"/opt/etl/config.etl.yaml",
+		"/etc/etl/config.etl.yaml",
+		"%PROGRAMDATA%/etl/config.etl.yaml",
 	}
 	configLock     = &sync.Mutex{}
 	ConfigInstance *Config
@@ -40,7 +41,7 @@ func GetConfigInstance() *Config {
 		// loop no config is found in any of the locations, panic
 		configFound := false
 		for i := range commonConfigPaths {
-			err := JSONToETLConfig(ConfigInstance, commonConfigPaths[i])
+			err := YAMLToETLConfig(ConfigInstance, commonConfigPaths[i])
 			if err == nil {
 				// the path we found the config for future reference
 				ConfigInstance.Path = commonConfigPaths[i]
@@ -168,24 +169,7 @@ func (core *Core) Run() {
 	go core.HttpThread.Start() // event loop
 	if GetConfigInstance().Debug {
 		log.Println(utils.Purple + "(+)" + utils.Reset + " HTTP API Thread Started")
-	}
-
-	// output all the static mounts on the system
-	config := GetConfigInstance()
-	numOfMountedClusters := len(config.AutoMount)
-
-	output := utils.Purple + "(!)" + utils.Reset + " Statically Mounted Cluster"
-	if numOfMountedClusters > 1 {
-		output += "s"
-	}
-
-	// only output the statically mounted clusters if the debug tag is enabled
-	if GetConfigInstance().Debug {
-		log.Println(output)
-	}
-
-	for _, clusterName := range config.AutoMount {
-		fmt.Printf("\t\t\t- %s\n", clusterName)
+		log.Printf("\t- Listening on %s:%d\n", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
 	}
 
 	// monitor system calls being sent to the process, if the etl is being
@@ -245,10 +229,11 @@ func (core *Core) Run() {
 	}
 }
 
-func (core *Core) Cluster(identifier string, cluster cluster.Cluster, config ...cluster.Config) {
+func (core *Core) Cluster(identifier string, implementation cluster.Cluster, config ...cluster.Config) {
 
 	p := GetProvisionerInstance()
-	p.Register(identifier, cluster)
+	defaultModule, _ := p.GetModule(provisioner.DefaultFrameworkModule)
+	defaultModule.AddCluster(identifier, implementation)
 
 	if len(config) == 1 {
 		d := GetDatabaseInstance()

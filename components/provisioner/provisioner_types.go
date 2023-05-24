@@ -5,7 +5,25 @@ import (
 	"sync"
 )
 
+const (
+	DefaultFrameworkModule = "common"
+)
+
+type ClusterWrapper struct {
+	registry *supervisor.Registry
+	mounted  bool
+
+	mutex sync.RWMutex
+}
+
+type ModuleWrapper struct {
+	clusters map[string]*ClusterWrapper
+	mounted  bool
+
+	mutex sync.RWMutex
+}
+
 type Provisioner struct {
-	Registries map[string]*supervisor.Registry `json:"functions"`
-	mutex      sync.RWMutex
+	modules map[string]*ModuleWrapper
+	mutex   sync.RWMutex
 }
