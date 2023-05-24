@@ -118,6 +118,15 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 		return
 	}
 
+	// if one of the clusters in the module is marked as mounted, then the module should be mounted itself
+	for _, export := range moduleInstance.Config.Exports {
+		if export.StaticMount {
+			moduleWrapper, _ := GetProvisionerInstance().GetModule(moduleInstance.Config.Identifier)
+			moduleWrapper.Mount()
+			break
+		}
+	}
+
 	for _, export := range moduleInstance.Config.Exports {
 
 		request := DatabaseRequest{
