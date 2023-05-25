@@ -22,16 +22,16 @@ const (
 
 type Cluster interface {
 	ExtractFunc(c *channel.OneWayManagedChannel)
-	TransformFunc(in channel.Message) (out channel.Message)
-	LoadFunc(in channel.Message)
+	TransformFunc(in any) (out any)
+	LoadFunc(in any)
 }
 
 type VerifiableET interface {
-	VerifyETFunction(in channel.Message) (valid bool)
+	VerifyETFunction(in any) (valid bool)
 }
 
 type VerifiableTL interface {
-	VerifyTLFunction(in channel.Message) (valid bool)
+	VerifyTLFunction(in any) (valid bool)
 }
 
 type Config struct {

@@ -3,17 +3,6 @@ name: ETLSentiment
 version: 1
 debug: true
 hard-terminate-time: 2
-auto-mount:
-- from-twitter
-- from-reddit
-- find-symbol
-- find-ip
-- find-url
-- find-email
-- calculate-entropy
-- calculate-hash
-- calculate-cfs
-- discard-duplicates
 cache:
   expire-in: 1
   max-size: 1000

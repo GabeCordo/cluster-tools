@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"net/http"
 	"net/url"
@@ -128,7 +129,12 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 				w.WriteHeader(http.StatusBadRequest)
 			} else {
 				if supervisor, found := SupervisorLookup(moduleName[0], clusterName[0], supervisorId); found {
-					bytes, _ := json.Marshal(supervisor)
+					supervisor.Print()
+					bytes, err := json.Marshal(supervisor)
+					if err != nil {
+						fmt.Println(err.Error())
+						w.WriteHeader(http.StatusInternalServerError)
+					}
 					if _, err := w.Write(bytes); err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
 					}

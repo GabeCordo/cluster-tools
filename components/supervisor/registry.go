@@ -64,6 +64,30 @@ func (registry *Registry) CreateSupervisor(config ...cluster.Config) *Supervisor
 	return supervisor
 }
 
+func (registry *Registry) DeleteSupervisor(id uint64) (deleted, found bool) {
+
+	registry.mutex.RLock()
+
+	supervisorInstance, found := registry.supervisors[id]
+	if !found {
+		return false, false
+	}
+
+	registry.mutex.RUnlock()
+
+	found = true
+	if supervisorInstance.Deletable() {
+		registry.mutex.Lock()
+		defer registry.mutex.Unlock()
+		delete(registry.supervisors, id)
+		deleted = true
+	} else {
+		deleted = false
+	}
+
+	return deleted, found
+}
+
 func (registry *Registry) GetSupervisor(id uint64) (*Supervisor, bool) {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()

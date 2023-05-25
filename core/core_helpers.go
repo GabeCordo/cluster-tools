@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 	"github.com/GabeCordo/etl/components/supervisor"
@@ -238,18 +239,23 @@ func SupervisorLookup(moduleName, clusterName string, supervisorId uint64) (supe
 
 	moduleWrapper, found := provisionerInstance.GetModule(moduleName)
 	if !found {
+		fmt.Println("module not found")
 		return nil, false
 	}
 
 	clusterWrapper, found := moduleWrapper.GetCluster(clusterName)
 	if !found {
+		fmt.Println("cluster not found")
 		return nil, false
 	}
 
 	supervisorInstance, found = clusterWrapper.FindSupervisor(supervisorId)
 	if !found {
+		fmt.Println("supervisor not found")
 		return nil, false
 	}
+
+	fmt.Println("returning supervisor")
 
 	return supervisorInstance, found
 }

@@ -10,25 +10,25 @@ func NewClusterWrapper(identifier string, implementation cluster.Cluster) *Clust
 	clusterWrapper := new(ClusterWrapper)
 
 	clusterWrapper.registry = supervisor.NewRegistry(identifier, implementation)
-	clusterWrapper.mounted = false
+	clusterWrapper.Mounted = false
 
 	return clusterWrapper
 }
 
 func (clusterWrapper *ClusterWrapper) IsMounted() bool {
 
-	return clusterWrapper.mounted
+	return clusterWrapper.Mounted
 }
 
 func (clusterWrapper *ClusterWrapper) Mount() *ClusterWrapper {
 
-	clusterWrapper.mounted = true
+	clusterWrapper.Mounted = true
 	return clusterWrapper
 }
 
 func (clusterWrapper *ClusterWrapper) UnMount() *ClusterWrapper {
 
-	clusterWrapper.mounted = false
+	clusterWrapper.Mounted = false
 	return clusterWrapper
 }
 
@@ -41,4 +41,23 @@ func (clusterWrapper *ClusterWrapper) FindSupervisor(id uint64) (instance *super
 func (clusterWrapper *ClusterWrapper) CreateSupervisor(config ...cluster.Config) *supervisor.Supervisor {
 
 	return clusterWrapper.registry.CreateSupervisor(config...)
+}
+
+func (clusterWrapper *ClusterWrapper) DeleteSupervisor(identifier uint64) (deleted, found bool) {
+
+	deleted, found = clusterWrapper.registry.DeleteSupervisor(identifier)
+	return deleted, found
+}
+
+func (clusterWrapper *ClusterWrapper) CanDelete() (canDelete bool) {
+
+	canDelete = true
+	for _, supervisorInstance := range clusterWrapper.registry.GetSupervisors() {
+		if !supervisorInstance.Deletable() {
+			canDelete = false
+			break
+		}
+	}
+
+	return canDelete
 }

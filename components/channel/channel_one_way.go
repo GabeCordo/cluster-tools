@@ -14,6 +14,6 @@ func NewOneWayManagedChannel(channel *ManagedChannel) (*OneWayManagedChannel, er
 
 func (owmc *OneWayManagedChannel) Push(data any) {
 
-	owmc.channel.Channel <- data
-	owmc.channel.size++
+	owmc.channel.channel <- data
+	owmc.channel.Size++
 }

@@ -29,8 +29,8 @@ func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster) *S
 		DefaultChannelGrowthFactor,
 	}
 	supervisor.Stats = cluster.NewStatistics()
-	supervisor.etChannel = channel.NewManagedChannel("etChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
-	supervisor.tlChannel = channel.NewManagedChannel("tlChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
+	supervisor.ETChannel = channel.NewManagedChannel("ETChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
+	supervisor.TLChannel = channel.NewManagedChannel("TLChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
 
 	return supervisor
 }
@@ -48,8 +48,8 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.C
 	supervisor.group = clusterImplementation
 	supervisor.Config = config
 	supervisor.Stats = cluster.NewStatistics()
-	supervisor.etChannel = channel.NewManagedChannel("etChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor)
-	supervisor.tlChannel = channel.NewManagedChannel("tlChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor)
+	supervisor.ETChannel = channel.NewManagedChannel("ETChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor)
+	supervisor.TLChannel = channel.NewManagedChannel("TLChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor)
 
 	return supervisor
 }
@@ -124,7 +124,7 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 
 	//// end creating the default frontend goroutines
 
-	// every N seconds we should check if the etChannel or tlChannel is congested
+	// every N seconds we should check if the ETChannel or TLChannel is congested
 	// and requires us to provision additional nodes
 	go supervisor.Runtime()
 
@@ -142,30 +142,30 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 
 func (supervisor *Supervisor) Runtime() {
 	for {
-		supervisor.etChannel.GetState()
+		supervisor.ETChannel.GetState()
 
-		// is etChannel congested?
-		if supervisor.etChannel.GetState() == channel.Congested {
+		// is ETChannel congested?
+		if supervisor.ETChannel.GetState() == channel.Congested {
 			supervisor.Stats.NumEtThresholdBreaches++
 			n := supervisor.Stats.NumProvisionedTransformRoutes
 			for n > 0 {
 				supervisor.Provision(cluster.Transform)
 				n--
 			}
-			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.etChannel.GetGrowthFactor()
+			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.ETChannel.GetGrowthFactor()
 		}
 
-		supervisor.tlChannel.GetState()
+		supervisor.TLChannel.GetState()
 
-		// is tlChannel congested?
-		if supervisor.tlChannel.GetState() == channel.Congested {
+		// is TLChannel congested?
+		if supervisor.TLChannel.GetState() == channel.Congested {
 			supervisor.Stats.NumTlThresholdBreaches++
 			n := supervisor.Stats.NumProvisionedLoadRoutines
 			for n > 0 {
 				supervisor.Provision(cluster.Load)
 				n--
 			}
-			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.tlChannel.GetGrowthFactor()
+			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.TLChannel.GetGrowthFactor()
 		}
 
 		// check if the channel is congested after DefaultMonitorRefreshDuration seconds
@@ -182,37 +182,37 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 		case cluster.Extract:
 			{
 				supervisor.Stats.NumProvisionedExtractRoutines++
-				oneWayChannel, _ := channel.NewOneWayManagedChannel(supervisor.etChannel)
+				oneWayChannel, _ := channel.NewOneWayManagedChannel(supervisor.ETChannel)
 
-				supervisor.etChannel.AddProducer()
+				supervisor.ETChannel.AddProducer()
 				supervisor.group.ExtractFunc(oneWayChannel)
-				supervisor.etChannel.ProducerDone()
+				supervisor.ETChannel.ProducerDone()
 			}
 		case cluster.Transform:
 			{
 				supervisor.Stats.NumProvisionedTransformRoutes++
-				supervisor.tlChannel.AddProducer()
+				supervisor.TLChannel.AddProducer()
 
-				for request := range supervisor.etChannel.Channel {
-					supervisor.etChannel.Pull()
+				for request := range supervisor.ETChannel.GetChannel() {
+					supervisor.ETChannel.Pull()
 
 					if i, ok := (supervisor.group).(cluster.VerifiableET); ok && !i.VerifyETFunction(request) {
 						continue
 					}
 
 					data := supervisor.group.TransformFunc(request)
-					supervisor.tlChannel.Push(data)
+					supervisor.TLChannel.Push(data)
 				}
 
-				supervisor.tlChannel.ProducerDone()
+				supervisor.TLChannel.ProducerDone()
 			}
 		case cluster.Load:
 			{
 				supervisor.Stats.NumProvisionedLoadRoutines++
 
-				for request := range supervisor.tlChannel.Channel {
+				for request := range supervisor.TLChannel.GetChannel() {
 					supervisor.Stats.NumOfDataProcessed++
-					supervisor.tlChannel.Pull()
+					supervisor.TLChannel.Pull()
 
 					if i, ok := (supervisor.group).(cluster.VerifiableTL); ok && !i.VerifyTLFunction(request) {
 						continue
@@ -230,6 +230,10 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 	// a new function (E, T, or L) is provisioned
 	// we should inform the wait group that the supervisor isn't finished until the wg is done
 	supervisor.waitGroup.Add(1)
+}
+
+func (supervisor *Supervisor) Deletable() bool {
+	return (supervisor.State == Terminated) || (supervisor.State == Failed)
 }
 
 func (supervisor *Supervisor) Print() {

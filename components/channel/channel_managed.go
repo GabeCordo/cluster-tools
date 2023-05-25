@@ -8,30 +8,34 @@ import (
 func NewManagedChannel(name string, threshold, growth int) *ManagedChannel {
 	mc := new(ManagedChannel)
 
-	mc.name = name
-	mc.config.Threshold = threshold
-	mc.config.GrowthFactor = growth
-	mc.Channel = make(chan Message)
+	mc.Name = name
+	mc.Config.Threshold = threshold
+	mc.Config.GrowthFactor = growth
+	mc.channel = make(chan any)
 
 	return mc
 }
 
-func (mc *ManagedChannel) Push(data Message) {
+func (mc *ManagedChannel) GetChannel() chan any {
+	return mc.channel
+}
+
+func (mc *ManagedChannel) Push(data any) {
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 
 	// see if we are hitting a threshold and the successive function is
 	// getting overloaded with data units
-	if (mc.size + 1) >= mc.config.Threshold {
-		mc.state = Congested
+	if (mc.Size + 1) >= mc.Config.Threshold {
+		mc.State = Congested
 	}
-	mc.size++
-	mc.lastPush = time.Now()
-	mc.Channel <- data
+	mc.Size++
+	mc.LastPush = time.Now()
+	mc.channel <- data
 }
 
 func (mc *ManagedChannel) Done() {
-	close(mc.Channel)
+	close(mc.channel)
 }
 
 func (mc *ManagedChannel) AddProducer() {
@@ -47,38 +51,38 @@ func (mc *ManagedChannel) ProducerDone() {
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 
-	if !mc.channelFinished {
-		mc.channelFinished = true
-		close(mc.Channel)
+	if !mc.ChannelFinished {
+		mc.ChannelFinished = true
+		close(mc.channel)
 	}
 }
 
 func (mc *ManagedChannel) Pull() {
-	mc.size--
+	mc.Size--
 }
 
 func (mc *ManagedChannel) GetState() Status {
 
-	if mc.size == 0 {
-		if time.Now().Sub(mc.lastPush).Seconds() > 3 {
-			mc.state = Idle
+	if mc.Size == 0 {
+		if time.Now().Sub(mc.LastPush).Seconds() > 3 {
+			mc.State = Idle
 		} else {
-			mc.state = Empty
+			mc.State = Empty
 		}
-	} else if mc.size > mc.config.Threshold {
-		mc.state = Congested
+	} else if mc.Size > mc.Config.Threshold {
+		mc.State = Congested
 	} else {
-		mc.state = Healthy
+		mc.State = Healthy
 	}
 
-	return mc.state
+	return mc.State
 }
 
 func (mc *ManagedChannel) GetGrowthFactor() int {
 
-	return mc.config.GrowthFactor
+	return mc.Config.GrowthFactor
 }
 
 func (mc *ManagedChannel) ToString() string {
-	return fmt.Sprintf("[%s][%s][Size: %d]\n", mc.name, mc.state.ToString(), mc.size)
+	return fmt.Sprintf("[%s][%s][Size: %d]\n", mc.Name, mc.State.ToString(), mc.Size)
 }

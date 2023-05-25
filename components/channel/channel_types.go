@@ -14,11 +14,9 @@ const (
 	Congested
 )
 
-type Message any
+type OutputChannel chan<- any
 
-type OutputChannel chan<- Message
-
-type InputChannel <-chan Message
+type InputChannel <-chan any
 
 type ManagedChannelConfig struct {
 	Threshold    int
@@ -26,16 +24,16 @@ type ManagedChannelConfig struct {
 }
 
 type ManagedChannel struct {
-	name string
+	Name string
 
-	state  Status
-	size   int
-	config ManagedChannelConfig
+	State  Status
+	Size   int
+	Config ManagedChannelConfig
 
-	Channel chan Message
+	channel chan any
 
-	lastPush        time.Time
-	channelFinished bool
+	LastPush        time.Time
+	ChannelFinished bool
 
 	mutex sync.Mutex
 	wg    sync.WaitGroup

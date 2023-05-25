@@ -42,16 +42,17 @@ type SupervisorData struct {
 }
 
 type Supervisor struct {
-	Id        uint64              `json:"id"`
-	group     cluster.Cluster     `json:"group"`
+	Id uint64 `json:"id"`
+
 	Config    cluster.Config      `json:"config"`
 	Stats     *cluster.Statistics `json:"stats"`
 	State     Status              `json:"status"`
-	mode      cluster.OnCrash     `json:"on-crash"`
+	Mode      cluster.OnCrash     `json:"on-crash"`
 	StartTime time.Time           `json:"start-time"`
 
-	etChannel *channel.ManagedChannel
-	tlChannel *channel.ManagedChannel
+	group     cluster.Cluster
+	ETChannel *channel.ManagedChannel
+	TLChannel *channel.ManagedChannel
 
 	waitGroup sync.WaitGroup
 	mutex     sync.RWMutex
