@@ -1,6 +1,20 @@
 package cluster
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/GabeCordo/fack"
+)
+
+var DefaultConfig Config = Config{
+	Identifier:                  fack.EmptyString,
+	Mode:                        DoNothing,
+	StartWithNTransformClusters: 1,
+	StartWithNLoadClusters:      1,
+	ETChannelThreshold:          2,
+	ETChannelGrowthFactor:       2,
+	TLChannelThreshold:          2,
+	TLChannelGrowthFactor:       2,
+}
 
 func NewConfig(identifier string, etChannelThreshold, etChannelGrowthFactor, tlChannelThreshold, tlChannelGrowthFactor int, mode OnCrash) *Config {
 	config := new(Config)
@@ -13,6 +27,12 @@ func NewConfig(identifier string, etChannelThreshold, etChannelGrowthFactor, tlC
 	config.Mode = mode
 
 	return config
+}
+
+func (config Config) Valid() bool {
+	return !((config.StartWithNLoadClusters <= 0) || (config.StartWithNTransformClusters <= 0) ||
+		(config.TLChannelThreshold < 1) || (config.ETChannelThreshold < 1) ||
+		(config.TLChannelGrowthFactor <= 1) || (config.ETChannelGrowthFactor <= 1))
 }
 
 func (config Config) Print() {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/etl/components/channel"
 	"github.com/GabeCordo/etl/components/cluster"
+	"log"
 	"time"
 )
 
@@ -130,6 +131,9 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 
 	supervisor.waitGroup.Wait() // wait for the Extract-Transform-Load (ETL) Cycle to Complete
 
+	// calculate the timings produced by data being fed across each of the channels
+	supervisor.CalculateTiming()
+
 	response = cluster.NewResponse(
 		supervisor.Config,
 		supervisor.Stats,
@@ -146,26 +150,26 @@ func (supervisor *Supervisor) Runtime() {
 
 		// is ETChannel congested?
 		if supervisor.ETChannel.GetState() == channel.Congested {
-			supervisor.Stats.NumEtThresholdBreaches++
-			n := supervisor.Stats.NumProvisionedTransformRoutes
+			supervisor.Stats.Channels.NumEtThresholdBreaches++
+			n := supervisor.Stats.Threads.NumProvisionedTransformRoutes
 			for n > 0 {
 				supervisor.Provision(cluster.Transform)
 				n--
 			}
-			supervisor.Stats.NumProvisionedTransformRoutes *= supervisor.ETChannel.GetGrowthFactor()
+			supervisor.Stats.Threads.NumProvisionedTransformRoutes *= supervisor.ETChannel.GetGrowthFactor()
 		}
 
 		supervisor.TLChannel.GetState()
 
 		// is TLChannel congested?
 		if supervisor.TLChannel.GetState() == channel.Congested {
-			supervisor.Stats.NumTlThresholdBreaches++
-			n := supervisor.Stats.NumProvisionedLoadRoutines
+			supervisor.Stats.Channels.NumTlThresholdBreaches++
+			n := supervisor.Stats.Threads.NumProvisionedLoadRoutines
 			for n > 0 {
 				supervisor.Provision(cluster.Load)
 				n--
 			}
-			supervisor.Stats.NumProvisionedLoadRoutines *= supervisor.TLChannel.GetGrowthFactor()
+			supervisor.Stats.Threads.NumProvisionedLoadRoutines *= supervisor.TLChannel.GetGrowthFactor()
 		}
 
 		// check if the channel is congested after DefaultMonitorRefreshDuration seconds
@@ -181,7 +185,14 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 		switch segment {
 		case cluster.Extract:
 			{
-				supervisor.Stats.NumProvisionedExtractRoutines++
+				defer func() {
+					if r := recover(); r != nil {
+						log.Println("cluster.Extract function raised error")
+						supervisor.ETChannel.ProducerDone()
+						supervisor.waitGroup.Done()
+					}
+				}()
+				supervisor.Stats.Threads.NumProvisionedExtractRoutines++
 				oneWayChannel, _ := channel.NewOneWayManagedChannel(supervisor.ETChannel)
 
 				supervisor.ETChannel.AddProducer()
@@ -190,35 +201,64 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 			}
 		case cluster.Transform:
 			{
-				supervisor.Stats.NumProvisionedTransformRoutes++
+				defer func() {
+					if r := recover(); r != nil {
+						log.Println("cluster.Transform function raised error")
+						log.Println(r)
+						supervisor.TLChannel.ProducerDone()
+						supervisor.waitGroup.Done()
+					}
+				}()
+
+				supervisor.Stats.Threads.NumProvisionedTransformRoutes++
 				supervisor.TLChannel.AddProducer()
 
+				fmt.Println("starting to read ET Channel")
+
 				for request := range supervisor.ETChannel.GetChannel() {
-					supervisor.ETChannel.Pull()
+
+					// associates a TimeOut to the data being removed from the channel and decrements
+					// the data counter for the current pipe
+					supervisor.ETChannel.DataPopped(request.Id)
+
+					supervisor.Stats.Data.TotalOverETChannel++
 
 					if i, ok := (supervisor.group).(cluster.VerifiableET); ok && !i.VerifyETFunction(request) {
 						continue
 					}
 
-					data := supervisor.group.TransformFunc(request)
-					supervisor.TLChannel.Push(data)
+					data, success := supervisor.group.TransformFunc(request.Data)
+					if success {
+						supervisor.Stats.Data.TotalOverTLChannel++
+						supervisor.TLChannel.Push(channel.DataWrapper{Id: request.Id, Data: data})
+					}
 				}
 
 				supervisor.TLChannel.ProducerDone()
 			}
 		case cluster.Load:
 			{
-				supervisor.Stats.NumProvisionedLoadRoutines++
+				defer func() {
+					if r := recover(); r != nil {
+						log.Println("cluster.Load function raised error")
+						supervisor.waitGroup.Done()
+					}
+				}()
+
+				supervisor.Stats.Threads.NumProvisionedLoadRoutines++
 
 				for request := range supervisor.TLChannel.GetChannel() {
-					supervisor.Stats.NumOfDataProcessed++
-					supervisor.TLChannel.Pull()
+					supervisor.Stats.Data.TotalProcessed++
+
+					// associates a TimeOut to the data being removed from the channel and decrements
+					// the data counter for the current pipe
+					supervisor.TLChannel.DataPopped(request.Id)
 
 					if i, ok := (supervisor.group).(cluster.VerifiableTL); ok && !i.VerifyTLFunction(request) {
 						continue
 					}
 
-					supervisor.group.LoadFunc(request)
+					supervisor.group.LoadFunc(request.Data)
 				}
 			}
 		}
@@ -234,6 +274,12 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 
 func (supervisor *Supervisor) Deletable() bool {
 	return (supervisor.State == Terminated) || (supervisor.State == Failed)
+}
+
+func (supervisor *Supervisor) CalculateTiming() {
+
+	supervisor.Stats.Data.TotalDropped = supervisor.Stats.Data.TotalOverETChannel - supervisor.Stats.Data.TotalOverTLChannel
+	supervisor.Stats.CalculateTiming(supervisor.ETChannel.Timestamps, supervisor.TLChannel.Timestamps)
 }
 
 func (supervisor *Supervisor) Print() {

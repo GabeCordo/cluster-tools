@@ -32,7 +32,7 @@ func (moduleWrapper *ModuleWrapper) UnMount() *ModuleWrapper {
 	return moduleWrapper
 }
 
-func (moduleWrapper *ModuleWrapper) GetClusters() map[string]bool {
+func (moduleWrapper *ModuleWrapper) GetClustersData() map[string]bool {
 
 	mounts := make(map[string]bool)
 
@@ -41,6 +41,17 @@ func (moduleWrapper *ModuleWrapper) GetClusters() map[string]bool {
 	}
 
 	return mounts
+}
+
+func (moduleWrapper *ModuleWrapper) GetClusters() (clusterWrappers []*ClusterWrapper) {
+
+	clusterWrappers = make([]*ClusterWrapper, 0)
+
+	for _, clusterWrapper := range moduleWrapper.clusters {
+		clusterWrappers = append(clusterWrappers, clusterWrapper)
+	}
+
+	return clusterWrappers
 }
 
 func (moduleWrapper *ModuleWrapper) GetCluster(clusterName string) (clusterWrapper *ClusterWrapper, found bool) {

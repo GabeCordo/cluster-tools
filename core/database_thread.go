@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 	"log"
@@ -77,6 +78,7 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 			switch request.Type {
 			case database.Config:
 				{
+					fmt.Println("storing config")
 					configData := (request.Data).(cluster.Config)
 					isOk := d.StoreClusterConfig(configData)
 

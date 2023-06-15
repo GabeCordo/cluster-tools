@@ -232,8 +232,10 @@ func (core *Core) Run() {
 func (core *Core) Cluster(identifier string, implementation cluster.Cluster, config ...cluster.Config) {
 
 	p := GetProvisionerInstance()
-	defaultModule, _ := p.GetModule(provisioner.DefaultFrameworkModule)
-	defaultModule.AddCluster(identifier, implementation)
+	defaultModule, _ := p.GetModule(provisioner.DefaultFrameworkModule) // the default framework module should always be found
+
+	clusterWrapper, _ := defaultModule.AddCluster(identifier, implementation)
+	clusterWrapper.Mount()
 
 	if len(config) == 1 {
 		d := GetDatabaseInstance()

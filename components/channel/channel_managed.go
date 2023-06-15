@@ -11,18 +11,18 @@ func NewManagedChannel(name string, threshold, growth int) *ManagedChannel {
 	mc.Name = name
 	mc.Config.Threshold = threshold
 	mc.Config.GrowthFactor = growth
-	mc.channel = make(chan any)
+	mc.TotalProcessed = 0
+	mc.Timestamps = make(map[uint64]DataTimer)
+	mc.channel = make(chan DataWrapper)
 
 	return mc
 }
 
-func (mc *ManagedChannel) GetChannel() chan any {
+func (mc *ManagedChannel) GetChannel() chan DataWrapper {
 	return mc.channel
 }
 
-func (mc *ManagedChannel) Push(data any) {
-	mc.mutex.Lock()
-	defer mc.mutex.Unlock()
+func (mc *ManagedChannel) Push(data DataWrapper) {
 
 	// see if we are hitting a threshold and the successive function is
 	// getting overloaded with data units
@@ -30,8 +30,27 @@ func (mc *ManagedChannel) Push(data any) {
 		mc.State = Congested
 	}
 	mc.Size++
-	mc.LastPush = time.Now()
+	mc.TotalProcessed++
+	currentTime := time.Now()
+
+	mc.mutex.Lock()
+	mc.Timestamps[data.Id] = DataTimer{In: currentTime}
+	mc.mutex.Unlock()
+
+	mc.LastPush = currentTime
 	mc.channel <- data
+}
+
+func (mc *ManagedChannel) DataPopped(id uint64) {
+
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	if dataTimer, found := mc.Timestamps[id]; found {
+		dataTimer.Out = time.Now()
+		mc.Timestamps[id] = dataTimer
+		mc.Size--
+	}
 }
 
 func (mc *ManagedChannel) Done() {
@@ -57,10 +76,6 @@ func (mc *ManagedChannel) ProducerDone() {
 	}
 }
 
-func (mc *ManagedChannel) Pull() {
-	mc.Size--
-}
-
 func (mc *ManagedChannel) GetState() Status {
 
 	if mc.Size == 0 {
@@ -81,6 +96,10 @@ func (mc *ManagedChannel) GetState() Status {
 func (mc *ManagedChannel) GetGrowthFactor() int {
 
 	return mc.Config.GrowthFactor
+}
+
+func (mc *ManagedChannel) AmountOfDataSeen() int {
+	return mc.TotalProcessed
 }
 
 func (mc *ManagedChannel) ToString() string {

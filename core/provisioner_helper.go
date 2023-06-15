@@ -1,23 +1,35 @@
 package core
 
 import (
+	"errors"
 	"math/rand"
 )
 
 type Helper struct {
-	core *Core
+	c9  chan CacheRequest
+	c11 chan MessengerRequest
 }
 
-func NewHelper(core *Core) *Helper {
+func NewHelper(channels ...any) (*Helper, error) {
 	helper := new(Helper)
 
-	if core == nil {
-		panic("cannot pass a nil pointer for a core, to a core helper")
-	} else {
-		helper.core = core
+	if len(channels) < 2 {
+		return nil, errors.New("helper requires two channels")
 	}
 
-	return helper
+	var ok bool // tracks the state of the channels provided
+
+	helper.c9, ok = (channels[0]).(chan CacheRequest)
+	if !ok {
+		return nil, errors.New("first parameter must be channel C9")
+	}
+
+	helper.c11, ok = (channels[1]).(chan MessengerRequest)
+	if !ok {
+		return nil, errors.New("second parameter must be channel C11")
+	}
+
+	return helper, nil
 }
 
 func (helper Helper) IsDebugEnabled() bool {
@@ -34,7 +46,7 @@ func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 	}
 
 	requestNonce := rand.Uint32()
-	helper.core.C9 <- CacheRequest{Action: CacheSaveIn, Data: data, Nonce: requestNonce, ExpiresIn: expiry}
+	helper.c9 <- CacheRequest{Action: CacheSaveIn, Data: data, Nonce: requestNonce, ExpiresIn: expiry}
 
 	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseEventListener(requestNonce)
 	promise := NewCacheResponsePromise(requestNonce, responseChannel)
@@ -45,7 +57,7 @@ func (helper Helper) SaveToCache(data any) *CacheResponsePromise {
 func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 
 	requestNonce := rand.Uint32()
-	helper.core.C9 <- CacheRequest{Action: CacheLoadFrom, Identifier: identifier, Nonce: requestNonce}
+	helper.c9 <- CacheRequest{Action: CacheLoadFrom, Identifier: identifier, Nonce: requestNonce}
 
 	responseChannel := GetProvisionerMemoryInstance().CreateCacheResponseEventListener(requestNonce)
 	promise := NewCacheResponsePromise(requestNonce, responseChannel)
@@ -56,17 +68,17 @@ func (helper Helper) LoadFromCache(identifier string) *CacheResponsePromise {
 func (helper Helper) Log(cluster, message string) {
 
 	requestNonce := rand.Uint32()
-	helper.core.C11 <- MessengerRequest{Action: MessengerLog, Cluster: cluster, Message: message, Nonce: requestNonce}
+	helper.c11 <- MessengerRequest{Action: MessengerLog, Cluster: cluster, Message: message, Nonce: requestNonce}
 }
 
 func (helper Helper) Warning(cluster, message string) {
 
 	requestNonce := rand.Uint32()
-	helper.core.C11 <- MessengerRequest{Action: MessengerWarning, Cluster: cluster, Message: message, Nonce: requestNonce}
+	helper.c11 <- MessengerRequest{Action: MessengerWarning, Cluster: cluster, Message: message, Nonce: requestNonce}
 }
 
 func (helper Helper) Fatal(cluster, message string) {
 
 	requestNonce := rand.Uint32()
-	helper.core.C11 <- MessengerRequest{Action: MessengerFatal, Cluster: cluster, Message: message, Nonce: requestNonce}
+	helper.c11 <- MessengerRequest{Action: MessengerFatal, Cluster: cluster, Message: message, Nonce: requestNonce}
 }

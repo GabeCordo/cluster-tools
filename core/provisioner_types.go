@@ -10,6 +10,7 @@ type ProvisionerAction int8
 const (
 	ProvisionerProvision ProvisionerAction = iota
 	ProvisionerModuleLoad
+	ProvisionerModuleDelete
 	ProvisionerDynamicLoad
 	ProvisionerDynamicDelete
 	ProvisionerMount

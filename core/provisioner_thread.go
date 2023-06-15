@@ -10,6 +10,7 @@ import (
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
 	"math/rand"
+	"reflect"
 	"time"
 )
 
@@ -90,6 +91,8 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *Pro
 		provisionerThread.ProcessPingProvisionerRequest(request)
 	} else if request.Action == ProvisionerModuleLoad {
 		provisionerThread.RegisterModule(request)
+	} else if request.Action == ProvisionerModuleDelete {
+		provisionerThread.ProcessDeleteModule(request)
 	}
 }
 
@@ -113,7 +116,7 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 
 	success := GetProvisionerInstance().AddModule(moduleInstance)
 	if !success {
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not add module"}
+		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "a module with that identifier already exists or is corrupt"}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -127,7 +130,42 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 		}
 	}
 
+	// note: the module wrapper should already be defined so there is no need to validate
+	moduleWrapper, _ := GetProvisionerInstance().GetModule(moduleInstance.Config.Identifier)
+
+	// REGISTER ANY HELPERS TO CLUSTERS THAT HAVE DEFINED THEM WITHIN THE STRUCT
+	for _, clusterWrapper := range moduleWrapper.GetClusters() {
+
+		clusterImplementation := clusterWrapper.GetClusterImplementation()
+
+		reflectedClusterImpl := reflect.ValueOf(clusterImplementation)
+
+		helperField := reflect.Indirect(reflectedClusterImpl).FieldByName("Helper")
+		if helperField.IsValid() && helperField.CanSet() {
+			if helper, err := NewHelper(provisionerThread.C9, provisionerThread.C11); err == nil {
+				helperField.Set(reflect.ValueOf(helper))
+			}
+		}
+	}
+
+	// REGISTER EACH CONFIG FROM THE MODULE FILE TO THE DATABASE THREAD
 	for _, export := range moduleInstance.Config.Exports {
+
+		config := cluster.Config{
+			Identifier:                  export.Cluster,
+			Mode:                        export.Config.OnCrash,
+			StartWithNLoadClusters:      export.Config.Static.LFunctions,
+			StartWithNTransformClusters: export.Config.Static.TFunctions,
+			ETChannelThreshold:          export.Config.Dynamic.TFunction.Threshold,
+			ETChannelGrowthFactor:       export.Config.Dynamic.TFunction.GrowthFactor,
+			TLChannelThreshold:          export.Config.Dynamic.LFunction.Threshold,
+			TLChannelGrowthFactor:       export.Config.Dynamic.LFunction.GrowthFactor,
+		}
+
+		if !config.Valid() {
+			config = cluster.DefaultConfig
+			config.Identifier = export.Cluster
+		}
 
 		request := DatabaseRequest{
 			Action:  DatabaseStore,
@@ -135,16 +173,7 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 			Origin:  Provisioner,
 			Type:    database.Config,
 			Cluster: export.Cluster,
-			Data: cluster.Config{
-				Identifier:                  export.Cluster,
-				Mode:                        export.Config.OnCrash,
-				StartWithNLoadClusters:      export.Config.Static.LFunctions,
-				StartWithNTransformClusters: export.Config.Static.TFunctions,
-				ETChannelThreshold:          export.Config.Dynamic.TFunction.Threshold,
-				ETChannelGrowthFactor:       export.Config.Dynamic.TFunction.GrowthFactor,
-				TLChannelThreshold:          export.Config.Dynamic.LFunction.Threshold,
-				TLChannelGrowthFactor:       export.Config.Dynamic.LFunction.GrowthFactor,
-			},
+			Data:    config,
 		}
 		provisionerThread.C7 <- request
 
@@ -171,7 +200,30 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 		}
 	}
 
+	log.Printf("[provisioner] dynamically loaded module %s\n", moduleInstance.Config.Identifier)
+
 	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce, Description: "module registered"}
+	provisionerThread.wg.Done()
+}
+
+func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *ProvisionerRequest) {
+
+	provisionerInstance := GetProvisionerInstance()
+
+	var response ProvisionerResponse = ProvisionerResponse{Nonce: request.Nonce}
+	if deleted, _, found := provisionerInstance.DeleteModule(request.ModuleName); found {
+		response.Success = true
+		if deleted {
+			response.Description = "module deleted"
+		} else {
+			response.Description = "module marked for deletion, a cluster is likely running right now, try later"
+		}
+	} else {
+		response.Success = false
+		response.Description = "module not found"
+	}
+
+	provisionerThread.C6 <- response
 	provisionerThread.wg.Done()
 }
 
@@ -342,11 +394,16 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		return
 	}
 
-	fmt.Println(moduleWrapper)
-
 	clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
 
-	if !found && !clusterWrapper.IsMounted() {
+	if !found {
+		log.Printf("%s[%s]%s Cluster does not exist\n", utils.Green, request.ClusterName, utils.Reset)
+		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.wg.Done()
+		return
+	}
+
+	if !clusterWrapper.IsMounted() {
 		log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.ClusterName, utils.Reset)
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()

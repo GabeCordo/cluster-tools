@@ -11,7 +11,8 @@ import (
 )
 
 type ModuleRequestBody struct {
-	ModulePath string `json:"path"`
+	ModulePath string `json:"path,omitempty"`
+	ModuleName string `json:"module,omitempty"`
 }
 
 func (httpThread *HttpThread) moduleCallback(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,11 @@ func (httpThread *HttpThread) moduleCallback(w http.ResponseWriter, r *http.Requ
 			w.Write([]byte(description))
 		}
 	} else if r.Method == "DELETE" {
-
+		success, description := DeleteModule(httpThread.C5, httpThread.provisionerResponseTable, request.ModuleName)
+		if !success {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		w.Write([]byte(description))
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}

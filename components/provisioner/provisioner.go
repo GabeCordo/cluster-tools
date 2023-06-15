@@ -10,7 +10,10 @@ func NewProvisioner() *Provisioner {
 	provisioner := new(Provisioner)
 
 	provisioner.modules = make(map[string]*ModuleWrapper)
-	provisioner.modules[DefaultFrameworkModule] = NewModuleWrapper()
+
+	defaultFrameworkModule := NewModuleWrapper()
+	defaultFrameworkModule.Mount()
+	provisioner.modules[DefaultFrameworkModule] = defaultFrameworkModule
 
 	return provisioner
 }
@@ -57,7 +60,13 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) (succes
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
+	fmt.Println(provisioner.modules)
+
 	if implementation == nil {
+		return false
+	}
+
+	if _, found := provisioner.modules[implementation.Config.Identifier]; found {
 		return false
 	}
 
@@ -95,8 +104,7 @@ func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, marked
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	if moduleWrapper, found := provisioner.modules[identifier]; found {
-
+	if moduleWrapper, foundModule := provisioner.modules[identifier]; foundModule {
 		found = true
 
 		moduleWrapper.MarkForDeletion = true

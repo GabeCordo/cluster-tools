@@ -1,5 +1,7 @@
 package channel
 
+import "math/rand"
+
 func NewOneWayManagedChannel(channel *ManagedChannel) (*OneWayManagedChannel, error) {
 
 	if channel == nil {
@@ -14,6 +16,5 @@ func NewOneWayManagedChannel(channel *ManagedChannel) (*OneWayManagedChannel, er
 
 func (owmc *OneWayManagedChannel) Push(data any) {
 
-	owmc.channel.channel <- data
-	owmc.channel.Size++
+	owmc.channel.Push(DataWrapper{Id: rand.Uint64(), Data: data})
 }

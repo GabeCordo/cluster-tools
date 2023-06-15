@@ -22,7 +22,8 @@ type DatabaseRequest struct {
 	Nonce   uint32            `json:"Nonce"`
 	Origin  Module            `json:"origin"`
 	Type    database.DataType `json:"type"`
-	Cluster string            `json:"cluster"` // aka. Identifier
+	Cluster string            `json:"cluster"` // aka. Cluster Identifier
+	Module  string            `json:"module"`  // aka. Module Identifier
 	Data    any               `json:"data"`    // *cluster.Response `json:"Data"`
 }
 

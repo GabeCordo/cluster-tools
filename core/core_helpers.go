@@ -225,7 +225,7 @@ func ClusterList(moduleName string) (clusters map[string]bool, success bool) {
 		return nil, false
 	}
 
-	mounts := moduleWrapper.GetClusters()
+	mounts := moduleWrapper.GetClustersData()
 	for identifier, isMounted := range mounts {
 		clusters[identifier] = isMounted
 	}
@@ -355,6 +355,31 @@ func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable
 func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, modulePath string) (success bool, description string) {
 
 	request := ProvisionerRequest{Action: ProvisionerModuleLoad, Nonce: rand.Uint32(), ModulePath: modulePath}
+	pipe <- request
+
+	provisionerTimeout := false
+	var provisionerResponse ProvisionerResponse
+
+	timestamp2 := time.Now()
+	for {
+		if time.Now().Sub(timestamp2).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			provisionerTimeout = true
+			break
+		}
+
+		if responseEntry, found := responseTable.Lookup(request.Nonce); found {
+			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			break
+		}
+	}
+
+	success = !provisionerTimeout && provisionerResponse.Success
+	return success, provisionerResponse.Description
+}
+
+func DeleteModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName string) (success bool, description string) {
+
+	request := ProvisionerRequest{Action: ProvisionerModuleDelete, Nonce: rand.Uint32(), ModuleName: moduleName}
 	pipe <- request
 
 	provisionerTimeout := false

@@ -34,13 +34,6 @@ const (
 	EndReport            = 6
 )
 
-type SupervisorData struct {
-	Id        uint64          `json:"id"`
-	State     Status          `json:"state"`
-	Mode      cluster.OnCrash `json:"on-crash"`
-	StartTime time.Time       `json:"start-time"`
-}
-
 type Supervisor struct {
 	Id uint64 `json:"id"`
 
@@ -53,18 +46,6 @@ type Supervisor struct {
 	group     cluster.Cluster
 	ETChannel *channel.ManagedChannel
 	TLChannel *channel.ManagedChannel
-
-	waitGroup sync.WaitGroup
-	mutex     sync.RWMutex
-}
-
-type SupervisorV2 struct {
-	Data   SupervisorData      `json:"data"`
-	Config *cluster.Config     `json:"config"`
-	Stats  *cluster.Statistics `json:"stats"`
-
-	etChannel *channel.ManagedChannel
-	tlChannel *channel.ManagedChannel
 
 	waitGroup sync.WaitGroup
 	mutex     sync.RWMutex

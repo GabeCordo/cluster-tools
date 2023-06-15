@@ -23,6 +23,16 @@ type ManagedChannelConfig struct {
 	GrowthFactor int
 }
 
+type DataTimer struct {
+	In  time.Time
+	Out time.Time
+}
+
+type DataWrapper struct {
+	Id   uint64
+	Data any
+}
+
 type ManagedChannel struct {
 	Name string
 
@@ -30,7 +40,10 @@ type ManagedChannel struct {
 	Size   int
 	Config ManagedChannelConfig
 
-	channel chan any
+	TotalProcessed int
+	Timestamps     map[uint64]DataTimer
+
+	channel chan DataWrapper
 
 	LastPush        time.Time
 	ChannelFinished bool
