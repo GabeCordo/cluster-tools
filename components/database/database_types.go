@@ -14,8 +14,9 @@ const (
 type DataType uint8
 
 const (
-	Statistic DataType = 0
-	Config             = 1
+	Statistic DataType = iota
+	Config
+	Module
 )
 
 type Entry struct {
@@ -32,8 +33,8 @@ type Record struct {
 }
 
 type Database struct {
-	Records map[string]*Record        `json:"record"`
-	Configs map[string]cluster.Config `json:"configs"`
+	Records map[string]map[string]*Record        `json:"record"`
+	Configs map[string]map[string]cluster.Config `json:"configs"`
 
 	mutex sync.RWMutex
 }

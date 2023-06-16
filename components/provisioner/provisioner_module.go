@@ -1,8 +1,8 @@
 package provisioner
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
+	"log"
 )
 
 func NewModuleWrapper() *ModuleWrapper {
@@ -79,8 +79,6 @@ func (moduleWrapper *ModuleWrapper) AddCluster(clusterName string, implementatio
 	clusterWrapper := NewClusterWrapper(clusterName, implementation)
 	moduleWrapper.clusters[clusterName] = clusterWrapper
 
-	fmt.Printf("registered cluster %s\n", clusterName)
-
 	return clusterWrapper, true
 }
 
@@ -108,15 +106,17 @@ func (moduleWrapper *ModuleWrapper) CanDelete() (canDelete bool) {
 	defer moduleWrapper.mutex.RUnlock()
 
 	// if the module is not marked for deletion, it should not be deleted
-	if moduleWrapper.MarkForDeletion {
+	if !moduleWrapper.MarkForDeletion {
+		log.Printf("[provisioner] cannot delete %s - not marked for deletion\n", moduleWrapper.Identifier)
 		return false
 	}
 
 	canDelete = true
 	// look over all the supervisor in a module
-	for _, clusterWrapper := range moduleWrapper.clusters {
+	for clusterName, clusterWrapper := range moduleWrapper.clusters {
 
 		if !clusterWrapper.CanDelete() {
+			log.Printf("[provisioner][cluster] cannot delete %s\n", clusterName)
 			canDelete = false
 			break
 		}

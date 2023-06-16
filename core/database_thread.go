@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
 	"log"
@@ -78,16 +77,15 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 			switch request.Type {
 			case database.Config:
 				{
-					fmt.Println("storing config")
 					configData := (request.Data).(cluster.Config)
-					isOk := d.StoreClusterConfig(configData)
+					isOk := d.StoreClusterConfig(request.Module, configData)
 
 					databaseThread.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			case database.Statistic:
 				{
 					statisticsData := (request.Data).(*cluster.Response)
-					isOk := d.StoreUsageRecord(request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
+					isOk := d.StoreUsageRecord(request.Module, request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
 
 					databaseThread.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
@@ -100,7 +98,7 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 			switch request.Type {
 			case database.Config:
 				{
-					config, ok := d.GetClusterConfig(request.Cluster)
+					config, ok := d.GetClusterConfig(request.Module, request.Cluster)
 					if !ok {
 						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
 					} else {
@@ -111,7 +109,7 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 				}
 			case database.Statistic:
 				{
-					record, ok := d.GetUsageRecord(request.Cluster)
+					record, ok := d.GetUsageRecord(request.Module, request.Cluster)
 					if !ok {
 						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
 					} else {
@@ -122,10 +120,22 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 				}
 			}
 		}
+	case DatabaseDelete:
+		{
+			switch request.Type {
+			case database.Module:
+				{
+					success := d.DeleteModuleRecords(request.Module)
+
+					response := DatabaseResponse{Success: success, Nonce: request.Nonce}
+					databaseThread.Send(request, &response)
+				}
+			}
+		}
 	case DatabaseReplace:
 		{
 			config := (request.Data).(cluster.Config)
-			success := d.ReplaceClusterConfig(config)
+			success := d.ReplaceClusterConfig(request.Module, config)
 			response := DatabaseResponse{Success: success, Nonce: request.Nonce}
 
 			databaseThread.Send(request, &response)

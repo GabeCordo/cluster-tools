@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/module"
+	"log"
 )
 
 func NewProvisioner() *Provisioner {
@@ -57,16 +58,17 @@ func (provisioner *Provisioner) GetModule(moduleName string) (instance *ModuleWr
 
 func (provisioner *Provisioner) AddModule(implementation *module.Module) (success bool) {
 
+	fmt.Printf("[provisioner] attempting to add module %s\n", implementation.Config.Identifier)
+
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
-
-	fmt.Println(provisioner.modules)
 
 	if implementation == nil {
 		return false
 	}
 
 	if _, found := provisioner.modules[implementation.Config.Identifier]; found {
+		log.Printf("[provisioner] the module %s already exists - it cannot be added\n", implementation.Config.Identifier)
 		return false
 	}
 
@@ -92,8 +94,11 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) (succes
 			continue
 		}
 
-		clusterWrapper, _ := moduleWrapper.AddCluster(export.Cluster, clusterImplementation)
-		clusterWrapper.Mounted = export.StaticMount
+		if clusterWrapper, success := moduleWrapper.AddCluster(export.Cluster, clusterImplementation); success {
+			clusterWrapper.Mounted = export.StaticMount
+		} else {
+			log.Printf("[provisioner] could not add cluster %s\n", export.Cluster)
+		}
 	}
 
 	return true
@@ -104,17 +109,25 @@ func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, marked
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
+	log.Printf("[provisioner] attempting to delete module %s\n", identifier)
+
+	deleted = false
+
 	if moduleWrapper, foundModule := provisioner.modules[identifier]; foundModule {
 		found = true
 
-		moduleWrapper.MarkForDeletion = true
+		provisioner.modules[identifier].MarkForDeletion = true
 		markedForDeletion = true
 
 		if moduleWrapper.CanDelete() {
 			delete(provisioner.modules, identifier)
+			deleted = true
+			log.Printf("[provisioner] module %s deleted\n", identifier)
+		} else {
+			log.Printf("[provisioner] could not delete %s\n", identifier)
 		}
-		deleted = true
 	} else {
+		log.Printf("[provisioner] could not find %s\n", identifier)
 		found = false
 	}
 

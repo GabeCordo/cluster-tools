@@ -239,6 +239,12 @@ func (core *Core) Cluster(identifier string, implementation cluster.Cluster, con
 
 	if len(config) == 1 {
 		d := GetDatabaseInstance()
-		d.StoreClusterConfig(config[0])
+		d.StoreClusterConfig(provisioner.DefaultFrameworkModule, config[0])
 	}
+}
+
+func (core *Core) Module(path string) (success bool, description string) {
+
+	success, description = RegisterModule(core.HttpThread.C5, core.HttpThread.provisionerResponseTable, path)
+	return success, description
 }

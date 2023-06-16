@@ -175,11 +175,19 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	/* the module always needs to be included */
+	moduleName, foundModuleName := urlMapping["module"]
+	if !foundModuleName {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	if r.Method == "GET" {
 
 		clusterName, foundClusterName := urlMapping["cluster"]
+
 		if foundClusterName {
-			if config, found := GetConfigFromDatabase(httpThread.C1, httpThread.databaseResponseTable, clusterName[0]); found {
+			if config, found := GetConfigFromDatabase(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], clusterName[0]); found {
 				bytes, _ := json.Marshal(config)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -193,13 +201,13 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 	} else if r.Method == "POST" {
 
-		isOk := StoreConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, *request)
+		isOk := StoreConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusConflict)
 		}
 
 	} else if r.Method == "PUT" {
-		isOk := ReplaceConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, *request)
+		isOk := ReplaceConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -215,9 +223,11 @@ func (httpThread *HttpThread) statisticCallback(w http.ResponseWriter, r *http.R
 
 	if r.Method == "GET" {
 
+		moduleName, moduleNameFound := urlMapping["module"]
 		clusterName, clusterNameFound := urlMapping["cluster"]
-		if clusterNameFound {
-			statistics, found := FindStatistics(httpThread.C1, httpThread.databaseResponseTable, clusterName[0])
+
+		if moduleNameFound && clusterNameFound {
+			statistics, found := FindStatistics(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], clusterName[0])
 			if found {
 				bytes, err := json.Marshal(statistics)
 				if err == nil {

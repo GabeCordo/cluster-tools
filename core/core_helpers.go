@@ -11,9 +11,15 @@ import (
 	"time"
 )
 
-func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, clusterName string) (config cluster.Config, found bool) {
+func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName, clusterName string) (config cluster.Config, found bool) {
 
-	databaseRequest := DatabaseRequest{Action: DatabaseFetch, Type: database.Config, Nonce: rand.Uint32(), Cluster: clusterName}
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseFetch,
+		Type:    database.Config,
+		Module:  moduleName,
+		Cluster: clusterName,
+		Nonce:   rand.Uint32(),
+	}
 	pipe <- databaseRequest
 
 	timeout := false
@@ -39,9 +45,16 @@ func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 	}
 }
 
-func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, config cluster.Config) (success bool) {
+func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
 
-	databaseRequest := DatabaseRequest{Action: DatabaseStore, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseStore,
+		Type:    database.Config,
+		Module:  moduleName,
+		Cluster: config.Identifier,
+		Data:    config,
+		Nonce:   rand.Uint32(),
+	}
 	pipe <- databaseRequest
 
 	timeout := false
@@ -63,9 +76,16 @@ func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 	return timeout || databaseResponse.Success
 }
 
-func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, config cluster.Config) (success bool) {
+func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
 
-	databaseRequest := DatabaseRequest{Action: DatabaseReplace, Type: database.Config, Nonce: rand.Uint32(), Cluster: config.Identifier, Data: config}
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseReplace,
+		Type:    database.Config,
+		Module:  moduleName,
+		Cluster: config.Identifier,
+		Data:    config,
+		Nonce:   rand.Uint32(),
+	}
 	pipe <- databaseRequest
 
 	timeout := false
@@ -87,9 +107,14 @@ func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable 
 	return timeout || databaseResponse.Success
 }
 
-func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, module, cluster string) (success bool) {
+func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), ModuleName: module, ClusterName: cluster, Action: ProvisionerMount}
+	provisionerThreadRequest := ProvisionerRequest{
+		Action:      ProvisionerMount,
+		ModuleName:  moduleName,
+		ClusterName: clusterName,
+		Nonce:       rand.Uint32(),
+	}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -111,9 +136,14 @@ func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 	return !timeout && provisionerResponse.Success
 }
 
-func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, module, cluster string) (success bool) {
+func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), ModuleName: module, ClusterName: cluster, Action: ProvisionerUnMount}
+	provisionerThreadRequest := ProvisionerRequest{
+		Action:      ProvisionerUnMount,
+		ModuleName:  moduleName,
+		ClusterName: clusterName,
+		Nonce:       rand.Uint32(),
+	}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -133,35 +163,15 @@ func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 	}
 
 	return !timeout && provisionerResponse.Success
-}
-
-func DynamicallyRegisterCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName, sharedObjectPath string, mount bool) (success bool, description string) {
-
-	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicLoad, Nonce: rand.Uint32(), ClusterName: clusterName, ModulePath: sharedObjectPath, Mount: mount}
-	pipe <- provisionerThreadRequest
-
-	timeout := false
-	var provisionerResponse ProvisionerResponse
-
-	timestamp := time.Now()
-	for {
-		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
-			timeout = true
-			break
-		}
-
-		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
-			break
-		}
-	}
-
-	return timeout || provisionerResponse.Success, provisionerResponse.Description
 }
 
 func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{Action: ProvisionerDynamicDelete, Nonce: rand.Uint32(), ClusterName: clusterName}
+	provisionerThreadRequest := ProvisionerRequest{
+		Action:      ProvisionerDynamicDelete,
+		ClusterName: clusterName,
+		Nonce:       rand.Uint32(),
+	}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
@@ -183,9 +193,14 @@ func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *uti
 	return timeout || provisionerResponse.Success
 }
 
-func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, module, cluster string, config ...string) (supervisorId uint64, success bool, description string) {
+func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string, config ...string) (supervisorId uint64, success bool, description string) {
 
-	provisionerThreadRequest := ProvisionerRequest{Nonce: rand.Uint32(), ModuleName: module, ClusterName: cluster, Action: ProvisionerProvision}
+	provisionerThreadRequest := ProvisionerRequest{
+		Action:      ProvisionerProvision,
+		ModuleName:  moduleName,
+		ClusterName: clusterName,
+		Nonce:       rand.Uint32(),
+	}
 	if len(config) > 0 {
 		provisionerThreadRequest.Config = config[0]
 	}
@@ -260,9 +275,15 @@ func SupervisorLookup(moduleName, clusterName string, supervisorId uint64) (supe
 	return supervisorInstance, found
 }
 
-func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTable, clusterName string) (entries []database.Entry, found bool) {
+func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (entries []database.Entry, found bool) {
 
-	databaseRequest := DatabaseRequest{Action: DatabaseFetch, Type: database.Statistic, Nonce: rand.Uint32(), Cluster: clusterName}
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseFetch,
+		Type:    database.Statistic,
+		Module:  moduleName,
+		Cluster: clusterName,
+		Nonce:   rand.Uint32(),
+	}
 	pipe <- databaseRequest
 
 	timeout := false
@@ -295,7 +316,10 @@ func ShutdownNode(pipe chan<- InterruptEvent) (response []byte, success bool) {
 
 func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, provisionerPipe chan<- ProvisionerRequest, provisionerResponseTable *utils.ResponseTable) (success bool) {
 
-	databasePingRequest := DatabaseRequest{Action: DatabaseUpperPing, Nonce: rand.Uint32()}
+	databasePingRequest := DatabaseRequest{
+		Action: DatabaseUpperPing,
+		Nonce:  rand.Uint32(),
+	}
 	databasePipe <- databasePingRequest
 
 	databaseTimeout := false
@@ -354,7 +378,11 @@ func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable
 
 func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, modulePath string) (success bool, description string) {
 
-	request := ProvisionerRequest{Action: ProvisionerModuleLoad, Nonce: rand.Uint32(), ModulePath: modulePath}
+	request := ProvisionerRequest{
+		Action:     ProvisionerModuleLoad,
+		ModulePath: modulePath,
+		Nonce:      rand.Uint32(),
+	}
 	pipe <- request
 
 	provisionerTimeout := false
@@ -379,7 +407,11 @@ func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 
 func DeleteModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName string) (success bool, description string) {
 
-	request := ProvisionerRequest{Action: ProvisionerModuleDelete, Nonce: rand.Uint32(), ModuleName: moduleName}
+	request := ProvisionerRequest{
+		Action:     ProvisionerModuleDelete,
+		ModuleName: moduleName,
+		Nonce:      rand.Uint32(),
+	}
 	pipe <- request
 
 	provisionerTimeout := false

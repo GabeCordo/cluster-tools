@@ -90,18 +90,19 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *Pro
 	} else if request.Action == ProvisionerLowerPing {
 		provisionerThread.ProcessPingProvisionerRequest(request)
 	} else if request.Action == ProvisionerModuleLoad {
-		provisionerThread.RegisterModule(request)
+		provisionerThread.ProcessAddModule(request)
 	} else if request.Action == ProvisionerModuleDelete {
 		provisionerThread.ProcessDeleteModule(request)
 	}
 }
 
-func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessAddModule(request *ProvisionerRequest) {
 
-	log.Printf("registering module at %s\n", request.ModulePath)
+	log.Printf("[provisioner] registering module at %s\n", request.ModulePath)
 
 	remoteModule, err := module.NewRemoteModule(request.ModulePath)
 	if err != nil {
+		log.Println("[provisioner] cannot find remote module")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "cannot find remote module"}
 		provisionerThread.wg.Done()
 		return
@@ -109,6 +110,7 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 
 	moduleInstance, err := remoteModule.Get()
 	if err != nil {
+		log.Println("[provisioner] module built with older version")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "module built with older version"}
 		provisionerThread.wg.Done()
 		return
@@ -116,6 +118,7 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 
 	success := GetProvisionerInstance().AddModule(moduleInstance)
 	if !success {
+		log.Println("[provisioner] a module with that identifier already exists or is corrupt")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "a module with that identifier already exists or is corrupt"}
 		provisionerThread.wg.Done()
 		return
@@ -126,6 +129,7 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 		if export.StaticMount {
 			moduleWrapper, _ := GetProvisionerInstance().GetModule(moduleInstance.Config.Identifier)
 			moduleWrapper.Mount()
+			log.Printf("[provisioner] mounted module %s\n", moduleInstance.Config.Identifier)
 			break
 		}
 	}
@@ -147,6 +151,8 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 			}
 		}
 	}
+
+	log.Printf("[provisioner] attempting to register configs for module %s\n", moduleWrapper.Identifier)
 
 	// REGISTER EACH CONFIG FROM THE MODULE FILE TO THE DATABASE THREAD
 	for _, export := range moduleInstance.Config.Exports {
@@ -172,6 +178,7 @@ func (provisionerThread *ProvisionerThread) RegisterModule(request *ProvisionerR
 			Nonce:   rand.Uint32(),
 			Origin:  Provisioner,
 			Type:    database.Config,
+			Module:  moduleInstance.Config.Identifier,
 			Cluster: export.Cluster,
 			Data:    config,
 		}
@@ -215,6 +222,35 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *Provisi
 		response.Success = true
 		if deleted {
 			response.Description = "module deleted"
+
+			databaseRequest := DatabaseRequest{
+				Action: DatabaseDelete,
+				Type:   database.Module,
+				Module: request.ModuleName,
+				Nonce:  rand.Uint32(),
+			}
+			provisionerThread.C7 <- databaseRequest
+
+			databasePingTimeout := false
+			var databaseResponse DatabaseResponse
+
+			timestamp := time.Now()
+			for {
+				if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+					databasePingTimeout = true
+					break
+				}
+
+				if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
+					databaseResponse = (responseEntry).(DatabaseResponse)
+					break
+				}
+			}
+
+			if databasePingTimeout || !databaseResponse.Success {
+				response.Success = false
+				response.Description = "could not delete clusters and statistics under a module"
+			}
 		} else {
 			response.Description = "module marked for deletion, a cluster is likely running right now, try later"
 		}
@@ -418,7 +454,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		request.Config = request.ClusterName
 	}
 
-	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.Config)
+	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.ModuleName, request.Config)
 	config.Print()
 	fmt.Println(configFound)
 	if !configFound {
