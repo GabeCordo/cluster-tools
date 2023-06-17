@@ -271,7 +271,7 @@ func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Reque
 			ShutdownNode(httpThread.Interrupt)
 		} else if request.Action == "ping" {
 			startTime := time.Now()
-			success := PingNodeChannels(httpThread.C1, httpThread.databaseResponseTable, httpThread.C5, httpThread.provisionerResponseTable)
+			success := PingNodeChannels(httpThread.logger, httpThread.C1, httpThread.databaseResponseTable, httpThread.C5, httpThread.provisionerResponseTable)
 			response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
 			bytes, err := json.Marshal(response)
 			if err == nil {
@@ -279,6 +279,11 @@ func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Reque
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		} else if request.Action == "debug" {
+			description := ToggleDebugMode(httpThread.logger)
+			if _, err := w.Write([]byte(description)); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}

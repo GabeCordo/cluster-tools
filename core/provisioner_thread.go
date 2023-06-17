@@ -8,7 +8,6 @@ import (
 	"github.com/GabeCordo/etl/components/provisioner"
 	"github.com/GabeCordo/etl/components/supervisor"
 	"github.com/GabeCordo/etl/components/utils"
-	"log"
 	"math/rand"
 	"reflect"
 	"time"
@@ -98,11 +97,11 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *Pro
 
 func (provisionerThread *ProvisionerThread) ProcessAddModule(request *ProvisionerRequest) {
 
-	log.Printf("[provisioner] registering module at %s\n", request.ModulePath)
+	provisionerThread.logger.Printf("[provisioner] registering module at %s\n", request.ModulePath)
 
 	remoteModule, err := module.NewRemoteModule(request.ModulePath)
 	if err != nil {
-		log.Println("[provisioner] cannot find remote module")
+		provisionerThread.logger.Alertln("cannot find remote module")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "cannot find remote module"}
 		provisionerThread.wg.Done()
 		return
@@ -110,15 +109,14 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 
 	moduleInstance, err := remoteModule.Get()
 	if err != nil {
-		log.Println("[provisioner] module built with older version")
+		provisionerThread.logger.Alertln("module built with older version")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "module built with older version"}
 		provisionerThread.wg.Done()
 		return
 	}
 
-	success := GetProvisionerInstance().AddModule(moduleInstance)
-	if !success {
-		log.Println("[provisioner] a module with that identifier already exists or is corrupt")
+	if err := GetProvisionerInstance().AddModule(moduleInstance); err != nil {
+		provisionerThread.logger.Alertln("a module with that identifier already exists or is corrupt")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "a module with that identifier already exists or is corrupt"}
 		provisionerThread.wg.Done()
 		return
@@ -129,7 +127,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 		if export.StaticMount {
 			moduleWrapper, _ := GetProvisionerInstance().GetModule(moduleInstance.Config.Identifier)
 			moduleWrapper.Mount()
-			log.Printf("[provisioner] mounted module %s\n", moduleInstance.Config.Identifier)
+			provisionerThread.logger.Printf("mounted module %s\n", moduleInstance.Config.Identifier)
 			break
 		}
 	}
@@ -151,8 +149,6 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 			}
 		}
 	}
-
-	log.Printf("[provisioner] attempting to register configs for module %s\n", moduleWrapper.Identifier)
 
 	// REGISTER EACH CONFIG FROM THE MODULE FILE TO THE DATABASE THREAD
 	for _, export := range moduleInstance.Config.Exports {
@@ -207,7 +203,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 		}
 	}
 
-	log.Printf("[provisioner] dynamically loaded module %s\n", moduleInstance.Config.Identifier)
+	provisionerThread.logger.Printf("dynamically loaded module %s\n", moduleInstance.Config.Identifier)
 
 	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce, Description: "module registered"}
 	provisionerThread.wg.Done()
@@ -266,7 +262,7 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *Provisi
 func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *ProvisionerRequest) {
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_provisioner] received ping over C5")
+		provisionerThread.logger.Println("received ping over C5")
 	}
 
 	databaseRequest := DatabaseRequest{Action: DatabaseLowerPing, Nonce: rand.Uint32()}
@@ -295,7 +291,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 	}
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_provisioner] received ping over C8")
+		provisionerThread.logger.Println("received ping over C8")
 	}
 
 	cacheRequest := CacheRequest{Action: CacheLowerPing, Nonce: rand.Uint32()}
@@ -318,14 +314,14 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 	}
 
 	if cachePingTimeout || !cacheResponse.Success {
-		log.Println("[etl_provisioner] failed to receive ping over C10")
+		provisionerThread.logger.Alertln("failed to receive ping over C10")
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_provisioner] received ping over C10")
+		provisionerThread.logger.Println("[etl_provisioner] received ping over C10")
 	}
 
 	provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: true}
@@ -346,7 +342,7 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *Provisi
 		moduleWrapper.Mount()
 
 		if GetConfigInstance().Debug {
-			log.Printf("%s[%s]%s Mounted module\n", utils.Green, request.ModuleName, utils.Reset)
+			provisionerThread.logger.Printf("%s[%s]%s Mounted module\n", utils.Green, request.ModuleName, utils.Reset)
 		}
 	}
 
@@ -363,7 +359,7 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *Provisi
 			clusterWrapper.Mount()
 
 			if GetConfigInstance().Debug {
-				log.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
+				provisionerThread.logger.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
 			}
 		}
 	}
@@ -385,7 +381,7 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *Provi
 		moduleWrapper.UnMount()
 
 		if GetConfigInstance().Debug {
-			log.Printf("%s[%s]%s UnMounted module\n", utils.Green, request.ModuleName, utils.Reset)
+			provisionerThread.logger.Printf("%s[%s]%s UnMounted module\n", utils.Green, request.ModuleName, utils.Reset)
 		}
 	}
 
@@ -402,7 +398,7 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *Provi
 			clusterWrapper.UnMount()
 
 			if GetConfigInstance().Debug {
-				log.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
+				provisionerThread.logger.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
 			}
 		}
 	}
@@ -424,7 +420,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 	}
 
 	if !moduleWrapper.IsMounted() {
-		log.Printf("%s[%s]%s Could not provision cluster; it's module was not mounted\n", utils.Green, request.ModuleName, utils.Reset)
+		provisionerThread.logger.Warnf("%s[%s]%s Could not provision cluster; it's module was not mounted\n", utils.Green, request.ModuleName, utils.Reset)
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
@@ -433,20 +429,20 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 	clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
 
 	if !found {
-		log.Printf("%s[%s]%s Cluster does not exist\n", utils.Green, request.ClusterName, utils.Reset)
+		provisionerThread.logger.Warnf("%s[%s]%s Cluster does not exist\n", utils.Green, request.ClusterName, utils.Reset)
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
 
 	if !clusterWrapper.IsMounted() {
-		log.Printf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.ClusterName, utils.Reset)
+		provisionerThread.logger.Warnf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.ClusterName, utils.Reset)
 		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
 
-	log.Printf("%s[%s]%s Provisioning cluster in module %s\n", utils.Green, request.ClusterName, utils.Reset, request.ModuleName)
+	provisionerThread.logger.Printf("%s[%s]%s Provisioning cluster in module %s\n", utils.Green, request.ClusterName, utils.Reset, request.ModuleName)
 
 	// if the operator does not specify a config to use, the system shall use the cluster identifier name
 	// to find a default config that should be located in the database thread
@@ -467,15 +463,15 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 
 	var supervisorInstance *supervisor.Supervisor
 	if configFound {
-		log.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.ClusterName, utils.Reset)
+		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.ClusterName, utils.Reset)
 		config.Print()
 		supervisorInstance = clusterWrapper.CreateSupervisor(config)
 	} else {
-		log.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.ClusterName, utils.Reset)
+		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.ClusterName, utils.Reset)
 		supervisorInstance = clusterWrapper.CreateSupervisor()
 	}
 
-	log.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.ClusterName, utils.Reset, supervisorInstance.Id, request.ClusterName)
+	provisionerThread.logger.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.ClusterName, utils.Reset, supervisorInstance.Id, request.ClusterName)
 
 	provisionerThread.C6 <- ProvisionerResponse{
 		Nonce:        request.Nonce,
@@ -484,7 +480,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		SupervisorId: supervisorInstance.Id,
 	}
 
-	log.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.ClusterName, utils.Reset)
+	provisionerThread.logger.Printf("%s[%s]%s Cluster Running\n", utils.Green, request.ClusterName, utils.Reset)
 
 	go func() {
 
@@ -507,7 +503,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 			// we already provide output when a cluster is provisioned, so it completes the state
 			if GetConfigInstance().Debug {
 				duration := time.Now().Sub(supervisorInstance.StartTime)
-				log.Printf("%s[%s]%s Cluster transformations complete, took %dhr %dm %ds %dms %dus\n",
+				provisionerThread.logger.Printf("%s[%s]%s Cluster transformations complete, took %dhr %dm %ds %dms %dus\n",
 					utils.Green,
 					supervisorInstance.Config.Identifier,
 					utils.Reset,

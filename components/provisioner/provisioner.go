@@ -1,10 +1,9 @@
 package provisioner
 
 import (
-	"fmt"
+	"errors"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/module"
-	"log"
 )
 
 func NewProvisioner() *Provisioner {
@@ -56,20 +55,17 @@ func (provisioner *Provisioner) GetModule(moduleName string) (instance *ModuleWr
 	return instance, found
 }
 
-func (provisioner *Provisioner) AddModule(implementation *module.Module) (success bool) {
-
-	fmt.Printf("[provisioner] attempting to add module %s\n", implementation.Config.Identifier)
+func (provisioner *Provisioner) AddModule(implementation *module.Module) error {
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
 	if implementation == nil {
-		return false
+		return errors.New("implementation got nil but expected type *module.Module")
 	}
 
 	if _, found := provisioner.modules[implementation.Config.Identifier]; found {
-		log.Printf("[provisioner] the module %s already exists - it cannot be added\n", implementation.Config.Identifier)
-		return false
+		return errors.New("module with identifier already exists")
 	}
 
 	moduleWrapper := NewModuleWrapper()
@@ -84,24 +80,20 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) (succes
 
 		f, err := implementation.Plugin.Lookup(export.Cluster)
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 
 		clusterImplementation, ok := (f).(cluster.Cluster)
 		if !ok {
-			fmt.Println(ok)
 			continue
 		}
 
 		if clusterWrapper, success := moduleWrapper.AddCluster(export.Cluster, clusterImplementation); success {
 			clusterWrapper.Mounted = export.StaticMount
-		} else {
-			log.Printf("[provisioner] could not add cluster %s\n", export.Cluster)
 		}
 	}
 
-	return true
+	return nil
 }
 
 func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, markedForDeletion, found bool) {
@@ -109,7 +101,7 @@ func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, marked
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	log.Printf("[provisioner] attempting to delete module %s\n", identifier)
+	//log.Printf("[provisioner] attempting to delete module %s\n", identifier)
 
 	deleted = false
 
@@ -122,12 +114,12 @@ func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, marked
 		if moduleWrapper.CanDelete() {
 			delete(provisioner.modules, identifier)
 			deleted = true
-			log.Printf("[provisioner] module %s deleted\n", identifier)
+			//log.Printf("[provisioner] module %s deleted\n", identifier)
 		} else {
-			log.Printf("[provisioner] could not delete %s\n", identifier)
+			//log.Printf("[provisioner] could not delete %s\n", identifier)
 		}
 	} else {
-		log.Printf("[provisioner] could not find %s\n", identifier)
+		//log.Printf("[provisioner] could not find %s\n", identifier)
 		found = false
 	}
 

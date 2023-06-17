@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/messenger"
-	"log"
 )
 
 var messengerInstance *messenger.Messenger
@@ -85,7 +84,7 @@ func (messengerThread *MessengerThread) ProcessIncomingRequest(request *Messenge
 func (messengerThread *MessengerThread) ProcessMessengerPing(request *MessengerRequest) {
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_messenger] received ping over C3")
+		messengerThread.logger.Println("[etl_messenger] received ping over C3")
 	}
 
 	messengerThread.C4 <- MessengerResponse{Nonce: request.Nonce, Success: true}

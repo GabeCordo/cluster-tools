@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/messenger"
+	"github.com/GabeCordo/etl/components/utils"
 )
 
 type InterruptEvent uint8
@@ -75,4 +76,6 @@ type Core struct {
 	C10       chan CacheResponse
 	C11       chan MessengerRequest
 	interrupt chan InterruptEvent
+
+	logger *utils.Logger
 }

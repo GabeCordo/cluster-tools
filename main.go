@@ -29,7 +29,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	c := core.NewCore()
+	if configPathFlag == "" {
+		log.Panic("you must specify a path to an etl confie file with '-config' or '--config'")
+	}
+
+	c, err := core.NewCore(configPathFlag)
+	if err != nil {
+		log.Panic(err.Error())
+	}
 
 	// load in the example cluster into the "common" module
 	// ~ this may be helpful for people trying to spin up the framework for the first time and

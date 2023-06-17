@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/GabeCordo/fack"
 	"gopkg.in/yaml.v3"
@@ -24,7 +26,7 @@ func NewConfig(name string) *Config {
 	return config
 }
 
-func (config Config) ToYAML(path string) {
+func (config *Config) ToYAML(path string) {
 
 	// if a config already exists, delete it
 	if _, err := os.Stat(path); err == nil {
@@ -38,10 +40,28 @@ func (config Config) ToYAML(path string) {
 	_ = ioutil.WriteFile(path, file, DefaultFilePermissions)
 }
 
-func (config Config) Print() {
+func (config *Config) Print() {
 
 	bytes, _ := yaml.Marshal(config)
 	fmt.Println(string(bytes))
+}
+
+func (c *Config) Store() bool {
+	// verify that the config file we initially loaded from has not been deleted
+	if _, err := os.Stat(c.Path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	jsonRepOfConfig, err := json.Marshal(c)
+	if err != nil {
+		return false
+	}
+
+	err = os.WriteFile(c.Path, jsonRepOfConfig, 0666)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func YAMLToETLConfig(config *Config, path string) error {

@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/database"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -156,7 +155,7 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *DatabaseRequest) {
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_database] received ping over C1")
+		databaseThread.logger.Println("received ping over C1")
 	}
 
 	messengerPingRequest := MessengerRequest{Action: MessengerUpperPing, Nonce: rand.Uint32()}
@@ -179,7 +178,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *Database
 	}
 
 	if GetConfigInstance().Debug && (!messengerTimeout || messengerResponse.Success) {
-		log.Println("[etl_database] received ping over C4")
+		databaseThread.logger.Println("received ping over C4")
 	}
 
 	databaseThread.C2 <- DatabaseResponse{Nonce: request.Nonce, Success: messengerTimeout || messengerResponse.Success}
@@ -188,7 +187,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *Database
 func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *DatabaseRequest) {
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_database] received ping over C7")
+		databaseThread.logger.Println("received ping over C7")
 	}
 
 	databaseThread.C8 <- DatabaseResponse{Nonce: request.Nonce, Success: true}

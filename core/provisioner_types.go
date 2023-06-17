@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"github.com/GabeCordo/etl/components/utils"
 	"sync"
 )
@@ -54,49 +55,57 @@ type ProvisionerThread struct {
 	databaseResponseTable *utils.ResponseTable
 	cacheResponseTable    *utils.ResponseTable
 
+	logger *utils.Logger
+
 	accepting bool
 	wg        sync.WaitGroup
 }
 
-func NewProvisioner(channels ...interface{}) (*ProvisionerThread, bool) {
+func NewProvisioner(logger *utils.Logger, channels ...interface{}) (*ProvisionerThread, error) {
 	provisioner := new(ProvisionerThread)
 	var ok bool
 
 	provisioner.Interrupt, ok = (channels[0]).(chan InterruptEvent)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
 	provisioner.C5, ok = (channels[1]).(chan ProvisionerRequest)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 1")
 	}
 	provisioner.C6, ok = (channels[2]).(chan ProvisionerResponse)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 2")
 	}
 	provisioner.C7, ok = (channels[3]).(chan DatabaseRequest)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan DatabaseRequest' in index 3")
 	}
 	provisioner.C8, ok = (channels[4]).(chan DatabaseResponse)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan DatabaseResponse' in index 4")
 	}
 	provisioner.C9, ok = (channels[5]).(chan CacheRequest)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan CacheRequest' in index 5")
 	}
 	provisioner.C10, ok = (channels[6]).(chan CacheResponse)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan CacheResponse' in index 6")
 	}
 	provisioner.C11, ok = (channels[7]).(chan MessengerRequest)
 	if !ok {
-		return nil, ok
+		return nil, errors.New("expected type 'chan MessengerRequest' in index 7")
 	}
 
 	provisioner.databaseResponseTable = utils.NewResponseTable()
 	provisioner.cacheResponseTable = utils.NewResponseTable()
 
-	return provisioner, ok
+	if logger == nil {
+		return nil, errors.New("expected non nil *utils.Logger type")
+	}
+	provisioner.logger = logger
+	provisioner.logger.SetColour(utils.Orange)
+
+	return provisioner, nil
 }

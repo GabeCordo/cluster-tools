@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/GabeCordo/etl/components/cache"
-	"log"
 	"time"
 )
 
@@ -87,7 +86,7 @@ func (cacheThread *CacheThread) ProcessLoadRequest(request *CacheRequest) {
 func (cacheThread *CacheThread) ProcessPingCache(request *CacheRequest) {
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_cache] received ping over C9")
+		cacheThread.logger.Println("received ping over C9")
 	}
 
 	cacheThread.C10 <- CacheResponse{Nonce: request.Nonce, Success: true}

@@ -6,7 +6,6 @@ import (
 	"github.com/GabeCordo/etl/components/database"
 	"github.com/GabeCordo/etl/components/supervisor"
 	"github.com/GabeCordo/etl/components/utils"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -314,7 +313,7 @@ func ShutdownNode(pipe chan<- InterruptEvent) (response []byte, success bool) {
 	return nil, true
 }
 
-func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, provisionerPipe chan<- ProvisionerRequest, provisionerResponseTable *utils.ResponseTable) (success bool) {
+func PingNodeChannels(logger *utils.Logger, databasePipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, provisionerPipe chan<- ProvisionerRequest, provisionerResponseTable *utils.ResponseTable) (success bool) {
 
 	databasePingRequest := DatabaseRequest{
 		Action: DatabaseUpperPing,
@@ -343,7 +342,7 @@ func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable
 	}
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_http] received ping over C2")
+		logger.Println("received ping over C2")
 	}
 
 	provisionerPingRequest := ProvisionerRequest{Action: ProvisionerLowerPing, Nonce: rand.Uint32()}
@@ -370,7 +369,7 @@ func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseResponseTable
 	}
 
 	if GetConfigInstance().Debug {
-		log.Println("[etl_provisioner] received ping over C6")
+		logger.Println("received ping over C6")
 	}
 
 	return true
@@ -432,4 +431,20 @@ func DeleteModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 
 	success = !provisionerTimeout && provisionerResponse.Success
 	return success, provisionerResponse.Description
+}
+
+func ToggleDebugMode(logger *utils.Logger) (description string) {
+
+	config := GetConfigInstance()
+	config.Debug = !config.Debug
+
+	if config.Debug {
+		description = "debug mode activated"
+		logger.Println("remote change: debug mode ON")
+	} else {
+		description = "debug mode disabled"
+		logger.Println("remote change: debug mode OFF")
+	}
+
+	return description
 }

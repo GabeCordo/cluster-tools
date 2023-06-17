@@ -1,8 +1,6 @@
 package core
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/GabeCordo/etl/components/cluster"
 	"github.com/GabeCordo/etl/components/provisioner"
@@ -10,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 )
@@ -19,71 +18,52 @@ const (
 )
 
 var (
-	commonConfigPaths = [...]string{
-		"config.etl.yaml",
-		"/opt/etl/config.etl.yaml",
-		"/etc/etl/config.etl.yaml",
-		"%PROGRAMDATA%/etl/config.etl.yaml",
-	}
 	configLock     = &sync.Mutex{}
 	ConfigInstance *Config
 )
 
-func GetConfigInstance() *Config {
+func GetDefaultConfigPath() string {
+
+	if runtime.GOOS == "windows" {
+		return "%PROGRAMDATA%/etl/config.etl.yaml"
+	} else if runtime.GOOS == "linux" {
+		return "/opt/etl/config.etl.yaml"
+	} else {
+		return "/etc/etl/config.etl.yaml"
+	}
+}
+
+func GetConfigInstance(configPath ...string) *Config {
 	configLock.Lock()
 	defer configLock.Unlock()
+
+	/* if this is the first time the config is being loaded the develoepr
+	   needs to pass in a configPath to load the config instance from
+	*/
+	if (ConfigInstance == nil) && (len(configPath) < 1) {
+		return nil
+	}
 
 	if ConfigInstance == nil {
 		ConfigInstance = NewConfig("test")
 
-		// multiple locations to store the config file are supported by default
-		// iterate over each one until a config is found. If by the end of the
-		// loop no config is found in any of the locations, panic
-		configFound := false
-		for i := range commonConfigPaths {
-			err := YAMLToETLConfig(ConfigInstance, commonConfigPaths[i])
-			if err == nil {
-				// the path we found the config for future reference
-				ConfigInstance.Path = commonConfigPaths[i]
-				// if the MaxWaitForResponse is not set, then simply default to 2.0
-				if ConfigInstance.MaxWaitForResponse == 0 {
-					ConfigInstance.MaxWaitForResponse = 2
-				}
-				configFound = true
-				break
-			} else {
-				fmt.Println("not found")
+		if err := YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
+			// the configPath we found the config for future reference
+			ConfigInstance.Path = configPath[0]
+			// if the MaxWaitForResponse is not set, then simply default to 2.0
+			if ConfigInstance.MaxWaitForResponse == 0 {
+				ConfigInstance.MaxWaitForResponse = 2
 			}
-		}
-
-		// no config found
-		if !configFound {
-			panic("(!) the etl configuration file can either not be found or is corrupted")
+		} else {
+			log.Println("(!) the etl configuration file can either not be found or is corrupted")
+			log.Fatal(fmt.Sprintf("%s was not a valid config path\n", configPath))
 		}
 	}
 
 	return ConfigInstance
 }
 
-func (c *Config) Store() bool {
-	// verify that the config file we initially loaded from has not been deleted
-	if _, err := os.Stat(c.Path); errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-
-	jsonRepOfConfig, err := json.Marshal(c)
-	if err != nil {
-		return false
-	}
-
-	err = os.WriteFile(c.Path, jsonRepOfConfig, 0666)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-func NewCore() *Core {
+func NewCore(configPath string) (*Core, error) {
 	core := new(Core)
 
 	core.C1 = make(chan DatabaseRequest)
@@ -99,29 +79,63 @@ func NewCore() *Core {
 	core.C11 = make(chan MessengerRequest)
 	core.interrupt = make(chan InterruptEvent)
 
-	var ok bool
-	core.HttpThread, ok = NewHttp(core.interrupt, core.C1, core.C2, core.C5, core.C6)
-	if !ok {
-		return nil
-	}
-	core.ProvisionerThread, ok = NewProvisioner(core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C9, core.C10, core.C11)
-	if !ok {
-		return nil
-	}
-	core.MessengerThread, ok = NewMessenger(core.interrupt, core.C3, core.C4, core.C11)
-	if !ok {
-		return nil
-	}
-	core.DatabaseThread, ok = NewDatabase(core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C7, core.C8)
-	if !ok {
-		return nil
-	}
-	core.CacheThread, ok = NewCacheThread(core.interrupt, core.C9, core.C10)
-	if !ok {
-		return nil
+	/* load the config in for the first time */
+	if config := GetConfigInstance(configPath); config == nil {
+		log.Panic("could not create config")
 	}
 
-	return core
+	httpLogger, err := utils.NewLogger(utils.Http, &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.HttpThread, err = NewHttp(httpLogger, core.interrupt, core.C1, core.C2, core.C5, core.C6)
+	if err != nil {
+		return nil, err
+	}
+
+	provisionerLogger, err := utils.NewLogger(utils.Provisioner, &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.ProvisionerThread, err = NewProvisioner(provisionerLogger, core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C9, core.C10, core.C11)
+	if err != nil {
+		return nil, err
+	}
+
+	messengerLogger, err := utils.NewLogger(utils.Messenger, &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.MessengerThread, err = NewMessenger(messengerLogger, core.interrupt, core.C3, core.C4, core.C11)
+	if err != nil {
+		return nil, err
+	}
+
+	databaseLogger, err := utils.NewLogger(utils.Database, &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.DatabaseThread, err = NewDatabase(databaseLogger, core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C7, core.C8)
+	if err != nil {
+		return nil, err
+	}
+
+	cacheLogger, err := utils.NewLogger(utils.Database, &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.CacheThread, err = NewCacheThread(cacheLogger, core.interrupt, core.C9, core.C10)
+	if err != nil {
+		return nil, err
+	}
+
+	coreLogger, err := utils.NewLogger(utils.Undefined, &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.logger = coreLogger
+
+	return core, nil
 }
 
 func (core *Core) Run() {
@@ -136,40 +150,54 @@ func (core *Core) Run() {
 	fmt.Println("[+]" + utils.Purple + " by Gabriel Cordovado 2022-23" + utils.Reset)
 	fmt.Println()
 
+	core.logger.SetColour(utils.Purple)
+
+	if GetConfigInstance().Debug {
+		core.logger.Println("debug mode ON")
+	} else {
+		core.logger.Println("debug mode OFF")
+	}
+
 	// needed in-case the proceeding core need logging or email capabilities during startup
 	core.MessengerThread.Setup()
 	go core.MessengerThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " Messenger Thread Started")
+		core.logger.Println("Messenger Thread Started")
+		//log.Println(utils.Purple + "(+)" + utils.Reset + " Messenger Thread Started")
 	}
 
 	// needed in-case the supervisor or http core need to populate Data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " Database Thread Started")
+		core.logger.Println("Database Thread Started")
+		//log.Println(utils.Purple + "(+)" + utils.Reset + " Database Thread Started")
 	}
 
 	// we need a way to provision clusters if we are receiving core before we can
 	core.ProvisionerThread.Setup()
 	go core.ProvisionerThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " Provisioner Thread Started")
+		core.logger.Println("Provisioner Thread Started")
+		//log.Println(utils.Purple + "(+)" + utils.Reset + " Provisioner Thread Started")
 	}
 
 	// if we chain requests, we should have a way to save that Data for re-use
 	core.CacheThread.Setup()
 	go core.CacheThread.Start()
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " Cache Thread Started")
+		core.logger.Println("Cache Thread Started")
+		//log.Println(utils.Purple + "(+)" + utils.Reset + " Cache Thread Started")
 	}
 
 	// the gateway to the frontend cluster should be the last startup
 	core.HttpThread.Setup()
 	go core.HttpThread.Start() // event loop
 	if GetConfigInstance().Debug {
-		log.Println(utils.Purple + "(+)" + utils.Reset + " HTTP API Thread Started")
-		log.Printf("\t- Listening on %s:%d\n", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
+		core.logger.Println("HTTP API Thread Started")
+		core.logger.Printf("\t- Listening on %s:%d\n", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
+		//log.Println(utils.Purple + "(+)" + utils.Reset + " HTTP API Thread Started")
+		//log.Printf("\t- Listening on %s:%d\n", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
 	}
 
 	// monitor system calls being sent to the process, if the etl is being
@@ -186,46 +214,55 @@ func (core *Core) Run() {
 	// error or end-state has been reached by the application
 	switch <-core.interrupt {
 	case Panic:
-		log.Println(utils.Red + "(IO)" + utils.Reset + " encountered panic")
+		core.logger.Printf("[IO] %s\n", " encountered panic")
+		//log.Println(utils.Red + "(IO)" + utils.Reset + " encountered panic")
 		break
 	default: // shutdown
-		log.Println(utils.Red + "(IO)" + utils.Reset + " shutting down")
+		core.logger.Printf("[IO] %s\n", " shutting down")
+		//log.Println(utils.Red + "(IO)" + utils.Reset + " shutting down")
 		break
 	}
 
 	// close the gateway, stop new core from flooding into the servers
 	core.HttpThread.Teardown()
 
+	core.logger.SetColour(utils.Red)
+
 	if GetConfigInstance().Debug {
-		log.Println(utils.Red + "(-)" + utils.Reset + " http shutdown")
+		core.logger.Println("http shutdown")
+		//log.Println(utils.Red + "(-)" + utils.Reset + " http shutdown")
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
 	core.ProvisionerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println(utils.Red + "(-)" + utils.Reset + " provisioner shutdown")
+		core.logger.Println("provisioner shutdown")
+		//log.Println(utils.Red + "(-)" + utils.Reset + " provisioner shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the Data is useless, shutdown
 	core.CacheThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println(utils.Red + "(-)" + utils.Reset + " cache shutdown")
+		core.logger.Println("cache shutdown")
+		//log.Println(utils.Red + "(-)" + utils.Reset + " cache shutdown")
 	}
 
 	// the supervisor might need to store Data while finishing, close after
 	core.DatabaseThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println(utils.Red + "(-)" + utils.Reset + " database shutdown")
+		core.logger.Println("database shutdown")
+		//log.Println(utils.Red + "(-)" + utils.Reset + " database shutdown")
 	}
 
 	// the preceding core might need to log, or send alerts of failure during shutdown
 	core.MessengerThread.Teardown()
 
 	if GetConfigInstance().Debug {
-		log.Println(utils.Red + "(-)" + utils.Reset + " messenger shutdown")
+		core.logger.Println("messenger shutdown")
+		//log.Println(utils.Red + "(-)" + utils.Reset + " messenger shutdown")
 	}
 }
 
