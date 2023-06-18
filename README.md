@@ -3,7 +3,9 @@ A software orchestration framework for extract-transform-load process deployment
 
 ```tested on windows 10, macos, and ubuntu```
 
-![example.png](.bin%2Fexample.png)
+```this documentation is in-progress, it still needs to be modified to reflect the recent refractoring```
+
+![example.png](.bin/images/example.png)
 
 ### Features
 

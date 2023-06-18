@@ -97,7 +97,7 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *Pro
 
 func (provisionerThread *ProvisionerThread) ProcessAddModule(request *ProvisionerRequest) {
 
-	provisionerThread.logger.Printf("[provisioner] registering module at %s\n", request.ModulePath)
+	provisionerThread.logger.Printf("registering module at %s\n", request.ModulePath)
 
 	remoteModule, err := module.NewRemoteModule(request.ModulePath)
 	if err != nil {
@@ -109,6 +109,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 
 	moduleInstance, err := remoteModule.Get()
 	if err != nil {
+		//provisionerThread.logger.Println(err.Error())
 		provisionerThread.logger.Alertln("module built with older version")
 		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "module built with older version"}
 		provisionerThread.wg.Done()
