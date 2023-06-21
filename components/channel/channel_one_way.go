@@ -1,8 +1,11 @@
 package channel
 
-import "math/rand"
+import (
+	"github.com/GabeCordo/etl-light/components/channel"
+	"math/rand"
+)
 
-func NewOneWayManagedChannel(channel *ManagedChannel) (*OneWayManagedChannel, error) {
+func NewOneWayManagedChannel(channel *ManagedChannel) (channel.OneWay, error) {
 
 	if channel == nil {
 		return nil, BadManagedChannelType{description: "ManagedChannel passed to NewONeWayManagedChannel was nil"}
@@ -14,7 +17,7 @@ func NewOneWayManagedChannel(channel *ManagedChannel) (*OneWayManagedChannel, er
 	return oneWayManagedChannel, nil
 }
 
-func (owmc *OneWayManagedChannel) Push(data any) {
+func (owmc OneWayManagedChannel) Push(data any) {
 
 	owmc.channel.Push(DataWrapper{Id: rand.Uint64(), Data: data})
 }

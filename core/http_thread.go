@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/GabeCordo/etl-light/core/threads"
 	"net/http"
 	"time"
 )
@@ -45,7 +46,7 @@ func (httpThread *HttpThread) Start() {
 		net := GetConfigInstance().Net
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
 		if err != nil {
-			thread.Interrupt <- Panic
+			thread.Interrupt <- threads.Panic
 		}
 	}(httpThread)
 
@@ -70,7 +71,7 @@ func (httpThread *HttpThread) Start() {
 	httpThread.wg.Wait()
 }
 
-func (httpThread *HttpThread) Receive(module Module, nonce uint32, timeout ...float64) (any, bool) {
+func (httpThread *HttpThread) Receive(module threads.Module, nonce uint32, timeout ...float64) (any, bool) {
 	startTime := time.Now()
 	flag := false
 
@@ -80,13 +81,13 @@ func (httpThread *HttpThread) Receive(module Module, nonce uint32, timeout ...fl
 			break
 		}
 
-		if module == Provisioner {
+		if module == threads.Provisioner {
 			if value, found := httpThread.supervisorResponses[nonce]; found {
 				response = value
 				flag = true
 				break
 			}
-		} else if module == Database {
+		} else if module == threads.Database {
 			if value, found := httpThread.databaseResponses[nonce]; found {
 				response = value
 				flag = true
@@ -94,29 +95,29 @@ func (httpThread *HttpThread) Receive(module Module, nonce uint32, timeout ...fl
 			}
 		}
 
-		time.Sleep(RefreshTime * time.Millisecond)
+		time.Sleep(threads.RefreshTime * time.Millisecond)
 	}
 
 	return response, flag
 }
 
-func (httpThread *HttpThread) Send(module Module, request any) (any, bool) {
+func (httpThread *HttpThread) Send(module threads.Module, request any) (any, bool) {
 	httpThread.mutex.Lock()
 	httpThread.counter++
 
 	nonce := httpThread.counter // make a copy of the current counter
-	if module == Provisioner {
-		req := (request).(ProvisionerRequest)
+	if module == threads.Provisioner {
+		req := (request).(threads.ProvisionerRequest)
 		req.Nonce = nonce
 		httpThread.C5 <- req
-	} else if module == Database {
-		req := (request).(DatabaseRequest)
+	} else if module == threads.Database {
+		req := (request).(threads.DatabaseRequest)
 		req.Nonce = nonce
 		httpThread.C1 <- req
 	}
 
 	httpThread.mutex.Unlock()
-	return httpThread.Receive(module, nonce, DefaultTimeout)
+	return httpThread.Receive(module, nonce, threads.DefaultTimeout)
 }
 
 func (httpThread *HttpThread) Teardown() {
@@ -129,6 +130,6 @@ func (httpThread *HttpThread) Teardown() {
 
 	err := httpThread.server.Shutdown(ctx)
 	if err != nil {
-		httpThread.Interrupt <- Panic
+		httpThread.Interrupt <- threads.Panic
 	}
 }

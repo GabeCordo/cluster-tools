@@ -2,7 +2,7 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl/components/module"
 )
 

@@ -1,7 +1,8 @@
 package core
 
 import (
-	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/database"
 	"math/rand"
 	"time"
@@ -28,7 +29,7 @@ func (databaseThread *DatabaseThread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = Http
+			request.Origin = threads.Http
 			databaseThread.wg.Add(1)
 			databaseThread.ProcessIncomingRequest(&request)
 		}
@@ -39,7 +40,7 @@ func (databaseThread *DatabaseThread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = Provisioner
+			request.Origin = threads.Provisioner
 			databaseThread.wg.Add(1)
 			databaseThread.ProcessIncomingRequest(&request)
 		}
@@ -56,94 +57,94 @@ func (databaseThread *DatabaseThread) Start() {
 	databaseThread.wg.Wait()
 }
 
-func (databaseThread *DatabaseThread) Send(request *DatabaseRequest, response *DatabaseResponse) {
+func (databaseThread *DatabaseThread) Send(request *threads.DatabaseRequest, response *threads.DatabaseResponse) {
 	switch request.Origin {
-	case Http:
+	case threads.Http:
 		databaseThread.C2 <- *response
 		break
-	case Provisioner:
+	case threads.Provisioner:
 		databaseThread.C8 <- *response
 		break
 	}
 }
 
-func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRequest) {
+func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *threads.DatabaseRequest) {
 	d := GetDatabaseInstance()
 
 	switch request.Action {
-	case DatabaseStore:
+	case threads.DatabaseStore:
 		{
 			switch request.Type {
-			case database.Config:
+			case threads.ClusterConfig:
 				{
 					configData := (request.Data).(cluster.Config)
 					isOk := d.StoreClusterConfig(request.Module, configData)
 
-					databaseThread.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
+					databaseThread.Send(request, &threads.DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
-			case database.Statistic:
+			case threads.SupervisorStatistic:
 				{
 					statisticsData := (request.Data).(*cluster.Response)
 					isOk := d.StoreUsageRecord(request.Module, request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
 
-					databaseThread.Send(request, &DatabaseResponse{Success: isOk, Nonce: request.Nonce})
+					databaseThread.Send(request, &threads.DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			}
 		}
-	case DatabaseFetch:
+	case threads.DatabaseFetch:
 		{
-			var response DatabaseResponse
+			var response threads.DatabaseResponse
 
 			switch request.Type {
-			case database.Config:
+			case threads.ClusterConfig:
 				{
 					config, ok := d.GetClusterConfig(request.Module, request.Cluster)
 					if !ok {
-						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+						response = threads.DatabaseResponse{Success: false, Nonce: request.Nonce}
 					} else {
-						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
+						response = threads.DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
 					}
 
 					databaseThread.Send(request, &response)
 				}
-			case database.Statistic:
+			case threads.SupervisorStatistic:
 				{
 					record, ok := d.GetUsageRecord(request.Module, request.Cluster)
 					if !ok {
-						response = DatabaseResponse{Success: false, Nonce: request.Nonce}
+						response = threads.DatabaseResponse{Success: false, Nonce: request.Nonce}
 					} else {
-						response = DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
+						response = threads.DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
 					}
 
 					databaseThread.Send(request, &response)
 				}
 			}
 		}
-	case DatabaseDelete:
+	case threads.DatabaseDelete:
 		{
 			switch request.Type {
-			case database.Module:
+			case threads.ClusterModule:
 				{
 					success := d.DeleteModuleRecords(request.Module)
 
-					response := DatabaseResponse{Success: success, Nonce: request.Nonce}
+					response := threads.DatabaseResponse{Success: success, Nonce: request.Nonce}
 					databaseThread.Send(request, &response)
 				}
 			}
 		}
-	case DatabaseReplace:
+	case threads.DatabaseReplace:
 		{
 			config := (request.Data).(cluster.Config)
 			success := d.ReplaceClusterConfig(request.Module, config)
-			response := DatabaseResponse{Success: success, Nonce: request.Nonce}
+			response := threads.DatabaseResponse{Success: success, Nonce: request.Nonce}
 
 			databaseThread.Send(request, &response)
 		}
-	case DatabaseUpperPing:
+	case threads.DatabaseUpperPing:
 		{
 			databaseThread.ProcessDatabaseUpperPing(request)
 		}
-	case DatabaseLowerPing:
+	case threads.DatabaseLowerPing:
 		{
 			databaseThread.ProcessDatabaseLowerPing(request)
 		}
@@ -152,17 +153,20 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *DatabaseRe
 	databaseThread.wg.Done()
 }
 
-func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *DatabaseRequest) {
+func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *threads.DatabaseRequest) {
 
 	if GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C1")
 	}
 
-	messengerPingRequest := MessengerRequest{Action: MessengerUpperPing, Nonce: rand.Uint32()}
+	messengerPingRequest := threads.MessengerRequest{
+		Action: threads.MessengerUpperPing,
+		Nonce:  rand.Uint32(),
+	}
 	databaseThread.C3 <- messengerPingRequest
 
 	messengerTimeout := false
-	var messengerResponse *MessengerResponse
+	var messengerResponse *threads.MessengerResponse
 
 	timestamp := time.Now()
 	for {
@@ -172,7 +176,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *Database
 		}
 
 		if responseEntry, found := databaseThread.messengerResponseTable.Lookup(messengerPingRequest.Nonce); found {
-			messengerResponse = (responseEntry).(*MessengerResponse)
+			messengerResponse = (responseEntry).(*threads.MessengerResponse)
 			break
 		}
 	}
@@ -181,19 +185,25 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *Database
 		databaseThread.logger.Println("received ping over C4")
 	}
 
-	databaseThread.C2 <- DatabaseResponse{Nonce: request.Nonce, Success: messengerTimeout || messengerResponse.Success}
+	databaseThread.C2 <- threads.DatabaseResponse{
+		Nonce:   request.Nonce,
+		Success: messengerTimeout || messengerResponse.Success,
+	}
 }
 
-func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *DatabaseRequest) {
+func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
 
 	if GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C7")
 	}
 
-	databaseThread.C8 <- DatabaseResponse{Nonce: request.Nonce, Success: true}
+	databaseThread.C8 <- threads.DatabaseResponse{
+		Nonce:   request.Nonce,
+		Success: true,
+	}
 }
 
-func (databaseThread *DatabaseThread) ProcessIncomingResponse(response *MessengerResponse) {
+func (databaseThread *DatabaseThread) ProcessIncomingResponse(response *threads.MessengerResponse) {
 	databaseThread.messengerResponseTable.Write(response.Nonce, response)
 }
 

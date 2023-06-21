@@ -1,6 +1,7 @@
 package channel
 
 import (
+	channel "github.com/GabeCordo/etl-light/components/channel"
 	"sync"
 	"time"
 )
@@ -23,11 +24,6 @@ type ManagedChannelConfig struct {
 	GrowthFactor int
 }
 
-type DataTimer struct {
-	In  time.Time
-	Out time.Time
-}
-
 type DataWrapper struct {
 	Id   uint64
 	Data any
@@ -41,7 +37,7 @@ type ManagedChannel struct {
 	Config ManagedChannelConfig
 
 	TotalProcessed int
-	Timestamps     map[uint64]DataTimer
+	Timestamps     map[uint64]channel.DataTimer
 
 	channel chan DataWrapper
 

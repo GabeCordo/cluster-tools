@@ -1,7 +1,7 @@
 package module
 
 import (
-	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl-light/components/cluster"
 	"plugin"
 )
 

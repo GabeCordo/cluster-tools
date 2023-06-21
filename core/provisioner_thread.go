@@ -2,8 +2,8 @@ package core
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl/components/cluster"
-	"github.com/GabeCordo/etl/components/database"
+	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/module"
 	"github.com/GabeCordo/etl/components/provisioner"
 	"github.com/GabeCordo/etl/components/supervisor"
@@ -76,33 +76,33 @@ func (provisionerThread *ProvisionerThread) Start() {
 	provisionerThread.wg.Wait()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *threads.ProvisionerRequest) {
 
-	if request.Action == ProvisionerMount {
+	if request.Action == threads.ProvisionerMount {
 		provisionerThread.ProcessMountRequest(request)
-	} else if request.Action == ProvisionerUnMount {
+	} else if request.Action == threads.ProvisionerUnMount {
 		provisionerThread.ProcessUnMountRequest(request)
-	} else if request.Action == ProvisionerProvision {
+	} else if request.Action == threads.ProvisionerProvision {
 		provisionerThread.ProcessProvisionRequest(request)
-	} else if request.Action == ProvisionerTeardown {
+	} else if request.Action == threads.ProvisionerTeardown {
 		// TODO - not implemented
-	} else if request.Action == ProvisionerLowerPing {
+	} else if request.Action == threads.ProvisionerLowerPing {
 		provisionerThread.ProcessPingProvisionerRequest(request)
-	} else if request.Action == ProvisionerModuleLoad {
+	} else if request.Action == threads.ProvisionerModuleLoad {
 		provisionerThread.ProcessAddModule(request)
-	} else if request.Action == ProvisionerModuleDelete {
+	} else if request.Action == threads.ProvisionerModuleDelete {
 		provisionerThread.ProcessDeleteModule(request)
 	}
 }
 
-func (provisionerThread *ProvisionerThread) ProcessAddModule(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.ProvisionerRequest) {
 
 	provisionerThread.logger.Printf("registering module at %s\n", request.ModulePath)
 
 	remoteModule, err := module.NewRemoteModule(request.ModulePath)
 	if err != nil {
 		provisionerThread.logger.Alertln("cannot find remote module")
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "cannot find remote module"}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "cannot find remote module"}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -111,14 +111,14 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 	if err != nil {
 		//provisionerThread.logger.Println(err.Error())
 		provisionerThread.logger.Alertln("module built with older version")
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "module built with older version"}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "module built with older version"}
 		provisionerThread.wg.Done()
 		return
 	}
 
 	if err := GetProvisionerInstance().AddModule(moduleInstance); err != nil {
 		provisionerThread.logger.Alertln("a module with that identifier already exists or is corrupt")
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "a module with that identifier already exists or is corrupt"}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "a module with that identifier already exists or is corrupt"}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -170,11 +170,11 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 			config.Identifier = export.Cluster
 		}
 
-		request := DatabaseRequest{
-			Action:  DatabaseStore,
+		request := threads.DatabaseRequest{
+			Action:  threads.DatabaseStore,
 			Nonce:   rand.Uint32(),
-			Origin:  Provisioner,
-			Type:    database.Config,
+			Origin:  threads.Provisioner,
+			Type:    threads.ClusterConfig,
 			Module:  moduleInstance.Config.Identifier,
 			Cluster: export.Cluster,
 			Data:    config,
@@ -182,7 +182,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 		provisionerThread.C7 <- request
 
 		timeout := false
-		var response DatabaseResponse
+		var response threads.DatabaseResponse
 
 		timestamp := time.Now()
 		for {
@@ -192,13 +192,13 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 			}
 
 			if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(request.Nonce); found {
-				response = (responseEntry).(DatabaseResponse)
+				response = (responseEntry).(threads.DatabaseResponse)
 				break
 			}
 		}
 
 		if timeout || !response.Success {
-			provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not save config"}
+			provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not save config"}
 			provisionerThread.wg.Done()
 			return
 		}
@@ -206,30 +206,30 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *Provisione
 
 	provisionerThread.logger.Printf("dynamically loaded module %s\n", moduleInstance.Config.Identifier)
 
-	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce, Description: "module registered"}
+	provisionerThread.C6 <- threads.ProvisionerResponse{Success: true, Nonce: request.Nonce, Description: "module registered"}
 	provisionerThread.wg.Done()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *threads.ProvisionerRequest) {
 
 	provisionerInstance := GetProvisionerInstance()
 
-	var response ProvisionerResponse = ProvisionerResponse{Nonce: request.Nonce}
+	var response threads.ProvisionerResponse = threads.ProvisionerResponse{Nonce: request.Nonce}
 	if deleted, _, found := provisionerInstance.DeleteModule(request.ModuleName); found {
 		response.Success = true
 		if deleted {
 			response.Description = "module deleted"
 
-			databaseRequest := DatabaseRequest{
-				Action: DatabaseDelete,
-				Type:   database.Module,
+			databaseRequest := threads.DatabaseRequest{
+				Action: threads.DatabaseDelete,
+				Type:   threads.ClusterModule,
 				Module: request.ModuleName,
 				Nonce:  rand.Uint32(),
 			}
 			provisionerThread.C7 <- databaseRequest
 
 			databasePingTimeout := false
-			var databaseResponse DatabaseResponse
+			var databaseResponse threads.DatabaseResponse
 
 			timestamp := time.Now()
 			for {
@@ -239,7 +239,7 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *Provisi
 				}
 
 				if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-					databaseResponse = (responseEntry).(DatabaseResponse)
+					databaseResponse = (responseEntry).(threads.DatabaseResponse)
 					break
 				}
 			}
@@ -260,17 +260,20 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *Provisi
 	provisionerThread.wg.Done()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *threads.ProvisionerRequest) {
 
 	if GetConfigInstance().Debug {
 		provisionerThread.logger.Println("received ping over C5")
 	}
 
-	databaseRequest := DatabaseRequest{Action: DatabaseLowerPing, Nonce: rand.Uint32()}
+	databaseRequest := threads.DatabaseRequest{
+		Action: threads.DatabaseLowerPing,
+		Nonce:  rand.Uint32(),
+	}
 	provisionerThread.C7 <- databaseRequest
 
 	databasePingTimeout := false
-	var databaseResponse DatabaseResponse
+	var databaseResponse threads.DatabaseResponse
 
 	timestamp := time.Now()
 	for {
@@ -280,13 +283,13 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		}
 
 		if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
+			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
 
 	if databasePingTimeout || !databaseResponse.Success {
-		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -295,11 +298,11 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		provisionerThread.logger.Println("received ping over C8")
 	}
 
-	cacheRequest := CacheRequest{Action: CacheLowerPing, Nonce: rand.Uint32()}
+	cacheRequest := threads.CacheRequest{Action: threads.CacheLowerPing, Nonce: rand.Uint32()}
 	provisionerThread.C9 <- cacheRequest
 
 	cachePingTimeout := false
-	var cacheResponse CacheResponse
+	var cacheResponse threads.CacheResponse
 
 	timestamp2 := time.Now()
 	for {
@@ -309,14 +312,14 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		}
 
 		if response, found := provisionerThread.cacheResponseTable.Lookup(cacheRequest.Nonce); found {
-			cacheResponse = (response).(CacheResponse)
+			cacheResponse = (response).(threads.CacheResponse)
 			break
 		}
 	}
 
 	if cachePingTimeout || !cacheResponse.Success {
 		provisionerThread.logger.Alertln("failed to receive ping over C10")
-		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -325,16 +328,16 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		provisionerThread.logger.Println("[etl_provisioner] received ping over C10")
 	}
 
-	provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: true}
+	provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: true}
 
 	provisionerThread.wg.Done()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *threads.ProvisionerRequest) {
 
 	moduleWrapper, found := GetProvisionerInstance().GetModule(request.ModuleName)
 	if !found {
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -351,7 +354,7 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *Provisi
 		clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
 
 		if !found {
-			provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+			provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce}
 			provisionerThread.wg.Done()
 			return
 		}
@@ -365,15 +368,15 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *Provisi
 		}
 	}
 
-	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce}
+	provisionerThread.C6 <- threads.ProvisionerResponse{Success: true, Nonce: request.Nonce}
 	provisionerThread.wg.Done()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *threads.ProvisionerRequest) {
 
 	moduleWrapper, found := GetProvisionerInstance().GetModule(request.ModuleName)
 	if !found {
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -390,7 +393,7 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *Provi
 		clusterWrapper, found := moduleWrapper.GetCluster(request.ClusterName)
 
 		if !found {
-			provisionerThread.C6 <- ProvisionerResponse{Success: false, Nonce: request.Nonce}
+			provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Nonce: request.Nonce}
 			provisionerThread.wg.Done()
 			return
 		}
@@ -404,25 +407,25 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *Provi
 		}
 	}
 
-	provisionerThread.C6 <- ProvisionerResponse{Success: true, Nonce: request.Nonce}
+	provisionerThread.C6 <- threads.ProvisionerResponse{Success: true, Nonce: request.Nonce}
 	provisionerThread.wg.Done()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *ProvisionerRequest) {
+func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *threads.ProvisionerRequest) {
 
 	provisionerInstance := GetProvisionerInstance()
 
 	moduleWrapper, found := provisionerInstance.GetModule(request.ModuleName)
 
 	if !found {
-		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
 
 	if !moduleWrapper.IsMounted() {
 		provisionerThread.logger.Warnf("%s[%s]%s Could not provision cluster; it's module was not mounted\n", utils.Green, request.ModuleName, utils.Reset)
-		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -431,14 +434,14 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 
 	if !found {
 		provisionerThread.logger.Warnf("%s[%s]%s Cluster does not exist\n", utils.Green, request.ClusterName, utils.Reset)
-		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
 
 	if !clusterWrapper.IsMounted() {
 		provisionerThread.logger.Warnf("%s[%s]%s Could not provision cluster; cluster was not mounted\n", utils.Green, request.ClusterName, utils.Reset)
-		provisionerThread.C6 <- ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -451,13 +454,13 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		request.Config = request.ClusterName
 	}
 
-	config, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.ModuleName, request.Config)
-	config.Print()
+	cnf, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.ModuleName, request.Config)
+	cnf.Print()
 	fmt.Println(configFound)
 	if !configFound {
 		// the config was either never created or deleted from the database.
 		// INSTEAD of continuing, the node should inform the user that the client cannot use the config they want
-		provisionerThread.C6 <- ProvisionerResponse{Success: false, Description: "config not found", Nonce: request.Nonce}
+		provisionerThread.C6 <- threads.ProvisionerResponse{Success: false, Description: "config not found", Nonce: request.Nonce}
 		provisionerThread.wg.Done()
 		return
 	}
@@ -465,8 +468,8 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 	var supervisorInstance *supervisor.Supervisor
 	if configFound {
 		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.ClusterName, utils.Reset)
-		config.Print()
-		supervisorInstance = clusterWrapper.CreateSupervisor(config)
+		cnf.Print()
+		supervisorInstance = clusterWrapper.CreateSupervisor(cnf)
 	} else {
 		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.ClusterName, utils.Reset)
 		supervisorInstance = clusterWrapper.CreateSupervisor()
@@ -474,7 +477,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 
 	provisionerThread.logger.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.ClusterName, utils.Reset, supervisorInstance.Id, request.ClusterName)
 
-	provisionerThread.C6 <- ProvisionerResponse{
+	provisionerThread.C6 <- threads.ProvisionerResponse{
 		Nonce:        request.Nonce,
 		Success:      true,
 		Cluster:      request.ClusterName,
@@ -493,11 +496,19 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 		// given to the cluster for grouping purposes
 		if len(supervisorInstance.Config.Identifier) != 0 {
 			// saves statistics to the database thread
-			dbRequest := DatabaseRequest{Action: DatabaseStore, Origin: Provisioner, Cluster: supervisorInstance.Config.Identifier, Data: response}
+			dbRequest := threads.DatabaseRequest{
+				Action:  threads.DatabaseStore,
+				Origin:  threads.Provisioner,
+				Cluster: supervisorInstance.Config.Identifier,
+				Data:    response,
+			}
 			provisionerThread.C7 <- dbRequest
 
 			// sends a completion message to the messenger thread to write to a log file or send an email regarding completion
-			msgRequest := MessengerRequest{Action: MessengerClose, Cluster: supervisorInstance.Config.Identifier}
+			msgRequest := threads.MessengerRequest{
+				Action:  threads.MessengerClose,
+				Cluster: supervisorInstance.Config.Identifier,
+			}
 			provisionerThread.C11 <- msgRequest
 
 			// provide the console with output indicating that the cluster has completed
@@ -523,11 +534,11 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *Pro
 	}()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response DatabaseResponse) {
+func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response threads.DatabaseResponse) {
 	provisionerThread.databaseResponseTable.Write(response.Nonce, response)
 }
 
-func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response CacheResponse) {
+func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response threads.CacheResponse) {
 	provisionerThread.cacheResponseTable.Write(response.Nonce, response)
 }
 

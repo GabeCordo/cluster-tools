@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/GabeCordo/etl/components/channel"
+	"github.com/GabeCordo/etl-light/components/channel"
 )
 
 type Vector struct {
@@ -11,7 +11,7 @@ type Vector struct {
 	y int
 }
 
-func (m Vector) ExtractFunc(c *channel.OneWayManagedChannel) {
+func (m Vector) ExtractFunc(c channel.OneWay) {
 
 	v := Vector{1, 5} // simulate pulling data from a source
 	for i := 0; i < 100; i++ {

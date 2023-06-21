@@ -2,7 +2,9 @@ package core
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl-light/core/config"
+	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/provisioner"
 	"github.com/GabeCordo/etl/components/utils"
 	"log"
@@ -19,7 +21,7 @@ const (
 
 var (
 	configLock     = &sync.Mutex{}
-	ConfigInstance *Config
+	ConfigInstance *config.Config
 )
 
 func GetDefaultConfigPath() string {
@@ -33,7 +35,7 @@ func GetDefaultConfigPath() string {
 	}
 }
 
-func GetConfigInstance(configPath ...string) *Config {
+func GetConfigInstance(configPath ...string) *config.Config {
 	configLock.Lock()
 	defer configLock.Unlock()
 
@@ -45,9 +47,9 @@ func GetConfigInstance(configPath ...string) *Config {
 	}
 
 	if ConfigInstance == nil {
-		ConfigInstance = NewConfig("test")
+		ConfigInstance = config.NewConfig("test")
 
-		if err := YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
+		if err := config.YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
 			// the configPath we found the config for future reference
 			ConfigInstance.Path = configPath[0]
 			// if the MaxWaitForResponse is not set, then simply default to 2.0
@@ -66,18 +68,18 @@ func GetConfigInstance(configPath ...string) *Config {
 func NewCore(configPath string) (*Core, error) {
 	core := new(Core)
 
-	core.C1 = make(chan DatabaseRequest)
-	core.C2 = make(chan DatabaseResponse)
-	core.C3 = make(chan MessengerRequest)
-	core.C4 = make(chan MessengerResponse)
-	core.C5 = make(chan ProvisionerRequest)
-	core.C6 = make(chan ProvisionerResponse)
-	core.C7 = make(chan DatabaseRequest)
-	core.C8 = make(chan DatabaseResponse)
-	core.C9 = make(chan CacheRequest)
-	core.C10 = make(chan CacheResponse)
-	core.C11 = make(chan MessengerRequest)
-	core.interrupt = make(chan InterruptEvent)
+	core.C1 = make(chan threads.DatabaseRequest)
+	core.C2 = make(chan threads.DatabaseResponse)
+	core.C3 = make(chan threads.MessengerRequest)
+	core.C4 = make(chan threads.MessengerResponse)
+	core.C5 = make(chan threads.ProvisionerRequest)
+	core.C6 = make(chan threads.ProvisionerResponse)
+	core.C7 = make(chan threads.DatabaseRequest)
+	core.C8 = make(chan threads.DatabaseResponse)
+	core.C9 = make(chan threads.CacheRequest)
+	core.C10 = make(chan threads.CacheResponse)
+	core.C11 = make(chan threads.MessengerRequest)
+	core.interrupt = make(chan threads.InterruptEvent)
 
 	/* load the config in for the first time */
 	if config := GetConfigInstance(configPath); config == nil {
@@ -207,13 +209,13 @@ func (core *Core) Run() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigs // block until we receive an interrupt from the system
-		core.interrupt <- Panic
+		core.interrupt <- threads.Panic
 	}()
 
 	// an interrupt can be sent by any thread that has access to the channel if an
 	// error or end-state has been reached by the application
 	switch <-core.interrupt {
-	case Panic:
+	case threads.Panic:
 		core.logger.Printf("[IO] %s\n", " encountered panic")
 		//log.Println(utils.Red + "(IO)" + utils.Reset + " encountered panic")
 		break

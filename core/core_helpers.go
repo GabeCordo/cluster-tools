@@ -2,7 +2,8 @@ package core
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl/components/cluster"
+	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/database"
 	"github.com/GabeCordo/etl/components/supervisor"
 	"github.com/GabeCordo/etl/components/utils"
@@ -10,11 +11,11 @@ import (
 	"time"
 )
 
-func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName, clusterName string) (config cluster.Config, found bool) {
+func GetConfigFromDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName, clusterName string) (conf cluster.Config, found bool) {
 
-	databaseRequest := DatabaseRequest{
-		Action:  DatabaseFetch,
-		Type:    database.Config,
+	databaseRequest := threads.DatabaseRequest{
+		Action:  threads.DatabaseFetch,
+		Type:    threads.ClusterConfig,
 		Module:  moduleName,
 		Cluster: clusterName,
 		Nonce:   rand.Uint32(),
@@ -22,7 +23,7 @@ func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 	pipe <- databaseRequest
 
 	timeout := false
-	var databaseResponse DatabaseResponse
+	var databaseResponse threads.DatabaseResponse
 
 	timestamp := time.Now()
 	for {
@@ -32,7 +33,7 @@ func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 		}
 
 		if responseEntry, found := databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
+			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
@@ -44,11 +45,11 @@ func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 	}
 }
 
-func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
+func StoreConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
 
-	databaseRequest := DatabaseRequest{
-		Action:  DatabaseStore,
-		Type:    database.Config,
+	databaseRequest := threads.DatabaseRequest{
+		Action:  threads.DatabaseStore,
+		Type:    threads.ClusterConfig,
 		Module:  moduleName,
 		Cluster: config.Identifier,
 		Data:    config,
@@ -57,7 +58,7 @@ func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 	pipe <- databaseRequest
 
 	timeout := false
-	var databaseResponse DatabaseResponse
+	var databaseResponse threads.DatabaseResponse
 
 	timestamp := time.Now()
 	for {
@@ -67,7 +68,7 @@ func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 		}
 
 		if responseEntry, found := databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
+			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
@@ -75,11 +76,11 @@ func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *u
 	return timeout || databaseResponse.Success
 }
 
-func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
+func ReplaceConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
 
-	databaseRequest := DatabaseRequest{
-		Action:  DatabaseReplace,
-		Type:    database.Config,
+	databaseRequest := threads.DatabaseRequest{
+		Action:  threads.DatabaseReplace,
+		Type:    threads.ClusterConfig,
 		Module:  moduleName,
 		Cluster: config.Identifier,
 		Data:    config,
@@ -88,7 +89,7 @@ func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable 
 	pipe <- databaseRequest
 
 	timeout := false
-	var databaseResponse DatabaseResponse
+	var databaseResponse threads.DatabaseResponse
 
 	timestamp := time.Now()
 	for {
@@ -98,7 +99,7 @@ func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable 
 		}
 
 		if responseEntry, found := databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
+			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
@@ -106,10 +107,10 @@ func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable 
 	return timeout || databaseResponse.Success
 }
 
-func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (success bool) {
+func ClusterMount(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{
-		Action:      ProvisionerMount,
+	provisionerThreadRequest := threads.ProvisionerRequest{
+		Action:      threads.ProvisionerMount,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
@@ -117,7 +118,7 @@ func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 	pipe <- provisionerThreadRequest
 
 	timeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp := time.Now()
 	for {
@@ -127,7 +128,7 @@ func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 		}
 
 		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}
@@ -135,10 +136,10 @@ func ClusterMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 	return !timeout && provisionerResponse.Success
 }
 
-func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (success bool) {
+func ClusterUnMount(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{
-		Action:      ProvisionerUnMount,
+	provisionerThreadRequest := threads.ProvisionerRequest{
+		Action:      threads.ProvisionerUnMount,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
@@ -146,7 +147,7 @@ func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 	pipe <- provisionerThreadRequest
 
 	timeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp := time.Now()
 	for {
@@ -156,7 +157,7 @@ func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 		}
 
 		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}
@@ -164,17 +165,17 @@ func ClusterUnMount(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 	return !timeout && provisionerResponse.Success
 }
 
-func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, clusterName string) (success bool) {
+func DynamicallyDeleteCluster(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, clusterName string) (success bool) {
 
-	provisionerThreadRequest := ProvisionerRequest{
-		Action:      ProvisionerDynamicDelete,
+	provisionerThreadRequest := threads.ProvisionerRequest{
+		Action:      threads.ProvisionerDynamicDelete,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
 	}
 	pipe <- provisionerThreadRequest
 
 	timeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp := time.Now()
 	for {
@@ -184,7 +185,7 @@ func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *uti
 		}
 
 		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}
@@ -192,10 +193,10 @@ func DynamicallyDeleteCluster(pipe chan<- ProvisionerRequest, responseTable *uti
 	return timeout || provisionerResponse.Success
 }
 
-func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string, config ...string) (supervisorId uint64, success bool, description string) {
+func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string, config ...string) (supervisorId uint64, success bool, description string) {
 
-	provisionerThreadRequest := ProvisionerRequest{
-		Action:      ProvisionerProvision,
+	provisionerThreadRequest := threads.ProvisionerRequest{
+		Action:      threads.ProvisionerProvision,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
@@ -206,7 +207,7 @@ func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.Re
 	pipe <- provisionerThreadRequest
 
 	timeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp := time.Now()
 	for {
@@ -216,7 +217,7 @@ func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *utils.Re
 		}
 
 		if responseEntry, found := responseTable.Lookup(provisionerThreadRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}
@@ -274,11 +275,11 @@ func SupervisorLookup(moduleName, clusterName string, supervisorId uint64) (supe
 	return supervisorInstance, found
 }
 
-func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (entries []database.Entry, found bool) {
+func FindStatistics(pipe chan<- threads.DatabaseRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (entries []database.Entry, found bool) {
 
-	databaseRequest := DatabaseRequest{
-		Action:  DatabaseFetch,
-		Type:    database.Statistic,
+	databaseRequest := threads.DatabaseRequest{
+		Action:  threads.DatabaseFetch,
+		Type:    threads.SupervisorStatistic,
 		Module:  moduleName,
 		Cluster: clusterName,
 		Nonce:   rand.Uint32(),
@@ -286,7 +287,7 @@ func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTa
 	pipe <- databaseRequest
 
 	timeout := false
-	var databaseResponse DatabaseResponse
+	var databaseResponse threads.DatabaseResponse
 
 	timestamp := time.Now()
 	for {
@@ -296,7 +297,7 @@ func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTa
 		}
 
 		if responseEntry, found := responseTable.Lookup(databaseRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
+			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
@@ -308,21 +309,21 @@ func FindStatistics(pipe chan<- DatabaseRequest, responseTable *utils.ResponseTa
 	}
 }
 
-func ShutdownNode(pipe chan<- InterruptEvent) (response []byte, success bool) {
-	pipe <- Shutdown
+func ShutdownNode(pipe chan<- threads.InterruptEvent) (response []byte, success bool) {
+	pipe <- threads.Shutdown
 	return nil, true
 }
 
-func PingNodeChannels(logger *utils.Logger, databasePipe chan<- DatabaseRequest, databaseResponseTable *utils.ResponseTable, provisionerPipe chan<- ProvisionerRequest, provisionerResponseTable *utils.ResponseTable) (success bool) {
+func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, provisionerPipe chan<- threads.ProvisionerRequest, provisionerResponseTable *utils.ResponseTable) (success bool) {
 
-	databasePingRequest := DatabaseRequest{
-		Action: DatabaseUpperPing,
+	databasePingRequest := threads.DatabaseRequest{
+		Action: threads.DatabaseUpperPing,
 		Nonce:  rand.Uint32(),
 	}
 	databasePipe <- databasePingRequest
 
 	databaseTimeout := false
-	var databaseResponse DatabaseResponse
+	var databaseResponse threads.DatabaseResponse
 
 	timestamp := time.Now()
 	for {
@@ -332,7 +333,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- DatabaseRequest,
 		}
 
 		if responseEntry, found := databaseResponseTable.Lookup(databasePingRequest.Nonce); found {
-			databaseResponse = (responseEntry).(DatabaseResponse)
+			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
@@ -345,11 +346,14 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- DatabaseRequest,
 		logger.Println("received ping over C2")
 	}
 
-	provisionerPingRequest := ProvisionerRequest{Action: ProvisionerLowerPing, Nonce: rand.Uint32()}
+	provisionerPingRequest := threads.ProvisionerRequest{
+		Action: threads.ProvisionerLowerPing,
+		Nonce:  rand.Uint32(),
+	}
 	provisionerPipe <- provisionerPingRequest
 
 	provisionerTimeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp2 := time.Now()
 	for {
@@ -359,7 +363,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- DatabaseRequest,
 		}
 
 		if responseEntry, found := provisionerResponseTable.Lookup(provisionerPingRequest.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}
@@ -375,17 +379,17 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- DatabaseRequest,
 	return true
 }
 
-func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, modulePath string) (success bool, description string) {
+func RegisterModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, modulePath string) (success bool, description string) {
 
-	request := ProvisionerRequest{
-		Action:     ProvisionerModuleLoad,
+	request := threads.ProvisionerRequest{
+		Action:     threads.ProvisionerModuleLoad,
 		ModulePath: modulePath,
 		Nonce:      rand.Uint32(),
 	}
 	pipe <- request
 
 	provisionerTimeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp2 := time.Now()
 	for {
@@ -395,7 +399,7 @@ func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 		}
 
 		if responseEntry, found := responseTable.Lookup(request.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}
@@ -404,17 +408,17 @@ func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *utils.Respons
 	return success, provisionerResponse.Description
 }
 
-func DeleteModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseTable, moduleName string) (success bool, description string) {
+func DeleteModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, moduleName string) (success bool, description string) {
 
-	request := ProvisionerRequest{
-		Action:     ProvisionerModuleDelete,
+	request := threads.ProvisionerRequest{
+		Action:     threads.ProvisionerModuleDelete,
 		ModuleName: moduleName,
 		Nonce:      rand.Uint32(),
 	}
 	pipe <- request
 
 	provisionerTimeout := false
-	var provisionerResponse ProvisionerResponse
+	var provisionerResponse threads.ProvisionerResponse
 
 	timestamp2 := time.Now()
 	for {
@@ -424,7 +428,7 @@ func DeleteModule(pipe chan<- ProvisionerRequest, responseTable *utils.ResponseT
 		}
 
 		if responseEntry, found := responseTable.Lookup(request.Nonce); found {
-			provisionerResponse = (responseEntry).(ProvisionerResponse)
+			provisionerResponse = (responseEntry).(threads.ProvisionerResponse)
 			break
 		}
 	}

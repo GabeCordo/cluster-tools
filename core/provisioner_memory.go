@@ -1,19 +1,22 @@
 package core
 
-import "sync"
+import (
+	"github.com/GabeCordo/etl-light/core/threads"
+	"sync"
+)
 
 ///////////////////////////////////////////////////////////////////////////
 //							Cache Storage
 //////////////////////////////////////////////////////////////////////////
 
 type ProvisionerMemory struct {
-	cacheResponses map[uint32]chan CacheResponse // uint32 => CacheResponse
+	cacheResponses map[uint32]chan threads.CacheResponse // uint32 => CacheResponse
 	cacheMutex     sync.RWMutex
 }
 
 func NewProvisionerResponses() *ProvisionerMemory {
 	provisionerResponses := new(ProvisionerMemory)
-	provisionerResponses.cacheResponses = make(map[uint32]chan CacheResponse)
+	provisionerResponses.cacheResponses = make(map[uint32]chan threads.CacheResponse)
 	return provisionerResponses
 }
 
@@ -27,17 +30,17 @@ func GetProvisionerMemoryInstance() *ProvisionerMemory {
 	return provisionerMemory
 }
 
-func (memory *ProvisionerMemory) CreateCacheResponseEventListener(nonce uint32) chan CacheResponse {
+func (memory *ProvisionerMemory) CreateCacheResponseEventListener(nonce uint32) chan threads.CacheResponse {
 	memory.cacheMutex.Lock()
 	defer memory.cacheMutex.Unlock()
 
-	channel := make(chan CacheResponse)
+	channel := make(chan threads.CacheResponse)
 	memory.cacheResponses[nonce] = channel
 
 	return channel
 }
 
-func (memory *ProvisionerMemory) SendCacheResponseEvent(nonce uint32, record CacheResponse) {
+func (memory *ProvisionerMemory) SendCacheResponseEvent(nonce uint32, record threads.CacheResponse) {
 	memory.cacheMutex.RLock()
 	defer memory.cacheMutex.RUnlock()
 
@@ -53,13 +56,13 @@ func (memory *ProvisionerMemory) SendCacheResponseEvent(nonce uint32, record Cac
 //////////////////////////////////////////////////////////////////////////
 
 type DatabaseMemory struct {
-	databaseResponses map[uint32]chan DatabaseResponse // uint32 => CacheResponse
+	databaseResponses map[uint32]chan threads.DatabaseResponse // uint32 => CacheResponse
 	cacheMutex        sync.RWMutex
 }
 
 func NewDatabaseResponses() *DatabaseMemory {
 	databaseResponses := new(DatabaseMemory)
-	databaseResponses.databaseResponses = make(map[uint32]chan DatabaseResponse)
+	databaseResponses.databaseResponses = make(map[uint32]chan threads.DatabaseResponse)
 	return databaseResponses
 }
 
@@ -72,17 +75,17 @@ func GetDatabaseMemoryInstance() *DatabaseMemory {
 	return databaseMemory
 }
 
-func (memory *DatabaseMemory) CreateDatabaseResponseEventListener(nonce uint32) chan DatabaseResponse {
+func (memory *DatabaseMemory) CreateDatabaseResponseEventListener(nonce uint32) chan threads.DatabaseResponse {
 	memory.cacheMutex.Lock()
 	defer memory.cacheMutex.Unlock()
 
-	channel := make(chan DatabaseResponse)
+	channel := make(chan threads.DatabaseResponse)
 	memory.databaseResponses[nonce] = channel
 
 	return channel
 }
 
-func (memory *DatabaseMemory) SendDatabaseResponseEvent(nonce uint32, record DatabaseResponse) {
+func (memory *DatabaseMemory) SendDatabaseResponseEvent(nonce uint32, record threads.DatabaseResponse) {
 	memory.cacheMutex.RLock()
 	defer memory.cacheMutex.RUnlock()
 

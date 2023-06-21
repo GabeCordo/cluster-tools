@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/cache"
 	"time"
 )
@@ -43,17 +44,17 @@ func (cacheThread *CacheThread) Start() {
 	cacheThread.wg.Wait()
 }
 
-func (cacheThread *CacheThread) Send(response *CacheResponse) {
+func (cacheThread *CacheThread) Send(response *threads.CacheResponse) {
 
 	cacheThread.C10 <- *response
 }
 
-func (cacheThread *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
-	if request.Action == CacheSaveIn {
+func (cacheThread *CacheThread) ProcessIncomingRequest(request *threads.CacheRequest) {
+	if request.Action == threads.CacheSaveIn {
 		cacheThread.ProcessSaveRequest(request)
-	} else if request.Action == CacheLoadFrom {
+	} else if request.Action == threads.CacheLoadFrom {
 		cacheThread.ProcessLoadRequest(request)
-	} else if request.Action == CacheLowerPing {
+	} else if request.Action == threads.CacheLowerPing {
 		cacheThread.ProcessPingCache(request)
 	}
 
@@ -61,21 +62,21 @@ func (cacheThread *CacheThread) ProcessIncomingRequest(request *CacheRequest) {
 }
 
 // ProcessSaveRequest will insert or override an existing cache record
-func (cacheThread *CacheThread) ProcessSaveRequest(request *CacheRequest) {
-	var response CacheResponse
+func (cacheThread *CacheThread) ProcessSaveRequest(request *threads.CacheRequest) {
+	var response threads.CacheResponse
 	if _, found := GetCacheInstance().Get(request.Identifier); found {
 		GetCacheInstance().Swap(request.Identifier, request.Data, request.ExpiresIn)
-		response = CacheResponse{Identifier: request.Identifier, Data: nil, Nonce: request.Nonce, Success: true}
+		response = threads.CacheResponse{Identifier: request.Identifier, Data: nil, Nonce: request.Nonce, Success: true}
 	} else {
 		newIdentifier := GetCacheInstance().Save(request.Data, request.ExpiresIn)
-		response = CacheResponse{Identifier: newIdentifier, Data: nil, Nonce: request.Nonce, Success: true}
+		response = threads.CacheResponse{Identifier: newIdentifier, Data: nil, Nonce: request.Nonce, Success: true}
 	}
 	cacheThread.C10 <- response
 }
 
-func (cacheThread *CacheThread) ProcessLoadRequest(request *CacheRequest) {
+func (cacheThread *CacheThread) ProcessLoadRequest(request *threads.CacheRequest) {
 	cacheData, isFoundAndNotExpired := GetCacheInstance().Get(request.Identifier)
-	cacheThread.C10 <- CacheResponse{
+	cacheThread.C10 <- threads.CacheResponse{
 		Identifier: request.Identifier,
 		Data:       cacheData,
 		Nonce:      request.Nonce,
@@ -83,13 +84,13 @@ func (cacheThread *CacheThread) ProcessLoadRequest(request *CacheRequest) {
 	}
 }
 
-func (cacheThread *CacheThread) ProcessPingCache(request *CacheRequest) {
+func (cacheThread *CacheThread) ProcessPingCache(request *threads.CacheRequest) {
 
 	if GetConfigInstance().Debug {
 		cacheThread.logger.Println("received ping over C9")
 	}
 
-	cacheThread.C10 <- CacheResponse{Nonce: request.Nonce, Success: true}
+	cacheThread.C10 <- threads.CacheResponse{Nonce: request.Nonce, Success: true}
 }
 
 func (cacheThread *CacheThread) Teardown() {

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/messenger"
 )
 
@@ -21,8 +22,14 @@ func GetMessengerInstance() *messenger.Messenger {
 
 		if config.Messenger.EnableSmtp {
 			messengerInstance.SetupSMTP(
-				config.Messenger.Smtp.Endpoint,
-				config.Messenger.Smtp.Credentials,
+				messenger.Endpoint{
+					Host: config.Messenger.Smtp.Endpoint.Host,
+					Port: config.Messenger.Smtp.Endpoint.Port,
+				},
+				messenger.Credentials{
+					Email:    config.Messenger.Smtp.Credentials.Email,
+					Password: config.Messenger.Smtp.Credentials.Password,
+				},
 			).SetupReceivers(
 				config.Messenger.Smtp.Subscribers,
 			)
@@ -63,16 +70,16 @@ func (messengerThread *MessengerThread) Start() {
 	messengerThread.wg.Wait()
 }
 
-func (messengerThread *MessengerThread) Send(module Module, response *MessengerResponse) {
+func (messengerThread *MessengerThread) Send(module threads.Module, response *threads.MessengerResponse) {
 
 	messengerThread.C4 <- *response
 }
 
-func (messengerThread *MessengerThread) ProcessIncomingRequest(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessIncomingRequest(request *threads.MessengerRequest) {
 
-	if request.Action == MessengerClose {
+	if request.Action == threads.MessengerClose {
 		messengerThread.ProcessCloseLogRequest(request)
-	} else if request.Action == MessengerUpperPing {
+	} else if request.Action == threads.MessengerUpperPing {
 		messengerThread.ProcessMessengerPing(request)
 	} else {
 		messengerThread.ProcessConsoleRequest(request)
@@ -81,22 +88,22 @@ func (messengerThread *MessengerThread) ProcessIncomingRequest(request *Messenge
 	messengerThread.wg.Done()
 }
 
-func (messengerThread *MessengerThread) ProcessMessengerPing(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessMessengerPing(request *threads.MessengerRequest) {
 
 	if GetConfigInstance().Debug {
 		messengerThread.logger.Println("[etl_messenger] received ping over C3")
 	}
 
-	messengerThread.C4 <- MessengerResponse{Nonce: request.Nonce, Success: true}
+	messengerThread.C4 <- threads.MessengerResponse{Nonce: request.Nonce, Success: true}
 }
 
-func (messengerThread *MessengerThread) ProcessConsoleRequest(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessConsoleRequest(request *threads.MessengerRequest) {
 	messengerInstance := GetMessengerInstance()
 
 	var priority messenger.MessagePriority
-	if request.Action == MessengerLog {
+	if request.Action == threads.MessengerLog {
 		priority = messenger.Log
-	} else if request.Action == MessengerWarning {
+	} else if request.Action == threads.MessengerWarning {
 		priority = messenger.Warning
 	} else {
 		priority = messenger.Fatal
@@ -105,7 +112,7 @@ func (messengerThread *MessengerThread) ProcessConsoleRequest(request *Messenger
 	messengerInstance.Log(request.Cluster, request.Message, priority)
 }
 
-func (messengerThread *MessengerThread) ProcessCloseLogRequest(request *MessengerRequest) {
+func (messengerThread *MessengerThread) ProcessCloseLogRequest(request *threads.MessengerRequest) {
 	messenger := GetMessengerInstance()
 	messenger.Complete(request.Cluster)
 }

@@ -6,13 +6,13 @@ import (
 )
 
 func TestMessenger(t *testing.T) {
-	//ukfehuywjmkmnydc
-	m := NewMessenger(DefaultEndpoint, Credentials{"~", "~"})
+
+	m := NewMessenger(true, true).SetupSMTP(DefaultEndpoint, Credentials{"~", "~"})
 
 	m.Log("test", "this is a hello message")
 	m.Log("test", "this is a hello message two")
 
-	if success := m.Complete("test", []string{"gabecofficial@gmail.com"}); !success {
+	if success := m.Complete("gabecofficial@gmail.com"); !success {
 		t.Error("email did not send")
 	}
 }
