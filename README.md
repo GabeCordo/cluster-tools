@@ -1,5 +1,5 @@
 # ETLE
-## Extract Transform Load Engine
+#### Extract Transform Load Engine
 An open source software orchestration framework for cloud functions implementing
 the Extract Transform Load (ETL) data transformation pattern.
 
