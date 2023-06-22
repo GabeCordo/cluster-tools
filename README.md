@@ -1,5 +1,4 @@
-# ETLE
-#### Extract Transform Load Engine
+# Extract Transform Load Engine
 An open source software orchestration framework for cloud functions implementing
 the Extract Transform Load (ETL) data transformation pattern.
 
@@ -11,7 +10,7 @@ around unexpected data loads, and performance monitoring for the functions devel
 
 ```tested on windows 10, macos, and ubuntu```
 
-This framework is still a work in progress with the hopes of adding more SRE functionality such as SLIs and SLAs
+This framework is still a work in progress with hopes of adding more SRE functionality such as SLIs and SLAs
 to the engine. If you are interested, feel free to reach out.
 
 ### Installation 
