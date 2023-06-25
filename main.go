@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"fmt"
 )
 
 var help = flag.Bool("help", false, "show help")
