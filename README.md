@@ -13,7 +13,7 @@ around unexpected data loads, and performance monitoring for the functions devel
 This framework is still a work in progress with hopes of adding more SRE functionality such as SLIs and SLAs
 to the engine. If you are interested, feel free to reach out.
 
-### Installation 
+### Installation
 
 ```shell
    git clone https://github.com/GabeCordo/etl
@@ -28,7 +28,7 @@ to the engine. If you are interested, feel free to reach out.
 ### Running the ETL Engine
 
 ```shell
-etl --config $ETL_ENGINE_CONFIG --modules ETL_ENGINE_MODULES
+etl --config $ETL_ENGINE_CONFIG --modules $ETL_ENGINE_MODULES
 ```
 
 ### Documentation

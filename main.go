@@ -59,6 +59,9 @@ func main() {
 		//	 operational, also, avoiding the need to dynamically load them over HTTP one by one
 		if modulePathFlag != "" {
 			err := filepath.Walk(modulePathFlag, func(path string, info fs.FileInfo, err error) error {
+				if info == nil {
+					return nil
+				  }
 				// the root folder will be included in the walk of the directory, we know this is not a module,
 				// so we should skip the path if it is pointing to the root
 				if info.IsDir() && (path != modulePathFlag) {
