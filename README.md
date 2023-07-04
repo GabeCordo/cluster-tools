@@ -28,8 +28,9 @@ to the engine. If you are interested, feel free to reach out.
 ### Running the ETL Engine
 
 ```shell
-etl --config $ETL_ENGINE_CONFIG --modules $ETL_ENGINE_MODULES
+etl --common
 ```
+adding the common variant will load in util and test functions that can be used to verify the framework is working.
 
 ### Documentation
 
