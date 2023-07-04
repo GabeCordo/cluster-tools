@@ -45,7 +45,7 @@ func (registry *Registry) IsMounted() bool {
 	return registry.mounted
 }
 
-func (registry *Registry) CreateSupervisor(config ...cluster.Config) *Supervisor {
+func (registry *Registry) CreateSupervisor(metadata map[string]string, config ...cluster.Config) *Supervisor {
 
 	id := registry.getNextUsableId()
 
@@ -54,9 +54,9 @@ func (registry *Registry) CreateSupervisor(config ...cluster.Config) *Supervisor
 
 	var supervisor *Supervisor
 	if len(config) > 0 {
-		supervisor = NewCustomSupervisor(registry.implementation, config[0])
+		supervisor = NewCustomSupervisor(registry.implementation, config[0], metadata)
 	} else {
-		supervisor = NewSupervisor(registry.identifier, registry.implementation)
+		supervisor = NewSupervisor(registry.identifier, registry.implementation, metadata)
 	}
 	supervisor.Id = id
 

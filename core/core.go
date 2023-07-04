@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/config"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 )
@@ -140,8 +142,7 @@ func NewCore(configPath string) (*Core, error) {
 	return core, nil
 }
 
-func (core *Core) Run() {
-
+func (core *Core) Banner() {
 	fmt.Println("   ___    _____    _")
 	fmt.Println("  | __|  |_   _|  | |")
 	fmt.Println("  | _|     | |    | |__")
@@ -151,6 +152,11 @@ func (core *Core) Run() {
 	fmt.Println("[+] " + utils.Purple + "Extract Transform Load Framework " + utils.Reset + Version)
 	fmt.Println("[+]" + utils.Purple + " by Gabriel Cordovado 2022-23" + utils.Reset)
 	fmt.Println()
+}
+
+func (core *Core) Run() {
+
+	core.Banner()
 
 	core.logger.SetColour(utils.Purple)
 
@@ -176,7 +182,7 @@ func (core *Core) Run() {
 		//log.Println(utils.Purple + "(+)" + utils.Reset + " Database Thread Started")
 	}
 
-	// we need a way to provision clusters if we are receiving core before we can
+	// we need a way to provision common if we are receiving core before we can
 	core.ProvisionerThread.Setup()
 	go core.ProvisionerThread.Start() // event loop
 	if GetConfigInstance().Debug {
@@ -210,6 +216,30 @@ func (core *Core) Run() {
 	go func() {
 		<-sigs // block until we receive an interrupt from the system
 		core.interrupt <- threads.Panic
+	}()
+
+	go func() {
+		fmt.Println()
+		fmt.Println("the interactive shell is an experimental feature that is still being worked on. " +
+			"there may be some issues or missing features that are under development.")
+		fmt.Println()
+
+		reader := bufio.NewReader(os.Stdin)
+
+		for {
+			fmt.Print("@etl ")
+			text, _ := reader.ReadString('\n')
+			text = strings.ReplaceAll(text, "\n", "")
+
+			if text == "modules" {
+				p := GetProvisionerInstance()
+				modules := p.GetModules()
+
+				for _, module := range modules {
+					module.Print()
+				}
+			}
+		}
 	}()
 
 	// an interrupt can be sent by any thread that has access to the channel if an

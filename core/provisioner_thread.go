@@ -123,7 +123,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 		return
 	}
 
-	// if one of the clusters in the module is marked as mounted, then the module should be mounted itself
+	// if one of the common in the module is marked as mounted, then the module should be mounted itself
 	for _, export := range moduleInstance.Config.Exports {
 		if export.StaticMount {
 			moduleWrapper, _ := GetProvisionerInstance().GetModule(moduleInstance.Config.Identifier)
@@ -246,7 +246,7 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *threads
 
 			if databasePingTimeout || !databaseResponse.Success {
 				response.Success = false
-				response.Description = "could not delete clusters and statistics under a module"
+				response.Description = "could not delete common and statistics under a module"
 			}
 		} else {
 			response.Description = "module marked for deletion, a cluster is likely running right now, try later"
@@ -469,10 +469,10 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 	if configFound {
 		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.ClusterName, utils.Reset)
 		cnf.Print()
-		supervisorInstance = clusterWrapper.CreateSupervisor(cnf)
+		supervisorInstance = clusterWrapper.CreateSupervisor(request.MetaData, cnf)
 	} else {
 		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.ClusterName, utils.Reset)
-		supervisorInstance = clusterWrapper.CreateSupervisor()
+		supervisorInstance = clusterWrapper.CreateSupervisor(request.MetaData)
 	}
 
 	provisionerThread.logger.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", utils.Green, request.ClusterName, utils.Reset, supervisorInstance.Id, request.ClusterName)
@@ -489,7 +489,6 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 	go func() {
 
 		// block until the supervisor completes
-		supervisorInstance.Print()
 		response := supervisorInstance.Start()
 
 		// don't send the statistics of the cluster to the database unless an Identifier has been

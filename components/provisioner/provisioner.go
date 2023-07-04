@@ -12,6 +12,8 @@ func NewProvisioner() *Provisioner {
 	provisioner.modules = make(map[string]*ModuleWrapper)
 
 	defaultFrameworkModule := NewModuleWrapper()
+	defaultFrameworkModule.Identifier = DefaultFrameworkModule
+	defaultFrameworkModule.Version = 1.0
 	defaultFrameworkModule.Mount()
 	provisioner.modules[DefaultFrameworkModule] = defaultFrameworkModule
 

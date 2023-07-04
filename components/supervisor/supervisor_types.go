@@ -11,15 +11,15 @@ const (
 	MaxConcurrentSupervisors = 24
 )
 
-type Status uint8
+type Status string
 
 const (
-	UnTouched Status = iota
-	Running
-	Provisioning
-	Failed
-	Terminated
-	Unknown
+	UnTouched    Status = "untouched"
+	Running             = "running"
+	Provisioning        = "provisioning"
+	Failed              = "failed"
+	Terminated          = "terminated"
+	Unknown             = "unknown"
 )
 
 type Event uint8
@@ -43,10 +43,13 @@ type Supervisor struct {
 	Mode      cluster.OnCrash     `json:"on-crash"`
 	StartTime time.Time           `json:"start-time"`
 
+	Metadata cluster.M `json:"meta-data"`
+
 	group     cluster.Cluster
 	ETChannel *channel.ManagedChannel
 	TLChannel *channel.ManagedChannel
 
-	waitGroup sync.WaitGroup
-	mutex     sync.RWMutex
+	loadWaitGroup sync.WaitGroup
+	waitGroup     sync.WaitGroup
+	mutex         sync.RWMutex
 }

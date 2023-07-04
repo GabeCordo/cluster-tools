@@ -15,13 +15,14 @@ const (
 	DefaultChannelGrowthFactor    = 2
 )
 
-func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster) *Supervisor {
+func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster, metadata map[string]string) *Supervisor {
 	supervisor := new(Supervisor)
 
 	supervisor.group = clusterImplementation
 	supervisor.Config = cluster.Config{
 		clusterName,
-		DefaultChannelThreshold,
+		cluster.CompleteAndPush,
+		cluster.DoNothing,
 		DefaultNumberOfClusters,
 		DefaultNumberOfClusters,
 		DefaultChannelGrowthFactor,
@@ -33,10 +34,15 @@ func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster) *S
 	supervisor.ETChannel = channel.NewManagedChannel("ETChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
 	supervisor.TLChannel = channel.NewManagedChannel("TLChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
 
+	if metadata != nil {
+		supervisor.Metadata = NewMetadata(metadata)
+	} else {
+		supervisor.Metadata = NewMetadata(nil)
+	}
 	return supervisor
 }
 
-func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.Config) *Supervisor {
+func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.Config, metdata map[string]string) *Supervisor {
 	supervisor := new(Supervisor)
 
 	/**
@@ -51,6 +57,12 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.C
 	supervisor.Stats = cluster.NewStatistics()
 	supervisor.ETChannel = channel.NewManagedChannel("ETChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor)
 	supervisor.TLChannel = channel.NewManagedChannel("TLChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor)
+
+	if metdata != nil {
+		supervisor.Metadata = NewMetadata(metdata)
+	} else {
+		supervisor.Metadata = NewMetadata(nil)
+	}
 
 	return supervisor
 }
@@ -196,7 +208,7 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 				oneWayChannel, _ := channel.NewOneWayManagedChannel(supervisor.ETChannel)
 
 				supervisor.ETChannel.AddProducer()
-				supervisor.group.ExtractFunc(oneWayChannel)
+				supervisor.group.ExtractFunc(supervisor.Metadata, oneWayChannel)
 				supervisor.ETChannel.ProducerDone()
 			}
 		case cluster.Transform:
@@ -227,7 +239,7 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 						continue
 					}
 
-					data, success := supervisor.group.TransformFunc(request.Data)
+					data, success := supervisor.group.TransformFunc(supervisor.Metadata, request.Data)
 					if success {
 						supervisor.Stats.Data.TotalOverTLChannel++
 						supervisor.TLChannel.Push(channel.DataWrapper{Id: request.Id, Data: data})
@@ -240,12 +252,15 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 			{
 				defer func() {
 					if r := recover(); r != nil {
+						log.Println(r)
 						log.Println("cluster.Load function raised error")
 						supervisor.waitGroup.Done()
 					}
 				}()
 
 				supervisor.Stats.Threads.NumProvisionedLoadRoutines++
+
+				aggregatedData := make([]any, 0)
 
 				for request := range supervisor.TLChannel.GetChannel() {
 					supervisor.Stats.Data.TotalProcessed++
@@ -258,7 +273,15 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 						continue
 					}
 
-					supervisor.group.LoadFunc(request.Data)
+					if a, success := (supervisor.group).(cluster.LoadOne); success {
+						a.LoadFunc(supervisor.Metadata, request.Data)
+					} else if _, success := (supervisor.group).(cluster.LoadAll); success {
+						aggregatedData = append(aggregatedData, request.Data)
+					}
+				}
+
+				if a, success := (supervisor.group).(cluster.LoadAll); success {
+					a.LoadFunc(supervisor.Metadata, aggregatedData)
 				}
 			}
 		}

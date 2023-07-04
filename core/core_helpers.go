@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/components/database"
@@ -41,7 +40,7 @@ func GetConfigFromDatabase(pipe chan<- threads.DatabaseRequest, databaseResponse
 	if timeout || !databaseResponse.Success {
 		return cluster.Config{}, false
 	} else {
-		return *(databaseResponse.Data).(*cluster.Config), true
+		return (databaseResponse.Data).(cluster.Config), true
 	}
 }
 
@@ -193,13 +192,20 @@ func DynamicallyDeleteCluster(pipe chan<- threads.ProvisionerRequest, responseTa
 	return timeout || provisionerResponse.Success
 }
 
-func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, moduleName, clusterName string, config ...string) (supervisorId uint64, success bool, description string) {
+func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
+	moduleName, clusterName string, meta map[string]string, config ...string) (supervisorId uint64, success bool, description string) {
 
+	// there is a possibility the user never passed an args value to the HTTP endpoint,
+	// so we need to replace it with and empty arry
+	if meta == nil {
+		meta = make(map[string]string)
+	}
 	provisionerThreadRequest := threads.ProvisionerRequest{
 		Action:      threads.ProvisionerProvision,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
+		MetaData:    meta,
 	}
 	if len(config) > 0 {
 		provisionerThreadRequest.Config = config[0]
@@ -254,23 +260,18 @@ func SupervisorLookup(moduleName, clusterName string, supervisorId uint64) (supe
 
 	moduleWrapper, found := provisionerInstance.GetModule(moduleName)
 	if !found {
-		fmt.Println("module not found")
 		return nil, false
 	}
 
 	clusterWrapper, found := moduleWrapper.GetCluster(clusterName)
 	if !found {
-		fmt.Println("cluster not found")
 		return nil, false
 	}
 
 	supervisorInstance, found = clusterWrapper.FindSupervisor(supervisorId)
 	if !found {
-		fmt.Println("supervisor not found")
 		return nil, false
 	}
-
-	fmt.Println("returning supervisor")
 
 	return supervisorInstance, found
 }

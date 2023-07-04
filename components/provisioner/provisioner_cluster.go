@@ -42,9 +42,9 @@ func (clusterWrapper *ClusterWrapper) FindSupervisor(id uint64) (instance *super
 	return instance, found
 }
 
-func (clusterWrapper *ClusterWrapper) CreateSupervisor(config ...cluster.Config) *supervisor.Supervisor {
+func (clusterWrapper *ClusterWrapper) CreateSupervisor(metadata map[string]string, config ...cluster.Config) *supervisor.Supervisor {
 
-	return clusterWrapper.registry.CreateSupervisor(config...)
+	return clusterWrapper.registry.CreateSupervisor(metadata, config...)
 }
 
 func (clusterWrapper *ClusterWrapper) DeleteSupervisor(identifier uint64) (deleted, found bool) {

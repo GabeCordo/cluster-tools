@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"log"
 )
@@ -123,4 +124,8 @@ func (moduleWrapper *ModuleWrapper) CanDelete() (canDelete bool) {
 	}
 
 	return canDelete
+}
+
+func (moduleWrapper *ModuleWrapper) Print() {
+	fmt.Printf("%s %.3f\n", moduleWrapper.Identifier, moduleWrapper.Version)
 }
