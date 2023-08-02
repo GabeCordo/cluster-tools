@@ -33,6 +33,7 @@ to the engine. If you are interested, feel free to reach out.
 ```shell
 etl start
 ```
+adding the common variant will load in util and test functions that can be used to verify the framework is working.
 
 ### Documentation
 
