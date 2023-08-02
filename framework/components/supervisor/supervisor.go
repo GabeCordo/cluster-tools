@@ -3,7 +3,7 @@ package supervisor
 import (
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl/components/channel"
+	"github.com/GabeCordo/etl/framework/components/channel"
 	"log"
 	"time"
 )

@@ -6,8 +6,8 @@ import (
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/config"
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/provisioner"
-	"github.com/GabeCordo/etl/components/utils"
+	"github.com/GabeCordo/etl/framework/components/provisioner"
+	"github.com/GabeCordo/etl/framework/utils"
 	"log"
 	"os"
 	"os/signal"
@@ -182,7 +182,7 @@ func (core *Core) Run() {
 		//log.Println(utils.Purple + "(+)" + utils.Reset + " Database Thread Started")
 	}
 
-	// we need a way to provision common if we are receiving core before we can
+	// we need a way to provision clusters if we are receiving core before we can
 	core.ProvisionerThread.Setup()
 	go core.ProvisionerThread.Start() // event loop
 	if GetConfigInstance().Debug {

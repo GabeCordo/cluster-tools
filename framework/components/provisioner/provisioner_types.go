@@ -1,12 +1,12 @@
 package provisioner
 
 import (
-	"github.com/GabeCordo/etl/components/supervisor"
+	"github.com/GabeCordo/etl/framework/components/supervisor"
 	"sync"
 )
 
 const (
-	DefaultFrameworkModule = "common"
+	DefaultFrameworkModule = "clusters"
 )
 
 type ClusterWrapper struct {

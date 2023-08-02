@@ -2,7 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/cache"
+	"github.com/GabeCordo/etl/framework/components/cache"
 	"time"
 )
 

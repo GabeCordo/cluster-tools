@@ -2,7 +2,7 @@ package core
 
 import (
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/messenger"
+	"github.com/GabeCordo/etl/framework/components/messenger"
 )
 
 var messengerInstance *messenger.Messenger

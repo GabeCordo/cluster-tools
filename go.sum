@@ -1,3 +1,5 @@
+github.com/GabeCordo/commandline v0.1.7 h1:Xg5wAFkuZmc1l405s5Med2kAPb1n5lybl84e9EsFf7U=
+github.com/GabeCordo/commandline v0.1.7/go.mod h1:PpEJZ9in2hhhZKvLNViNCl26O9Aij/A0fiJmYazRmdI=
 github.com/GabeCordo/etl-light v0.1.2 h1:rnFMQRMY//9MCSm+rnknxtFbxPRERbmv0TPRK2rUs20=
 github.com/GabeCordo/etl-light v0.1.2/go.mod h1:R18NMPncq563pbBP+ExRJvz1o9oGqHPnmt0ZbLYwWuU=
 github.com/GabeCordo/fack v0.1.4 h1:sEFZvPN0e1xBWotTKBTN15CG3sHhxdRiILEX87xfIMs=

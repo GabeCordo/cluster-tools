@@ -16,19 +16,22 @@ to the engine. If you are interested, feel free to reach out.
 ### Installation
 
 ```shell
+   # create a local copy of the framework
    git clone https://github.com/GabeCordo/etl
-   cd etl
-   mkdir .bin/modules
-   # add .bin/modules as to your environment as ETL_ENGINE_MODULES
-   # add .bin/configs/config.etl.yaml to your environment as ETL_ENGINE_CONFIG
+   
+   # generate a framework binary in the GOPATH bin folder
    go install
+   
    # add $(go env GOPATH)/bin to your environment PATH
+   
+   # generate global files used by the framework when run
+   etl init
 ```
 
 ### Running the ETL Engine
 
 ```shell
-etl --config $ETL_ENGINE_CONFIG --modules $ETL_ENGINE_MODULES
+etl start
 ```
 
 ### Documentation

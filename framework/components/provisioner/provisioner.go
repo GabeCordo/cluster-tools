@@ -3,7 +3,7 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl/components/module"
+	"github.com/GabeCordo/etl/framework/components/module"
 )
 
 func NewProvisioner() *Provisioner {

@@ -20,7 +20,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 	if cache.numOfRecords == cache.maxAllowedRecords {
 		// send a warning to the developer that notifies them that they are likely
 		// abusing the cache, it is a short-term data storage for inter-cluster
-		// communication. If they just have too many common using the cache, it
+		// communication. If they just have too many clusters using the cache, it
 		// might indicate that they need to increase the ram on their production environment
 		log.Println("(warning) cache miss, increase the maximum number of records allowed.")
 		log.Println("[ increasing the maximum records on low-ram machines will degrade performance, be careful ]")

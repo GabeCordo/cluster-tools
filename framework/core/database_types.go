@@ -3,7 +3,7 @@ package core
 import (
 	"errors"
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/utils"
+	"github.com/GabeCordo/etl/framework/utils"
 	"sync"
 )
 

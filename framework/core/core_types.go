@@ -2,7 +2,17 @@ package core
 
 import (
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/utils"
+	"github.com/GabeCordo/etl/framework/utils"
+	"os"
+)
+
+var (
+	userCacheDir, _        = os.UserCacheDir()
+	DefaultFrameworkFolder = userCacheDir + "/etl/"
+	DefaultModulesFolder   = DefaultFrameworkFolder + "modules/"
+	DefaultConfigsFolder   = DefaultFrameworkFolder + "configs/"
+	DefaultConfigFile      = DefaultConfigsFolder + "global.etl.yml"
+	DefaultLogsFolder      = DefaultFrameworkFolder + "logs/"
 )
 
 type Core struct {

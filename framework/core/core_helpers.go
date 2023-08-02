@@ -3,9 +3,9 @@ package core
 import (
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/database"
-	"github.com/GabeCordo/etl/components/supervisor"
-	"github.com/GabeCordo/etl/components/utils"
+	"github.com/GabeCordo/etl/framework/components/database"
+	"github.com/GabeCordo/etl/framework/components/supervisor"
+	"github.com/GabeCordo/etl/framework/utils"
 	"math/rand"
 	"time"
 )

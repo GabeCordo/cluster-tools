@@ -2,7 +2,7 @@ package provisioner
 
 import (
 	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl/components/supervisor"
+	"github.com/GabeCordo/etl/framework/components/supervisor"
 )
 
 func NewClusterWrapper(identifier string, implementation cluster.Cluster) *ClusterWrapper {

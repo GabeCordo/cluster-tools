@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/utils"
+	"github.com/GabeCordo/etl/framework/utils"
 	"net/http"
 	"sync"
 )

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/components/module"
-	"github.com/GabeCordo/etl/components/provisioner"
-	"github.com/GabeCordo/etl/components/supervisor"
-	"github.com/GabeCordo/etl/components/utils"
+	"github.com/GabeCordo/etl/framework/components/module"
+	"github.com/GabeCordo/etl/framework/components/provisioner"
+	"github.com/GabeCordo/etl/framework/components/supervisor"
+	"github.com/GabeCordo/etl/framework/utils"
 	"math/rand"
 	"reflect"
 	"time"
@@ -123,7 +123,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 		return
 	}
 
-	// if one of the common in the module is marked as mounted, then the module should be mounted itself
+	// if one of the clusters in the module is marked as mounted, then the module should be mounted itself
 	for _, export := range moduleInstance.Config.Exports {
 		if export.StaticMount {
 			moduleWrapper, _ := GetProvisionerInstance().GetModule(moduleInstance.Config.Identifier)
@@ -246,7 +246,7 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *threads
 
 			if databasePingTimeout || !databaseResponse.Success {
 				response.Success = false
-				response.Description = "could not delete common and statistics under a module"
+				response.Description = "could not delete clusters and statistics under a module"
 			}
 		} else {
 			response.Description = "module marked for deletion, a cluster is likely running right now, try later"

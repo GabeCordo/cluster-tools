@@ -1,4 +1,4 @@
-package common
+package clusters
 
 import (
 	"fmt"
