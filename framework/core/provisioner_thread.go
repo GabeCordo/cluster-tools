@@ -39,70 +39,45 @@ func (provisionerThread *ProvisionerThread) Start() {
 
 	provisionerThread.listenersWg.Add(1)
 
+	// temporary go-routine
 	go func() {
-		// request coming from http_server
-		for request := range provisionerThread.C5 {
-			if !provisionerThread.accepting {
-				fmt.Println("closing C5")
-				provisionerThread.listenersWg.Done()
-				break
+		for _, moduleWrapper := range GetProvisionerInstance().GetModules() {
+
+			for _, clusterWrapper := range moduleWrapper.GetClusters() {
+
+				if clusterWrapper.IsMounted() && clusterWrapper.IsStream() {
+
+					if !moduleWrapper.IsMounted() {
+						moduleWrapper.Mount()
+					}
+
+					provisionerThread.logger.Printf("%s[%s]%s mount cluster \n", utils.Green, clusterWrapper.Identifier, utils.Reset)
+
+					provisionerThread.C5 <- threads.ProvisionerRequest{
+						Action:      threads.ProvisionerProvision,
+						Source:      threads.Provisioner,
+						ModuleName:  moduleWrapper.Identifier,
+						ClusterName: clusterWrapper.Identifier,
+						Metadata:    threads.ProvisionerMetadata{},
+						Nonce:       rand.Uint32(),
+					}
+				}
 			}
+		}
+	}()
+
+	for provisionerThread.accepting {
+
+		select {
+		case request := <-provisionerThread.C5: // request coming from http_server
 			provisionerThread.requestWg.Add(1)
-
-			// if this doesn't spawn its own thread we will be left waiting
-			provisionerThread.ProcessIncomingRequests(&request)
-		}
-
-		provisionerThread.requestWg.Wait()
-	}()
-	go func() {
-		for response := range provisionerThread.C8 {
-			if !provisionerThread.accepting {
-				fmt.Println("closing C8")
-				break
-			}
-
-			// if this doesn't spawn its own thread we will be left waiting
-			provisionerThread.ProcessesIncomingDatabaseResponses(response)
-		}
-
-		provisionerThread.requestWg.Wait()
-	}()
-	go func() {
-		for response := range provisionerThread.C10 {
-			if !provisionerThread.accepting {
-				fmt.Println("closing C10")
-				break
-			}
-
-			// if this doesn't spawn its own thread we can be left waiting
-			provisionerThread.ProcessIncomingCacheResponses(response)
-		}
-
-		provisionerThread.requestWg.Wait()
-	}()
-
-	for _, moduleWrapper := range GetProvisionerInstance().GetModules() {
-
-		for _, clusterWrapper := range moduleWrapper.GetClusters() {
-
-			if clusterWrapper.IsMounted() && clusterWrapper.IsStream() {
-
-				if !moduleWrapper.IsMounted() {
-					moduleWrapper.Mount()
-				}
-
-				provisionerThread.logger.Printf("%s[%s]%s mount cluster \n", utils.Green, clusterWrapper.Identifier, utils.Reset)
-
-				provisionerThread.C5 <- threads.ProvisionerRequest{
-					Action:      threads.ProvisionerProvision,
-					Source:      threads.Provisioner,
-					ModuleName:  moduleWrapper.Identifier,
-					ClusterName: clusterWrapper.Identifier,
-					Metadata:    threads.ProvisionerMetadata{},
-					Nonce:       rand.Uint32(),
-				}
-			}
+			go provisionerThread.ProcessIncomingRequests(&request)
+		case response := <-provisionerThread.C8:
+			go provisionerThread.ProcessesIncomingDatabaseResponses(response)
+		case response := <-provisionerThread.C10:
+			go provisionerThread.ProcessIncomingCacheResponses(response)
+		default:
+			time.Sleep(1 * time.Millisecond)
 		}
 	}
 
@@ -339,32 +314,45 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		provisionerThread.logger.Println("received ping over C5")
 	}
 
+	nonce := rand.Uint32()
+	data := make(map[string]string)
+	data["hi"] = "me"
 	databaseRequest := threads.DatabaseRequest{
 		Action: threads.DatabaseLowerPing,
-		Nonce:  rand.Uint32(),
+		Nonce:  nonce,
+		Data:   data,
 	}
 	provisionerThread.C7 <- databaseRequest
 
 	databasePingTimeout := false
 	var databaseResponse threads.DatabaseResponse
 
+	var diffSeconds float64
+
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+		diffSeconds = time.Now().Sub(timestamp).Seconds()
+		if diffSeconds > 10 {
 			databasePingTimeout = true
 			break
 		}
 
 		if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
+			fmt.Println("got response")
 			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
 
-	if databasePingTimeout || !databaseResponse.Success {
+	if databasePingTimeout {
+		fmt.Printf("timeout %d\n", diffSeconds)
 		response := &threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.Send(request, response)
 		return
+	}
+
+	if !databaseResponse.Success {
+
 	}
 
 	if GetConfigInstance().Debug {
@@ -650,6 +638,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 
 func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response threads.DatabaseResponse) {
 	provisionerThread.databaseResponseTable.Write(response.Nonce, response)
+	fmt.Println("stored")
 }
 
 func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response threads.CacheResponse) {

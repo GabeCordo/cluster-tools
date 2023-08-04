@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/messenger"
+	"time"
 )
 
 var messengerInstance *messenger.Messenger
@@ -45,27 +46,19 @@ func (messengerThread *MessengerThread) Setup() {
 func (messengerThread *MessengerThread) Start() {
 	// as long as a teardown has not been called, continue looping
 
-	go func() {
-		// request coming from database
-		for request := range messengerThread.C3 {
-			if !messengerThread.accepting {
-				break
-			}
-			messengerThread.wg.Add(1)
-			messengerThread.ProcessIncomingRequest(&request)
-		}
-	}()
+	for messengerThread.accepting {
 
-	go func() {
-		// request coming from provisioner
-		for request := range messengerThread.C11 {
-			if !messengerThread.accepting {
-				break
-			}
+		select {
+		case request := <-messengerThread.C3:
 			messengerThread.wg.Add(1)
 			messengerThread.ProcessIncomingRequest(&request)
+		case request := <-messengerThread.C11:
+			messengerThread.wg.Add(1)
+			messengerThread.ProcessIncomingRequest(&request)
+		default:
+			time.Sleep(1 * time.Millisecond)
 		}
-	}()
+	}
 
 	messengerThread.wg.Wait()
 }
@@ -113,8 +106,8 @@ func (messengerThread *MessengerThread) ProcessConsoleRequest(request *threads.M
 }
 
 func (messengerThread *MessengerThread) ProcessCloseLogRequest(request *threads.MessengerRequest) {
-	messenger := GetMessengerInstance()
-	messenger.Complete(request.Cluster)
+	messengerInstance := GetMessengerInstance()
+	messengerInstance.Complete(request.Cluster)
 }
 
 func (messengerThread *MessengerThread) Teardown() {

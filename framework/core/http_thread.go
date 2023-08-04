@@ -61,23 +61,17 @@ func (httpThread *HttpThread) Start() {
 		}
 	}(httpThread)
 
-	go func() {
-		for supervisorResponse := range httpThread.C6 {
-			if !httpThread.accepting {
-				break
-			}
-			httpThread.provisionerResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
-		}
-	}()
+	for httpThread.accepting {
 
-	go func() {
-		for databaseResponse := range httpThread.C2 {
-			if !httpThread.accepting {
-				break
-			}
-			httpThread.databaseResponseTable.Write(databaseResponse.Nonce, databaseResponse)
+		select {
+		case response := <-httpThread.C6:
+			httpThread.provisionerResponseTable.Write(response.Nonce, response)
+		case response := <-httpThread.C2:
+			httpThread.databaseResponseTable.Write(response.Nonce, response)
+		default:
+			time.Sleep(1 * time.Millisecond)
 		}
-	}()
+	}
 
 	httpThread.wg.Wait()
 }

@@ -20,26 +20,28 @@ func (cacheThread *CacheThread) Setup() {
 }
 
 func (cacheThread *CacheThread) Start() {
-	go func() {
-		// request from http_server
-		for request := range cacheThread.C9 {
-			if !cacheThread.accepting {
-				break
-			}
-			cacheThread.wg.Add(1)
-			cacheThread.ProcessIncomingRequest(&request)
-		}
-	}()
 
-	go func() {
-		// cleaning the cacheThread of expired records
-		for cacheThread.accepting {
-			time.Sleep(1 * time.Minute)
-			// every minute, attempt to clean the cacheThread by removing any records that
-			// may have expired since we last checked
-			GetCacheInstance().Clean()
+	for cacheThread.accepting {
+		lastTimeInterval := time.Now()
+
+		select {
+		case request := <-cacheThread.C9:
+			{
+				cacheThread.wg.Add(1)
+				cacheThread.ProcessIncomingRequest(&request)
+			}
+		default:
+			{
+				// every minute, attempt to clean the cacheThread by removing any records that
+				// may have expired since we last checked
+				if time.Now().Sub(lastTimeInterval).Minutes() >= 1 {
+					GetCacheInstance().Clean()
+				}
+			}
 		}
-	}()
+
+		time.Sleep(1 * time.Millisecond)
+	}
 
 	cacheThread.wg.Wait()
 }

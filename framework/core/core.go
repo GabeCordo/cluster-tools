@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/config"
@@ -12,8 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"runtime/debug"
-	"strings"
 	"sync"
 	"syscall"
 )
@@ -172,7 +169,6 @@ func (core *Core) Run() {
 	go core.MessengerThread.Start() // event loop
 	if GetConfigInstance().Debug {
 		core.logger.Println("Messenger Thread Started")
-		//log.Println(utils.Purple + "(+)" + utils.Reset + " Messenger Thread Started")
 	}
 
 	// needed in-case the supervisor or http core need to populate Data on startup
@@ -180,7 +176,15 @@ func (core *Core) Run() {
 	go core.DatabaseThread.Start() // event loop
 	if GetConfigInstance().Debug {
 		core.logger.Println("Database Thread Started")
-		//log.Println(utils.Purple + "(+)" + utils.Reset + " Database Thread Started")
+	}
+
+	// if we chain requests, we should have a way to save that Data for re-use
+	// FIX: the cache should start up before the provisioner in case the provisioner
+	//		has stream processes that need to start using it.
+	core.CacheThread.Setup()
+	go core.CacheThread.Start()
+	if GetConfigInstance().Debug {
+		core.logger.Println("Cache Thread Started")
 	}
 
 	// we need a way to provision clusters if we are receiving core before we can
@@ -188,15 +192,6 @@ func (core *Core) Run() {
 	go core.ProvisionerThread.Start() // event loop
 	if GetConfigInstance().Debug {
 		core.logger.Println("Provisioner Thread Started")
-		//log.Println(utils.Purple + "(+)" + utils.Reset + " Provisioner Thread Started")
-	}
-
-	// if we chain requests, we should have a way to save that Data for re-use
-	core.CacheThread.Setup()
-	go core.CacheThread.Start()
-	if GetConfigInstance().Debug {
-		core.logger.Println("Cache Thread Started")
-		//log.Println(utils.Purple + "(+)" + utils.Reset + " Cache Thread Started")
 	}
 
 	// the gateway to the frontend cluster should be the last startup
@@ -205,60 +200,29 @@ func (core *Core) Run() {
 	if GetConfigInstance().Debug {
 		core.logger.Println("HTTP API Thread Started")
 		core.logger.Printf("\t- Listening on %s:%d\n", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
-		//log.Println(utils.Purple + "(+)" + utils.Reset + " HTTP API Thread Started")
-		//log.Printf("\t- Listening on %s:%d\n", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
 	}
+
+	go core.repl()
 
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
 	// requiring us to cleanly close the application without risking the loss of Data
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigs // block until we receive an interrupt from the system
-		core.interrupt <- threads.Panic
-	}()
-
-	go func() {
-		fmt.Println()
-		fmt.Println("the interactive shell is an experimental feature that is still being worked on. " +
-			"there may be some issues or missing features that are under development.")
-		fmt.Println()
-
-		reader := bufio.NewReader(os.Stdin)
-
-		for {
-			fmt.Print("@etl ")
-			text, _ := reader.ReadString('\n')
-			text = strings.ReplaceAll(text, "\n", "")
-
-			if text == "modules" {
-				p := GetProvisionerInstance()
-				modules := p.GetModules()
-
-				for _, module := range modules {
-					module.Print()
-				}
-			} else if text == "stop" {
-				core.interrupt <- threads.Shutdown
-				break
-			}
-		}
-	}()
-
-	debug.PrintStack()
-
+	// ---
 	// an interrupt can be sent by any thread that has access to the channel if an
 	// error or end-state has been reached by the application
-	switch <-core.interrupt {
-	case threads.Panic:
-		core.logger.Printf("[IO] %s\n", " encountered panic")
-		//log.Println(utils.Red + "(IO)" + utils.Reset + " encountered panic")
-		break
-	default: // shutdown
-		core.logger.Printf("[IO] %s\n", " shutting down")
-		//log.Println(utils.Red + "(IO)" + utils.Reset + " shutting down")
-		break
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case <-sigs:
+		core.interrupt <- threads.Panic
+	case interrupt := <-core.interrupt:
+		switch interrupt {
+		case threads.Panic:
+			core.logger.Printf("[IO] %s\n", " encountered panic")
+		default: // shutdown
+			core.logger.Printf("[IO] %s\n", " shutting down")
+		}
 	}
 
 	// close the gateway, stop new core from flooding into the servers
@@ -268,7 +232,6 @@ func (core *Core) Run() {
 
 	if GetConfigInstance().Debug {
 		core.logger.Println("http shutdown")
-		//log.Println(utils.Red + "(-)" + utils.Reset + " http shutdown")
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
@@ -276,7 +239,6 @@ func (core *Core) Run() {
 
 	if GetConfigInstance().Debug {
 		core.logger.Println("provisioner shutdown")
-		//log.Println(utils.Red + "(-)" + utils.Reset + " provisioner shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the Data is useless, shutdown
@@ -284,7 +246,6 @@ func (core *Core) Run() {
 
 	if GetConfigInstance().Debug {
 		core.logger.Println("cache shutdown")
-		//log.Println(utils.Red + "(-)" + utils.Reset + " cache shutdown")
 	}
 
 	// the supervisor might need to store Data while finishing, close after
@@ -292,7 +253,6 @@ func (core *Core) Run() {
 
 	if GetConfigInstance().Debug {
 		core.logger.Println("database shutdown")
-		//log.Println(utils.Red + "(-)" + utils.Reset + " database shutdown")
 	}
 
 	// the preceding core might need to log, or send alerts of failure during shutdown
@@ -300,7 +260,6 @@ func (core *Core) Run() {
 
 	if GetConfigInstance().Debug {
 		core.logger.Println("messenger shutdown")
-		//log.Println(utils.Red + "(-)" + utils.Reset + " messenger shutdown")
 	}
 }
 

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/database"
@@ -23,36 +24,24 @@ func (databaseThread *DatabaseThread) Setup() {
 }
 
 func (databaseThread *DatabaseThread) Start() {
-	go func() {
-		// request from http_server
-		for request := range databaseThread.C1 {
-			if !databaseThread.accepting {
-				break
-			}
+
+	for databaseThread.accepting {
+
+		select {
+		case request := <-databaseThread.C1: // request from http_server
 			request.Origin = threads.Http
 			databaseThread.wg.Add(1)
-			databaseThread.ProcessIncomingRequest(&request)
-		}
-	}()
-	go func() {
-		// request from supervisor
-		for request := range databaseThread.C7 {
-			if !databaseThread.accepting {
-				break
-			}
+			go databaseThread.ProcessIncomingRequest(&request)
+		case request := <-databaseThread.C7: // request from provisioner
 			request.Origin = threads.Provisioner
 			databaseThread.wg.Add(1)
-			databaseThread.ProcessIncomingRequest(&request)
+			go databaseThread.ProcessIncomingRequest(&request)
+		case response := <-databaseThread.C4:
+			go databaseThread.ProcessIncomingResponse(&response)
+		default:
+			time.Sleep(1 * time.Second)
 		}
-	}()
-	go func() {
-		for response := range databaseThread.C4 {
-			if !databaseThread.accepting {
-				break
-			}
-			databaseThread.ProcessIncomingResponse(&response)
-		}
-	}()
+	}
 
 	databaseThread.wg.Wait()
 }
@@ -181,13 +170,24 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *threads.
 		}
 	}
 
-	if GetConfigInstance().Debug && (!messengerTimeout || messengerResponse.Success) {
+	fmt.Println(messengerTimeout)
+	fmt.Println(messengerResponse)
+
+	if messengerTimeout {
+		databaseThread.C2 <- threads.DatabaseResponse{
+			Nonce:   request.Nonce,
+			Success: false,
+		}
+		return
+	}
+
+	if GetConfigInstance().Debug && messengerResponse.Success {
 		databaseThread.logger.Println("received ping over C4")
 	}
 
 	databaseThread.C2 <- threads.DatabaseResponse{
 		Nonce:   request.Nonce,
-		Success: messengerTimeout || messengerResponse.Success,
+		Success: messengerResponse.Success,
 	}
 }
 
@@ -201,6 +201,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *threads.
 		Nonce:   request.Nonce,
 		Success: true,
 	}
+	fmt.Println("done")
 }
 
 func (databaseThread *DatabaseThread) ProcessIncomingResponse(response *threads.MessengerResponse) {
