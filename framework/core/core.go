@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"syscall"
@@ -244,6 +245,8 @@ func (core *Core) Run() {
 			}
 		}
 	}()
+
+	debug.PrintStack()
 
 	// an interrupt can be sent by any thread that has access to the channel if an
 	// error or end-state has been reached by the application

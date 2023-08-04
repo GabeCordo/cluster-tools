@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"net/http"
+	"net/http/pprof"
 	"time"
 )
 
@@ -35,6 +36,15 @@ func (httpThread *HttpThread) Setup() {
 	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
 		httpThread.debugCallback(w, r)
 	})
+
+	// TODO - explore this more, fucking cool
+	if GetConfigInstance().Debug {
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
 
 	httpThread.mux = mux
 }
