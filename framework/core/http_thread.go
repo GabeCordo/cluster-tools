@@ -46,6 +46,7 @@ func (httpThread *HttpThread) Start() {
 		net := GetConfigInstance().Net
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
 		if err != nil {
+			fmt.Println("could not start http server")
 			thread.Interrupt <- threads.Panic
 		}
 	}(httpThread)

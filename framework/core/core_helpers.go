@@ -110,6 +110,7 @@ func ClusterMount(pipe chan<- threads.ProvisionerRequest, responseTable *utils.R
 
 	provisionerThreadRequest := threads.ProvisionerRequest{
 		Action:      threads.ProvisionerMount,
+		Source:      threads.Http,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
@@ -139,6 +140,7 @@ func ClusterUnMount(pipe chan<- threads.ProvisionerRequest, responseTable *utils
 
 	provisionerThreadRequest := threads.ProvisionerRequest{
 		Action:      threads.ProvisionerUnMount,
+		Source:      threads.Http,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
@@ -168,6 +170,7 @@ func DynamicallyDeleteCluster(pipe chan<- threads.ProvisionerRequest, responseTa
 
 	provisionerThreadRequest := threads.ProvisionerRequest{
 		Action:      threads.ProvisionerDynamicDelete,
+		Source:      threads.Http,
 		ClusterName: clusterName,
 		Nonce:       rand.Uint32(),
 	}
@@ -202,13 +205,16 @@ func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *
 	}
 	provisionerThreadRequest := threads.ProvisionerRequest{
 		Action:      threads.ProvisionerProvision,
+		Source:      threads.Http,
 		ModuleName:  moduleName,
 		ClusterName: clusterName,
-		Nonce:       rand.Uint32(),
-		MetaData:    meta,
+		Metadata: threads.ProvisionerMetadata{
+			Other: meta,
+		},
+		Nonce: rand.Uint32(),
 	}
 	if len(config) > 0 {
-		provisionerThreadRequest.Config = config[0]
+		provisionerThreadRequest.Metadata.ConfigName = config[0]
 	}
 	pipe <- provisionerThreadRequest
 
@@ -349,6 +355,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.Database
 
 	provisionerPingRequest := threads.ProvisionerRequest{
 		Action: threads.ProvisionerLowerPing,
+		Source: threads.Http,
 		Nonce:  rand.Uint32(),
 	}
 	provisionerPipe <- provisionerPingRequest
@@ -383,9 +390,12 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.Database
 func RegisterModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable, modulePath string) (success bool, description string) {
 
 	request := threads.ProvisionerRequest{
-		Action:     threads.ProvisionerModuleLoad,
-		ModulePath: modulePath,
-		Nonce:      rand.Uint32(),
+		Action: threads.ProvisionerModuleLoad,
+		Source: threads.Http,
+		Metadata: threads.ProvisionerMetadata{
+			ModulePath: modulePath,
+		},
+		Nonce: rand.Uint32(),
 	}
 	pipe <- request
 
@@ -413,6 +423,7 @@ func DeleteModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.R
 
 	request := threads.ProvisionerRequest{
 		Action:     threads.ProvisionerModuleDelete,
+		Source:     threads.Http,
 		ModuleName: moduleName,
 		Nonce:      rand.Uint32(),
 	}

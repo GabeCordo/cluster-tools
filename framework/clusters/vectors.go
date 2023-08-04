@@ -3,6 +3,7 @@ package clusters
 import (
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
+	"time"
 
 	"github.com/GabeCordo/etl-light/components/channel"
 )
@@ -15,7 +16,8 @@ type Vector struct {
 func (v Vector) ExtractFunc(m cluster.M, c channel.OneWay) {
 
 	vec := Vector{1, 5} // simulate pulling data from a source
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 15; i++ {
+		time.Sleep(1 * time.Second)
 		c.Push(vec) // send data to the TransformFunc
 	}
 }

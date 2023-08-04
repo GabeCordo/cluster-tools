@@ -70,18 +70,18 @@ func GetConfigInstance(configPath ...string) *config.Config {
 func NewCore(configPath string) (*Core, error) {
 	core := new(Core)
 
-	core.C1 = make(chan threads.DatabaseRequest)
-	core.C2 = make(chan threads.DatabaseResponse)
-	core.C3 = make(chan threads.MessengerRequest)
-	core.C4 = make(chan threads.MessengerResponse)
-	core.C5 = make(chan threads.ProvisionerRequest)
-	core.C6 = make(chan threads.ProvisionerResponse)
-	core.C7 = make(chan threads.DatabaseRequest)
-	core.C8 = make(chan threads.DatabaseResponse)
-	core.C9 = make(chan threads.CacheRequest)
-	core.C10 = make(chan threads.CacheResponse)
-	core.C11 = make(chan threads.MessengerRequest)
-	core.interrupt = make(chan threads.InterruptEvent)
+	core.C1 = make(chan threads.DatabaseRequest, 10)
+	core.C2 = make(chan threads.DatabaseResponse, 10)
+	core.C3 = make(chan threads.MessengerRequest, 10)
+	core.C4 = make(chan threads.MessengerResponse, 10)
+	core.C5 = make(chan threads.ProvisionerRequest, 10)
+	core.C6 = make(chan threads.ProvisionerResponse, 10)
+	core.C7 = make(chan threads.DatabaseRequest, 10)
+	core.C8 = make(chan threads.DatabaseResponse, 10)
+	core.C9 = make(chan threads.CacheRequest, 10)
+	core.C10 = make(chan threads.CacheResponse, 10)
+	core.C11 = make(chan threads.MessengerRequest, 10)
+	core.interrupt = make(chan threads.InterruptEvent, 10)
 
 	/* load the config in for the first time */
 	if config := GetConfigInstance(configPath); config == nil {
@@ -238,6 +238,9 @@ func (core *Core) Run() {
 				for _, module := range modules {
 					module.Print()
 				}
+			} else if text == "stop" {
+				core.interrupt <- threads.Shutdown
+				break
 			}
 		}
 	}()
@@ -298,13 +301,13 @@ func (core *Core) Run() {
 	}
 }
 
-func (core *Core) Cluster(identifier string, implementation cluster.Cluster, config ...cluster.Config) {
+func (core *Core) Cluster(identifier string, mode cluster.EtlMode, implementation cluster.Cluster, config ...cluster.Config) {
 
 	p := GetProvisionerInstance()
 	defaultModule, _ := p.GetModule(provisioner.DefaultFrameworkModule) // the default framework module should always be found
 
-	clusterWrapper, _ := defaultModule.AddCluster(identifier, implementation)
-	clusterWrapper.Mount()
+	clusterWrapper, _ := defaultModule.AddCluster(identifier, mode, implementation)
+	clusterWrapper.UnMount()
 
 	if len(config) == 1 {
 		d := GetDatabaseInstance()

@@ -15,6 +15,8 @@ func NewManagedChannel(name string, threshold, growth int) *ManagedChannel {
 	mc.TotalProcessed = 0
 	mc.Timestamps = make(map[uint64]channel.DataTimer)
 	mc.channel = make(chan DataWrapper)
+	mc.ChannelFinished = false
+	mc.StopNewPushes = false
 
 	return mc
 }
@@ -23,7 +25,13 @@ func (mc *ManagedChannel) GetChannel() chan DataWrapper {
 	return mc.channel
 }
 
-func (mc *ManagedChannel) Push(data DataWrapper) {
+func (mc *ManagedChannel) Push(data DataWrapper) bool {
+
+	// don't push to the channel if it is supposed to be closed
+	if mc.StopNewPushes {
+		fmt.Println("cant push new data")
+		return false
+	}
 
 	// see if we are hitting a threshold and the successive function is
 	// getting overloaded with data units
@@ -40,6 +48,8 @@ func (mc *ManagedChannel) Push(data DataWrapper) {
 
 	mc.LastPush = currentTime
 	mc.channel <- data
+
+	return true
 }
 
 func (mc *ManagedChannel) DataPopped(id uint64) {
@@ -54,8 +64,12 @@ func (mc *ManagedChannel) DataPopped(id uint64) {
 	}
 }
 
-func (mc *ManagedChannel) Done() {
-	close(mc.channel)
+func (mc *ManagedChannel) Accepting() bool {
+	return !mc.StopNewPushes
+}
+
+func (mc *ManagedChannel) StopPushes() {
+	mc.StopNewPushes = true
 }
 
 func (mc *ManagedChannel) AddProducer() {

@@ -11,7 +11,9 @@ type DynamicFeatures struct {
 }
 
 type ClusterConfig struct {
+	Mode    cluster.EtlMode `yaml:"mode"`
 	OnCrash cluster.OnCrash `yaml:"on-crash"`
+	OnLoad  cluster.OnLoad  `yaml:"on-load"`
 	Static  struct {
 		TFunctions int `yaml:"t-functions"`
 		LFunctions int `yaml:"l-functions"`

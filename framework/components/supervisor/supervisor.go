@@ -19,17 +19,8 @@ func NewSupervisor(clusterName string, clusterImplementation cluster.Cluster, me
 	supervisor := new(Supervisor)
 
 	supervisor.group = clusterImplementation
-	supervisor.Config = cluster.Config{
-		clusterName,
-		cluster.CompleteAndPush,
-		cluster.DoNothing,
-		DefaultNumberOfClusters,
-		DefaultNumberOfClusters,
-		DefaultChannelGrowthFactor,
-		DefaultChannelThreshold,
-		DefaultChannelGrowthFactor,
-		DefaultChannelGrowthFactor,
-	}
+	supervisor.State = UnTouched
+	supervisor.Config = cluster.DefaultConfig
 	supervisor.Stats = cluster.NewStatistics()
 	supervisor.ETChannel = channel.NewManagedChannel("ETChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor)
 	supervisor.TLChannel = channel.NewManagedChannel("TLChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor)
@@ -52,6 +43,7 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config cluster.C
 	 *       that "self improves" if the output of the monitor is looped back
 	 */
 
+	supervisor.State = UnTouched
 	supervisor.group = clusterImplementation
 	supervisor.Config = config
 	supervisor.Stats = cluster.NewStatistics()
@@ -74,6 +66,8 @@ func (supervisor *Supervisor) Event(event Event) bool {
 	if supervisor.State == UnTouched {
 		if event == Startup {
 			supervisor.State = Running
+		} else if (event == Suspend) || (event == TearedDown) {
+			supervisor.State = Stopping
 		} else {
 			return false
 		}
@@ -82,6 +76,8 @@ func (supervisor *Supervisor) Event(event Event) bool {
 			supervisor.State = Provisioning
 		} else if event == Error {
 			supervisor.State = Failed
+		} else if event == Suspend {
+			supervisor.State = Stopping
 		} else if event == TearedDown {
 			supervisor.State = Terminated
 		} else {
@@ -92,6 +88,12 @@ func (supervisor *Supervisor) Event(event Event) bool {
 			supervisor.State = Running
 		} else if event == Error {
 			supervisor.State = Failed
+		} else {
+			return false
+		}
+	} else if supervisor.State == Stopping {
+		if event == TearedDown {
+			supervisor.State = Terminated
 		} else {
 			return false
 		}
@@ -156,9 +158,26 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 	return response
 }
 
+func (supervisor *Supervisor) Teardown() {
+
+	supervisor.Event(Suspend)
+}
+
 func (supervisor *Supervisor) Runtime() {
 	for {
+		if supervisor.State == Terminated {
+			break
+		}
+
+		fmt.Println("check runtime")
+		fmt.Println(supervisor.State)
+
 		supervisor.ETChannel.GetState()
+
+		if (supervisor.State == Stopping) && supervisor.ETChannel.Accepting() {
+			fmt.Println("stop ET Channel input")
+			supervisor.ETChannel.StopPushes()
+		}
 
 		// is ETChannel congested?
 		if supervisor.ETChannel.GetState() == channel.Congested {
@@ -172,6 +191,11 @@ func (supervisor *Supervisor) Runtime() {
 		}
 
 		supervisor.TLChannel.GetState()
+
+		if (supervisor.State == Stopping) && supervisor.TLChannel.Accepting() {
+			fmt.Println("stop TL Channel input")
+			supervisor.TLChannel.StopPushes()
+		}
 
 		// is TLChannel congested?
 		if supervisor.TLChannel.GetState() == channel.Congested {

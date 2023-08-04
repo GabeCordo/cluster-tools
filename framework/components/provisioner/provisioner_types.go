@@ -1,19 +1,22 @@
 package provisioner
 
 import (
+	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl/framework/components/supervisor"
 	"sync"
 )
 
 const (
-	DefaultFrameworkModule = "clusters"
+	DefaultFrameworkModule = "common"
 )
 
 type ClusterWrapper struct {
 	registry *supervisor.Registry
 
-	Mounted           bool `json:"mounted"`
-	MarkedForDeletion bool `json:"marked-for-deletion"`
+	Identifier        string          `json:"identifier"`
+	Mode              cluster.EtlMode `json:"mode"`
+	Mounted           bool            `json:"mounted"`
+	MarkedForDeletion bool            `json:"marked-for-deletion"`
 
 	mutex sync.RWMutex
 }

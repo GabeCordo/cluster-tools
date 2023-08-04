@@ -37,20 +37,20 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 
 	config := cluster.DefaultConfig
 	config.Identifier = "Vec"
-	c.Cluster("Vec", Vec, config)
+	c.Cluster("Vec", cluster.Stream, Vec, config)
 
 	VecWait := clusters.VectorWait{}
 
 	configWait := cluster.DefaultConfig
 	configWait.Identifier = "VecWait"
 	configWait.OnLoad = cluster.WaitAndPush
-	c.Cluster("VecWait", VecWait, configWait)
+	c.Cluster("VecWait", cluster.Batch, VecWait, configWait)
 
 	KeyTest := clusters.MetaDataCluster{}
 
 	configMDC := cluster.DefaultConfig
 	configMDC.Identifier = "KeyTest"
-	c.Cluster("KeyTest", KeyTest, configMDC)
+	c.Cluster("KeyTest", cluster.Batch, KeyTest, configMDC)
 
 	go func() {
 

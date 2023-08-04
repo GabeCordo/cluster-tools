@@ -26,6 +26,7 @@ func (mc ModuleCommand) Run(cli *commandline.CommandLine) commandline.TerminateO
 	} else if cli.Flag(commandline.Install) {
 
 		moduleYamlFile := workingDirectory + "/module.etl.yaml"
+		fmt.Println(moduleYamlFile)
 		if _, err := os.Stat(moduleYamlFile); err != nil {
 			panic(err)
 		}

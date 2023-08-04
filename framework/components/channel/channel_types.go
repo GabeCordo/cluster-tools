@@ -42,6 +42,7 @@ type ManagedChannel struct {
 	channel chan DataWrapper
 
 	LastPush        time.Time
+	StopNewPushes   bool
 	ChannelFinished bool
 
 	mutex sync.Mutex

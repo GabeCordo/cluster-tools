@@ -18,6 +18,7 @@ const (
 	Running             = "running"
 	Provisioning        = "provisioning"
 	Failed              = "failed"
+	Stopping            = "stopping"
 	Terminated          = "terminated"
 	Unknown             = "unknown"
 )
@@ -25,13 +26,14 @@ const (
 type Event uint8
 
 const (
-	Startup        Event = 0
-	StartProvision       = 1
-	EndProvision         = 2
-	Error                = 3
-	TearedDown           = 4
-	StartReport          = 5
-	EndReport            = 6
+	Startup Event = iota
+	StartProvision
+	EndProvision
+	Error
+	Suspend
+	TearedDown
+	StartReport
+	EndReport
 )
 
 type Supervisor struct {

@@ -64,7 +64,7 @@ func (moduleWrapper *ModuleWrapper) GetCluster(clusterName string) (clusterWrapp
 	return clusterWrapper, found
 }
 
-func (moduleWrapper *ModuleWrapper) AddCluster(clusterName string, implementation cluster.Cluster) (*ClusterWrapper, bool) {
+func (moduleWrapper *ModuleWrapper) AddCluster(clusterName string, mode cluster.EtlMode, implementation cluster.Cluster) (*ClusterWrapper, bool) {
 
 	moduleWrapper.mutex.RLock()
 
@@ -77,7 +77,8 @@ func (moduleWrapper *ModuleWrapper) AddCluster(clusterName string, implementatio
 	moduleWrapper.mutex.Lock()
 	defer moduleWrapper.mutex.Unlock()
 
-	clusterWrapper := NewClusterWrapper(clusterName, implementation)
+	clusterWrapper := NewClusterWrapper(clusterName, mode, implementation)
+
 	moduleWrapper.clusters[clusterName] = clusterWrapper
 
 	return clusterWrapper, true

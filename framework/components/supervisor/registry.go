@@ -1,6 +1,7 @@
 package supervisor
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"math"
 )
@@ -33,6 +34,11 @@ func (registry *Registry) getNextUsableId() uint64 {
 	return registry.idReference
 }
 
+func (registry *Registry) NumberOfActiveSupervisors() uint64 {
+
+	return registry.numOfActiveSupervisors
+}
+
 func (registry *Registry) SupervisorExists(id uint64) bool {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()
@@ -60,6 +66,7 @@ func (registry *Registry) CreateSupervisor(metadata map[string]string, config ..
 	}
 	supervisor.Id = id
 
+	registry.numOfActiveSupervisors++
 	registry.supervisors[id] = supervisor
 	return supervisor
 }
@@ -80,6 +87,7 @@ func (registry *Registry) DeleteSupervisor(id uint64) (deleted, found bool) {
 		registry.mutex.Lock()
 		defer registry.mutex.Unlock()
 		delete(registry.supervisors, id)
+		registry.numOfActiveSupervisors--
 		deleted = true
 	} else {
 		deleted = false
@@ -110,6 +118,16 @@ func (registry *Registry) GetSupervisors() []*Supervisor {
 	}
 
 	return supervisors
+}
+
+func (registry *Registry) SuspendSupervisors() {
+	registry.mutex.Lock()
+	defer registry.mutex.Unlock()
+
+	for _, supervisor := range registry.supervisors {
+		fmt.Println("teardown supervisor")
+		supervisor.Teardown()
+	}
 }
 
 func (registry *Registry) GetClusterImplementation() cluster.Cluster {

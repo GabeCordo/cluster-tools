@@ -5,14 +5,21 @@ import (
 	"github.com/GabeCordo/etl/framework/components/supervisor"
 )
 
-func NewClusterWrapper(identifier string, implementation cluster.Cluster) *ClusterWrapper {
+func NewClusterWrapper(identifier string, mode cluster.EtlMode, implementation cluster.Cluster) *ClusterWrapper {
 
 	clusterWrapper := new(ClusterWrapper)
 
 	clusterWrapper.registry = supervisor.NewRegistry(identifier, implementation)
+	clusterWrapper.Identifier = identifier
+	clusterWrapper.Mode = mode
 	clusterWrapper.Mounted = false
 
 	return clusterWrapper
+}
+
+func (clusterWrapper *ClusterWrapper) IsStream() bool {
+
+	return clusterWrapper.Mode == cluster.Stream
 }
 
 func (clusterWrapper *ClusterWrapper) IsMounted() bool {
@@ -51,6 +58,11 @@ func (clusterWrapper *ClusterWrapper) DeleteSupervisor(identifier uint64) (delet
 
 	deleted, found = clusterWrapper.registry.DeleteSupervisor(identifier)
 	return deleted, found
+}
+
+func (clusterWrapper *ClusterWrapper) SuspendSupervisors() {
+
+	clusterWrapper.registry.SuspendSupervisors()
 }
 
 func (clusterWrapper *ClusterWrapper) CanDelete() (canDelete bool) {

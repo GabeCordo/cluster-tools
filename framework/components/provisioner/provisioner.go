@@ -70,7 +70,9 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) error {
 		return errors.New("module with identifier already exists")
 	}
 
+	// return a pointer to a ModuleWrapper
 	moduleWrapper := NewModuleWrapper()
+	// store the pointer to the ModuleWrapper in the provisioner modules map
 	provisioner.modules[implementation.Config.Identifier] = moduleWrapper
 
 	moduleWrapper.Version = implementation.Config.Version
@@ -78,21 +80,40 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) error {
 	moduleWrapper.Contact.Name = implementation.Config.Contact.Name
 	moduleWrapper.Contact.Email = implementation.Config.Contact.Email
 
+	// iterate over cluster that is stored in the module's config
 	for _, export := range implementation.Config.Exports {
 
+		// for every cluster that is defined in the config, there should be a 1:1 mapping
+		// of an implementation in the go plugin in a var of the same name. Try to find
+		// this variable in the go plugin
 		f, err := implementation.Plugin.Lookup(export.Cluster)
 		if err != nil {
+			// the cluster is missing a 1:1 mapping
 			continue
 		}
 
+		// the incoming struct must implement the cluster.Cluster interface
 		clusterImplementation, ok := (f).(cluster.Cluster)
 		if !ok {
 			continue
 		}
 
-		if clusterWrapper, success := moduleWrapper.AddCluster(export.Cluster, clusterImplementation); success {
-			clusterWrapper.Mounted = export.StaticMount
+		_, implementsLoadOne := (f).(cluster.LoadOne)
+
+		_, implementsLoadAll := (f).(cluster.LoadAll)
+
+		// the cluster must implement either LoadOne or LoadAll interfaces
+		if !implementsLoadOne && !implementsLoadAll {
+			continue
 		}
+
+		clusterWrapper, success := moduleWrapper.AddCluster(export.Cluster, export.Config.Mode, clusterImplementation)
+		if !success {
+			continue
+		}
+
+		// the config specifies whether they want the cluster to be mounted on load
+		clusterWrapper.Mounted = export.StaticMount
 	}
 
 	return nil
@@ -102,8 +123,6 @@ func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, marked
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
-
-	//log.Printf("[provisioner] attempting to delete module %s\n", identifier)
 
 	deleted = false
 

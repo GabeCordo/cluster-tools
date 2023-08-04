@@ -10,7 +10,7 @@ import (
 type ProvisionerThread struct {
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C5 <-chan threads.ProvisionerRequest  // Supervisor is receiving core from the http_thread
+	C5 chan threads.ProvisionerRequest    // Supervisor is receiving core from the http_thread
 	C6 chan<- threads.ProvisionerResponse // Supervisor is sending responses to the http_thread
 
 	C7 chan<- threads.DatabaseRequest  // Supervisor is sending core to the database
@@ -26,8 +26,9 @@ type ProvisionerThread struct {
 
 	logger *utils.Logger
 
-	accepting bool
-	wg        sync.WaitGroup
+	accepting   bool
+	listenersWg sync.WaitGroup
+	requestWg   sync.WaitGroup
 }
 
 func NewProvisioner(logger *utils.Logger, channels ...interface{}) (*ProvisionerThread, error) {
