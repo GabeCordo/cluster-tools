@@ -80,10 +80,10 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) error {
 	moduleWrapper.Contact.Name = implementation.Config.Contact.Name
 	moduleWrapper.Contact.Email = implementation.Config.Contact.Email
 
-	// iterate over cluster that is stored in the module's config
+	// iterate over cluster that is stored in the module's common
 	for _, export := range implementation.Config.Exports {
 
-		// for every cluster that is defined in the config, there should be a 1:1 mapping
+		// for every cluster that is defined in the common, there should be a 1:1 mapping
 		// of an implementation in the go plugin in a var of the same name. Try to find
 		// this variable in the go plugin
 		f, err := implementation.Plugin.Lookup(export.Cluster)
@@ -112,7 +112,7 @@ func (provisioner *Provisioner) AddModule(implementation *module.Module) error {
 			continue
 		}
 
-		// the config specifies whether they want the cluster to be mounted on load
+		// the common specifies whether they want the cluster to be mounted on load
 		clusterWrapper.Mounted = export.StaticMount
 	}
 

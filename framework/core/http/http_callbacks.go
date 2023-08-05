@@ -1,9 +1,9 @@
-package core
+package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,7 +15,7 @@ type ModuleRequestBody struct {
 	ModuleName string `json:"module,omitempty"`
 }
 
-func (httpThread *HttpThread) moduleCallback(w http.ResponseWriter, r *http.Request) {
+func (httpThread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 	request := &ModuleRequestBody{}
 	err := json.NewDecoder(r.Body).Decode(request)
@@ -25,17 +25,19 @@ func (httpThread *HttpThread) moduleCallback(w http.ResponseWriter, r *http.Requ
 	}
 
 	if r.Method == "GET" {
-		provisioner := GetProvisionerInstance()
-		modules := provisioner.GetModules()
-		bytes, _ := json.Marshal(modules)
-		w.Write(bytes)
+		// TODO
+		//provisioner := GetProvisionerInstance()
+		//modules := provisioner.GetModules()
+		//bytes, _ := json.Marshal(modules)
+		//w.Write(bytes)
+		w.WriteHeader(http.StatusNotImplemented)
 	} else if r.Method == "POST" {
-		if success, description := RegisterModule(httpThread.C5, httpThread.provisionerResponseTable, request.ModulePath); !success {
+		if success, description := common.RegisterModule(httpThread.C5, httpThread.ProvisionerResponseTable, request.ModulePath); !success {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(description))
 		}
 	} else if r.Method == "DELETE" {
-		success, description := DeleteModule(httpThread.C5, httpThread.provisionerResponseTable, request.ModuleName)
+		success, description := common.DeleteModule(httpThread.C5, httpThread.ProvisionerResponseTable, request.ModuleName)
 		if !success {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -57,7 +59,7 @@ type ClusterConfigJSONBody struct {
 	Mounted bool   `json:"mounted"`
 }
 
-func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Request) {
+func (httpThread *Thread) clusterCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
@@ -69,26 +71,28 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 	}
 
 	if r.Method == "GET" {
-		if moduleName, foundModuleName := urlMapping["module"]; foundModuleName {
-			if clusterList, success := ClusterList(moduleName[0]); success {
-				bytes, _ := json.Marshal(clusterList)
-				if _, err := w.Write(bytes); err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-				}
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+		if _, foundModuleName := urlMapping["module"]; foundModuleName {
+			// TODO - moduleName, foundModuleName
+			//if clusterList, success := common.ClusterList(moduleName[0]); success {
+			//	bytes, _ := json.Marshal(clusterList)
+			//	if _, err := w.Write(bytes); err != nil {
+			//		w.WriteHeader(http.StatusInternalServerError)
+			//	}
+			//} else {
+			//	w.WriteHeader(http.StatusInternalServerError)
+			//}
+			w.WriteHeader(http.StatusNotImplemented)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	} else if r.Method == "PUT" {
 		if request.Mounted {
-			success := ClusterMount(httpThread.C5, httpThread.provisionerResponseTable, request.Module, request.Cluster)
+			success := common.ClusterMount(httpThread.C5, httpThread.ProvisionerResponseTable, request.Module, request.Cluster)
 			if !success {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			success := ClusterUnMount(httpThread.C5, httpThread.provisionerResponseTable, request.Module, request.Cluster)
+			success := common.ClusterUnMount(httpThread.C5, httpThread.ProvisionerResponseTable, request.Module, request.Cluster)
 			if !success {
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -101,7 +105,7 @@ func (httpThread *HttpThread) clusterCallback(w http.ResponseWriter, r *http.Req
 type SupervisorConfigJSONBody struct {
 	Module     string            `json:"module"`
 	Cluster    string            `json:"cluster"`
-	Config     string            `json:"config"`
+	Config     string            `json:"common"`
 	Supervisor uint64            `json:"id,omitempty"`
 	Metadata   map[string]string `json:"metadata,omitempty"`
 }
@@ -111,7 +115,7 @@ type SupervisorProvisionJSONResponse struct {
 	Supervisor uint64 `json:"id,omitempty"`
 }
 
-func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (httpThread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
@@ -124,34 +128,39 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 
 	if r.Method == "GET" {
 
-		clusterName, foundClusterName := urlMapping["cluster"]
-		moduleName, foundModuleName := urlMapping["module"]
+		// TODO _ -> clusterName
+		_, foundClusterName := urlMapping["cluster"]
+		// TODO _ -> moduleName
+		_, foundModuleName := urlMapping["module"]
 		supervisorIdStr, foundSupervisorId := urlMapping["id"]
 
 		if !foundSupervisorId || !foundClusterName || !foundModuleName {
 			w.WriteHeader(http.StatusBadRequest)
 		} else {
-			if supervisorId, err := strconv.ParseUint(supervisorIdStr[0], 10, 64); err != nil {
+			// TODO _ -> supervisorId
+			if _, err := strconv.ParseUint(supervisorIdStr[0], 10, 64); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 			} else {
-				if supervisor, found := SupervisorLookup(moduleName[0], clusterName[0], supervisorId); found {
-					bytes, err := json.Marshal(supervisor)
-					if err != nil {
-						fmt.Println(err.Error())
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-					if _, err := w.Write(bytes); err != nil {
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				} else {
-					w.WriteHeader(http.StatusNotFound)
-				}
+				// TODO
+				//if supervisor, found := common.SupervisorLookup(moduleName[0], clusterName[0], supervisorId); found {
+				//	bytes, err := json.Marshal(supervisor)
+				//	if err != nil {
+				//		fmt.Println(err.Error())
+				//		w.WriteHeader(http.StatusInternalServerError)
+				//	}
+				//	if _, err := w.Write(bytes); err != nil {
+				//		w.WriteHeader(http.StatusInternalServerError)
+				//	}
+				//} else {
+				//	w.WriteHeader(http.StatusNotFound)
+				//}
+				w.WriteHeader(http.StatusNotImplemented)
 			}
 		}
 	} else if r.Method == "POST" {
-		if supervisorId, success, description := SupervisorProvision(
+		if supervisorId, success, description := common.SupervisorProvision(
 			httpThread.C5,
-			httpThread.provisionerResponseTable,
+			httpThread.ProvisionerResponseTable,
 			request.Module,
 			request.Cluster,
 			request.Metadata,
@@ -171,7 +180,7 @@ func (httpThread *HttpThread) supervisorCallback(w http.ResponseWriter, r *http.
 	}
 }
 
-func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Request) {
+func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
@@ -194,7 +203,7 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 		clusterName, foundClusterName := urlMapping["cluster"]
 
 		if foundClusterName {
-			if config, found := GetConfigFromDatabase(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], clusterName[0]); found {
+			if config, found := common.GetConfigFromDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], clusterName[0]); found {
 				bytes, _ := json.Marshal(config)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -208,13 +217,13 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 	} else if r.Method == "POST" {
 
-		isOk := StoreConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], *request)
+		isOk := common.StoreConfigInDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusConflict)
 		}
 
 	} else if r.Method == "PUT" {
-		isOk := ReplaceConfigInDatabase(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], *request)
+		isOk := common.ReplaceConfigInDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -224,7 +233,7 @@ func (httpThread *HttpThread) configCallback(w http.ResponseWriter, r *http.Requ
 
 }
 
-func (httpThread *HttpThread) statisticCallback(w http.ResponseWriter, r *http.Request) {
+func (httpThread *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
@@ -234,7 +243,7 @@ func (httpThread *HttpThread) statisticCallback(w http.ResponseWriter, r *http.R
 		clusterName, clusterNameFound := urlMapping["cluster"]
 
 		if moduleNameFound && clusterNameFound {
-			statistics, found := FindStatistics(httpThread.C1, httpThread.databaseResponseTable, moduleName[0], clusterName[0])
+			statistics, found := common.FindStatistics(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], clusterName[0])
 			if found {
 				bytes, err := json.Marshal(statistics)
 				if err == nil {
@@ -264,7 +273,7 @@ type DebugJSONResponse struct {
 	Success  bool          `json:"success"`
 }
 
-func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Request) {
+func (httpThread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
 
 	var request DebugJSONBody
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -275,10 +284,10 @@ func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Reque
 
 	if r.Method == "POST" {
 		if request.Action == "shutdown" {
-			ShutdownNode(httpThread.Interrupt)
+			common.ShutdownCore(httpThread.Interrupt)
 		} else if request.Action == "ping" {
 			startTime := time.Now()
-			success := PingNodeChannels(httpThread.logger, httpThread.C1, httpThread.databaseResponseTable, httpThread.C5, httpThread.provisionerResponseTable)
+			success := common.PingNodeChannels(httpThread.logger, httpThread.C1, httpThread.DatabaseResponseTable, httpThread.C5, httpThread.ProvisionerResponseTable)
 			response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
 			bytes, err := json.Marshal(response)
 			if err == nil {
@@ -289,7 +298,7 @@ func (httpThread *HttpThread) debugCallback(w http.ResponseWriter, r *http.Reque
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		} else if request.Action == "debug" {
-			description := ToggleDebugMode(httpThread.logger)
+			description := common.ToggleDebugMode(httpThread.logger)
 			if _, err := w.Write([]byte(description)); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}

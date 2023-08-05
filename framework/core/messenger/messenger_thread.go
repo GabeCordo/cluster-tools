@@ -1,8 +1,9 @@
-package core
+package messenger
 
 import (
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/messenger"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"time"
 )
 
@@ -10,40 +11,40 @@ var messengerInstance *messenger.Messenger
 
 func GetMessengerInstance() *messenger.Messenger {
 	if messengerInstance == nil {
-		config := GetConfigInstance()
+		cfg := common.GetConfigInstance()
 
 		messengerInstance = messenger.NewMessenger(
-			config.Messenger.EnableLogging,
-			config.Messenger.EnableSmtp,
+			cfg.Messenger.EnableLogging,
+			cfg.Messenger.EnableSmtp,
 		)
 
-		if config.Messenger.EnableLogging {
-			messengerInstance.LoggingDirectory(config.Messenger.LogFiles.Directory)
+		if cfg.Messenger.EnableLogging {
+			messengerInstance.LoggingDirectory(cfg.Messenger.LogFiles.Directory)
 		}
 
-		if config.Messenger.EnableSmtp {
+		if cfg.Messenger.EnableSmtp {
 			messengerInstance.SetupSMTP(
 				messenger.Endpoint{
-					Host: config.Messenger.Smtp.Endpoint.Host,
-					Port: config.Messenger.Smtp.Endpoint.Port,
+					Host: cfg.Messenger.Smtp.Endpoint.Host,
+					Port: cfg.Messenger.Smtp.Endpoint.Port,
 				},
 				messenger.Credentials{
-					Email:    config.Messenger.Smtp.Credentials.Email,
-					Password: config.Messenger.Smtp.Credentials.Password,
+					Email:    cfg.Messenger.Smtp.Credentials.Email,
+					Password: cfg.Messenger.Smtp.Credentials.Password,
 				},
 			).SetupReceivers(
-				config.Messenger.Smtp.Subscribers,
+				cfg.Messenger.Smtp.Subscribers,
 			)
 		}
 	}
 	return messengerInstance
 }
 
-func (messengerThread *MessengerThread) Setup() {
+func (messengerThread *Thread) Setup() {
 	messengerThread.accepting = true
 }
 
-func (messengerThread *MessengerThread) Start() {
+func (messengerThread *Thread) Start() {
 	// as long as a teardown has not been called, continue looping
 
 	for messengerThread.accepting {
@@ -63,12 +64,12 @@ func (messengerThread *MessengerThread) Start() {
 	messengerThread.wg.Wait()
 }
 
-func (messengerThread *MessengerThread) Send(module threads.Module, response *threads.MessengerResponse) {
+func (messengerThread *Thread) Send(module threads.Module, response *threads.MessengerResponse) {
 
 	messengerThread.C4 <- *response
 }
 
-func (messengerThread *MessengerThread) ProcessIncomingRequest(request *threads.MessengerRequest) {
+func (messengerThread *Thread) ProcessIncomingRequest(request *threads.MessengerRequest) {
 
 	if request.Action == threads.MessengerClose {
 		messengerThread.ProcessCloseLogRequest(request)
@@ -81,16 +82,16 @@ func (messengerThread *MessengerThread) ProcessIncomingRequest(request *threads.
 	messengerThread.wg.Done()
 }
 
-func (messengerThread *MessengerThread) ProcessMessengerPing(request *threads.MessengerRequest) {
+func (messengerThread *Thread) ProcessMessengerPing(request *threads.MessengerRequest) {
 
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		messengerThread.logger.Println("[etl_messenger] received ping over C3")
 	}
 
 	messengerThread.C4 <- threads.MessengerResponse{Nonce: request.Nonce, Success: true}
 }
 
-func (messengerThread *MessengerThread) ProcessConsoleRequest(request *threads.MessengerRequest) {
+func (messengerThread *Thread) ProcessConsoleRequest(request *threads.MessengerRequest) {
 	messengerInstance := GetMessengerInstance()
 
 	var priority messenger.MessagePriority
@@ -105,12 +106,12 @@ func (messengerThread *MessengerThread) ProcessConsoleRequest(request *threads.M
 	messengerInstance.Log(request.Cluster, request.Message, priority)
 }
 
-func (messengerThread *MessengerThread) ProcessCloseLogRequest(request *threads.MessengerRequest) {
+func (messengerThread *Thread) ProcessCloseLogRequest(request *threads.MessengerRequest) {
 	messengerInstance := GetMessengerInstance()
 	messengerInstance.Complete(request.Cluster)
 }
 
-func (messengerThread *MessengerThread) Teardown() {
+func (messengerThread *Thread) Teardown() {
 	messengerThread.accepting = false
 
 	messengerThread.wg.Wait()

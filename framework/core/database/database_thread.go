@@ -1,10 +1,11 @@
-package core
+package database
 
 import (
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/database"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"math/rand"
 	"time"
 )
@@ -19,11 +20,11 @@ func GetDatabaseInstance() *database.Database {
 	return DatabaseInstance
 }
 
-func (databaseThread *DatabaseThread) Setup() {
+func (databaseThread *Thread) Setup() {
 	databaseThread.accepting = true
 }
 
-func (databaseThread *DatabaseThread) Start() {
+func (databaseThread *Thread) Start() {
 
 	for databaseThread.accepting {
 
@@ -46,7 +47,7 @@ func (databaseThread *DatabaseThread) Start() {
 	databaseThread.wg.Wait()
 }
 
-func (databaseThread *DatabaseThread) Send(request *threads.DatabaseRequest, response *threads.DatabaseResponse) {
+func (databaseThread *Thread) Send(request *threads.DatabaseRequest, response *threads.DatabaseResponse) {
 	switch request.Origin {
 	case threads.Http:
 		databaseThread.C2 <- *response
@@ -57,7 +58,7 @@ func (databaseThread *DatabaseThread) Send(request *threads.DatabaseRequest, res
 	}
 }
 
-func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *threads.DatabaseRequest) {
+func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRequest) {
 	d := GetDatabaseInstance()
 
 	switch request.Action {
@@ -142,9 +143,9 @@ func (databaseThread *DatabaseThread) ProcessIncomingRequest(request *threads.Da
 	databaseThread.wg.Done()
 }
 
-func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *threads.DatabaseRequest) {
+func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.DatabaseRequest) {
 
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C1")
 	}
 
@@ -159,7 +160,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *threads.
 
 	timestamp := time.Now()
 	for {
-		if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+		if time.Now().Sub(timestamp).Seconds() > common.GetConfigInstance().MaxWaitForResponse {
 			messengerTimeout = true
 			break
 		}
@@ -181,7 +182,7 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *threads.
 		return
 	}
 
-	if GetConfigInstance().Debug && messengerResponse.Success {
+	if common.GetConfigInstance().Debug && messengerResponse.Success {
 		databaseThread.logger.Println("received ping over C4")
 	}
 
@@ -191,9 +192,9 @@ func (databaseThread *DatabaseThread) ProcessDatabaseUpperPing(request *threads.
 	}
 }
 
-func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
+func (databaseThread *Thread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
 
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C7")
 	}
 
@@ -204,11 +205,11 @@ func (databaseThread *DatabaseThread) ProcessDatabaseLowerPing(request *threads.
 	fmt.Println("done")
 }
 
-func (databaseThread *DatabaseThread) ProcessIncomingResponse(response *threads.MessengerResponse) {
+func (databaseThread *Thread) ProcessIncomingResponse(response *threads.MessengerResponse) {
 	databaseThread.messengerResponseTable.Write(response.Nonce, response)
 }
 
-func (databaseThread *DatabaseThread) Teardown() {
+func (databaseThread *Thread) Teardown() {
 	databaseThread.accepting = false
 
 	databaseThread.wg.Wait()

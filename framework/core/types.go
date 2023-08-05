@@ -2,6 +2,11 @@ package core
 
 import (
 	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl/framework/core/cache"
+	"github.com/GabeCordo/etl/framework/core/database"
+	"github.com/GabeCordo/etl/framework/core/http"
+	"github.com/GabeCordo/etl/framework/core/messenger"
+	"github.com/GabeCordo/etl/framework/core/provisioner"
 	"github.com/GabeCordo/etl/framework/utils"
 	"os"
 )
@@ -16,11 +21,11 @@ var (
 )
 
 type Core struct {
-	HttpThread        *HttpThread
-	ProvisionerThread *ProvisionerThread
-	MessengerThread   *MessengerThread
-	DatabaseThread    *DatabaseThread
-	CacheThread       *CacheThread
+	HttpThread        *http.Thread
+	ProvisionerThread *provisioner.Thread
+	MessengerThread   *messenger.Thread
+	DatabaseThread    *database.Thread
+	CacheThread       *cache.Thread
 
 	C1        chan threads.DatabaseRequest
 	C2        chan threads.DatabaseResponse

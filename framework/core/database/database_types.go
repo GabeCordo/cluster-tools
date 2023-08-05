@@ -1,4 +1,4 @@
-package core
+package database
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type DatabaseThread struct {
+type Thread struct {
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
 	C1 <-chan threads.DatabaseRequest  // Database is receiving core from the http_thread
@@ -27,8 +27,8 @@ type DatabaseThread struct {
 	wg        sync.WaitGroup
 }
 
-func NewDatabase(logger *utils.Logger, channels ...interface{}) (*DatabaseThread, error) {
-	database := new(DatabaseThread)
+func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
+	database := new(Thread)
 	var ok bool
 
 	database.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)

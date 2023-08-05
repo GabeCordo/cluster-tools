@@ -1,4 +1,4 @@
-package core
+package messenger
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type MessengerThread struct {
+type Thread struct {
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
 	C3  <-chan threads.MessengerRequest  // Messenger is receiving core form the Database
@@ -20,8 +20,8 @@ type MessengerThread struct {
 	wg        sync.WaitGroup
 }
 
-func NewMessenger(logger *utils.Logger, channels ...interface{}) (*MessengerThread, error) {
-	messenger := new(MessengerThread)
+func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
+	messenger := new(Thread)
 	var ok bool
 
 	messenger.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)

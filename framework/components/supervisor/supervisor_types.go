@@ -39,7 +39,7 @@ const (
 type Supervisor struct {
 	Id uint64 `json:"id"`
 
-	Config    cluster.Config      `json:"config"`
+	Config    cluster.Config      `json:"common"`
 	Stats     *cluster.Statistics `json:"stats"`
 	State     Status              `json:"status"`
 	Mode      cluster.OnCrash     `json:"on-crash"`

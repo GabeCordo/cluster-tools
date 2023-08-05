@@ -1,4 +1,4 @@
-package core
+package common
 
 import (
 	"github.com/GabeCordo/etl-light/components/cluster"
@@ -44,14 +44,14 @@ func GetConfigFromDatabase(pipe chan<- threads.DatabaseRequest, databaseResponse
 	}
 }
 
-func StoreConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
+func StoreConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, cfg cluster.Config) (success bool) {
 
 	databaseRequest := threads.DatabaseRequest{
 		Action:  threads.DatabaseStore,
 		Type:    threads.ClusterConfig,
 		Module:  moduleName,
-		Cluster: config.Identifier,
-		Data:    config,
+		Cluster: cfg.Identifier,
+		Data:    cfg,
 		Nonce:   rand.Uint32(),
 	}
 	pipe <- databaseRequest
@@ -75,14 +75,14 @@ func StoreConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponse
 	return timeout || databaseResponse.Success
 }
 
-func ReplaceConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, config cluster.Config) (success bool) {
+func ReplaceConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable, moduleName string, cfg cluster.Config) (success bool) {
 
 	databaseRequest := threads.DatabaseRequest{
 		Action:  threads.DatabaseReplace,
 		Type:    threads.ClusterConfig,
 		Module:  moduleName,
-		Cluster: config.Identifier,
-		Data:    config,
+		Cluster: cfg.Identifier,
+		Data:    cfg,
 		Nonce:   rand.Uint32(),
 	}
 	pipe <- databaseRequest
@@ -196,7 +196,7 @@ func DynamicallyDeleteCluster(pipe chan<- threads.ProvisionerRequest, responseTa
 }
 
 func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName, clusterName string, meta map[string]string, config ...string) (supervisorId uint64, success bool, description string) {
+	moduleName, clusterName string, meta map[string]string, cfg ...string) (supervisorId uint64, success bool, description string) {
 
 	// there is a possibility the user never passed an args value to the HTTP endpoint,
 	// so we need to replace it with and empty arry
@@ -213,8 +213,8 @@ func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *
 		},
 		Nonce: rand.Uint32(),
 	}
-	if len(config) > 0 {
-		provisionerThreadRequest.Metadata.ConfigName = config[0]
+	if len(cfg) > 0 {
+		provisionerThreadRequest.Metadata.ConfigName = cfg[0]
 	}
 	pipe <- provisionerThreadRequest
 
@@ -243,43 +243,49 @@ func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *
 
 func ClusterList(moduleName string) (clusters map[string]bool, success bool) {
 
-	provisionerInstance := GetProvisionerInstance()
+	// TODO
+	//provisionerInstance := GetProvisionerInstance()
+	//
+	//clusters = make(map[string]bool, 0)
+	//
+	//moduleWrapper, found := provisionerInstance.GetModule(moduleName)
+	//if !found {
+	//	return nil, false
+	//}
+	//
+	//mounts := moduleWrapper.GetClustersData()
+	//for identifier, isMounted := range mounts {
+	//	clusters[identifier] = isMounted
+	//}
+	//
+	//return clusters, true
 
-	clusters = make(map[string]bool, 0)
-
-	moduleWrapper, found := provisionerInstance.GetModule(moduleName)
-	if !found {
-		return nil, false
-	}
-
-	mounts := moduleWrapper.GetClustersData()
-	for identifier, isMounted := range mounts {
-		clusters[identifier] = isMounted
-	}
-
-	return clusters, true
+	return nil, false
 }
 
 func SupervisorLookup(moduleName, clusterName string, supervisorId uint64) (supervisorInstance *supervisor.Supervisor, success bool) {
 
-	provisionerInstance := GetProvisionerInstance()
+	// TODO
+	//provisionerInstance := GetProvisionerInstance()
+	//
+	//moduleWrapper, found := provisionerInstance.GetModule(moduleName)
+	//if !found {
+	//	return nil, false
+	//}
+	//
+	//clusterWrapper, found := moduleWrapper.GetCluster(clusterName)
+	//if !found {
+	//	return nil, false
+	//}
+	//
+	//supervisorInstance, found = clusterWrapper.FindSupervisor(supervisorId)
+	//if !found {
+	//	return nil, false
+	//}
+	//
+	//return supervisorInstance, found
 
-	moduleWrapper, found := provisionerInstance.GetModule(moduleName)
-	if !found {
-		return nil, false
-	}
-
-	clusterWrapper, found := moduleWrapper.GetCluster(clusterName)
-	if !found {
-		return nil, false
-	}
-
-	supervisorInstance, found = clusterWrapper.FindSupervisor(supervisorId)
-	if !found {
-		return nil, false
-	}
-
-	return supervisorInstance, found
+	return nil, false
 }
 
 func FindStatistics(pipe chan<- threads.DatabaseRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (entries []database.Entry, found bool) {
@@ -316,7 +322,7 @@ func FindStatistics(pipe chan<- threads.DatabaseRequest, responseTable *utils.Re
 	}
 }
 
-func ShutdownNode(pipe chan<- threads.InterruptEvent) (response []byte, success bool) {
+func ShutdownCore(pipe chan<- threads.InterruptEvent) (response []byte, success bool) {
 	pipe <- threads.Shutdown
 	return nil, true
 }
@@ -451,10 +457,10 @@ func DeleteModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.R
 
 func ToggleDebugMode(logger *utils.Logger) (description string) {
 
-	config := GetConfigInstance()
-	config.Debug = !config.Debug
+	cfg := GetConfigInstance()
+	cfg.Debug = !cfg.Debug
 
-	if config.Debug {
+	if cfg.Debug {
 		description = "debug mode activated"
 		logger.Println("remote change: debug mode ON")
 	} else {

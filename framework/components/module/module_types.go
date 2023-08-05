@@ -27,7 +27,7 @@ type ClusterConfig struct {
 type Cluster struct {
 	Cluster     string        `yaml:"cluster"`
 	StaticMount bool          `yaml:"mount"`
-	Config      ClusterConfig `yaml:"config"`
+	Config      ClusterConfig `yaml:"common"`
 }
 
 type Contact struct {

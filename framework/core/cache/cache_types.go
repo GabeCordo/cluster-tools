@@ -1,4 +1,4 @@
-package core
+package cache
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type CacheThread struct {
+type Thread struct {
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
 	C9  <-chan threads.CacheRequest
@@ -19,8 +19,8 @@ type CacheThread struct {
 	wg        sync.WaitGroup
 }
 
-func NewCacheThread(logger *utils.Logger, channels ...any) (*CacheThread, error) {
-	cache := new(CacheThread)
+func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
+	cache := new(Thread)
 	var ok bool
 
 	cache.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)

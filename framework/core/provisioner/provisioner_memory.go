@@ -1,4 +1,4 @@
-package core
+package provisioner
 
 import (
 	"github.com/GabeCordo/etl-light/core/threads"

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"net/http"
 	"os"
 	"strings"
@@ -27,14 +28,16 @@ func (core *Core) repl() {
 		text = strings.ReplaceAll(text, "\n", "")
 
 		if text == "modules" {
-			p := GetProvisionerInstance()
-			modules := p.GetModules()
-
-			for _, module := range modules {
-				module.Print()
-			}
+			//p := GetProvisionerInstance()
+			//modules := p.GetModules()
+			//
+			//for _, module := range modules {
+			//	module.Print()
+			//}
+			fmt.Println("not implemented")
 		} else if text == "ping" {
-			url := fmt.Sprintf("\"http://\"%s:%d/debug", GetConfigInstance().Net.Host, GetConfigInstance().Net.Port)
+			url := fmt.Sprintf("\"http://\"%s:%d/debug",
+				common.GetConfigInstance().Net.Host, common.GetConfigInstance().Net.Port)
 			request := &struct {
 				Action string `json:"action"`
 			}{

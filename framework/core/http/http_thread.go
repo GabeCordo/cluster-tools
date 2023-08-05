@@ -1,15 +1,16 @@
-package core
+package http
 
 import (
 	"context"
 	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"net/http"
 	"net/http/pprof"
 	"time"
 )
 
-func (httpThread *HttpThread) Setup() {
+func (httpThread *Thread) Setup() {
 
 	mux := http.NewServeMux()
 
@@ -38,7 +39,7 @@ func (httpThread *HttpThread) Setup() {
 	})
 
 	// TODO - explore this more, fucking cool
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
@@ -49,11 +50,11 @@ func (httpThread *HttpThread) Setup() {
 	httpThread.mux = mux
 }
 
-func (httpThread *HttpThread) Start() {
+func (httpThread *Thread) Start() {
 	httpThread.wg.Add(1)
 
-	go func(thread *HttpThread) {
-		net := GetConfigInstance().Net
+	go func(thread *Thread) {
+		net := common.GetConfigInstance().Net
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
 		if err != nil {
 			fmt.Println("could not start http server")
@@ -65,9 +66,9 @@ func (httpThread *HttpThread) Start() {
 
 		select {
 		case response := <-httpThread.C6:
-			httpThread.provisionerResponseTable.Write(response.Nonce, response)
+			httpThread.ProvisionerResponseTable.Write(response.Nonce, response)
 		case response := <-httpThread.C2:
-			httpThread.databaseResponseTable.Write(response.Nonce, response)
+			httpThread.DatabaseResponseTable.Write(response.Nonce, response)
 		default:
 			time.Sleep(1 * time.Millisecond)
 		}
@@ -76,7 +77,7 @@ func (httpThread *HttpThread) Start() {
 	httpThread.wg.Wait()
 }
 
-func (httpThread *HttpThread) Receive(module threads.Module, nonce uint32, timeout ...float64) (any, bool) {
+func (httpThread *Thread) Receive(module threads.Module, nonce uint32, timeout ...float64) (any, bool) {
 	startTime := time.Now()
 	flag := false
 
@@ -106,7 +107,7 @@ func (httpThread *HttpThread) Receive(module threads.Module, nonce uint32, timeo
 	return response, flag
 }
 
-func (httpThread *HttpThread) Send(module threads.Module, request any) (any, bool) {
+func (httpThread *Thread) Send(module threads.Module, request any) (any, bool) {
 	httpThread.mutex.Lock()
 	httpThread.counter++
 
@@ -125,7 +126,7 @@ func (httpThread *HttpThread) Send(module threads.Module, request any) (any, boo
 	return httpThread.Receive(module, nonce, threads.DefaultTimeout)
 }
 
-func (httpThread *HttpThread) Teardown() {
+func (httpThread *Thread) Teardown() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {

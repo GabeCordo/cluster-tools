@@ -1,9 +1,10 @@
-package core
+package provisioner
 
 import (
 	"errors"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl-light/utils"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"math/rand"
 )
 
@@ -35,14 +36,14 @@ func NewHelper(channels ...any) (utils.Helper, error) {
 }
 
 func (helper Helper) IsDebugEnabled() bool {
-	return GetConfigInstance().Debug
+	return common.GetConfigInstance().Debug
 }
 
 func (helper Helper) SaveToCache(data any) utils.Promise {
 
 	var expiry float64
-	if GetConfigInstance().Cache.Expiry != 0.0 {
-		expiry = GetConfigInstance().Cache.Expiry
+	if common.GetConfigInstance().Cache.Expiry != 0.0 {
+		expiry = common.GetConfigInstance().Cache.Expiry
 	} else {
 		expiry = threads.DefaultTimeout
 	}

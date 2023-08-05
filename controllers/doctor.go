@@ -39,31 +39,31 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 	}
 
 	if _, err := os.Stat(core.DefaultConfigFile); err != nil {
-		fmt.Printf("[x] the global config file is missing (%s)\n", core.DefaultConfigFile)
+		fmt.Printf("[x] the global common file is missing (%s)\n", core.DefaultConfigFile)
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] the global config file exists (%s)\n", core.DefaultConfigFile)
+		fmt.Printf("[✓] the global common file exists (%s)\n", core.DefaultConfigFile)
 	}
 
 	configFile, err := os.Open(core.DefaultConfigFile)
 	if err != nil {
-		fmt.Printf("[x] the global config file is missing (%s)\n", core.DefaultConfigFile)
+		fmt.Printf("[x] the global common file is missing (%s)\n", core.DefaultConfigFile)
 		return commandline.Terminate
 	}
 	defer configFile.Close()
 
 	bytes, err := io.ReadAll(configFile)
 	if err != nil {
-		fmt.Printf("[x] the global config is corrupt (%s)\n", core.DefaultConfigFile)
+		fmt.Printf("[x] the global common is corrupt (%s)\n", core.DefaultConfigFile)
 		return commandline.Terminate
 	}
 
 	c := &config.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
-		fmt.Printf("[x] the global config is corrupt (%s)\n", core.DefaultConfigFile)
+		fmt.Printf("[x] the global common is corrupt (%s)\n", core.DefaultConfigFile)
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] the global config is healthy (%s)\n", core.DefaultConfigFile)
+		fmt.Printf("[✓] the global common is healthy (%s)\n", core.DefaultConfigFile)
 	}
 
 	return commandline.Terminate

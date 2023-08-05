@@ -1,4 +1,4 @@
-package core
+package provisioner
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/GabeCordo/etl/framework/components/module"
 	"github.com/GabeCordo/etl/framework/components/provisioner"
 	"github.com/GabeCordo/etl/framework/components/supervisor"
+	"github.com/GabeCordo/etl/framework/core/common"
 	"github.com/GabeCordo/etl/framework/utils"
 	"math/rand"
 	"reflect"
@@ -27,7 +28,7 @@ func GetProvisionerInstance() *provisioner.Provisioner {
 	return provisionerInstance
 }
 
-func (provisionerThread *ProvisionerThread) Setup() {
+func (provisionerThread *Thread) Setup() {
 
 	provisionerThread.accepting = true
 
@@ -35,7 +36,7 @@ func (provisionerThread *ProvisionerThread) Setup() {
 	GetProvisionerInstance()
 }
 
-func (provisionerThread *ProvisionerThread) Start() {
+func (provisionerThread *Thread) Start() {
 
 	provisionerThread.listenersWg.Add(1)
 
@@ -85,7 +86,7 @@ func (provisionerThread *ProvisionerThread) Start() {
 	provisionerThread.requestWg.Wait()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessIncomingRequests(request *threads.ProvisionerRequest) {
 
 	if request.Action == threads.ProvisionerMount {
 		provisionerThread.ProcessMountRequest(request)
@@ -104,7 +105,7 @@ func (provisionerThread *ProvisionerThread) ProcessIncomingRequests(request *thr
 	}
 }
 
-func (provisionerThread *ProvisionerThread) Send(request *threads.ProvisionerRequest, response *threads.ProvisionerResponse) {
+func (provisionerThread *Thread) Send(request *threads.ProvisionerRequest, response *threads.ProvisionerResponse) {
 
 	if request.Source == threads.Http {
 		fmt.Println("sending provisioner response")
@@ -112,7 +113,7 @@ func (provisionerThread *ProvisionerThread) Send(request *threads.ProvisionerReq
 	}
 }
 
-func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessAddModule(request *threads.ProvisionerRequest) {
 
 	defer provisionerThread.requestWg.Done()
 
@@ -174,7 +175,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 	// REGISTER EACH CONFIG FROM THE MODULE FILE TO THE DATABASE THREAD
 	for _, export := range registeredExports {
 
-		config := cluster.Config{
+		cfg := cluster.Config{
 			Identifier:                  export.Cluster,
 			OnCrash:                     export.Config.OnCrash,
 			OnLoad:                      export.Config.OnLoad,
@@ -186,12 +187,12 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 			TLChannelGrowthFactor:       export.Config.Dynamic.LFunction.GrowthFactor,
 		}
 
-		if !config.Valid() {
-			config = cluster.DefaultConfig
-			config.Identifier = export.Cluster
+		if !cfg.Valid() {
+			cfg = cluster.DefaultConfig
+			cfg.Identifier = export.Cluster
 		}
 
-		registeredConfigs[config.Identifier] = config
+		registeredConfigs[cfg.Identifier] = cfg
 
 		databaseRequest := threads.DatabaseRequest{
 			Action:  threads.DatabaseStore,
@@ -200,7 +201,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 			Type:    threads.ClusterConfig,
 			Module:  moduleInstance.Config.Identifier,
 			Cluster: export.Cluster,
-			Data:    config,
+			Data:    cfg,
 		}
 		provisionerThread.C7 <- databaseRequest
 
@@ -209,7 +210,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 
 		timestamp := time.Now()
 		for {
-			if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+			if time.Now().Sub(timestamp).Seconds() > common.GetConfigInstance().MaxWaitForResponse {
 				timeout = true
 				break
 			}
@@ -221,7 +222,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 		}
 
 		if timeout || !response.Success {
-			response := &threads.ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not save config"}
+			response := &threads.ProvisionerResponse{Success: false, Nonce: request.Nonce, Description: "could not save cfg"}
 			provisionerThread.Send(request, response)
 			return
 		}
@@ -255,7 +256,7 @@ func (provisionerThread *ProvisionerThread) ProcessAddModule(request *threads.Pr
 	provisionerThread.Send(request, response)
 }
 
-func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessDeleteModule(request *threads.ProvisionerRequest) {
 
 	defer provisionerThread.requestWg.Done()
 
@@ -280,7 +281,7 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *threads
 
 			timestamp := time.Now()
 			for {
-				if time.Now().Sub(timestamp).Seconds() > GetConfigInstance().MaxWaitForResponse {
+				if time.Now().Sub(timestamp).Seconds() > common.GetConfigInstance().MaxWaitForResponse {
 					databasePingTimeout = true
 					break
 				}
@@ -306,11 +307,11 @@ func (provisionerThread *ProvisionerThread) ProcessDeleteModule(request *threads
 	provisionerThread.Send(request, response)
 }
 
-func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessPingProvisionerRequest(request *threads.ProvisionerRequest) {
 
 	defer provisionerThread.requestWg.Done()
 
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		provisionerThread.logger.Println("received ping over C5")
 	}
 
@@ -338,14 +339,12 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		}
 
 		if responseEntry, found := provisionerThread.databaseResponseTable.Lookup(databaseRequest.Nonce); found {
-			fmt.Println("got response")
 			databaseResponse = (responseEntry).(threads.DatabaseResponse)
 			break
 		}
 	}
 
 	if databasePingTimeout {
-		fmt.Printf("timeout %d\n", diffSeconds)
 		response := &threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
 		provisionerThread.Send(request, response)
 		return
@@ -355,7 +354,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 
 	}
 
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		provisionerThread.logger.Println("received ping over C8")
 	}
 
@@ -367,7 +366,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 
 	timestamp2 := time.Now()
 	for {
-		if time.Now().Sub(timestamp2).Seconds() > GetConfigInstance().MaxWaitForResponse {
+		if time.Now().Sub(timestamp2).Seconds() > common.GetConfigInstance().MaxWaitForResponse {
 			cachePingTimeout = true
 			break
 		}
@@ -385,7 +384,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 		return
 	}
 
-	if GetConfigInstance().Debug {
+	if common.GetConfigInstance().Debug {
 		provisionerThread.logger.Println("[etl_provisioner] received ping over C10")
 	}
 
@@ -393,7 +392,7 @@ func (provisionerThread *ProvisionerThread) ProcessPingProvisionerRequest(reques
 	provisionerThread.Send(request, response)
 }
 
-func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessMountRequest(request *threads.ProvisionerRequest) {
 
 	defer provisionerThread.requestWg.Done()
 
@@ -407,7 +406,7 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *threads
 	if !moduleWrapper.IsMounted() {
 		moduleWrapper.Mount()
 
-		if GetConfigInstance().Debug {
+		if common.GetConfigInstance().Debug {
 			provisionerThread.logger.Printf("%s[%s]%s Mounted module\n", utils.Green, request.ModuleName, utils.Reset)
 		}
 	}
@@ -425,7 +424,7 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *threads
 		if !clusterWrapper.IsMounted() {
 			clusterWrapper.Mount()
 
-			if GetConfigInstance().Debug {
+			if common.GetConfigInstance().Debug {
 				provisionerThread.logger.Printf("%s[%s]%s Mounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
 			}
 
@@ -450,7 +449,7 @@ func (provisionerThread *ProvisionerThread) ProcessMountRequest(request *threads
 	provisionerThread.Send(request, response)
 }
 
-func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessUnMountRequest(request *threads.ProvisionerRequest) {
 
 	defer provisionerThread.requestWg.Done()
 
@@ -464,7 +463,7 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *threa
 	if moduleWrapper.IsMounted() {
 		moduleWrapper.UnMount()
 
-		if GetConfigInstance().Debug {
+		if common.GetConfigInstance().Debug {
 			provisionerThread.logger.Printf("%s[%s]%s UnMounted module\n", utils.Green, request.ModuleName, utils.Reset)
 		}
 	}
@@ -481,7 +480,7 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *threa
 		if clusterWrapper.IsMounted() {
 			clusterWrapper.UnMount()
 
-			if GetConfigInstance().Debug {
+			if common.GetConfigInstance().Debug {
 				provisionerThread.logger.Printf("%s[%s]%s UnMounted cluster\n", utils.Green, request.ClusterName, utils.Reset)
 			}
 
@@ -496,7 +495,7 @@ func (provisionerThread *ProvisionerThread) ProcessUnMountRequest(request *threa
 	provisionerThread.Send(request, response)
 }
 
-func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *threads.ProvisionerRequest) {
+func (provisionerThread *Thread) ProcessProvisionRequest(request *threads.ProvisionerRequest) {
 
 	provisionerInstance := GetProvisionerInstance()
 
@@ -551,17 +550,17 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 
 	provisionerThread.logger.Printf("%s[%s]%s Provisioning cluster in module %s\n", utils.Green, request.ClusterName, utils.Reset, request.ModuleName)
 
-	// if the operator does not specify a config to use, the system shall use the cluster identifier name
-	// to find a default config that should be located in the database thread
+	// if the operator does not specify a common to use, the system shall use the cluster identifier name
+	// to find a default common that should be located in the database thread
 	if request.Metadata.ConfigName == "" {
 		request.Metadata.ConfigName = request.ClusterName
 	}
 
-	cnf, configFound := GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.ModuleName, request.Metadata.ConfigName)
+	cnf, configFound := common.GetConfigFromDatabase(provisionerThread.C7, provisionerThread.databaseResponseTable, request.ModuleName, request.Metadata.ConfigName)
 	if !configFound {
-		// the config was either never created or deleted from the database.
-		// INSTEAD of continuing, the node should inform the user that the client cannot use the config they want
-		response := &threads.ProvisionerResponse{Success: false, Description: "config not found", Nonce: request.Nonce}
+		// the common was either never created or deleted from the database.
+		// INSTEAD of continuing, the node should inform the user that the client cannot use the common they want
+		response := &threads.ProvisionerResponse{Success: false, Description: "common not found", Nonce: request.Nonce}
 		provisionerThread.Send(request, response)
 		provisionerThread.requestWg.Done()
 		return
@@ -569,8 +568,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 
 	var supervisorInstance *supervisor.Supervisor
 	if configFound {
-		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor from config\n", utils.Green, request.ClusterName, utils.Reset)
-		cnf.Print()
+		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor from common\n", utils.Green, request.ClusterName, utils.Reset)
 		supervisorInstance = clusterWrapper.CreateSupervisor(request.Metadata.Other, cnf)
 	} else {
 		provisionerThread.logger.Printf("%s[%s]%s Initializing cluster supervisor\n", utils.Green, request.ClusterName, utils.Reset)
@@ -615,7 +613,7 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 
 			// provide the console with output indicating that the cluster has completed
 			// we already provide output when a cluster is provisioned, so it completes the state
-			if GetConfigInstance().Debug {
+			if common.GetConfigInstance().Debug {
 				duration := time.Now().Sub(supervisorInstance.StartTime)
 				provisionerThread.logger.Printf("%s[%s]%s Cluster transformations complete, took %dhr %dm %ds %dms %dus\n",
 					utils.Green,
@@ -636,16 +634,16 @@ func (provisionerThread *ProvisionerThread) ProcessProvisionRequest(request *thr
 	}()
 }
 
-func (provisionerThread *ProvisionerThread) ProcessesIncomingDatabaseResponses(response threads.DatabaseResponse) {
+func (provisionerThread *Thread) ProcessesIncomingDatabaseResponses(response threads.DatabaseResponse) {
 	provisionerThread.databaseResponseTable.Write(response.Nonce, response)
 	fmt.Println("stored")
 }
 
-func (provisionerThread *ProvisionerThread) ProcessIncomingCacheResponses(response threads.CacheResponse) {
+func (provisionerThread *Thread) ProcessIncomingCacheResponses(response threads.CacheResponse) {
 	provisionerThread.cacheResponseTable.Write(response.Nonce, response)
 }
 
-func (provisionerThread *ProvisionerThread) Teardown() {
+func (provisionerThread *Thread) Teardown() {
 	provisionerThread.accepting = false
 
 	provisionerThread.requestWg.Wait()

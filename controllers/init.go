@@ -69,17 +69,17 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 
 	bytes, err := yaml.Marshal(defaultConfig)
 	if err != nil {
-		fmt.Printf("[x] failed to marshal default config %s\n", err.Error())
+		fmt.Printf("[x] failed to marshal default common %s\n", err.Error())
 		return commandline.Terminate
 	} else {
 
 	}
 
 	if _, err := dst.Write(bytes); err != nil {
-		fmt.Printf("[x] failed to write bytes of default config to file %s\n", err.Error())
+		fmt.Printf("[x] failed to write bytes of default common to file %s\n", err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created default config %s\n", core.DefaultConfigFile)
+		fmt.Printf("[✓] created default common %s\n", core.DefaultConfigFile)
 	}
 
 	return commandline.Terminate

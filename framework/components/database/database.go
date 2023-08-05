@@ -79,7 +79,7 @@ func (db *Database) StoreClusterConfig(moduleName string, config cluster.Config)
 		db.Configs[moduleName] = make(map[string]cluster.Config)
 	}
 
-	/* if the config already exists, we can't replace it, use the replace config function */
+	/* if the common already exists, we can't replace it, use the replace common function */
 	if _, found := db.Configs[moduleName][config.Identifier]; found {
 		return false
 	}
@@ -99,7 +99,7 @@ func (db *Database) ReplaceClusterConfig(moduleName string, config cluster.Confi
 		return false
 	}
 
-	/* we're not creating a new config using the replace function */
+	/* we're not creating a new common using the replace function */
 	if _, found := db.Configs[moduleName][config.Identifier]; !found {
 		return false
 	}

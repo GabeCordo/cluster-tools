@@ -1,4 +1,4 @@
-package core
+package http
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 // Frontend Thread
 
-type HttpThread struct {
+type Thread struct {
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
 	C1 chan<- threads.DatabaseRequest  // Core is sending core to the Database
@@ -23,8 +23,8 @@ type HttpThread struct {
 	databaseResponses   map[uint32]threads.DatabaseResponse
 	supervisorResponses map[uint32]threads.ProvisionerResponse
 
-	provisionerResponseTable *utils.ResponseTable
-	databaseResponseTable    *utils.ResponseTable
+	ProvisionerResponseTable *utils.ResponseTable
+	DatabaseResponseTable    *utils.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
@@ -38,8 +38,8 @@ type HttpThread struct {
 	wg        sync.WaitGroup
 }
 
-func NewHttp(logger *utils.Logger, channels ...interface{}) (*HttpThread, error) {
-	core := new(HttpThread)
+func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
+	core := new(Thread)
 
 	var ok bool
 
@@ -67,8 +67,8 @@ func NewHttp(logger *utils.Logger, channels ...interface{}) (*HttpThread, error)
 	core.databaseResponses = make(map[uint32]threads.DatabaseResponse)
 	core.supervisorResponses = make(map[uint32]threads.ProvisionerResponse)
 
-	core.provisionerResponseTable = utils.NewResponseTable()
-	core.databaseResponseTable = utils.NewResponseTable()
+	core.ProvisionerResponseTable = utils.NewResponseTable()
+	core.DatabaseResponseTable = utils.NewResponseTable()
 
 	core.server = new(http.Server)
 

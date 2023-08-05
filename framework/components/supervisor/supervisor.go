@@ -127,12 +127,12 @@ func (supervisor *Supervisor) Start() (response *cluster.Response) {
 	//// start creating the default frontend goroutines
 	supervisor.Provision(cluster.Extract)
 
-	// the config specifies the number of transform functions to start running in parallel
+	// the common specifies the number of transform functions to start running in parallel
 	for i := 0; i < supervisor.Config.StartWithNTransformClusters; i++ {
 		supervisor.Provision(cluster.Transform)
 	}
 
-	// the config specifies the number of load functions to start running in parallel
+	// the common specifies the number of load functions to start running in parallel
 	for i := 0; i < supervisor.Config.StartWithNLoadClusters; i++ {
 		supervisor.Provision(cluster.Load)
 	}
