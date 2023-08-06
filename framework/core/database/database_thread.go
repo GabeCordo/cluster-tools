@@ -26,23 +26,36 @@ func (databaseThread *Thread) Setup() {
 
 func (databaseThread *Thread) Start() {
 
-	for databaseThread.accepting {
-
-		select {
-		case request := <-databaseThread.C1: // request from http_server
+	go func() {
+		// request from http_server
+		for request := range databaseThread.C1 {
+			if !databaseThread.accepting {
+				break
+			}
 			request.Origin = threads.Http
 			databaseThread.wg.Add(1)
-			go databaseThread.ProcessIncomingRequest(&request)
-		case request := <-databaseThread.C7: // request from provisioner
+			databaseThread.ProcessIncomingRequest(&request)
+		}
+	}()
+	go func() {
+		// request from supervisor
+		for request := range databaseThread.C7 {
+			if !databaseThread.accepting {
+				break
+			}
 			request.Origin = threads.Provisioner
 			databaseThread.wg.Add(1)
-			go databaseThread.ProcessIncomingRequest(&request)
-		case response := <-databaseThread.C4:
-			go databaseThread.ProcessIncomingResponse(&response)
-		default:
-			time.Sleep(1 * time.Second)
+			databaseThread.ProcessIncomingRequest(&request)
 		}
-	}
+	}()
+	go func() {
+		for response := range databaseThread.C4 {
+			if !databaseThread.accepting {
+				break
+			}
+			databaseThread.ProcessIncomingResponse(&response)
+		}
+	}()
 
 	databaseThread.wg.Wait()
 }
@@ -145,6 +158,8 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 
 func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.DatabaseRequest) {
 
+	fmt.Printf("got from http (%d)\n", request.Nonce)
+
 	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C1")
 	}
@@ -153,6 +168,7 @@ func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.Database
 		Action: threads.MessengerUpperPing,
 		Nonce:  rand.Uint32(),
 	}
+	fmt.Printf("send to msg (%d)\n", messengerPingRequest.Nonce)
 	databaseThread.C3 <- messengerPingRequest
 
 	messengerTimeout := false
@@ -171,9 +187,6 @@ func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.Database
 		}
 	}
 
-	fmt.Println(messengerTimeout)
-	fmt.Println(messengerResponse)
-
 	if messengerTimeout {
 		databaseThread.C2 <- threads.DatabaseResponse{
 			Nonce:   request.Nonce,
@@ -182,27 +195,32 @@ func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.Database
 		return
 	}
 
+	fmt.Printf("got from msg (%d)(%t)\n", messengerResponse.Nonce, messengerResponse.Success)
 	if common.GetConfigInstance().Debug && messengerResponse.Success {
 		databaseThread.logger.Println("received ping over C4")
 	}
 
-	databaseThread.C2 <- threads.DatabaseResponse{
+	databaseResponse := threads.DatabaseResponse{
 		Nonce:   request.Nonce,
 		Success: messengerResponse.Success,
 	}
+	fmt.Printf("send to http (%d)\n", databaseResponse.Nonce)
+	databaseThread.C2 <- databaseResponse
 }
 
 func (databaseThread *Thread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
 
+	fmt.Printf("got from prov (%d)\n", request.Nonce)
 	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C7")
 	}
 
-	databaseThread.C8 <- threads.DatabaseResponse{
+	response := threads.DatabaseResponse{
 		Nonce:   request.Nonce,
 		Success: true,
 	}
-	fmt.Println("done")
+	fmt.Printf("send to prov (%d, %t)\n", response.Nonce, response.Success)
+	databaseThread.C8 <- response
 }
 
 func (databaseThread *Thread) ProcessIncomingResponse(response *threads.MessengerResponse) {

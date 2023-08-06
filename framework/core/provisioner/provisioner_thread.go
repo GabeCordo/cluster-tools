@@ -67,20 +67,44 @@ func (provisionerThread *Thread) Start() {
 		}
 	}()
 
-	for provisionerThread.accepting {
-
-		select {
-		case request := <-provisionerThread.C5: // request coming from http_server
+	go func() {
+		// request coming from http_server
+		for request := range provisionerThread.C5 {
+			if !provisionerThread.accepting {
+				break
+			}
 			provisionerThread.requestWg.Add(1)
-			go provisionerThread.ProcessIncomingRequests(&request)
-		case response := <-provisionerThread.C8:
-			go provisionerThread.ProcessesIncomingDatabaseResponses(response)
-		case response := <-provisionerThread.C10:
-			go provisionerThread.ProcessIncomingCacheResponses(response)
-		default:
-			time.Sleep(1 * time.Millisecond)
+
+			// if this doesn't spawn its own thread we will be left waiting
+			provisionerThread.ProcessIncomingRequests(&request)
 		}
-	}
+
+		provisionerThread.listenersWg.Wait()
+	}()
+	go func() {
+		for response := range provisionerThread.C8 {
+			if !provisionerThread.accepting {
+				break
+			}
+
+			// if this doesn't spawn its own thread we will be left waiting
+			provisionerThread.ProcessesIncomingDatabaseResponses(response)
+		}
+
+		provisionerThread.listenersWg.Wait()
+	}()
+	go func() {
+		for response := range provisionerThread.C10 {
+			if !provisionerThread.accepting {
+				break
+			}
+
+			// if this doesn't spawn its own thread we can be left waiting
+			provisionerThread.ProcessIncomingCacheResponses(response)
+		}
+
+		provisionerThread.listenersWg.Wait()
+	}()
 
 	provisionerThread.listenersWg.Wait()
 	provisionerThread.requestWg.Wait()
@@ -108,7 +132,6 @@ func (provisionerThread *Thread) ProcessIncomingRequests(request *threads.Provis
 func (provisionerThread *Thread) Send(request *threads.ProvisionerRequest, response *threads.ProvisionerResponse) {
 
 	if request.Source == threads.Http {
-		fmt.Println("sending provisioner response")
 		provisionerThread.C6 <- *response
 	}
 }
@@ -311,6 +334,8 @@ func (provisionerThread *Thread) ProcessPingProvisionerRequest(request *threads.
 
 	defer provisionerThread.requestWg.Done()
 
+	fmt.Printf("got from http (%d)\n", request.Nonce)
+
 	if common.GetConfigInstance().Debug {
 		provisionerThread.logger.Println("received ping over C5")
 	}
@@ -323,6 +348,7 @@ func (provisionerThread *Thread) ProcessPingProvisionerRequest(request *threads.
 		Nonce:  nonce,
 		Data:   data,
 	}
+	fmt.Printf("send to db (%d)\n", databaseRequest.Nonce)
 	provisionerThread.C7 <- databaseRequest
 
 	databasePingTimeout := false
@@ -351,14 +377,18 @@ func (provisionerThread *Thread) ProcessPingProvisionerRequest(request *threads.
 	}
 
 	if !databaseResponse.Success {
-
+		response := &threads.ProvisionerResponse{Nonce: request.Nonce, Success: false}
+		provisionerThread.Send(request, response)
+		return
 	}
 
+	fmt.Printf("got from db (%d)(%t)\n", request.Nonce, true)
 	if common.GetConfigInstance().Debug {
 		provisionerThread.logger.Println("received ping over C8")
 	}
 
 	cacheRequest := threads.CacheRequest{Action: threads.CacheLowerPing, Nonce: rand.Uint32()}
+	fmt.Printf("send to cache (%d)\n", cacheRequest.Nonce)
 	provisionerThread.C9 <- cacheRequest
 
 	cachePingTimeout := false
@@ -384,6 +414,7 @@ func (provisionerThread *Thread) ProcessPingProvisionerRequest(request *threads.
 		return
 	}
 
+	fmt.Printf("got from cache (%d)(%t)\n", cacheResponse.Nonce, true)
 	if common.GetConfigInstance().Debug {
 		provisionerThread.logger.Println("[etl_provisioner] received ping over C10")
 	}
@@ -429,7 +460,6 @@ func (provisionerThread *Thread) ProcessMountRequest(request *threads.Provisione
 			}
 
 			if clusterWrapper.IsStream() {
-				fmt.Println("sending provision request from provisioner")
 				provisionerThread.C5 <- threads.ProvisionerRequest{
 					Action:      threads.ProvisionerProvision,
 					Source:      threads.Provisioner,
@@ -438,7 +468,6 @@ func (provisionerThread *Thread) ProcessMountRequest(request *threads.Provisione
 					Metadata:    threads.ProvisionerMetadata{},
 					Nonce:       rand.Uint32(),
 				}
-				fmt.Println("sent provision request to provisioner")
 			}
 		}
 	}
@@ -636,7 +665,6 @@ func (provisionerThread *Thread) ProcessProvisionRequest(request *threads.Provis
 
 func (provisionerThread *Thread) ProcessesIncomingDatabaseResponses(response threads.DatabaseResponse) {
 	provisionerThread.databaseResponseTable.Write(response.Nonce, response)
-	fmt.Println("stored")
 }
 
 func (provisionerThread *Thread) ProcessIncomingCacheResponses(response threads.CacheResponse) {

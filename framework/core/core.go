@@ -79,7 +79,7 @@ func NewCore(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	cacheLogger, err := utils.NewLogger(utils.Database, &common.GetConfigInstance().Debug)
+	cacheLogger, err := utils.NewLogger(utils.Cache, &common.GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}

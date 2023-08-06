@@ -57,22 +57,27 @@ func (httpThread *Thread) Start() {
 		net := common.GetConfigInstance().Net
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
 		if err != nil {
-			fmt.Println("could not start http server")
 			thread.Interrupt <- threads.Panic
 		}
 	}(httpThread)
 
-	for httpThread.accepting {
-
-		select {
-		case response := <-httpThread.C6:
-			httpThread.ProvisionerResponseTable.Write(response.Nonce, response)
-		case response := <-httpThread.C2:
-			httpThread.DatabaseResponseTable.Write(response.Nonce, response)
-		default:
-			time.Sleep(1 * time.Millisecond)
+	go func() {
+		for supervisorResponse := range httpThread.C6 {
+			if !httpThread.accepting {
+				break
+			}
+			httpThread.ProvisionerResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
 		}
-	}
+	}()
+
+	go func() {
+		for databaseResponse := range httpThread.C2 {
+			if !httpThread.accepting {
+				break
+			}
+			httpThread.DatabaseResponseTable.Write(databaseResponse.Nonce, databaseResponse)
+		}
+	}()
 
 	httpThread.wg.Wait()
 }

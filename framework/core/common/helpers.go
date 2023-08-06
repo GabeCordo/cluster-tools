@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/database"
@@ -333,6 +334,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.Database
 		Action: threads.DatabaseUpperPing,
 		Nonce:  rand.Uint32(),
 	}
+	fmt.Printf("send to db (%d)\n", databasePingRequest.Nonce)
 	databasePipe <- databasePingRequest
 
 	databaseTimeout := false
@@ -355,6 +357,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.Database
 		return false
 	}
 
+	fmt.Printf("got from db (%d)(%t)\n", databaseResponse.Nonce, databaseResponse.Success)
 	if GetConfigInstance().Debug {
 		logger.Println("received ping over C2")
 	}
@@ -364,6 +367,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.Database
 		Source: threads.Http,
 		Nonce:  rand.Uint32(),
 	}
+	fmt.Printf("send to prov (%d)\n", provisionerPingRequest.Nonce)
 	provisionerPipe <- provisionerPingRequest
 
 	provisionerTimeout := false
@@ -386,6 +390,7 @@ func PingNodeChannels(logger *utils.Logger, databasePipe chan<- threads.Database
 		return false
 	}
 
+	fmt.Printf("got from prov (%d)(%t)\n", provisionerResponse.Nonce, provisionerResponse.Success)
 	if GetConfigInstance().Debug {
 		logger.Println("received ping over C6")
 	}

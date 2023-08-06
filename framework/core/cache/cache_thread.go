@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/cache"
 	"github.com/GabeCordo/etl/framework/core/common"
@@ -22,27 +23,26 @@ func (cacheThread *Thread) Setup() {
 
 func (cacheThread *Thread) Start() {
 
-	for cacheThread.accepting {
-		lastTimeInterval := time.Now()
-
-		select {
-		case request := <-cacheThread.C9:
-			{
-				cacheThread.wg.Add(1)
-				cacheThread.ProcessIncomingRequest(&request)
+	go func() {
+		// request from http_server
+		for request := range cacheThread.C9 {
+			if !cacheThread.accepting {
+				break
 			}
-		default:
-			{
-				// every minute, attempt to clean the cacheThread by removing any records that
-				// may have expired since we last checked
-				if time.Now().Sub(lastTimeInterval).Minutes() >= 1 {
-					GetCacheInstance().Clean()
-				}
-			}
+			cacheThread.wg.Add(1)
+			cacheThread.ProcessIncomingRequest(&request)
 		}
+	}()
 
-		time.Sleep(1 * time.Millisecond)
-	}
+	go func() {
+		// cleaning the cacheThread of expired records
+		for cacheThread.accepting {
+			time.Sleep(1 * time.Minute)
+			// every minute, attempt to clean the cacheThread by removing any records that
+			// may have expired since we last checked
+			GetCacheInstance().Clean()
+		}
+	}()
 
 	cacheThread.wg.Wait()
 }
@@ -93,6 +93,7 @@ func (cacheThread *Thread) ProcessPingCache(request *threads.CacheRequest) {
 		cacheThread.logger.Println("received ping over C9")
 	}
 
+	fmt.Printf("(cache) got (%d, %t)\n", request.Nonce, true)
 	cacheThread.C10 <- threads.CacheResponse{Nonce: request.Nonce, Success: true}
 }
 

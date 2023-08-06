@@ -1,10 +1,10 @@
 package messenger
 
 import (
+	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/messenger"
 	"github.com/GabeCordo/etl/framework/core/common"
-	"time"
 )
 
 var messengerInstance *messenger.Messenger
@@ -47,19 +47,27 @@ func (messengerThread *Thread) Setup() {
 func (messengerThread *Thread) Start() {
 	// as long as a teardown has not been called, continue looping
 
-	for messengerThread.accepting {
-
-		select {
-		case request := <-messengerThread.C3:
+	go func() {
+		// request coming from database
+		for request := range messengerThread.C3 {
+			if !messengerThread.accepting {
+				break
+			}
 			messengerThread.wg.Add(1)
 			messengerThread.ProcessIncomingRequest(&request)
-		case request := <-messengerThread.C11:
-			messengerThread.wg.Add(1)
-			messengerThread.ProcessIncomingRequest(&request)
-		default:
-			time.Sleep(1 * time.Millisecond)
 		}
-	}
+	}()
+
+	go func() {
+		// request coming from provisioner
+		for request := range messengerThread.C11 {
+			if !messengerThread.accepting {
+				break
+			}
+			messengerThread.wg.Add(1)
+			messengerThread.ProcessIncomingRequest(&request)
+		}
+	}()
 
 	messengerThread.wg.Wait()
 }
@@ -84,10 +92,13 @@ func (messengerThread *Thread) ProcessIncomingRequest(request *threads.Messenger
 
 func (messengerThread *Thread) ProcessMessengerPing(request *threads.MessengerRequest) {
 
+	fmt.Printf("got from db (%d)\n", request.Nonce)
+
 	if common.GetConfigInstance().Debug {
 		messengerThread.logger.Println("[etl_messenger] received ping over C3")
 	}
 
+	fmt.Printf("send to db (%d, %t)\n", request.Nonce, true)
 	messengerThread.C4 <- threads.MessengerResponse{Nonce: request.Nonce, Success: true}
 }
 
