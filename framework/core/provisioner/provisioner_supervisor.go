@@ -178,7 +178,8 @@ func (provisionerThread *Thread) ProcessProvisionRequest(request *threads.Provis
 			dbRequest := &threads.DatabaseRequest{
 				Action:  threads.DatabaseStore,
 				Origin:  threads.Provisioner,
-				Cluster: supervisorInstance.Config.Identifier,
+				Cluster: request.ClusterName,
+				Module:  request.ModuleName,
 				Data:    response,
 			}
 			provisionerThread.Request(threads.Database, dbRequest)
