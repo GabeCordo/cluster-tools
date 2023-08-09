@@ -1,6 +1,9 @@
 package utils
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type ResponseTable struct {
 	responses map[uint32]any
@@ -29,5 +32,18 @@ func (responseTable *ResponseTable) Lookup(nonce uint32) (response any, found bo
 		return response, found
 	} else {
 		return nil, found
+	}
+}
+
+func SendAndWait(table *ResponseTable, nonce uint32, timeout float64) (data any, timedOut bool) {
+	timestamp2 := time.Now()
+	for {
+		if time.Now().Sub(timestamp2).Seconds() > timeout {
+			return nil, true
+		}
+
+		if responseEntry, found := table.Lookup(nonce); found {
+			return responseEntry, false
+		}
 	}
 }

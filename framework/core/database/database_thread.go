@@ -1,13 +1,12 @@
 package database
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/database"
 	"github.com/GabeCordo/etl/framework/core/common"
+	"github.com/GabeCordo/etl/framework/utils"
 	"math/rand"
-	"time"
 )
 
 var DatabaseInstance *database.Database
@@ -60,7 +59,23 @@ func (databaseThread *Thread) Start() {
 	databaseThread.wg.Wait()
 }
 
-func (databaseThread *Thread) Send(request *threads.DatabaseRequest, response *threads.DatabaseResponse) {
+func (databaseThread *Thread) Request(module threads.Module, request any) (success bool) {
+
+	success = true
+
+	switch module {
+	case threads.Messenger:
+		databaseThread.C3 <- *(request).(*threads.MessengerRequest)
+	default:
+		success = false
+	}
+	return success
+}
+
+func (databaseThread *Thread) Respond(request *threads.DatabaseRequest, response *threads.DatabaseResponse) (success bool) {
+
+	success = true
+
 	switch request.Origin {
 	case threads.Http:
 		databaseThread.C2 <- *response
@@ -68,7 +83,11 @@ func (databaseThread *Thread) Send(request *threads.DatabaseRequest, response *t
 	case threads.Provisioner:
 		databaseThread.C8 <- *response
 		break
+	default:
+		success = false
 	}
+
+	return success
 }
 
 func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRequest) {
@@ -83,14 +102,14 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 					configData := (request.Data).(cluster.Config)
 					isOk := d.StoreClusterConfig(request.Module, configData)
 
-					databaseThread.Send(request, &threads.DatabaseResponse{Success: isOk, Nonce: request.Nonce})
+					databaseThread.Respond(request, &threads.DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			case threads.SupervisorStatistic:
 				{
 					statisticsData := (request.Data).(*cluster.Response)
 					isOk := d.StoreUsageRecord(request.Module, request.Cluster, statisticsData.Stats, statisticsData.LapsedTime)
 
-					databaseThread.Send(request, &threads.DatabaseResponse{Success: isOk, Nonce: request.Nonce})
+					databaseThread.Respond(request, &threads.DatabaseResponse{Success: isOk, Nonce: request.Nonce})
 				}
 			}
 		}
@@ -108,7 +127,7 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 						response = threads.DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
 					}
 
-					databaseThread.Send(request, &response)
+					databaseThread.Respond(request, &response)
 				}
 			case threads.SupervisorStatistic:
 				{
@@ -119,7 +138,7 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 						response = threads.DatabaseResponse{Success: true, Nonce: request.Nonce, Data: record.Entries[:record.Head+1]}
 					}
 
-					databaseThread.Send(request, &response)
+					databaseThread.Respond(request, &response)
 				}
 			}
 		}
@@ -131,7 +150,7 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 					success := d.DeleteModuleRecords(request.Module)
 
 					response := threads.DatabaseResponse{Success: success, Nonce: request.Nonce}
-					databaseThread.Send(request, &response)
+					databaseThread.Respond(request, &response)
 				}
 			}
 		}
@@ -141,7 +160,7 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 			success := d.ReplaceClusterConfig(request.Module, config)
 			response := threads.DatabaseResponse{Success: success, Nonce: request.Nonce}
 
-			databaseThread.Send(request, &response)
+			databaseThread.Respond(request, &response)
 		}
 	case threads.DatabaseUpperPing:
 		{
@@ -158,36 +177,20 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 
 func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.DatabaseRequest) {
 
-	fmt.Printf("got from http (%d)\n", request.Nonce)
-
 	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C1")
 	}
 
-	messengerPingRequest := threads.MessengerRequest{
+	messengerPingRequest := &threads.MessengerRequest{
 		Action: threads.MessengerUpperPing,
 		Nonce:  rand.Uint32(),
 	}
-	fmt.Printf("send to msg (%d)\n", messengerPingRequest.Nonce)
-	databaseThread.C3 <- messengerPingRequest
+	databaseThread.Request(threads.Messenger, messengerPingRequest)
 
-	messengerTimeout := false
-	var messengerResponse *threads.MessengerResponse
+	data, didTimeout := utils.SendAndWait(databaseThread.messengerResponseTable, messengerPingRequest.Nonce,
+		common.GetConfigInstance().MaxWaitForResponse)
 
-	timestamp := time.Now()
-	for {
-		if time.Now().Sub(timestamp).Seconds() > common.GetConfigInstance().MaxWaitForResponse {
-			messengerTimeout = true
-			break
-		}
-
-		if responseEntry, found := databaseThread.messengerResponseTable.Lookup(messengerPingRequest.Nonce); found {
-			messengerResponse = (responseEntry).(*threads.MessengerResponse)
-			break
-		}
-	}
-
-	if messengerTimeout {
+	if didTimeout {
 		databaseThread.C2 <- threads.DatabaseResponse{
 			Nonce:   request.Nonce,
 			Success: false,
@@ -195,8 +198,17 @@ func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.Database
 		return
 	}
 
-	fmt.Printf("got from msg (%d)(%t)\n", messengerResponse.Nonce, messengerResponse.Success)
-	if common.GetConfigInstance().Debug && messengerResponse.Success {
+	messengerResponse := (data).(*threads.MessengerResponse)
+
+	if !messengerResponse.Success {
+		databaseThread.C2 <- threads.DatabaseResponse{
+			Nonce:   request.Nonce,
+			Success: false,
+		}
+		return
+	}
+
+	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C4")
 	}
 
@@ -204,13 +216,11 @@ func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.Database
 		Nonce:   request.Nonce,
 		Success: messengerResponse.Success,
 	}
-	fmt.Printf("send to http (%d)\n", databaseResponse.Nonce)
 	databaseThread.C2 <- databaseResponse
 }
 
 func (databaseThread *Thread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
 
-	fmt.Printf("got from prov (%d)\n", request.Nonce)
 	if common.GetConfigInstance().Debug {
 		databaseThread.logger.Println("received ping over C7")
 	}
@@ -219,7 +229,6 @@ func (databaseThread *Thread) ProcessDatabaseLowerPing(request *threads.Database
 		Nonce:   request.Nonce,
 		Success: true,
 	}
-	fmt.Printf("send to prov (%d, %t)\n", response.Nonce, response.Success)
 	databaseThread.C8 <- response
 }
 

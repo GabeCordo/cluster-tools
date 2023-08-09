@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/cache"
 	"github.com/GabeCordo/etl/framework/core/common"
@@ -47,7 +46,7 @@ func (cacheThread *Thread) Start() {
 	cacheThread.wg.Wait()
 }
 
-func (cacheThread *Thread) Send(response *threads.CacheResponse) {
+func (cacheThread *Thread) Respond(response *threads.CacheResponse) {
 
 	cacheThread.C10 <- *response
 }
@@ -93,7 +92,6 @@ func (cacheThread *Thread) ProcessPingCache(request *threads.CacheRequest) {
 		cacheThread.logger.Println("received ping over C9")
 	}
 
-	fmt.Printf("(cache) got (%d, %t)\n", request.Nonce, true)
 	cacheThread.C10 <- threads.CacheResponse{Nonce: request.Nonce, Success: true}
 }
 

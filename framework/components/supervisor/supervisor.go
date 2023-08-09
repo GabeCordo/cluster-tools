@@ -169,9 +169,6 @@ func (supervisor *Supervisor) Runtime() {
 			break
 		}
 
-		fmt.Println("check runtime")
-		fmt.Println(supervisor.State)
-
 		supervisor.ETChannel.GetState()
 
 		if (supervisor.State == Stopping) && supervisor.ETChannel.Accepting() {
@@ -248,8 +245,6 @@ func (supervisor *Supervisor) Provision(segment cluster.Segment) {
 
 				supervisor.Stats.Threads.NumProvisionedTransformRoutes++
 				supervisor.TLChannel.AddProducer()
-
-				fmt.Println("starting to read ET Channel")
 
 				for request := range supervisor.ETChannel.GetChannel() {
 

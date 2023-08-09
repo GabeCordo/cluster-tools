@@ -43,6 +43,10 @@ func (clusterWrapper *ClusterWrapper) GetClusterImplementation() cluster.Cluster
 	return clusterWrapper.registry.GetClusterImplementation()
 }
 
+func (clusterWrapper *ClusterWrapper) FindSupervisors() []*supervisor.Supervisor {
+	return clusterWrapper.registry.GetSupervisors()
+}
+
 func (clusterWrapper *ClusterWrapper) FindSupervisor(id uint64) (instance *supervisor.Supervisor, found bool) {
 
 	instance, found = clusterWrapper.registry.GetSupervisor(id)

@@ -1,7 +1,6 @@
 package messenger
 
 import (
-	"fmt"
 	"github.com/GabeCordo/etl-light/core/threads"
 	"github.com/GabeCordo/etl/framework/components/messenger"
 	"github.com/GabeCordo/etl/framework/core/common"
@@ -72,18 +71,28 @@ func (messengerThread *Thread) Start() {
 	messengerThread.wg.Wait()
 }
 
-func (messengerThread *Thread) Send(module threads.Module, response *threads.MessengerResponse) {
+func (messengerThread *Thread) Respond(module threads.Module, response any) (success bool) {
 
-	messengerThread.C4 <- *response
+	success = true
+
+	switch module {
+	case threads.Database:
+		messengerThread.C4 <- *(response).(*threads.MessengerResponse)
+	default:
+		success = false
+	}
+
+	return success
 }
 
 func (messengerThread *Thread) ProcessIncomingRequest(request *threads.MessengerRequest) {
 
-	if request.Action == threads.MessengerClose {
+	switch request.Action {
+	case threads.MessengerClose:
 		messengerThread.ProcessCloseLogRequest(request)
-	} else if request.Action == threads.MessengerUpperPing {
+	case threads.MessengerUpperPing:
 		messengerThread.ProcessMessengerPing(request)
-	} else {
+	default:
 		messengerThread.ProcessConsoleRequest(request)
 	}
 
@@ -92,25 +101,25 @@ func (messengerThread *Thread) ProcessIncomingRequest(request *threads.Messenger
 
 func (messengerThread *Thread) ProcessMessengerPing(request *threads.MessengerRequest) {
 
-	fmt.Printf("got from db (%d)\n", request.Nonce)
-
 	if common.GetConfigInstance().Debug {
 		messengerThread.logger.Println("[etl_messenger] received ping over C3")
 	}
 
-	fmt.Printf("send to db (%d, %t)\n", request.Nonce, true)
-	messengerThread.C4 <- threads.MessengerResponse{Nonce: request.Nonce, Success: true}
+	response := &threads.MessengerResponse{Nonce: request.Nonce, Success: true}
+	messengerThread.Respond(threads.Database, response)
 }
 
 func (messengerThread *Thread) ProcessConsoleRequest(request *threads.MessengerRequest) {
 	messengerInstance := GetMessengerInstance()
 
 	var priority messenger.MessagePriority
-	if request.Action == threads.MessengerLog {
+
+	switch request.Action {
+	case threads.MessengerLog:
 		priority = messenger.Log
-	} else if request.Action == threads.MessengerWarning {
+	case threads.MessengerWarning:
 		priority = messenger.Warning
-	} else {
+	default:
 		priority = messenger.Fatal
 	}
 
