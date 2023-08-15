@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
 	"github.com/GabeCordo/etl-light/core/config"
-	"github.com/GabeCordo/etl/framework/core"
+	"github.com/GabeCordo/etl/core/threads"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -46,7 +46,7 @@ func (mc ModuleCommand) Run(cli *commandline.CommandLine) commandline.TerminateO
 			panic(err)
 		}
 
-		buildFolder := core.DefaultModulesFolder + moduleConfig.Name + "/"
+		buildFolder := threads.DefaultModulesFolder + moduleConfig.Name + "/"
 		if _, err := os.Stat(buildFolder); err == nil {
 			fmt.Printf("cannot create module %s as it already exists\n", moduleConfig.Name)
 			return commandline.Terminate
@@ -78,7 +78,7 @@ func (mc ModuleCommand) Run(cli *commandline.CommandLine) commandline.TerminateO
 			panic(err)
 		}
 
-		dstModuleFolder := core.DefaultModulesFolder + "/" + moduleConfig.Name
+		dstModuleFolder := threads.DefaultModulesFolder + "/" + moduleConfig.Name
 		if _, err := os.Stat(dstModuleFolder); err == nil {
 			os.Remove(dstModuleFolder)
 		}
@@ -91,7 +91,7 @@ func (mc ModuleCommand) Run(cli *commandline.CommandLine) commandline.TerminateO
 			return commandline.Terminate
 		}
 
-		buildFolder := core.DefaultModulesFolder + moduleName + "/"
+		buildFolder := threads.DefaultModulesFolder + moduleName + "/"
 		if _, err := os.Stat(buildFolder); os.IsNotExist(err) {
 			fmt.Printf("%s module does not exist\n", moduleName)
 			return commandline.Terminate

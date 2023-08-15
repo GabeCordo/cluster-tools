@@ -16,15 +16,15 @@ to the engine. If you are interested, feel free to reach out.
 ### Installation
 
 ```shell
-   # create a local copy of the framework
+   # create a local copy of the threads
    git clone https://github.com/GabeCordo/etl
    
-   # generate a framework binary in the GOPATH bin folder
+   # generate a threads binary in the GOPATH bin folder
    go install
    
    # add $(go env GOPATH)/bin to your environment PATH
    
-   # generate global files used by the framework when run
+   # generate global files used by the threads when run
    etl init
 ```
 
