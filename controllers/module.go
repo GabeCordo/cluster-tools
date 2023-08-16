@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/etl-light/core/config"
+	"github.com/GabeCordo/etl-light/core"
 	"github.com/GabeCordo/etl/core/threads"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -41,7 +41,7 @@ func (mc ModuleCommand) Run(cli *commandline.CommandLine) commandline.TerminateO
 			panic(err)
 		}
 
-		moduleConfig := config.Config{}
+		moduleConfig := core.Config{}
 		if err := yaml.Unmarshal(bytes, &moduleConfig); err != nil {
 			panic(err)
 		}

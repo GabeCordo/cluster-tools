@@ -2,12 +2,8 @@ package threads
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/core/threads/common"
-	"net/http"
+	"github.com/GabeCordo/etl-light/threads"
 	"os"
 	"strings"
 )
@@ -35,16 +31,6 @@ func (core *Core) repl() {
 			//	module.Print()
 			//}
 			fmt.Println("not implemented")
-		} else if text == "ping" {
-			url := fmt.Sprintf("\"http://\"%s:%d/debug",
-				common.GetConfigInstance().Net.Host, common.GetConfigInstance().Net.Port)
-			request := &struct {
-				Action string `json:"action"`
-			}{
-				Action: "ping",
-			}
-			body, _ := json.Marshal(request)
-			http.Post(url, "application/json", bytes.NewReader(body))
 		} else if text == "stop" {
 			core.interrupt <- threads.Shutdown
 			break

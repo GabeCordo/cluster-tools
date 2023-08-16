@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/etl-light/core/config"
+	"github.com/GabeCordo/etl-light/core"
 	"github.com/GabeCordo/etl/core/threads"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -14,14 +14,16 @@ type InitCommand struct {
 
 func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	defaultConfig := config.Config{Debug: true, HardTerminateTime: 2}
+	defaultConfig := core.Config{Debug: true, HardTerminateTime: 2}
 	defaultConfig.Cache.Expiry = 2
 	defaultConfig.Cache.MaxSize = 1000
 	defaultConfig.Messenger.EnableLogging = true
 	defaultConfig.Messenger.LogFiles.Directory = "/var/etl/logs"
 	defaultConfig.Messenger.EnableSmtp = false
-	defaultConfig.Net.Host = "0.0.0.0"
-	defaultConfig.Net.Port = 8136
+	defaultConfig.Net.Client.Host = "localhost"
+	defaultConfig.Net.Client.Port = 8136
+	defaultConfig.Net.Processor.Host = "localhost"
+	defaultConfig.Net.Processor.Port = 8137
 	defaultConfig.Path = threads.DefaultFrameworkFolder
 
 	defaultConfig.Messenger.LogFiles.Directory = threads.DefaultLogsFolder

@@ -2,7 +2,7 @@ package common
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/core/config"
+	"github.com/GabeCordo/etl-light/core"
 	"log"
 	"runtime"
 	"sync"
@@ -10,7 +10,7 @@ import (
 
 var (
 	configLock     = &sync.Mutex{}
-	ConfigInstance *config.Config
+	ConfigInstance *core.Config
 )
 
 func GetDefaultConfigPath() string {
@@ -24,7 +24,7 @@ func GetDefaultConfigPath() string {
 	}
 }
 
-func GetConfigInstance(configPath ...string) *config.Config {
+func GetConfigInstance(configPath ...string) *core.Config {
 	configLock.Lock()
 	defer configLock.Unlock()
 
@@ -36,9 +36,9 @@ func GetConfigInstance(configPath ...string) *config.Config {
 	}
 
 	if ConfigInstance == nil {
-		ConfigInstance = config.NewConfig("test")
+		ConfigInstance = core.NewConfig("test")
 
-		if err := config.YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
+		if err := core.YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
 			// the configPath we found the common for future reference
 			ConfigInstance.Path = configPath[0]
 			// if the MaxWaitForResponse is not set, then simply default to 2.0

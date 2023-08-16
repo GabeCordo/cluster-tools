@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/etl-light/core/config"
+	"github.com/GabeCordo/etl-light/core"
 	"github.com/GabeCordo/etl/core/threads"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -64,7 +64,7 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 		return commandline.Terminate
 	}
 
-	c := &config.Config{}
+	c := &core.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
 		fmt.Printf("[x] the global common is corrupt (%s)\n", threads.DefaultConfigFile)
 		return commandline.Terminate

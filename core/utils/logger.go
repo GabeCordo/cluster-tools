@@ -9,8 +9,11 @@ import (
 type ThreadType uint8
 
 const (
-	Http ThreadType = iota
+	HttpClient ThreadType = iota
+	HttpProcessor
 	Provisioner
+	Processor
+	Supervisor
 	Database
 	Messenger
 	Cache
@@ -19,7 +22,7 @@ const (
 
 func (threadType ThreadType) ToString() string {
 	switch threadType {
-	case Http:
+	case HttpClient:
 		return "HTTP"
 	case Provisioner:
 		return "PROVISIONER"

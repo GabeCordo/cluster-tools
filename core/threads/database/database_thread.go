@@ -2,7 +2,7 @@ package database
 
 import (
 	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl-light/threads"
 	"github.com/GabeCordo/etl/core/components/database"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"github.com/GabeCordo/etl/core/utils"
@@ -42,7 +42,7 @@ func (databaseThread *Thread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = threads.Http
+			request.Origin = threads.HttpClient
 			databaseThread.wg.Add(1)
 			databaseThread.ProcessIncomingRequest(&request)
 		}
@@ -88,7 +88,7 @@ func (databaseThread *Thread) Respond(request *threads.DatabaseRequest, response
 	success = true
 
 	switch request.Origin {
-	case threads.Http:
+	case threads.HttpClient:
 		databaseThread.C2 <- *response
 		break
 	case threads.Provisioner:

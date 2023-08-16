@@ -1,9 +1,9 @@
-package http
+package http_client
 
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl-light/threads"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"net/http"
 	"net/http/pprof"
@@ -13,6 +13,10 @@ import (
 func (httpThread *Thread) Setup() {
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("/processor", func(w http.ResponseWriter, r *http.Request) {
+		httpThread.processorCallback(w, r)
+	})
 
 	mux.HandleFunc("/module", func(w http.ResponseWriter, r *http.Request) {
 		httpThread.moduleCallback(w, r)
@@ -58,7 +62,7 @@ func (httpThread *Thread) Start() {
 	httpThread.wg.Add(1)
 
 	go func(thread *Thread) {
-		net := common.GetConfigInstance().Net
+		net := common.GetConfigInstance().Net.Client
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
 		if err != nil {
 			thread.Interrupt <- threads.Panic
@@ -70,7 +74,7 @@ func (httpThread *Thread) Start() {
 			if !httpThread.accepting {
 				break
 			}
-			httpThread.ProvisionerResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
+			httpThread.ProcessorResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
 		}
 	}()
 
@@ -122,7 +126,7 @@ func (httpThread *Thread) Send(module threads.Module, request any) (any, bool) {
 
 	nonce := httpThread.counter // make a copy of the current counter
 	if module == threads.Provisioner {
-		req := (request).(threads.ProvisionerRequest)
+		req := (request).(common.ProcessorRequest)
 		req.Nonce = nonce
 		httpThread.C5 <- req
 	} else if module == threads.Database {

@@ -2,15 +2,15 @@ package threads
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/core/threads"
-	provisioner_component "github.com/GabeCordo/etl/core/components/provisioner"
+	"github.com/GabeCordo/etl-light/threads"
 	"github.com/GabeCordo/etl/core/threads/cache"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"github.com/GabeCordo/etl/core/threads/database"
-	"github.com/GabeCordo/etl/core/threads/http"
+	"github.com/GabeCordo/etl/core/threads/http_client"
+	"github.com/GabeCordo/etl/core/threads/http_processor"
 	"github.com/GabeCordo/etl/core/threads/messenger"
-	"github.com/GabeCordo/etl/core/threads/provisioner"
+	"github.com/GabeCordo/etl/core/threads/processor"
+	"github.com/GabeCordo/etl/core/threads/supervisor"
 	"github.com/GabeCordo/etl/core/utils"
 	"log"
 	"os"
@@ -29,13 +29,17 @@ func NewCore(configPath string) (*Core, error) {
 	core.C2 = make(chan threads.DatabaseResponse, 10)
 	core.C3 = make(chan threads.MessengerRequest, 10)
 	core.C4 = make(chan threads.MessengerResponse, 10)
-	core.C5 = make(chan threads.ProvisionerRequest, 10)
-	core.C6 = make(chan threads.ProvisionerResponse, 10)
+	core.C5 = make(chan common.ProcessorRequest, 10)
+	core.C6 = make(chan common.ProcessorResponse, 10)
 	core.C7 = make(chan threads.DatabaseRequest, 10)
 	core.C8 = make(chan threads.DatabaseResponse, 10)
 	core.C9 = make(chan threads.CacheRequest, 10)
 	core.C10 = make(chan threads.CacheResponse, 10)
 	core.C11 = make(chan threads.MessengerRequest, 10)
+	core.C12 = make(chan common.ProcessorRequest, 10)
+	core.C13 = make(chan common.ProcessorResponse, 10)
+	core.C14 = make(chan common.SupervisorRequest, 10)
+	core.C15 = make(chan common.SupervisorResponse, 10)
 	core.interrupt = make(chan threads.InterruptEvent, 10)
 
 	/* load the cfg in for the first time */
@@ -43,20 +47,42 @@ func NewCore(configPath string) (*Core, error) {
 		log.Panic("could not create cfg")
 	}
 
-	httpLogger, err := utils.NewLogger(utils.Http, &common.GetConfigInstance().Debug)
+	httpLogger, err := utils.NewLogger(utils.HttpClient, &common.GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
-	core.HttpThread, err = http.NewThread(httpLogger, core.interrupt, core.C1, core.C2, core.C5, core.C6)
+	core.HttpClientThread, err = http_client.NewThread(httpLogger,
+		core.interrupt, core.C1, core.C2, core.C5, core.C6)
 	if err != nil {
 		return nil, err
 	}
 
-	provisionerLogger, err := utils.NewLogger(utils.Provisioner, &common.GetConfigInstance().Debug)
+	httpProcessorLogger, err := utils.NewLogger(utils.HttpProcessor, &common.GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
-	core.ProvisionerThread, err = provisioner.NewThread(provisionerLogger, core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C9, core.C10, core.C11)
+	core.HttpProcessorThread, err = http_processor.NewThread(httpProcessorLogger,
+		core.interrupt, core.C12, core.C13)
+	if err != nil {
+		return nil, err
+	}
+
+	processorLogger, err := utils.NewLogger(utils.Processor, &common.GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.ProcessorThread, err = processor.NewThread(processorLogger,
+		core.interrupt, core.C5, core.C6, core.C12, core.C13, core.C14, core.C15)
+	if err != nil {
+		return nil, err
+	}
+
+	supervisorLogger, err := utils.NewLogger(utils.Supervisor, &common.GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	core.SupervisorThread, err = supervisor.NewThread(supervisorLogger,
+		core.interrupt, core.C14, core.C15, core.C7, core.C8, core.C9, core.C10, core.C11)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +155,7 @@ func (core *Core) Run() {
 		core.logger.Println("Messenger Thread Started")
 	}
 
-	// needed in-case the supervisor or http threads need to populate Data on startup
+	// needed in-case the supervisor or http_client threads need to populate Data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if common.GetConfigInstance().Debug {
@@ -146,19 +172,39 @@ func (core *Core) Run() {
 	}
 
 	// we need a way to provision clusters if we are receiving threads before we can
-	core.ProvisionerThread.Setup()
-	go core.ProvisionerThread.Start() // event loop
+	//core.ProvisionerThread.Setup()
+	//go core.ProvisionerThread.Start() // event loop
+	//if common.GetConfigInstance().Debug {
+	//	core.logger.Println("Provisioner Thread Started")
+	//}
+
+	core.SupervisorThread.Setup()
+	go core.SupervisorThread.Start()
 	if common.GetConfigInstance().Debug {
-		core.logger.Println("Provisioner Thread Started")
+		core.logger.Println("Supervisor Thread Started")
+	}
+
+	core.ProcessorThread.Setup()
+	go core.ProcessorThread.Start()
+	if common.GetConfigInstance().Debug {
+		core.logger.Println("Processor Thread Started")
+	}
+
+	core.HttpProcessorThread.Setup()
+	go core.HttpProcessorThread.Start()
+	if common.GetConfigInstance().Debug {
+		core.logger.Println("HTTP Processor API Thread Started")
+		core.logger.Printf("\t- Listening on %s:%d\n",
+			common.GetConfigInstance().Net.Processor.Host, common.GetConfigInstance().Net.Processor.Port)
 	}
 
 	// the gateway to the frontend cluster should be the last startup
-	core.HttpThread.Setup()
-	go core.HttpThread.Start() // event loop
+	core.HttpClientThread.Setup()
+	go core.HttpClientThread.Start() // event loop
 	if common.GetConfigInstance().Debug {
-		core.logger.Println("HTTP API Thread Started")
+		core.logger.Println("HTTP Client API Thread Started")
 		core.logger.Printf("\t- Listening on %s:%d\n",
-			common.GetConfigInstance().Net.Host, common.GetConfigInstance().Net.Port)
+			common.GetConfigInstance().Net.Client.Host, common.GetConfigInstance().Net.Client.Port)
 	}
 
 	go core.repl()
@@ -184,20 +230,38 @@ func (core *Core) Run() {
 		}
 	}
 
-	// close the gateway, stop new threads from flooding into the servers
-	core.HttpThread.Teardown()
-
 	core.logger.SetColour(utils.Red)
 
+	// close the gateway, stop new threads from flooding into the servers
+	core.HttpClientThread.Teardown()
+
 	if common.GetConfigInstance().Debug {
-		core.logger.Println("http shutdown")
+		core.logger.Println("http_client shutdown")
+	}
+
+	core.HttpProcessorThread.Teardown()
+
+	if common.GetConfigInstance().Debug {
+		core.logger.Println("http_processor shutdown")
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	core.ProvisionerThread.Teardown()
+	//core.ProvisionerThread.Teardown()
+	//
+	//if common.GetConfigInstance().Debug {
+	//	core.logger.Println("provisioner shutdown")
+	//}
+
+	core.ProcessorThread.Teardown()
 
 	if common.GetConfigInstance().Debug {
-		core.logger.Println("provisioner shutdown")
+		core.logger.Println("processor shutdown")
+	}
+
+	core.SupervisorThread.Teardown()
+
+	if common.GetConfigInstance().Debug {
+		core.logger.Println("supervisor shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the Data is useless, shutdown
@@ -222,34 +286,36 @@ func (core *Core) Run() {
 	}
 }
 
-func (core *Core) Cluster(identifier string, mode cluster.EtlMode, implementation cluster.Cluster, configs ...cluster.Config) {
+// TODO : no longer support on the core
+//func (core *Core) Cluster(identifier string, mode cluster.EtlMode, implementation cluster.Cluster, configs ...cluster.Config) {
+//
+//	p := provisioner.GetProvisionerInstance()
+//	defaultModule, _ := p.GetModule(provisioner_component.DefaultFrameworkModule) // the default threads module should always be found
+//
+//	clusterWrapper, _ := defaultModule.AddCluster(identifier, mode, implementation)
+//	if common.GetConfigInstance().MountByDefault {
+//		clusterWrapper.Mount()
+//	} else {
+//		clusterWrapper.UnMount()
+//	}
+//
+//	clusterImplementation := clusterWrapper.GetClusterImplementation()
+//	if helperImplementation, ok := (clusterImplementation).(cluster.Helper); ok {
+//		helper, _ := provisioner.NewHelper(provisioner_component.DefaultFrameworkModule, clusterWrapper.Identifier,
+//			core.C9, core.C11)
+//		helperImplementation.SetHelper(helper)
+//	}
+//
+//	d := database.GetConfigDatabaseInstance()
+//
+//	for _, config := range configs {
+//		d.Create(provisioner_component.DefaultFrameworkModule, identifier, config)
+//	}
+//}
 
-	p := provisioner.GetProvisionerInstance()
-	defaultModule, _ := p.GetModule(provisioner_component.DefaultFrameworkModule) // the default threads module should always be found
-
-	clusterWrapper, _ := defaultModule.AddCluster(identifier, mode, implementation)
-	if common.GetConfigInstance().MountByDefault {
-		clusterWrapper.Mount()
-	} else {
-		clusterWrapper.UnMount()
-	}
-
-	clusterImplementation := clusterWrapper.GetClusterImplementation()
-	if helperImplementation, ok := (clusterImplementation).(cluster.Helper); ok {
-		helper, _ := provisioner.NewHelper(provisioner_component.DefaultFrameworkModule, clusterWrapper.Identifier,
-			core.C9, core.C11)
-		helperImplementation.SetHelper(helper)
-	}
-
-	d := database.GetConfigDatabaseInstance()
-
-	for _, config := range configs {
-		d.Create(provisioner_component.DefaultFrameworkModule, identifier, config)
-	}
-}
-
-func (core *Core) Module(path string) (success bool, description string) {
-
-	success, description = common.RegisterModule(core.HttpThread.C5, core.HttpThread.ProvisionerResponseTable, path)
-	return success, description
-}
+// TODO : no longer support on the core
+//func (core *Core) Module(path string) (success bool, description string) {
+//
+//	success, description = common.RegisterModule(core.HttpClientThread.C5, core.HttpClientThread.ProcessorResponseTable, path)
+//	return success, description
+//}

@@ -1,7 +1,7 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl-light/threads"
 	"github.com/GabeCordo/etl/core/components/messenger"
 	"github.com/GabeCordo/etl/core/threads/common"
 )

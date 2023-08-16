@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl-light/threads"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"time"
 )

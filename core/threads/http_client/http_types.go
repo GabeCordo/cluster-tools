@@ -1,9 +1,10 @@
-package http
+package http_client
 
 import (
 	"context"
 	"errors"
-	"github.com/GabeCordo/etl-light/core/threads"
+	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl/core/threads/common"
 	"github.com/GabeCordo/etl/core/utils"
 	"net/http"
 	"sync"
@@ -17,14 +18,14 @@ type Thread struct {
 	C1 chan<- threads.DatabaseRequest  // Core is sending threads to the Database
 	C2 <-chan threads.DatabaseResponse // Core is receiving responses from the Database
 
-	C5 chan<- threads.ProvisionerRequest  // Core is sending threads to the Database
-	C6 <-chan threads.ProvisionerResponse // Core is receiving responses from the Database
+	C5 chan<- common.ProcessorRequest  // Core is sending threads to the Database
+	C6 <-chan common.ProcessorResponse // Core is receiving responses from the Database
 
 	databaseResponses   map[uint32]threads.DatabaseResponse
 	supervisorResponses map[uint32]threads.ProvisionerResponse
 
-	ProvisionerResponseTable *utils.ResponseTable
-	DatabaseResponseTable    *utils.ResponseTable
+	ProcessorResponseTable *utils.ResponseTable
+	DatabaseResponseTable  *utils.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
@@ -38,7 +39,7 @@ type Thread struct {
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
+func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 	core := new(Thread)
 
 	var ok bool
@@ -55,19 +56,19 @@ func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 2")
 	}
-	core.C5, ok = (channels[3]).(chan threads.ProvisionerRequest)
+	core.C5, ok = (channels[3]).(chan common.ProcessorRequest)
 	if !ok {
-		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 3")
+		return nil, errors.New("expected type 'chan ProcessorRequest' in index 3")
 	}
-	core.C6, ok = (channels[4]).(chan threads.ProvisionerResponse)
+	core.C6, ok = (channels[4]).(chan common.ProcessorResponse)
 	if !ok {
-		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 4")
+		return nil, errors.New("expected type 'chan ProcessorResponse' in index 4")
 	}
 
 	core.databaseResponses = make(map[uint32]threads.DatabaseResponse)
 	core.supervisorResponses = make(map[uint32]threads.ProvisionerResponse)
 
-	core.ProvisionerResponseTable = utils.NewResponseTable()
+	core.ProcessorResponseTable = utils.NewResponseTable()
 	core.DatabaseResponseTable = utils.NewResponseTable()
 
 	core.server = new(http.Server)
