@@ -2,8 +2,10 @@ package http_client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl/core/components/processor"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"net/http"
 	"net/url"
@@ -32,8 +34,8 @@ func (httpThread *Thread) processorCallback(w http.ResponseWriter, r *http.Reque
 }
 
 type ModuleRequestBody struct {
-	ModulePath string `json:"path,omitempty"`
-	ModuleName string `json:"module,omitempty"`
+	ModuleName string `json:"module"`
+	Mounted    bool   `json:"mounted"`
 }
 
 func (httpThread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
@@ -58,18 +60,19 @@ func (httpThread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		//}
-		//else if r.Method == "POST" {
-		//	if success, description := common.RegisterModule(httpThread.C5, httpThread.ProcessorResponseTable, request.ModulePath); !success {
-		//		w.WriteHeader(http.StatusInternalServerError)
-		//		w.Write([]byte(description))
-		//	}
-		//} else if r.Method == "DELETE" {
-		//	success, description := common.DeleteModule(httpThread.C5, httpThread.ProcessorResponseTable, request.ModuleName)
-		//	if !success {
-		//		w.WriteHeader(http.StatusBadRequest)
-		//	}
-		//	w.Write([]byte(description))
+	} else if r.Method == "PUT" {
+		var success bool = false
+		if request.Mounted {
+			success, err = common.MountModule(httpThread.C5, httpThread.ProcessorResponseTable, request.ModuleName)
+		} else {
+			success, err = common.UnmountModule(httpThread.C5, httpThread.ProcessorResponseTable, request.ModuleName)
+		}
+
+		if errors.Is(err, processor.ModuleDoesNotExist) {
+			w.WriteHeader(http.StatusNotFound)
+		} else if !success {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -102,7 +105,7 @@ func (httpThread *Thread) clusterCallback(w http.ResponseWriter, r *http.Request
 		if moduleName, foundModuleName := urlMapping["module"]; foundModuleName {
 			clusterList, success := common.GetClusters(httpThread.C5, httpThread.ProcessorResponseTable, moduleName[0])
 			if !success {
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusNotFound)
 				return
 			}
 			clusterBytes, err := json.Marshal(clusterList)
@@ -119,12 +122,12 @@ func (httpThread *Thread) clusterCallback(w http.ResponseWriter, r *http.Request
 		}
 	} else if r.Method == "PUT" {
 		if request.Mounted {
-			success := common.ClusterMount(httpThread.C5, httpThread.ProcessorResponseTable, request.Module, request.Cluster)
+			success := common.MountCluster(httpThread.C5, httpThread.ProcessorResponseTable, request.Module, request.Cluster)
 			if !success {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			success := common.ClusterUnMount(httpThread.C5, httpThread.ProcessorResponseTable, request.Module, request.Cluster)
+			success := common.UnmountCluster(httpThread.C5, httpThread.ProcessorResponseTable, request.Module, request.Cluster)
 			if !success {
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -359,6 +362,7 @@ func (httpThread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if r.Method == "GET" {
+		fmt.Println(r.RemoteAddr)
 		// treat this as a probe to the http server
 	} else if r.Method == "POST" {
 		if request.Action == "shutdown" {

@@ -9,6 +9,8 @@ import (
 
 func (thread *Thread) Setup() {
 
+	thread.accepting = true
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/processor", func(w http.ResponseWriter, r *http.Request) {
@@ -28,6 +30,8 @@ func (thread *Thread) Setup() {
 
 func (thread *Thread) Start() {
 
+	// HTTP API SERVER
+
 	go func(thread *Thread) {
 		net := common.GetConfigInstance().Net.Processor
 		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), thread.mux)
@@ -35,8 +39,20 @@ func (thread *Thread) Start() {
 			thread.Interrupt <- threads.Panic
 		}
 	}(thread)
+
+	// RESPONSE THREADS
+
+	go func() {
+		for response := range thread.C13 {
+			if !thread.accepting {
+				break
+			}
+			thread.ProcessorResponseTable.Write(response.Nonce, response)
+		}
+	}()
+
 }
 
 func (thread *Thread) Teardown() {
-
+	thread.accepting = false
 }

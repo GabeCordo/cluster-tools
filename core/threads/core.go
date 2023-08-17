@@ -155,14 +155,14 @@ func (core *Core) Run() {
 		core.logger.Println("Messenger Thread Started")
 	}
 
-	// needed in-case the supervisor or http_client threads need to populate Data on startup
+	// needed in-case the supervisor or http_client threads need to populate data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if common.GetConfigInstance().Debug {
 		core.logger.Println("Database Thread Started")
 	}
 
-	// if we chain requests, we should have a way to save that Data for re-use
+	// if we chain requests, we should have a way to save that data for re-use
 	// FIX: the cache should start up before the provisioner in case the provisioner
 	//		has stream processes that need to start using it.
 	core.CacheThread.Setup()
@@ -211,7 +211,7 @@ func (core *Core) Run() {
 
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT
-	// requiring us to cleanly close the application without risking the loss of Data
+	// requiring us to cleanly close the application without risking the loss of data
 	// ---
 	// an interrupt can be sent by any thread that has access to the channel if an
 	// error or end-state has been reached by the application
@@ -264,14 +264,14 @@ func (core *Core) Run() {
 		core.logger.Println("supervisor shutdown")
 	}
 
-	// we won't need the cache if the cluster thread is shutdown, the Data is useless, shutdown
+	// we won't need the cache if the cluster thread is shutdown, the data is useless, shutdown
 	core.CacheThread.Teardown()
 
 	if common.GetConfigInstance().Debug {
 		core.logger.Println("cache shutdown")
 	}
 
-	// the supervisor might need to store Data while finishing, close after
+	// the supervisor might need to store data while finishing, close after
 	core.DatabaseThread.Teardown()
 
 	if common.GetConfigInstance().Debug {

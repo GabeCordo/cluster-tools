@@ -1,7 +1,10 @@
 package common
 
 import (
+	"errors"
 	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl-light/module"
+	processor_i "github.com/GabeCordo/etl-light/processor_i"
 	"github.com/GabeCordo/etl-light/threads"
 	"github.com/GabeCordo/etl/core/components/database"
 	"github.com/GabeCordo/etl/core/components/processor"
@@ -160,16 +163,68 @@ func GetProcessors(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTa
 	}
 }
 
-func ClusterMount(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+func AddProcessor(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	cfg *processor_i.Config) (bool, error) {
+
+	request := ProcessorRequest{
+		Action: ProcessorAdd,
+		Source: threads.HttpProcessor,
+		Data: struct {
+			Cluster   cluster.Config
+			Module    module.Config
+			Processor processor_i.Config
+		}{Processor: *cfg},
+		Nonce: rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+	return response.Success, response.Error
+}
+
+func DeleteProcessor(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	processorName string) error {
+
+	request := ProcessorRequest{
+		Action: ProcessorRemove,
+		Source: threads.HttpProcessor,
+		Identifiers: struct {
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
+		}{Processor: processorName},
+		Nonce: rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+	if didTimeout {
+		return utils.NoResponseReceived
+	}
+
+	response := (data).(ProcessorResponse)
+	return response.Error
+}
+
+func MountCluster(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
 	moduleName, clusterName string) (success bool) {
 
 	request := ProcessorRequest{
 		Action: ProcessorClusterMount,
 		Source: threads.HttpClient,
 		Identifiers: struct {
-			Module  string
-			Cluster string
-			Config  string
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
 		}{Module: moduleName, Cluster: clusterName, Config: ""},
 		Nonce: rand.Uint32(),
 	}
@@ -185,16 +240,17 @@ func ClusterMount(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTab
 	return provisionerResponse.Success
 }
 
-func ClusterUnMount(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+func UnmountCluster(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
 	moduleName, clusterName string) (success bool) {
 
 	request := ProcessorRequest{
 		Action: ProcessorClusterUnmount,
 		Source: threads.HttpClient,
 		Identifiers: struct {
-			Module  string
-			Cluster string
-			Config  string
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
 		}{Module: moduleName, Cluster: clusterName, Config: ""},
 		Nonce: rand.Uint32(),
 	}
@@ -245,14 +301,15 @@ func ClusterUnMount(pipe chan<- ProcessorRequest, responseTable *utils.ResponseT
 //}
 
 func GetClusters(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
-	moduleName string) (clusters map[string]bool, success bool) {
+	moduleName string) (clusters []processor.ClusterData, success bool) {
 
 	request := ProcessorRequest{
 		Action: ProcessorClusterGet,
 		Identifiers: struct {
-			Module  string
-			Cluster string
-			Config  string
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
 		}{Module: moduleName, Cluster: "", Config: ""},
 		Source: threads.HttpClient,
 		Nonce:  rand.Uint32(),
@@ -271,7 +328,7 @@ func GetClusters(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTabl
 		return nil, false
 	}
 
-	return (provisionerResponse.Data).(map[string]bool), true
+	return (provisionerResponse.Data).([]processor.ClusterData), true
 }
 
 // TODO : fix
@@ -293,7 +350,7 @@ func GetClusters(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTabl
 //	}
 //	provisionerResponse := (data).(threads.ProvisionerResponse)
 //
-//	return (provisionerResponse.Data).(map[uint64]supervisor.Status), true
+//	return (provisionerResponse.data).(map[uint64]supervisor.Status), true
 //}
 
 // TODO : fix
@@ -323,7 +380,7 @@ func GetClusters(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTabl
 //		return nil, false
 //	}
 //
-//	return (provisionerResponse.Data).(*supervisor.Supervisor), true
+//	return (provisionerResponse.data).(*supervisor.Supervisor), true
 //}
 
 func FindStatistics(pipe chan<- threads.DatabaseRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (entries []database.Statistic, found bool) {
@@ -407,7 +464,7 @@ func ShutdownCore(pipe chan<- threads.InterruptEvent) (response []byte, success 
 //	return true
 //}
 
-func GetModules(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable) (success bool, modules map[string]bool) {
+func GetModules(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable) (success bool, modules []processor.ModuleData) {
 
 	request := ProcessorRequest{
 		Action: ProcessorModuleGet,
@@ -428,7 +485,121 @@ func GetModules(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable
 		return false, nil
 	}
 
-	return true, (provisionerResponse.Data).(map[string]bool)
+	return true, (provisionerResponse.Data).([]processor.ModuleData)
+}
+
+func AddModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	processorName string, cfg *module.Config) (bool, error) {
+
+	request := ProcessorRequest{
+		Action: ProcessorModuleAdd,
+		Source: threads.HttpProcessor,
+		Identifiers: struct {
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
+		}{Processor: processorName},
+		Data: struct {
+			Cluster   cluster.Config
+			Module    module.Config
+			Processor processor_i.Config
+		}{Module: *cfg},
+		Nonce: rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
+}
+
+func MountModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	moduleName string) (bool, error) {
+
+	request := ProcessorRequest{
+		Action: ProcessorModuleMount,
+		Source: threads.HttpClient,
+		Identifiers: struct {
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
+		}{Module: moduleName},
+		Nonce: rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
+}
+
+func UnmountModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	moduleName string) (bool, error) {
+
+	request := ProcessorRequest{
+		Action: ProcessorModuleUnmount,
+		Source: threads.HttpClient,
+		Identifiers: struct {
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
+		}{Module: moduleName},
+		Nonce: rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
+}
+
+func DeleteModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	processorName, moduleName string) (bool, error) {
+
+	request := ProcessorRequest{
+		Action: ProcessorModuleDelete,
+		Source: threads.HttpProcessor,
+		Identifiers: struct {
+			Processor string
+			Module    string
+			Cluster   string
+			Config    string
+		}{Processor: processorName, Module: moduleName},
+		Nonce: rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+
+	if didTimeout {
+		return false, utils.NoResponseReceived
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
 }
 
 // TODO : I believe this needs to be removed from the core

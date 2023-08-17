@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
+
+var NoResponseReceived = errors.New("no response recieved from the channel")
 
 type ResponseTable struct {
 	responses map[uint32]any

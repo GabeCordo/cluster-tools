@@ -66,23 +66,34 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 		processors := thread.processorGet()
 		thread.respond(request.Source, &common.ProcessorResponse{Success: true, Data: processors, Nonce: request.Nonce})
 	case common.ProcessorAdd:
-		thread.processorAdd(request.Data.Module)
+		err := thread.processorAdd(&request.Data.Processor)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
 	case common.ProcessorRemove:
 		thread.processorRemove(request.Data.Module)
 	case common.ProcessorModuleGet:
 		modules := thread.getModules()
 		thread.respond(request.Source, &common.ProcessorResponse{Success: true, Data: modules, Nonce: request.Nonce})
+	case common.ProcessorModuleAdd:
+		err := thread.addModule(request.Identifiers.Processor, &request.Data.Module)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
+	case common.ProcessorModuleDelete:
+		err := thread.deleteModule(request.Identifiers.Processor, request.Identifiers.Module)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
 	case common.ProcessorModuleMount:
-		thread.mountModule(request.Identifiers.Module)
+		err := thread.mountModule(request.Identifiers.Module)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
 	case common.ProcessorModuleUnmount:
-		thread.unmountModule(request.Identifiers.Module)
+		err := thread.unmountModule(request.Identifiers.Module)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
 	case common.ProcessorClusterGet:
 		clusters, found := thread.getClusters(request.Identifiers.Module)
 		thread.respond(request.Source, &common.ProcessorResponse{Success: found, Data: clusters, Nonce: request.Nonce})
 	case common.ProcessorClusterMount:
-		thread.mountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
+		err := thread.mountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
 	case common.ProcessorClusterUnmount:
-		thread.unmountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
+		err := thread.unmountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
+		thread.respond(request.Source, &common.ProcessorResponse{Success: err == nil, Error: err, Nonce: request.Nonce})
 	}
 
 	thread.wg.Done()

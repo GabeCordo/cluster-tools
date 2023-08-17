@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/GabeCordo/etl-light/module"
 	"sync"
 	"time"
 )
@@ -18,6 +19,7 @@ type Processor struct {
 	Port       int
 	Status     Status
 	LastUpdate time.Time
+	Modules    []string
 }
 
 func newProcessor(host string, port int) *Processor {
@@ -25,14 +27,20 @@ func newProcessor(host string, port int) *Processor {
 
 	processor.Host = host
 	processor.Port = port
+	processor.Status = Active
 	processor.LastUpdate = time.Now()
+	processor.Modules = make([]string, 0)
 
 	return processor
 }
 
-type Cluster struct {
+type ClusterData struct {
 	Name    string
 	Mounted bool
+}
+
+type Cluster struct {
+	data ClusterData
 
 	Processors []*Processor
 	mutex      sync.Mutex
@@ -41,36 +49,48 @@ type Cluster struct {
 func newCluster(name string) *Cluster {
 	cluster := new(Cluster)
 
-	cluster.Name = name
-	cluster.Mounted = false
+	cluster.data.Name = name
+	cluster.data.Mounted = false
 	cluster.Processors = make([]*Processor, 0)
 
 	return cluster
 }
 
-type Module struct {
+type ModuleData struct {
 	Name    string
+	Version float64
+	Contact module.Contact
 	Mounted bool
+}
 
-	Clusters map[string]*Cluster
+type Module struct {
+	data ModuleData
+
+	clusters map[string]*Cluster
 	mutex    sync.RWMutex
 }
 
-func newModule(name string) *Module {
+func newModule(name string, version float64, contact ...module.Contact) *Module {
 	module := new(Module)
 
-	module.Name = name
-	module.Mounted = false
-	module.Clusters = make(map[string]*Cluster)
+	module.data.Name = name
+	module.data.Version = version
+
+	for _, c := range contact {
+		module.data.Contact = c
+	}
+
+	module.data.Mounted = false
+	module.clusters = make(map[string]*Cluster)
 
 	return module
 }
 
 type Table struct {
-	Processors      []*Processor
+	processors      []*Processor
 	NumOfProcessors uint8
 
-	Modules map[string]*Module
+	modules map[string]*Module
 	mutex   sync.RWMutex
 }
 
@@ -78,9 +98,9 @@ func NewTable() *Table {
 
 	table := new(Table)
 
-	table.Processors = make([]*Processor, 0)
+	table.processors = make([]*Processor, 0)
 	table.NumOfProcessors = 0
-	table.Modules = make(map[string]*Module)
+	table.modules = make(map[string]*Module)
 
 	return table
 }
