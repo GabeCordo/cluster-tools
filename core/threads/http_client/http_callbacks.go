@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/etl-light/core"
 	"github.com/GabeCordo/etl/core/components/processor"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"net/http"
@@ -12,76 +13,139 @@ import (
 	"time"
 )
 
-func (httpThread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
+// TODO : add comments to the else conditions where the http_processor may support
+
+func (thread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		if processors, success := common.GetProcessors(httpThread.C5, httpThread.ProcessorResponseTable); success {
-			processorBytes, err := json.Marshal(processors)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			_, err = w.Write(processorBytes)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		/* show the operator all the processors attached to the core */
+		thread.getProcessorCallback(w, r)
+	} else {
+		/* the http_client does not support any other methods on the processor */
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
+
+	processors, success := common.GetProcessors(thread.C5, thread.ProcessorResponseTable)
+
+	response := core.Response{Success: success}
+
+	if success {
+		response.Data = processors
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "GET" {
+		/* show the operator all the modules registered to the core */
+		thread.getModuleCallback(w, r)
+	} else if r.Method == "PUT" {
+		/* the operator shall be allowed to mount and unmount modules */
+		thread.putModuleCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-type ModuleRequestBody struct {
+func (thread *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
+
+	success, modules := common.GetModules(thread.C5, thread.ProcessorResponseTable)
+
+	response := core.Response{Success: success}
+	if success {
+		response.Data = modules
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+type ModuleBody struct {
 	ModuleName string `json:"module"`
 	Mounted    bool   `json:"mounted"`
 }
 
-func (httpThread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 
-	request := &ModuleRequestBody{}
+	request := &ModuleBody{}
 	err := json.NewDecoder(r.Body).Decode(request)
-	if (r.Method != "GET") && (err != nil) {
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if r.Method == "GET" {
-		success, modules := common.GetModules(httpThread.C5, httpThread.ProcessorResponseTable)
-		if !success {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		moduleBytes, err := json.Marshal(modules)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		_, err = w.Write(moduleBytes)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	} else if r.Method == "PUT" {
-		var success bool = false
-		if request.Mounted {
-			success, err = common.MountModule(httpThread.C5, httpThread.ProcessorResponseTable, request.ModuleName)
-		} else {
-			success, err = common.UnmountModule(httpThread.C5, httpThread.ProcessorResponseTable, request.ModuleName)
-		}
+	/* store the success of the request in this address */
+	var success bool = false
 
-		if errors.Is(err, processor.ModuleDoesNotExist) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if !success {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+	if request.Mounted {
+		success, err = common.MountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName)
+	} else {
+		success, err = common.UnmountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName)
+	}
+
+	response := core.Response{Success: success}
+
+	if errors.Is(err, processor.ModuleDoesNotExist) {
+		w.WriteHeader(http.StatusNotFound)
+	} else if !success {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) clusterCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "GET" {
+		/* the operator shall see clusters registered to the core */
+		thread.getClusterCallback(w, r)
+	} else if r.Method == "PUT" {
+		/* the operator shall mount clusters in the core */
+		/* the operator shall unmount clusters in the core */
+		thread.putClusterCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-type JSONResponse struct {
-	Status      int    `json:"status,omitempty"`
-	Description string `json:"description,omitempty"`
-	Data        any    `json:"data,omitempty"`
+func (thread *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	moduleName, foundModuleName := urlMapping["module"]
+
+	if foundModuleName {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	clusterList, success := common.GetClusters(thread.C5, thread.ProcessorResponseTable, moduleName[0])
+	if !success {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	response := core.Response{Success: success}
+
+	if success {
+		response.Data = clusterList
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
 }
 
 type ClusterConfigJSONBody struct {
@@ -90,51 +154,29 @@ type ClusterConfigJSONBody struct {
 	Mounted bool   `json:"mounted"`
 }
 
-func (httpThread *Thread) clusterCallback(w http.ResponseWriter, r *http.Request) {
-
-	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+func (thread *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request) {
 
 	request := &ClusterConfigJSONBody{}
 	err := json.NewDecoder(r.Body).Decode(request)
-	if (r.Method != "GET") && (err != nil) {
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if r.Method == "GET" {
-		if moduleName, foundModuleName := urlMapping["module"]; foundModuleName {
-			clusterList, success := common.GetClusters(httpThread.C5, httpThread.ProcessorResponseTable, moduleName[0])
-			if !success {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			clusterBytes, err := json.Marshal(clusterList)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			_, err = w.Write(clusterBytes)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-	} else if r.Method == "PUT" {
-		if request.Mounted {
-			success := common.MountCluster(httpThread.C5, httpThread.ProcessorResponseTable, request.Module, request.Cluster)
-			if !success {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		} else {
-			success := common.UnmountCluster(httpThread.C5, httpThread.ProcessorResponseTable, request.Module, request.Cluster)
-			if !success {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		}
+	response := core.Response{}
+
+	if request.Mounted {
+		response.Success = common.MountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster)
 	} else {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		response.Success = common.UnmountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster)
 	}
+
+	if !response.Success {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
 }
 
 type SupervisorConfigJSONBody struct {
@@ -150,7 +192,7 @@ type SupervisorProvisionJSONResponse struct {
 	Supervisor uint64 `json:"id,omitempty"`
 }
 
-func (httpThread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
 
 	// TODO : fix
 	//urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
@@ -178,7 +220,7 @@ func (httpThread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Requ
 	//				return
 	//			}
 	//
-	//			supervisorInst, success := common.GetSupervisor(httpThread.C5, httpThread.ProcessorResponseTable,
+	//			supervisorInst, success := common.GetSupervisor(thread.C5, thread.ProcessorResponseTable,
 	//				moduleName[0], clusterName[0], supervisorId)
 	//			if !success {
 	//				w.WriteHeader(http.StatusBadRequest)
@@ -196,7 +238,7 @@ func (httpThread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Requ
 	//				w.WriteHeader(http.StatusInternalServerError)
 	//			}
 	//		} else {
-	//			supervisors, success := common.GetSupervisors(httpThread.C5, httpThread.ProcessorResponseTable, moduleName[0], clusterName[0])
+	//			supervisors, success := common.GetSupervisors(thread.C5, thread.ProcessorResponseTable, moduleName[0], clusterName[0])
 	//			if !success {
 	//				w.WriteHeader(http.StatusBadRequest)
 	//				return
@@ -216,8 +258,8 @@ func (httpThread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Requ
 	//	}
 	//} else if r.Method == "POST" {
 	//	if supervisorId, success, description := common.SupervisorProvision(
-	//		httpThread.C5,
-	//		httpThread.ProcessorResponseTable,
+	//		thread.C5,
+	//		thread.ProcessorResponseTable,
 	//		request.Module,
 	//		request.Cluster,
 	//		request.Metadata,
@@ -237,7 +279,7 @@ func (httpThread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Requ
 	//}
 }
 
-func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
@@ -260,7 +302,7 @@ func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request)
 		clusterName, foundClusterName := urlMapping["config"]
 
 		if foundClusterName {
-			if config, found := common.GetConfigFromDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], clusterName[0]); found {
+			if config, found := common.GetConfigFromDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], clusterName[0]); found {
 				bytes, _ := json.Marshal(config)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -269,7 +311,7 @@ func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request)
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			if configs, found := common.GetConfigsFromDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0]); found {
+			if configs, found := common.GetConfigsFromDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0]); found {
 				bytes, _ := json.Marshal(configs)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -281,13 +323,13 @@ func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request)
 
 	} else if r.Method == "POST" {
 
-		isOk := common.StoreConfigInDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], *request)
+		isOk := common.StoreConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusConflict)
 		}
 
 	} else if r.Method == "PUT" {
-		isOk := common.ReplaceConfigInDatabase(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], *request)
+		isOk := common.ReplaceConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -296,7 +338,7 @@ func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request)
 		clusterName, foundClusterName := urlMapping["config"]
 
 		if foundClusterName {
-			if isOk := common.DeleteConfigInDatabase(httpThread.C1, httpThread.DatabaseResponseTable,
+			if isOk := common.DeleteConfigInDatabase(thread.C1, thread.DatabaseResponseTable,
 				moduleName[0], clusterName[0]); !isOk {
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -309,7 +351,7 @@ func (httpThread *Thread) configCallback(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (httpThread *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
@@ -319,7 +361,7 @@ func (httpThread *Thread) statisticCallback(w http.ResponseWriter, r *http.Reque
 		clusterName, clusterNameFound := urlMapping["cluster"]
 
 		if moduleNameFound && clusterNameFound {
-			statistics, found := common.FindStatistics(httpThread.C1, httpThread.DatabaseResponseTable, moduleName[0], clusterName[0])
+			statistics, found := common.FindStatistics(thread.C1, thread.DatabaseResponseTable, moduleName[0], clusterName[0])
 			if found {
 				bytes, err := json.Marshal(statistics)
 				if err == nil {
@@ -349,7 +391,7 @@ type DebugJSONResponse struct {
 	Success  bool          `json:"success"`
 }
 
-func (httpThread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
 
 	var request DebugJSONBody
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -366,11 +408,11 @@ func (httpThread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) 
 		// treat this as a probe to the http server
 	} else if r.Method == "POST" {
 		if request.Action == "shutdown" {
-			common.ShutdownCore(httpThread.Interrupt)
+			common.ShutdownCore(thread.Interrupt)
 			// TODO : fix
 			//} else if request.Action == "ping" {
 			//	startTime := time.Now()
-			//	success := common.PingNodeChannels(httpThread.logger, httpThread.C1, httpThread.DatabaseResponseTable, httpThread.C5, httpThread.ProcessorResponseTable)
+			//	success := common.PingNodeChannels(thread.logger, thread.C1, thread.DatabaseResponseTable, thread.C5, thread.ProcessorResponseTable)
 			//	response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
 			//	bytes, err := json.Marshal(response)
 			//	if err == nil {
@@ -381,7 +423,7 @@ func (httpThread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) 
 			//		w.WriteHeader(http.StatusInternalServerError)
 			//	}
 		} else if request.Action == "debug" {
-			description := common.ToggleDebugMode(httpThread.logger)
+			description := common.ToggleDebugMode(thread.logger)
 			if _, err := w.Write([]byte(description)); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
@@ -394,7 +436,7 @@ func (httpThread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (httpThread *Thread) corsCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) corsCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 	}

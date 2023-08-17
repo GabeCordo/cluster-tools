@@ -3,7 +3,7 @@ package messenger
 import (
 	"errors"
 	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl/core/utils"
+	"github.com/GabeCordo/etl-light/utils"
 	"sync"
 )
 

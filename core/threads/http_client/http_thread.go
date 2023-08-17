@@ -10,40 +10,37 @@ import (
 	"time"
 )
 
-func (httpThread *Thread) Setup() {
+func (thread *Thread) Setup() {
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/processor", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.processorCallback(w, r)
+		thread.processorCallback(w, r)
 	})
 
 	mux.HandleFunc("/module", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.moduleCallback(w, r)
+		thread.moduleCallback(w, r)
 	})
 
 	mux.HandleFunc("/cluster", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.clusterCallback(w, r)
+		thread.clusterCallback(w, r)
 	})
 
 	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.supervisorCallback(w, r)
+		thread.supervisorCallback(w, r)
 	})
 
 	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.statisticCallback(w, r)
+		thread.statisticCallback(w, r)
 	})
 
 	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.configCallback(w, r)
-	})
-
-	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
-		httpThread.debugCallback(w, r)
+		thread.configCallback(w, r)
 	})
 
 	// TODO - explore this more, fucking cool
 	if common.GetConfigInstance().Debug {
+		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) { thread.debugCallback(w, r) })
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
@@ -52,45 +49,45 @@ func (httpThread *Thread) Setup() {
 	}
 
 	if common.GetConfigInstance().EnableCors {
-		mux.HandleFunc("/cors", httpThread.corsCallback)
+		mux.HandleFunc("/cors", thread.corsCallback)
 	}
 
-	httpThread.mux = mux
+	thread.mux = mux
 }
 
-func (httpThread *Thread) Start() {
-	httpThread.wg.Add(1)
+func (thread *Thread) Start() {
+	thread.wg.Add(1)
 
 	go func(thread *Thread) {
 		net := common.GetConfigInstance().Net.Client
-		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), httpThread.mux)
+		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), thread.mux)
 		if err != nil {
 			thread.Interrupt <- threads.Panic
 		}
-	}(httpThread)
+	}(thread)
 
 	go func() {
-		for supervisorResponse := range httpThread.C6 {
-			if !httpThread.accepting {
+		for supervisorResponse := range thread.C6 {
+			if !thread.accepting {
 				break
 			}
-			httpThread.ProcessorResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
+			thread.ProcessorResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
 		}
 	}()
 
 	go func() {
-		for databaseResponse := range httpThread.C2 {
-			if !httpThread.accepting {
+		for databaseResponse := range thread.C2 {
+			if !thread.accepting {
 				break
 			}
-			httpThread.DatabaseResponseTable.Write(databaseResponse.Nonce, databaseResponse)
+			thread.DatabaseResponseTable.Write(databaseResponse.Nonce, databaseResponse)
 		}
 	}()
 
-	httpThread.wg.Wait()
+	thread.wg.Wait()
 }
 
-func (httpThread *Thread) Receive(module threads.Module, nonce uint32, timeout ...float64) (any, bool) {
+func (thread *Thread) Receive(module threads.Module, nonce uint32, timeout ...float64) (any, bool) {
 	startTime := time.Now()
 	flag := false
 
@@ -101,13 +98,13 @@ func (httpThread *Thread) Receive(module threads.Module, nonce uint32, timeout .
 		}
 
 		if module == threads.Provisioner {
-			if value, found := httpThread.supervisorResponses[nonce]; found {
+			if value, found := thread.supervisorResponses[nonce]; found {
 				response = value
 				flag = true
 				break
 			}
 		} else if module == threads.Database {
-			if value, found := httpThread.databaseResponses[nonce]; found {
+			if value, found := thread.databaseResponses[nonce]; found {
 				response = value
 				flag = true
 				break
@@ -120,26 +117,26 @@ func (httpThread *Thread) Receive(module threads.Module, nonce uint32, timeout .
 	return response, flag
 }
 
-func (httpThread *Thread) Send(module threads.Module, request any) (any, bool) {
-	httpThread.mutex.Lock()
-	httpThread.counter++
+func (thread *Thread) Send(module threads.Module, request any) (any, bool) {
+	thread.mutex.Lock()
+	thread.counter++
 
-	nonce := httpThread.counter // make a copy of the current counter
+	nonce := thread.counter // make a copy of the current counter
 	if module == threads.Provisioner {
 		req := (request).(common.ProcessorRequest)
 		req.Nonce = nonce
-		httpThread.C5 <- req
+		thread.C5 <- req
 	} else if module == threads.Database {
 		req := (request).(threads.DatabaseRequest)
 		req.Nonce = nonce
-		httpThread.C1 <- req
+		thread.C1 <- req
 	}
 
-	httpThread.mutex.Unlock()
-	return httpThread.Receive(module, nonce, threads.DefaultTimeout)
+	thread.mutex.Unlock()
+	return thread.Receive(module, nonce, threads.DefaultTimeout)
 }
 
-func (httpThread *Thread) Teardown() {
+func (thread *Thread) Teardown() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
@@ -147,8 +144,8 @@ func (httpThread *Thread) Teardown() {
 		cancel()
 	}()
 
-	err := httpThread.server.Shutdown(ctx)
+	err := thread.server.Shutdown(ctx)
 	if err != nil {
-		httpThread.Interrupt <- threads.Panic
+		thread.Interrupt <- threads.Panic
 	}
 }

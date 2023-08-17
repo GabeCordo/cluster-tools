@@ -3,7 +3,7 @@ package common
 import (
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/module"
-	"github.com/GabeCordo/etl-light/processor_i"
+	processor_i "github.com/GabeCordo/etl-light/processor"
 	"github.com/GabeCordo/etl-light/threads"
 )
 

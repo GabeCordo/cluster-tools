@@ -3,8 +3,8 @@ package supervisor
 import (
 	"errors"
 	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/threads/common"
-	"github.com/GabeCordo/etl/core/utils"
 	"sync"
 )
 

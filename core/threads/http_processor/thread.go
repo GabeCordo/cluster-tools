@@ -21,9 +21,24 @@ func (thread *Thread) Setup() {
 		thread.moduleCallback(w, r)
 	})
 
-	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
-		thread.debugCallback(w, r)
+	mux.HandleFunc("/cache", func(w http.ResponseWriter, r *http.Request) {
+		thread.cacheCallback(w, r)
 	})
+
+	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
+		thread.supervisorCallback(w, r)
+	})
+
+	mux.HandleFunc("/log", func(w http.ResponseWriter, r *http.Request) {
+		thread.logCallback(w, r)
+	})
+
+	/* the debug endpoint is only enabled when debug is set to true */
+	if common.GetConfigInstance().Debug {
+		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
+			thread.debugCallback(w, r)
+		})
+	}
 
 	thread.mux = mux
 }

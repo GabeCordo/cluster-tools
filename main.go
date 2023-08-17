@@ -16,7 +16,5 @@ func main() {
 	cli.AddCommand("start", controllers.StartCommand{}).SetCategory("utils")
 	cli.AddCommand("init", controllers.InitCommand{}).SetCategory("utils")
 
-	cli.AddCommand("module", controllers.ModuleCommand{}).SetCategory("modules")
-
 	cli.Run()
 }

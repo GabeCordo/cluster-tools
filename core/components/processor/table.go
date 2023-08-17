@@ -3,7 +3,7 @@ package processor
 import (
 	"fmt"
 	"github.com/GabeCordo/etl-light/module"
-	"github.com/GabeCordo/etl-light/processor_i"
+	processor_i "github.com/GabeCordo/etl-light/processor"
 )
 
 func (table *Table) AddProcessor(cfg *processor_i.Config) error {

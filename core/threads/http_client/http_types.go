@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/threads/common"
-	"github.com/GabeCordo/etl/core/utils"
 	"net/http"
 	"sync"
 )

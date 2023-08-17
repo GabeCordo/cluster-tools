@@ -2,7 +2,7 @@ package processor
 
 import (
 	"github.com/GabeCordo/etl-light/module"
-	processor_i "github.com/GabeCordo/etl-light/processor_i"
+	processor_i "github.com/GabeCordo/etl-light/processor"
 	"github.com/GabeCordo/etl/core/components/processor"
 )
 

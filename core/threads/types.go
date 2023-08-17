@@ -2,6 +2,7 @@ package threads
 
 import (
 	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/threads/cache"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"github.com/GabeCordo/etl/core/threads/database"
@@ -10,18 +11,6 @@ import (
 	"github.com/GabeCordo/etl/core/threads/messenger"
 	"github.com/GabeCordo/etl/core/threads/processor"
 	"github.com/GabeCordo/etl/core/threads/supervisor"
-	"github.com/GabeCordo/etl/core/utils"
-	"os"
-)
-
-var (
-	userCacheDir, _         = os.UserCacheDir()
-	DefaultFrameworkFolder  = userCacheDir + "/etl/"
-	DefaultModulesFolder    = DefaultFrameworkFolder + "modules/"
-	DefaultConfigsFolder    = DefaultFrameworkFolder + "configs/"
-	DefaultConfigFile       = DefaultFrameworkFolder + "global.etl.yml"
-	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
-	DefaultStatisticsFolder = DefaultFrameworkFolder + "statistics/"
 )
 
 type Core struct {

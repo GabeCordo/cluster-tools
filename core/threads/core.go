@@ -2,7 +2,9 @@ package threads
 
 import (
 	"fmt"
+	core_i "github.com/GabeCordo/etl-light/core"
 	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/threads/cache"
 	"github.com/GabeCordo/etl/core/threads/common"
 	"github.com/GabeCordo/etl/core/threads/database"
@@ -11,7 +13,6 @@ import (
 	"github.com/GabeCordo/etl/core/threads/messenger"
 	"github.com/GabeCordo/etl/core/threads/processor"
 	"github.com/GabeCordo/etl/core/threads/supervisor"
-	"github.com/GabeCordo/etl/core/utils"
 	"log"
 	"os"
 	"os/signal"
@@ -100,7 +101,7 @@ func NewCore(configPath string) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
-	core.DatabaseThread, err = database.NewThread(databaseLogger, DefaultConfigsFolder, DefaultStatisticsFolder,
+	core.DatabaseThread, err = database.NewThread(databaseLogger, core_i.DefaultConfigsFolder, core_i.DefaultStatisticsFolder,
 		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C7, core.C8)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
+	"github.com/GabeCordo/etl-light/core"
 	"github.com/GabeCordo/etl/core/threads"
 	"log"
 	"os"
@@ -15,12 +16,12 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 
 	// check to see that the etl threads has been initialized with the required files
 	// if it has not, fail and tell the operator to call the 'etl init' command
-	if _, err := os.Stat(threads.DefaultConfigsFolder); err != nil {
+	if _, err := os.Stat(core.DefaultConfigsFolder); err != nil {
 		fmt.Println("the etl threads has never been initialized, run 'etl init'")
 		return commandline.Terminate
 	}
 
-	c, err := threads.NewCore(threads.DefaultConfigFile)
+	c, err := threads.NewCore(core.DefaultConfigFile)
 	if err != nil {
 		log.Panic(err.Error())
 	}

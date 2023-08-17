@@ -3,110 +3,207 @@ package http_processor
 import (
 	"encoding/json"
 	"errors"
-	"github.com/GabeCordo/etl-light/module"
-	"github.com/GabeCordo/etl-light/processor_i"
+	"fmt"
+	"github.com/GabeCordo/etl-light/core"
+	processor_i "github.com/GabeCordo/etl-light/processor"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/components/processor"
 	"github.com/GabeCordo/etl/core/threads/common"
-	"github.com/GabeCordo/etl/core/utils"
 	"net/http"
 	"net/url"
 )
 
 func (thread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 
-	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
-
 	if r.Method == "POST" {
-		cfg := &processor_i.Config{}
-		if err := json.NewDecoder(r.Body).Decode(cfg); err == nil {
-			success, err := common.AddProcessor(thread.C12, thread.ProcessorResponseTable, cfg)
-			if !success && errors.Is(err, processor.AlreadyExists) {
-				w.WriteHeader(http.StatusConflict)
-			} else if !success {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-
-			if err != nil {
-				w.Write([]byte(err.Error()))
-			}
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
+		/* the operator wants to register a new processor to the core */
+		thread.postProcessorCallback(w, r)
 	} else if r.Method == "DELETE" {
-
-		processorName, processorNameFound := urlMapping["processor"]
-		if !processorNameFound {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		err := common.DeleteProcessor(thread.C12, thread.ProcessorResponseTable, processorName[0])
-		if errors.Is(err, processor.DoesNotExist) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if errors.Is(err, utils.NoResponseReceived) {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		}
+		/* the operator wants to delete a processor from the server */
+		thread.deleteProcessorCallback(w, r)
 	} else {
+		/* we don't support the method for this resource */
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (thread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Request) {
+
+	request, err := core.GetRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	cfg := &processor_i.Config{Host: request.Host, Port: request.Port}
+	success, err := common.AddProcessor(thread.C12, thread.ProcessorResponseTable, cfg)
+
+	if errors.Is(err, processor.AlreadyExists) {
+		w.WriteHeader(http.StatusConflict)
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	response := core.Response{Success: success}
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) deleteProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
-
 	processorName, processorNameFound := urlMapping["processor"]
-
 	if !processorNameFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	err := common.DeleteProcessor(thread.C12, thread.ProcessorResponseTable, processorName[0])
+
+	response := core.Response{Success: err == nil}
+
+	if errors.Is(err, processor.DoesNotExist) {
+		w.WriteHeader(http.StatusNotFound)
+	} else if errors.Is(err, utils.NoResponseReceived) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method == "POST" {
-		cfg := &module.Config{}
-		if err := json.NewDecoder(r.Body).Decode(cfg); err == nil {
-			success, err := common.AddModule(thread.C12, thread.ProcessorResponseTable, processorName[0], cfg)
-			if !success && errors.Is(err, processor.ModuleAlreadyRegistered) {
-				/* the module is already registered to the processor */
-				w.WriteHeader(http.StatusConflict)
-			} else if !success && errors.Is(err, processor.DoesNotExist) {
-				/* the processor does not exist and can not bind a module */
-				w.WriteHeader(http.StatusBadRequest)
-			} else if !success {
-				w.WriteHeader(http.StatusBadRequest)
-			}
-
-			if err != nil {
-				w.Write([]byte(err.Error()))
-			}
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
+		/* operator wishes to add a new module to a processor */
+		thread.postModuleCallback(w, r)
 	} else if r.Method == "DELETE" {
-
-		processorName, processorNameFound := urlMapping["processor"]
-		moduleName, moduleNameFound := urlMapping["module"]
-
-		if !processorNameFound || !moduleNameFound {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		_, err := common.DeleteModule(thread.C12, thread.ProcessorResponseTable, processorName[0], moduleName[0])
-		if errors.Is(err, processor.DoesNotExist) || errors.Is(err, processor.ModuleDoesNotExist) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if errors.Is(err, utils.NoResponseReceived) {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		}
+		/* operator wishes to remove an existing module from a processor */
+		thread.deleteModuleCallback(w, r)
 	} else {
+		/* the method is not supported for this resource type */
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request) {
+
+	request, err := core.GetRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	processorName := fmt.Sprintf("%s:%d", request.Host, request.Port)
+	success, err := common.AddModule(thread.C12, thread.ProcessorResponseTable, processorName, &request.Module.Config)
+
+	response := core.Response{Success: success}
+
+	if !success && errors.Is(err, processor.ModuleAlreadyRegistered) {
+		/* the module is already registered to the processor */
+		w.WriteHeader(http.StatusConflict)
+	} else if !success && errors.Is(err, processor.DoesNotExist) {
+		/* the processor does not exist and can not bind a module */
+		w.WriteHeader(http.StatusBadRequest)
+	} else if !success {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	processorName, processorNameFound := urlMapping["processor"]
+	moduleName, moduleNameFound := urlMapping["module"]
+
+	if !processorNameFound || !moduleNameFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err := common.DeleteModule(thread.C12, thread.ProcessorResponseTable, processorName[0], moduleName[0])
+
+	response := core.Response{Success: err == nil}
+
+	if errors.Is(err, processor.DoesNotExist) || errors.Is(err, processor.ModuleDoesNotExist) {
+		w.WriteHeader(http.StatusNotFound)
+	} else if errors.Is(err, utils.NoResponseReceived) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) cacheCallback(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		/* the program wants to grab an existing cached value */
+		thread.getCacheCallback(w, r)
+	} else if r.Method == "POST" {
+		/* the program wants to create a new cached value */
+		thread.postCacheCallback(w, r)
+	} else {
+		/* the endpoint does not support any other methods on the resource */
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) getCacheCallback(w http.ResponseWriter, r *http.Request) {
+	// TODO
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+func (thread *Thread) postCacheCallback(w http.ResponseWriter, r *http.Request) {
+	// TODO
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+func (thread *Thread) logCallback(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		/* the program wants to log a new event */
+		thread.postLogCallback(w, r)
+	} else {
+		/* the endpoint does not support any other methods on the resource */
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) postLogCallback(w http.ResponseWriter, r *http.Request) {
+	// TODO
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "PUT" {
+		/* the processor requests to update a provisioned supervisor */
+
+	} else {
+		/* the http_processor cannot call any other methods on this resource */
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) putSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+	// TODO
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
 func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {

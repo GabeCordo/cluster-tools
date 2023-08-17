@@ -3,9 +3,9 @@ package database
 import (
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/components/database"
 	"github.com/GabeCordo/etl/core/threads/common"
-	"github.com/GabeCordo/etl/core/utils"
 	"log"
 	"math/rand"
 	"time"

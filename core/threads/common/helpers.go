@@ -4,11 +4,11 @@ import (
 	"errors"
 	"github.com/GabeCordo/etl-light/components/cluster"
 	"github.com/GabeCordo/etl-light/module"
-	processor_i "github.com/GabeCordo/etl-light/processor_i"
+	processor_i "github.com/GabeCordo/etl-light/processor"
 	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/etl-light/utils"
 	"github.com/GabeCordo/etl/core/components/database"
 	"github.com/GabeCordo/etl/core/components/processor"
-	"github.com/GabeCordo/etl/core/utils"
 	"math/rand"
 )
 
