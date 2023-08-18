@@ -12,7 +12,7 @@ func (thread *Thread) Start() {
 
 	go func() {
 		// request coming from http_server
-		for request := range thread.C14 {
+		for request := range thread.C13 {
 			if !thread.accepting {
 				break
 			}
@@ -26,18 +26,10 @@ func (thread *Thread) Start() {
 	// INCOMING RESPONSES
 
 	go func() {
-		// request coming from http_server
-		for response := range thread.C8 {
+		// response coming from database thread
+		for response := range thread.C16 {
 			// if this doesn't spawn its own thread we will be left waiting
 			thread.DatabaseResponseTable.Write(response.Nonce, response)
-		}
-	}()
-
-	go func() {
-		// request coming from http_server
-		for response := range thread.C10 {
-			// if this doesn't spawn its own thread we will be left waiting
-			thread.CacheResponseTable.Write(response.Nonce, response)
 		}
 	}()
 

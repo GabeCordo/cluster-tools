@@ -97,7 +97,7 @@ func (thread *Thread) Receive(module threads.Module, nonce uint32, timeout ...fl
 			break
 		}
 
-		if module == threads.Provisioner {
+		if module == threads.Processor {
 			if value, found := thread.supervisorResponses[nonce]; found {
 				response = value
 				flag = true
@@ -122,7 +122,7 @@ func (thread *Thread) Send(module threads.Module, request any) (any, bool) {
 	thread.counter++
 
 	nonce := thread.counter // make a copy of the current counter
-	if module == threads.Provisioner {
+	if module == threads.Processor {
 		req := (request).(common.ProcessorRequest)
 		req.Nonce = nonce
 		thread.C5 <- req

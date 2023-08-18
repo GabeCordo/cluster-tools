@@ -649,6 +649,74 @@ func DeleteModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTab
 //	return provisionerResponse.Success, provisionerResponse.Description
 //}
 
+func FetchFromCache(pipe chan<- threads.CacheRequest, responseTable *utils.ResponseTable,
+	key string) (value any, found bool) {
+
+	request := threads.CacheRequest{
+		Action:     threads.CacheLoadFrom,
+		Identifier: key,
+		Nonce:      rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+
+	if didTimeout {
+		return nil, false
+	}
+
+	response := (rsp).(threads.CacheResponse)
+
+	return response.Data, response.Success
+}
+
+func StoreInCache(pipe chan<- threads.CacheRequest, responseTable *utils.ResponseTable,
+	data any, expiry float64) (identifier string, success bool) {
+
+	request := threads.CacheRequest{
+		Action:    threads.CacheSaveIn,
+		Data:      data,
+		Nonce:     rand.Uint32(),
+		ExpiresIn: expiry,
+	}
+	pipe <- request
+
+	rsp, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+
+	if didTimeout {
+		success = false
+	} else {
+
+	}
+
+	response := (rsp).(threads.CacheResponse)
+	return response.Identifier, response.Success
+}
+
+func SwapInCache(pipe chan<- threads.CacheRequest, responseTable *utils.ResponseTable,
+	key string, data any) (success bool) {
+
+	request := threads.CacheRequest{
+		Action:     threads.CacheSaveIn,
+		Data:       data,
+		Identifier: key,
+		Nonce:      rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+
+	if didTimeout {
+		return false
+	}
+
+	response := (rsp).(threads.CacheResponse)
+	return response.Success
+}
+
 func ToggleDebugMode(logger *utils.Logger) (description string) {
 
 	cfg := GetConfigInstance()

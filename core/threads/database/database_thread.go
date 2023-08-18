@@ -36,6 +36,8 @@ func (databaseThread *Thread) Teardown() {
 
 func (databaseThread *Thread) Start() {
 
+	// LISTEN FOR INCOMING REQUESTS
+
 	go func() {
 		// request from http_server
 		for request := range databaseThread.C1 {
@@ -49,15 +51,29 @@ func (databaseThread *Thread) Start() {
 	}()
 	go func() {
 		// request from supervisor
-		for request := range databaseThread.C7 {
+		for request := range databaseThread.C11 {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = threads.Provisioner
+			request.Origin = threads.HttpProcessor
 			databaseThread.wg.Add(1)
 			databaseThread.ProcessIncomingRequest(&request)
 		}
 	}()
+	go func() {
+		// request from supervisor
+		for request := range databaseThread.C15 {
+			if !databaseThread.accepting {
+				break
+			}
+			request.Origin = threads.Supervisor
+			databaseThread.wg.Add(1)
+			databaseThread.ProcessIncomingRequest(&request)
+		}
+	}()
+
+	// LISTEN FOR INCOMING RESPONSES
+
 	go func() {
 		for response := range databaseThread.C4 {
 			if !databaseThread.accepting {
@@ -91,9 +107,11 @@ func (databaseThread *Thread) Respond(request *threads.DatabaseRequest, response
 	case threads.HttpClient:
 		databaseThread.C2 <- *response
 		break
-	case threads.Provisioner:
-		databaseThread.C8 <- *response
+	case threads.HttpProcessor:
+		databaseThread.C12 <- *response
 		break
+	case threads.Supervisor:
+		databaseThread.C16 <- *response
 	default:
 		success = false
 	}
@@ -250,15 +268,16 @@ func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.Database
 
 func (databaseThread *Thread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
 
-	if common.GetConfigInstance().Debug {
-		databaseThread.logger.Println("received ping over C7")
-	}
-
-	response := threads.DatabaseResponse{
-		Nonce:   request.Nonce,
-		Success: true,
-	}
-	databaseThread.C8 <- response
+	// TODO : fix
+	//if common.GetConfigInstance().Debug {
+	//	databaseThread.logger.Println("received ping over C15")
+	//}
+	//
+	//response := threads.DatabaseResponse{
+	//	Nonce:   request.Nonce,
+	//	Success: true,
+	//}
+	//databaseThread.C <- response
 }
 
 func (databaseThread *Thread) ProcessIncomingResponse(response *threads.MessengerResponse) {

@@ -128,7 +128,7 @@ func (thread *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request)
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 	moduleName, foundModuleName := urlMapping["module"]
 
-	if foundModuleName {
+	if !foundModuleName {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

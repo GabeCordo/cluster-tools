@@ -35,7 +35,7 @@ func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Reque
 	}
 
 	cfg := &processor_i.Config{Host: request.Host, Port: request.Port}
-	success, err := common.AddProcessor(thread.C12, thread.ProcessorResponseTable, cfg)
+	success, err := common.AddProcessor(thread.C7, thread.ProcessorResponseTable, cfg)
 
 	if errors.Is(err, processor.AlreadyExists) {
 		w.WriteHeader(http.StatusConflict)
@@ -61,7 +61,7 @@ func (thread *Thread) deleteProcessorCallback(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err := common.DeleteProcessor(thread.C12, thread.ProcessorResponseTable, processorName[0])
+	err := common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, processorName[0])
 
 	response := core.Response{Success: err == nil}
 
@@ -102,7 +102,7 @@ func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request)
 	}
 
 	processorName := fmt.Sprintf("%s:%d", request.Host, request.Port)
-	success, err := common.AddModule(thread.C12, thread.ProcessorResponseTable, processorName, &request.Module.Config)
+	success, err := common.AddModule(thread.C7, thread.ProcessorResponseTable, processorName, &request.Module.Config)
 
 	response := core.Response{Success: success}
 
@@ -135,7 +135,7 @@ func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err := common.DeleteModule(thread.C12, thread.ProcessorResponseTable, processorName[0], moduleName[0])
+	_, err := common.DeleteModule(thread.C7, thread.ProcessorResponseTable, processorName[0], moduleName[0])
 
 	response := core.Response{Success: err == nil}
 
@@ -144,7 +144,7 @@ func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Reques
 	} else if errors.Is(err, utils.NoResponseReceived) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	
+
 	if err != nil {
 		response.Description = err.Error()
 	}
@@ -160,6 +160,9 @@ func (thread *Thread) cacheCallback(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 		/* the program wants to create a new cached value */
 		thread.postCacheCallback(w, r)
+	} else if r.Method == "PUT" {
+		/* the program wants to swap an existing cached value */
+		thread.putCacheCallback(w, r)
 	} else {
 		/* the endpoint does not support any other methods on the resource */
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -167,13 +170,67 @@ func (thread *Thread) cacheCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (thread *Thread) getCacheCallback(w http.ResponseWriter, r *http.Request) {
-	// TODO
-	w.WriteHeader(http.StatusNotImplemented)
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	key, keyFound := urlMapping["key"]
+
+	if !keyFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	value, found := common.FetchFromCache(thread.C9, thread.CacheResponseTable, key[0])
+
+	response := core.Response{Success: found}
+
+	if found {
+		response.Data = value
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+type CacheBody struct {
+	Value  any     `json:"value"`
+	Expiry float64 `json:"expiry"`
+	Key    string  `json:"key,omitempty"`
 }
 
 func (thread *Thread) postCacheCallback(w http.ResponseWriter, r *http.Request) {
-	// TODO
-	w.WriteHeader(http.StatusNotImplemented)
+
+	request := &CacheBody{}
+	json.NewDecoder(r.Body).Decode(request)
+
+	expiry := common.GetConfigInstance().Cache.Expiry
+	if request.Expiry != 0.0 {
+		expiry = request.Expiry
+	}
+
+	identifier, success := common.StoreInCache(thread.C9, thread.CacheResponseTable, request.Value, expiry)
+
+	response := core.Response{Success: success, Data: identifier}
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) putCacheCallback(w http.ResponseWriter, r *http.Request) {
+
+	request := &CacheBody{}
+	json.NewDecoder(r.Body).Decode(request)
+
+	success := common.SwapInCache(thread.C9, thread.CacheResponseTable, request.Key, request.Value)
+
+	response := core.Response{Success: success}
+
+	if !success {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
 }
 
 func (thread *Thread) logCallback(w http.ResponseWriter, r *http.Request) {

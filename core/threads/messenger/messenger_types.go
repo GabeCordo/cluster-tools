@@ -12,7 +12,7 @@ type Thread struct {
 
 	C3  <-chan threads.MessengerRequest  // Messenger is receiving threads form the Database
 	C4  chan<- threads.MessengerResponse // Messenger is sending responses to the Database
-	C11 <-chan threads.MessengerRequest  // Messenger is receiving requests from the Provisioner
+	C17 <-chan threads.MessengerRequest  // Messenger is receiving requests from the Provisioner
 
 	logger *utils.Logger
 
@@ -36,7 +36,7 @@ func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 2")
 	}
-	messenger.C11, ok = (channels[3]).(chan threads.MessengerRequest)
+	messenger.C17, ok = (channels[3]).(chan threads.MessengerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MesengerRequest' in index 3")
 	}

@@ -63,11 +63,12 @@ func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
 		record.created = time.Now()
 
 		// if we are provided with a new expiry time, use that, else re-use the old one
-		if len(expiry) == 1 {
-			record.expiry = expiry[0]
-		}
+		// TODO : I don't really see a use for this? - I could be wrong in the future
+		//if len(expiry) == 1 {
+		//	record.expiry = expiry[0]
+		//}
 
-		cache.records.Store(identifier, record)
+		cache.records.Swap(identifier, record)
 		return true
 	} else {
 		// no record exists with that identifier, there's nothing to "swap"

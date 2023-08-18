@@ -16,8 +16,11 @@ type Thread struct {
 	C3 chan<- threads.MessengerRequest  // Database is sending threads to the Messenger
 	C4 <-chan threads.MessengerResponse // Database is receiving responses from the Messenger
 
-	C7 <-chan threads.DatabaseRequest  // Database is receiving threads from the Supervisor
-	C8 chan<- threads.DatabaseResponse // Database is sending responses to the Supervisor
+	C11 <-chan threads.DatabaseRequest  // Database is receiving req from the processor_thread
+	C12 chan<- threads.DatabaseResponse // Database is sending rsp to the processor_thread
+
+	C15 <-chan threads.DatabaseRequest  // Database is receiving req from the supervisor_thread
+	C16 chan<- threads.DatabaseResponse // Database is sending rsp from the supervisor_thread
 
 	messengerResponseTable *utils.ResponseTable
 
@@ -57,13 +60,21 @@ func NewThread(logger *utils.Logger, configPath, statisticPath string, channels 
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 4")
 	}
-	database.C7, ok = (channels[5]).(chan threads.DatabaseRequest)
+	database.C11, ok = (channels[5]).(chan threads.DatabaseRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 5")
 	}
-	database.C8, ok = (channels[6]).(chan threads.DatabaseResponse)
+	database.C12, ok = (channels[6]).(chan threads.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
+	}
+	database.C15, ok = (channels[7]).(chan threads.DatabaseRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseRequest' in index 7")
+	}
+	database.C16, ok = (channels[8]).(chan threads.DatabaseResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseResponse' in index 8")
 	}
 
 	database.messengerResponseTable = utils.NewResponseTable()

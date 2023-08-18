@@ -26,22 +26,24 @@ const (
 func NewCore(configPath string) (*Core, error) {
 	core := new(Core)
 
+	core.interrupt = make(chan threads.InterruptEvent, 10)
 	core.C1 = make(chan threads.DatabaseRequest, 10)
 	core.C2 = make(chan threads.DatabaseResponse, 10)
 	core.C3 = make(chan threads.MessengerRequest, 10)
 	core.C4 = make(chan threads.MessengerResponse, 10)
 	core.C5 = make(chan common.ProcessorRequest, 10)
 	core.C6 = make(chan common.ProcessorResponse, 10)
-	core.C7 = make(chan threads.DatabaseRequest, 10)
-	core.C8 = make(chan threads.DatabaseResponse, 10)
+	core.C7 = make(chan common.ProcessorRequest, 10)
+	core.C8 = make(chan common.ProcessorResponse, 10)
 	core.C9 = make(chan threads.CacheRequest, 10)
 	core.C10 = make(chan threads.CacheResponse, 10)
-	core.C11 = make(chan threads.MessengerRequest, 10)
-	core.C12 = make(chan common.ProcessorRequest, 10)
-	core.C13 = make(chan common.ProcessorResponse, 10)
-	core.C14 = make(chan common.SupervisorRequest, 10)
-	core.C15 = make(chan common.SupervisorResponse, 10)
-	core.interrupt = make(chan threads.InterruptEvent, 10)
+	core.C11 = make(chan threads.DatabaseRequest, 10)
+	core.C12 = make(chan threads.DatabaseResponse, 10)
+	core.C13 = make(chan common.SupervisorRequest, 10)
+	core.C14 = make(chan common.SupervisorResponse, 10)
+	core.C15 = make(chan threads.DatabaseRequest, 10)
+	core.C16 = make(chan threads.DatabaseResponse, 10)
+	core.C17 = make(chan threads.MessengerRequest, 10)
 
 	/* load the cfg in for the first time */
 	if cfg := common.GetConfigInstance(configPath); cfg == nil {
@@ -63,7 +65,7 @@ func NewCore(configPath string) (*Core, error) {
 		return nil, err
 	}
 	core.HttpProcessorThread, err = http_processor.NewThread(httpProcessorLogger,
-		core.interrupt, core.C12, core.C13)
+		core.interrupt, core.C7, core.C8, core.C9, core.C10)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +75,7 @@ func NewCore(configPath string) (*Core, error) {
 		return nil, err
 	}
 	core.ProcessorThread, err = processor.NewThread(processorLogger,
-		core.interrupt, core.C5, core.C6, core.C12, core.C13, core.C14, core.C15)
+		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +85,7 @@ func NewCore(configPath string) (*Core, error) {
 		return nil, err
 	}
 	core.SupervisorThread, err = supervisor.NewThread(supervisorLogger,
-		core.interrupt, core.C14, core.C15, core.C7, core.C8, core.C9, core.C10, core.C11)
+		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +94,7 @@ func NewCore(configPath string) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
-	core.MessengerThread, err = messenger.NewThread(messengerLogger, core.interrupt, core.C3, core.C4, core.C11)
+	core.MessengerThread, err = messenger.NewThread(messengerLogger, core.interrupt, core.C3, core.C4, core.C17)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +104,7 @@ func NewCore(configPath string) (*Core, error) {
 		return nil, err
 	}
 	core.DatabaseThread, err = database.NewThread(databaseLogger, core_i.DefaultConfigsFolder, core_i.DefaultStatisticsFolder,
-		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C7, core.C8)
+		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C11, core.C12, core.C15, core.C16)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +305,7 @@ func (core *Core) Run() {
 //	clusterImplementation := clusterWrapper.GetClusterImplementation()
 //	if helperImplementation, ok := (clusterImplementation).(cluster.Helper); ok {
 //		helper, _ := provisioner.NewHelper(provisioner_component.DefaultFrameworkModule, clusterWrapper.Identifier,
-//			core.C9, core.C11)
+//			core.C9, core.C17)
 //		helperImplementation.SetHelper(helper)
 //	}
 //

@@ -9,7 +9,7 @@ import (
 func (thread *Thread) createSupervisor(moduleName, clusterName, configName string) (uint64, error) {
 
 	// TODO : change it so that configs are received via pointer over the channel
-	conf, found := common.GetConfigFromDatabase(thread.C7, thread.DatabaseResponseTable, moduleName, configName)
+	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName)
 	if !found {
 		return 0, errors.New("no config with that identifier exists")
 	}

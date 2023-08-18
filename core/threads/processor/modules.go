@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/GabeCordo/etl-light/module"
 	"github.com/GabeCordo/etl/core/components/processor"
+	"github.com/GabeCordo/etl/core/threads/common"
 )
 
 func (thread *Thread) getModules() []processor.ModuleData {
@@ -22,6 +23,9 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 	}
 
 	// TODO : what should we do with the configs that we are getting?
+	for _, export := range cfg.Exports {
+		common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig())
+	}
 
 	return nil
 }

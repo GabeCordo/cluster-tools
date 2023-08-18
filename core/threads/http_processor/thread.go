@@ -58,11 +58,20 @@ func (thread *Thread) Start() {
 	// RESPONSE THREADS
 
 	go func() {
-		for response := range thread.C13 {
+		for response := range thread.C8 {
 			if !thread.accepting {
 				break
 			}
 			thread.ProcessorResponseTable.Write(response.Nonce, response)
+		}
+	}()
+
+	go func() {
+		for response := range thread.C10 {
+			if !thread.accepting {
+				break
+			}
+			thread.CacheResponseTable.Write(response.Nonce, response)
 		}
 	}()
 

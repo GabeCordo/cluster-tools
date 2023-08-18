@@ -26,7 +26,7 @@ func (messengerThread *Thread) Start() {
 
 	go func() {
 		// request coming from provisioner
-		for request := range messengerThread.C11 {
+		for request := range messengerThread.C17 {
 			if !messengerThread.accepting {
 				break
 			}
