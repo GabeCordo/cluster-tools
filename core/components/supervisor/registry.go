@@ -1,15 +1,15 @@
 package supervisor
 
-import "github.com/GabeCordo/etl-light/components/cluster"
+import "github.com/GabeCordo/mango/components/cluster"
 
-func (registry *Registry) Create(moduleName, clusterName string, conf *cluster.Config) (identifier uint64) {
+func (registry *Registry) Create(processorName, moduleName, clusterName string, conf *cluster.Config) (identifier uint64) {
 
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
 	identifier = registry.counter
 
-	supervisor := newSupervisor(identifier, moduleName, clusterName, conf)
+	supervisor := newSupervisor(identifier, processorName, moduleName, clusterName, conf)
 	registry.supervisors[identifier] = supervisor
 
 	registry.counter++

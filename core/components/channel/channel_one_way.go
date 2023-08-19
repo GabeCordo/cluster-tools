@@ -1,7 +1,7 @@
 package channel
 
 import (
-	"github.com/GabeCordo/etl-light/components/channel"
+	"github.com/GabeCordo/mango/components/channel"
 	"math/rand"
 )
 

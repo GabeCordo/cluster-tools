@@ -1,9 +1,9 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl/core/components/messenger"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/components/messenger"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
 )
 
 func (messengerThread *Thread) Setup() {
@@ -11,7 +11,8 @@ func (messengerThread *Thread) Setup() {
 }
 
 func (messengerThread *Thread) Start() {
-	// as long as a teardown has not been called, continue looping
+
+	// LISTEN TO INCOMING REQUESTS
 
 	go func() {
 		// request coming from database
@@ -20,17 +21,21 @@ func (messengerThread *Thread) Start() {
 				break
 			}
 			messengerThread.wg.Add(1)
+
+			request.Source = threads.Database
 			messengerThread.ProcessIncomingRequest(&request)
 		}
 	}()
 
 	go func() {
-		// request coming from provisioner
+		// request coming from supervisor
 		for request := range messengerThread.C17 {
 			if !messengerThread.accepting {
 				break
 			}
 			messengerThread.wg.Add(1)
+
+			request.Source = threads.Supervisor
 			messengerThread.ProcessIncomingRequest(&request)
 		}
 	}()

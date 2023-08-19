@@ -2,9 +2,9 @@ package clusters
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/components/channel"
-	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/utils"
+	"github.com/GabeCordo/mango/components/channel"
+	"github.com/GabeCordo/mango/components/cluster"
+	"github.com/GabeCordo/mango/utils"
 	"time"
 )
 

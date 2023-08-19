@@ -2,9 +2,8 @@ package common
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/core"
+	"github.com/GabeCordo/mango/core"
 	"log"
-	"runtime"
 	"sync"
 )
 
@@ -12,17 +11,6 @@ var (
 	configLock     = &sync.Mutex{}
 	ConfigInstance *core.Config
 )
-
-func GetDefaultConfigPath() string {
-
-	if runtime.GOOS == "windows" {
-		return "%PROGRAMDATA%/etl/common.etl.yaml"
-	} else if runtime.GOOS == "linux" {
-		return "/opt/etl/common.etl.yaml"
-	} else {
-		return "/etc/etl/common.etl.yaml"
-	}
-}
 
 func GetConfigInstance(configPath ...string) *core.Config {
 	configLock.Lock()

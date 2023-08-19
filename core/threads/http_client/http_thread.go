@@ -3,8 +3,8 @@ package http_client
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -65,6 +65,8 @@ func (thread *Thread) Start() {
 			thread.Interrupt <- threads.Panic
 		}
 	}(thread)
+
+	// LISTEN FOR RESPONSES
 
 	go func() {
 		for supervisorResponse := range thread.C6 {

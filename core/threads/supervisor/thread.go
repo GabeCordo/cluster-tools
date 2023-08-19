@@ -1,6 +1,10 @@
 package supervisor
 
-import "github.com/GabeCordo/etl/core/threads/common"
+import (
+	"github.com/GabeCordo/mango-core/core/components/supervisor"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
+)
 
 func (thread *Thread) Setup() {
 	thread.accepting = true
@@ -11,15 +15,13 @@ func (thread *Thread) Start() {
 	// INCOMING REQUESTS
 
 	go func() {
-		// request coming from http_server
 		for request := range thread.C13 {
 			if !thread.accepting {
 				break
 			}
-			thread.wg.Add(1)
 
-			// if this doesn't spawn its own thread we will be left waiting
-			thread.ProcessRequest(&request)
+			request.Source = threads.Processor
+			thread.processRequest(&request)
 		}
 	}()
 
@@ -36,16 +38,34 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) ProcessRequest(request *common.SupervisorRequest) {
+func (thread *Thread) respond(dst threads.Module, response *common.SupervisorResponse) error {
+	switch dst {
+	case threads.Processor:
+		thread.C14 <- *response
+	default:
+		return threads.BadResponseType
+	}
+
+	return nil
+}
+
+func (thread *Thread) processRequest(request *common.SupervisorRequest) {
+
+	response := &common.SupervisorResponse{Nonce: request.Nonce, Error: nil}
 
 	switch request.Action {
 	case common.SupervisorCreate:
-		thread.createSupervisor(
-			request.Identifiers.Module, request.Identifiers.Module, request.Identifiers.Config)
-	case common.SupervisorError:
-		GetRegistryInstance().Get(request.Identifiers.Supervisor)
-	case common.SupervisorClose:
+		response.Data, response.Error = thread.createSupervisor(
+			request.Identifiers.Processor, request.Identifiers.Module, request.Identifiers.Module, request.Identifiers.Config)
+	case common.SupervisorUpdate:
+		s := (request.Data).(supervisor.Supervisor)
+		response.Error = thread.updateSupervisor(&s)
+	default:
+		response.Error = threads.BadRequestType
 	}
+
+	response.Success = response.Error == nil
+	thread.respond(request.Source, response)
 }
 
 func (thread *Thread) Teardown() {

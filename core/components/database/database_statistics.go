@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/mango/components/cluster"
 	"os"
 	"sync"
 	"time"

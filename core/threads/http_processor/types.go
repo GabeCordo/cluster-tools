@@ -2,9 +2,9 @@ package http_processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl-light/utils"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/utils"
 	"net/http"
 	"sync"
 )

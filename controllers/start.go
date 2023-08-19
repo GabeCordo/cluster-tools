@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/etl-light/core"
-	"github.com/GabeCordo/etl/core/threads"
+	"github.com/GabeCordo/mango-core/core/threads"
+	"github.com/GabeCordo/mango/core"
 	"log"
 	"os"
 )

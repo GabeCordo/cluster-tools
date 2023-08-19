@@ -1,7 +1,8 @@
 package processor
 
 import (
-	"github.com/GabeCordo/etl-light/module"
+	"fmt"
+	"github.com/GabeCordo/mango/module"
 	"sync"
 	"time"
 )
@@ -20,6 +21,10 @@ type Processor struct {
 	Status     Status
 	LastUpdate time.Time
 	Modules    []string
+}
+
+func (processor Processor) ToString() string {
+	return fmt.Sprintf("%s:%d", processor.Host, processor.Port)
 }
 
 func newProcessor(host string, port int) *Processor {
@@ -42,8 +47,11 @@ type ClusterData struct {
 type Cluster struct {
 	data ClusterData
 
-	Processors []*Processor
-	mutex      sync.Mutex
+	processors      []*Processor
+	numOfProcessors int
+	processorIndex  int
+
+	mutex sync.Mutex
 }
 
 func newCluster(name string) *Cluster {
@@ -51,7 +59,8 @@ func newCluster(name string) *Cluster {
 
 	cluster.data.Name = name
 	cluster.data.Mounted = false
-	cluster.Processors = make([]*Processor, 0)
+	cluster.processors = make([]*Processor, 0)
+	cluster.processorIndex = 0
 
 	return cluster
 }

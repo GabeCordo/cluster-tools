@@ -1,7 +1,7 @@
 package channel
 
 import (
-	channel "github.com/GabeCordo/etl-light/components/channel"
+	channel "github.com/GabeCordo/mango/components/channel"
 	"sync"
 	"time"
 )

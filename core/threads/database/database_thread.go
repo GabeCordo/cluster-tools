@@ -1,11 +1,11 @@
 package database
 
 import (
-	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl-light/utils"
-	"github.com/GabeCordo/etl/core/components/database"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/components/database"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/components/cluster"
+	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/utils"
 	"log"
 	"math/rand"
 	"time"
@@ -44,8 +44,9 @@ func (databaseThread *Thread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = threads.HttpClient
 			databaseThread.wg.Add(1)
+
+			request.Source = threads.HttpClient
 			databaseThread.ProcessIncomingRequest(&request)
 		}
 	}()
@@ -55,8 +56,9 @@ func (databaseThread *Thread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = threads.HttpProcessor
 			databaseThread.wg.Add(1)
+
+			request.Source = threads.HttpProcessor
 			databaseThread.ProcessIncomingRequest(&request)
 		}
 	}()
@@ -66,8 +68,9 @@ func (databaseThread *Thread) Start() {
 			if !databaseThread.accepting {
 				break
 			}
-			request.Origin = threads.Supervisor
 			databaseThread.wg.Add(1)
+
+			request.Source = threads.Supervisor
 			databaseThread.ProcessIncomingRequest(&request)
 		}
 	}()
@@ -103,7 +106,7 @@ func (databaseThread *Thread) Respond(request *threads.DatabaseRequest, response
 
 	success = true
 
-	switch request.Origin {
+	switch request.Source {
 	case threads.HttpClient:
 		databaseThread.C2 <- *response
 		break

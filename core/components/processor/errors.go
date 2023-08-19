@@ -12,6 +12,10 @@ var ModuleVersionClash = errors.New("module with same name but different version
 
 var ModuleContactClash = errors.New("module with same name has different contact information")
 
+var ModuleNotMounted = errors.New("module is not mounted")
+
 var ModuleDoesNotExist = errors.New("module does not exist")
+
+var ClusterNotMounted = errors.New("cluster is not mounted")
 
 var ClusterDoesNotExist = errors.New("cluster does not exist in the module")

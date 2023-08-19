@@ -2,9 +2,9 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl-light/utils"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/utils"
 	"sync"
 )
 
@@ -22,7 +22,6 @@ type Thread struct {
 	Logger *utils.Logger
 
 	DatabaseResponseTable *utils.ResponseTable
-	CacheResponseTable    *utils.ResponseTable
 
 	accepting bool
 	wg        sync.WaitGroup
@@ -63,6 +62,8 @@ func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 7")
 	}
+
+	thread.DatabaseResponseTable = utils.NewResponseTable()
 
 	return thread, nil
 }

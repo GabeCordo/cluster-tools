@@ -2,13 +2,13 @@ package common
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/module"
-	processor_i "github.com/GabeCordo/etl-light/processor"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl-light/utils"
-	"github.com/GabeCordo/etl/core/components/database"
-	"github.com/GabeCordo/etl/core/components/processor"
+	"github.com/GabeCordo/mango-core/core/components/database"
+	"github.com/GabeCordo/mango-core/core/components/processor"
+	"github.com/GabeCordo/mango/components/cluster"
+	"github.com/GabeCordo/mango/module"
+	processor_i "github.com/GabeCordo/mango/processor"
+	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/utils"
 	"math/rand"
 )
 
@@ -169,12 +169,8 @@ func AddProcessor(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTab
 	request := ProcessorRequest{
 		Action: ProcessorAdd,
 		Source: threads.HttpProcessor,
-		Data: struct {
-			Cluster   cluster.Config
-			Module    module.Config
-			Processor processor_i.Config
-		}{Processor: *cfg},
-		Nonce: rand.Uint32(),
+		Data:   *cfg,
+		Nonce:  rand.Uint32(),
 	}
 	pipe <- request
 
@@ -192,15 +188,10 @@ func DeleteProcessor(pipe chan<- ProcessorRequest, responseTable *utils.Response
 	processorName string) error {
 
 	request := ProcessorRequest{
-		Action: ProcessorRemove,
-		Source: threads.HttpProcessor,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Processor: processorName},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorRemove,
+		Source:      threads.HttpProcessor,
+		Identifiers: RequestIdentifiers{Processor: processorName},
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -218,15 +209,10 @@ func MountCluster(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTab
 	moduleName, clusterName string) (success bool) {
 
 	request := ProcessorRequest{
-		Action: ProcessorClusterMount,
-		Source: threads.HttpClient,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Module: moduleName, Cluster: clusterName, Config: ""},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorClusterMount,
+		Source:      threads.HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: ""},
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -244,15 +230,10 @@ func UnmountCluster(pipe chan<- ProcessorRequest, responseTable *utils.ResponseT
 	moduleName, clusterName string) (success bool) {
 
 	request := ProcessorRequest{
-		Action: ProcessorClusterUnmount,
-		Source: threads.HttpClient,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Module: moduleName, Cluster: clusterName, Config: ""},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorClusterUnmount,
+		Source:      threads.HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: ""},
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -266,53 +247,14 @@ func UnmountCluster(pipe chan<- ProcessorRequest, responseTable *utils.ResponseT
 	return provisionerResponse.Success
 }
 
-// TODO : this needs to be fixed, not supported yet
-//func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-//	moduleName, clusterName string, meta map[string]string, cfg ...string) (supervisorId uint64, success bool, description string) {
-//
-//	// there is a possibility the user never passed an args value to the HTTP endpoint,
-//	// so we need to replace it with and empty arry
-//	if meta == nil {
-//		meta = make(map[string]string)
-//	}
-//	provisionerThreadRequest := threads.ProvisionerRequest{
-//		Action:      threads.ProvisionerProvision,
-//		Source:      threads.Http,
-//		ModuleName:  moduleName,
-//		ClusterName: clusterName,
-//		Metadata: threads.ProvisionerMetadata{
-//			Other: meta,
-//		},
-//		Nonce: rand.Uint32(),
-//	}
-//	if len(cfg) > 0 {
-//		provisionerThreadRequest.Metadata.ConfigName = cfg[0]
-//	}
-//	pipe <- provisionerThreadRequest
-//
-//	data, didTimeout := utils.SendAndWait(responseTable, provisionerThreadRequest.Nonce,
-//		GetConfigInstance().MaxWaitForResponse)
-//	if didTimeout {
-//		return 0, false, "timeout"
-//	}
-//
-//	provisionerResponse := (data).(threads.ProvisionerResponse)
-//	return provisionerResponse.SupervisorId, provisionerResponse.Success, provisionerResponse.Description
-//}
-
 func GetClusters(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
 	moduleName string) (clusters []processor.ClusterData, success bool) {
 
 	request := ProcessorRequest{
-		Action: ProcessorClusterGet,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Module: moduleName, Cluster: "", Config: ""},
-		Source: threads.HttpClient,
-		Nonce:  rand.Uint32(),
+		Action:      ProcessorClusterGet,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: "", Config: ""},
+		Source:      threads.HttpClient,
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -329,6 +271,29 @@ func GetClusters(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTabl
 	}
 
 	return (provisionerResponse.Data).([]processor.ClusterData), true
+}
+
+func CreateSupervisor(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
+	moduleName, clusterName, configName string, metadata map[string]string) (uint64, error) {
+
+	request := ProcessorRequest{
+		Action:      ProcessorSupervisorCreate,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: configName},
+		Data:        metadata,
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
+		GetConfigInstance().MaxWaitForResponse)
+
+	if didTimeout {
+		return 0, utils.NoResponseReceived
+	}
+
+	response := (rsp).(ProcessorResponse)
+
+	return (response.Data).(uint64), response.Error
 }
 
 // TODO : fix
@@ -492,20 +457,11 @@ func AddModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTable,
 	processorName string, cfg *module.Config) (bool, error) {
 
 	request := ProcessorRequest{
-		Action: ProcessorModuleAdd,
-		Source: threads.HttpProcessor,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Processor: processorName},
-		Data: struct {
-			Cluster   cluster.Config
-			Module    module.Config
-			Processor processor_i.Config
-		}{Module: *cfg},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorModuleAdd,
+		Source:      threads.HttpProcessor,
+		Identifiers: RequestIdentifiers{Processor: processorName},
+		Data:        *cfg,
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -524,15 +480,10 @@ func MountModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTabl
 	moduleName string) (bool, error) {
 
 	request := ProcessorRequest{
-		Action: ProcessorModuleMount,
-		Source: threads.HttpClient,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Module: moduleName},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorModuleMount,
+		Source:      threads.HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName},
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -551,15 +502,10 @@ func UnmountModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTa
 	moduleName string) (bool, error) {
 
 	request := ProcessorRequest{
-		Action: ProcessorModuleUnmount,
-		Source: threads.HttpClient,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Module: moduleName},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorModuleUnmount,
+		Source:      threads.HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName},
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
@@ -578,15 +524,10 @@ func DeleteModule(pipe chan<- ProcessorRequest, responseTable *utils.ResponseTab
 	processorName, moduleName string) (bool, error) {
 
 	request := ProcessorRequest{
-		Action: ProcessorModuleDelete,
-		Source: threads.HttpProcessor,
-		Identifiers: struct {
-			Processor string
-			Module    string
-			Cluster   string
-			Config    string
-		}{Processor: processorName, Module: moduleName},
-		Nonce: rand.Uint32(),
+		Action:      ProcessorModuleDelete,
+		Source:      threads.HttpProcessor,
+		Identifiers: RequestIdentifiers{Processor: processorName, Module: moduleName},
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 

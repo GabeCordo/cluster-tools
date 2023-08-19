@@ -13,6 +13,10 @@ func (module *Module) add(name string) (success bool) {
 	return true
 }
 
+func (module *Module) IsMounted() bool {
+	return module.data.Mounted
+}
+
 func (module *Module) Mount() {
 
 	module.mutex.Lock()

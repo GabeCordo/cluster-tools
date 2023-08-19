@@ -2,8 +2,8 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl-light/utils"
+	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/utils"
 	"sync"
 )
 

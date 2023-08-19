@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/etl-light/core"
+	"github.com/GabeCordo/mango/core"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"

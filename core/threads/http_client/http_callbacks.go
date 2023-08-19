@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/core"
-	"github.com/GabeCordo/etl/core/components/processor"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/components/processor"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/components/cluster"
+	"github.com/GabeCordo/mango/core"
 	"net/http"
 	"net/url"
 	"time"
@@ -256,27 +256,27 @@ func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request)
 	//			}
 	//		}
 	//	}
-	//} else if r.Method == "POST" {
-	//	if supervisorId, success, description := common.SupervisorProvision(
-	//		thread.C5,
-	//		thread.ProcessorResponseTable,
-	//		request.Module,
-	//		request.Cluster,
-	//		request.Metadata,
-	//		request.Config); success {
-	//
-	//		response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
-	//		bytes, _ := json.Marshal(response)
-	//		if _, err := w.Write(bytes); err != nil {
-	//			w.WriteHeader(http.StatusInternalServerError)
-	//		}
-	//	} else {
-	//		w.WriteHeader(http.StatusBadRequest)
-	//		w.Write([]byte(description))
-	//	}
-	//} else {
-	//	w.WriteHeader(http.StatusMethodNotAllowed)
-	//}
+	if r.Method == "POST" {
+		if supervisorId, err := common.CreateSupervisor(
+			thread.C5,
+			thread.ProcessorResponseTable,
+			request.Module,
+			request.Cluster,
+			request.Config,
+			request.Metadata,
+		); err == nil {
+
+			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
+			bytes, _ := json.Marshal(response)
+			if _, err := w.Write(bytes); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 }
 
 func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {

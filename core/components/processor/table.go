@@ -2,8 +2,8 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/module"
-	processor_i "github.com/GabeCordo/etl-light/processor"
+	"github.com/GabeCordo/mango/module"
+	processor_i "github.com/GabeCordo/mango/processor"
 )
 
 func (table *Table) AddProcessor(cfg *processor_i.Config) error {

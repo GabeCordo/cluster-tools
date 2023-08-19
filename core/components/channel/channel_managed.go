@@ -2,7 +2,7 @@ package channel
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/components/channel"
+	"github.com/GabeCordo/mango/components/channel"
 	"time"
 )
 

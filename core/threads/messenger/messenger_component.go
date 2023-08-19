@@ -1,8 +1,8 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/etl/core/components/messenger"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/components/messenger"
+	"github.com/GabeCordo/mango-core/core/threads/common"
 )
 
 var instance *messenger.Messenger

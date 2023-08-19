@@ -2,8 +2,8 @@ package http_processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
 	"net/http"
 )
 
@@ -59,18 +59,12 @@ func (thread *Thread) Start() {
 
 	go func() {
 		for response := range thread.C8 {
-			if !thread.accepting {
-				break
-			}
 			thread.ProcessorResponseTable.Write(response.Nonce, response)
 		}
 	}()
 
 	go func() {
 		for response := range thread.C10 {
-			if !thread.accepting {
-				break
-			}
 			thread.CacheResponseTable.Write(response.Nonce, response)
 		}
 	}()

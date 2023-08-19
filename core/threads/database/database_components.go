@@ -1,6 +1,6 @@
 package database
 
-import "github.com/GabeCordo/etl/core/components/database"
+import "github.com/GabeCordo/mango-core/core/components/database"
 
 var statisticDatabase *database.StatisticDatabase
 

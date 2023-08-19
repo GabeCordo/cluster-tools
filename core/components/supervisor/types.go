@@ -1,7 +1,7 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/etl-light/components/cluster"
+	"github.com/GabeCordo/mango/components/cluster"
 	"sync"
 )
 
@@ -26,25 +26,29 @@ const (
 )
 
 type Supervisor struct {
-	Id uint64
+	Id     uint64 `json:"id"`
+	Status Status `json:"status,omitempty"`
 
-	Status  Status
-	Module  string
-	Cluster string
+	Processor string `json:"processor,omitempty"`
+	Module    string `json:"module,omitempty"`
+	Cluster   string `json:"cluster,omitempty"`
 
-	Config cluster.Config
+	Config     cluster.Config      `json:"config"`
+	Statistics *cluster.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func newSupervisor(id uint64, moduleName, clusterName string, conf *cluster.Config) *Supervisor {
+func newSupervisor(id uint64, processorName, moduleName, clusterName string, conf *cluster.Config) *Supervisor {
 	supervisor := new(Supervisor)
 
 	supervisor.Status = Created
 	supervisor.Id = id
+	supervisor.Processor = processorName
 	supervisor.Module = moduleName
 	supervisor.Cluster = clusterName
 	supervisor.Config = *conf // make a copy
+	supervisor.Statistics = cluster.NewStatistics()
 
 	return supervisor
 }
@@ -60,5 +64,6 @@ func NewRegistry() *Registry {
 
 	registry := new(Registry)
 	registry.supervisors = make(map[uint64]*Supervisor)
+	registry.counter = 1
 	return registry
 }

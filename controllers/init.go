@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/etl-light/core"
+	"github.com/GabeCordo/mango/core"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -17,7 +17,7 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Cache.Expiry = 2
 	defaultConfig.Cache.MaxSize = 1000
 	defaultConfig.Messenger.EnableLogging = true
-	defaultConfig.Messenger.LogFiles.Directory = "/var/etl/logs"
+	defaultConfig.Messenger.LogFiles.Directory = "/var/mangoose/logs"
 	defaultConfig.Messenger.EnableSmtp = false
 	defaultConfig.Net.Client.Host = "localhost"
 	defaultConfig.Net.Client.Port = 8136

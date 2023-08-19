@@ -1,15 +1,19 @@
 package processor
 
-import "github.com/GabeCordo/etl/core/components/processor"
+import (
+	"errors"
+	"github.com/GabeCordo/mango-core/core/components/processor"
+)
 
-func (thread *Thread) getClusters(name string) ([]processor.ClusterData, bool) {
+func (thread *Thread) getClusters(name string) ([]processor.ClusterData, error) {
 
 	instance, found := GetTableInstance().Get(name)
 	if !found {
-		return nil, false
+		// TODO : replace with proper error
+		return nil, errors.New("no cluster found with that module name")
 	}
 
-	return instance.Registered(), true
+	return instance.Registered(), nil
 }
 
 func (thread *Thread) mountCluster(moduleName, clusterName string) error {

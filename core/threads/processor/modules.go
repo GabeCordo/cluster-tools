@@ -2,9 +2,9 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/module"
-	"github.com/GabeCordo/etl/core/components/processor"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/components/processor"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/module"
 )
 
 func (thread *Thread) getModules() []processor.ModuleData {

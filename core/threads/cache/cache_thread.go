@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/GabeCordo/etl-light/threads"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/threads"
 	"time"
 )
 
@@ -19,6 +19,8 @@ func (cacheThread *Thread) Start() {
 				break
 			}
 			cacheThread.wg.Add(1)
+
+			request.Source = threads.HttpProcessor
 			cacheThread.ProcessIncomingRequest(&request)
 		}
 	}()

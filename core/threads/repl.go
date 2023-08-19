@@ -3,7 +3,7 @@ package threads
 import (
 	"bufio"
 	"fmt"
-	"github.com/GabeCordo/etl-light/threads"
+	"github.com/GabeCordo/mango/threads"
 	"os"
 	"strings"
 )
