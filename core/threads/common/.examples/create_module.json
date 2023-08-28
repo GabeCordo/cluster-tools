@@ -1,0 +1,39 @@
+{
+  "host": "127.0.0.1",
+  "port": 5023,
+  "module": {
+    "config": {
+      "name": "common",
+      "version": 1,
+      "contact": {
+        "name": "Gabriel Cordovado",
+        "email": "gabriel.cordovado@icloud.com"
+      },
+      "exports": [
+        {
+          "cluster": "Vec",
+          "mount": true,
+          "config": {
+            "mode": "Batch",
+            "on-crash": "DoNothing",
+            "on-load": "WaitAndPush",
+            "static": {
+              "t-functions": 1,
+              "l-functions": 1
+            },
+            "dynamic": {
+              "t-function": {
+                "threshold": 2,
+                "growth-factor": 2
+              },
+              "l-function": {
+                "threshold": 2,
+                "growth-factor": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

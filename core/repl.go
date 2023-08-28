@@ -1,9 +1,9 @@
-package threads
+package core
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/core/threads/common"
 	"os"
 	"strings"
 )
@@ -32,7 +32,7 @@ func (core *Core) repl() {
 			//}
 			fmt.Println("not implemented")
 		} else if text == "stop" {
-			core.interrupt <- threads.Shutdown
+			core.interrupt <- common.Shutdown
 			break
 		}
 	}

@@ -3,35 +3,46 @@ package http_client
 import (
 	"context"
 	"errors"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
 	"sync"
 )
 
 // Frontend Thread
 
-type Thread struct {
-	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
+type Config struct {
+	Debug      bool
+	EnableCors bool
+	Net        struct {
+		Host string
+		Port int
+	}
+	Timeout float64
+}
 
-	C1 chan<- threads.DatabaseRequest  // Core is sending threads to the Database
-	C2 <-chan threads.DatabaseResponse // Core is receiving responses from the Database
+type Thread struct {
+	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
+
+	C1 chan<- common.DatabaseRequest  // Core is sending threads to the Database
+	C2 <-chan common.DatabaseResponse // Core is receiving responses from the Database
 
 	C5 chan<- common.ProcessorRequest  // Core is sending threads to the Database
 	C6 <-chan common.ProcessorResponse // Core is receiving responses from the Database
 
-	databaseResponses   map[uint32]threads.DatabaseResponse
-	supervisorResponses map[uint32]threads.ProvisionerResponse
+	databaseResponses   map[uint32]common.DatabaseResponse
+	supervisorResponses map[uint32]common.SupervisorResponse
 
-	ProcessorResponseTable *utils.ResponseTable
-	DatabaseResponseTable  *utils.ResponseTable
+	ProcessorResponseTable *multithreaded.ResponseTable
+	DatabaseResponseTable  *multithreaded.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
 	cancelCtx context.CancelFunc
 
-	logger *utils.Logger
+	config *Config
+	logger *logging.Logger
 
 	accepting bool
 	counter   uint32
@@ -39,48 +50,53 @@ type Thread struct {
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
-	core := new(Thread)
+func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
+	thread := new(Thread)
 
 	var ok bool
 
-	core.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
+
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	core.C1, ok = (channels[1]).(chan threads.DatabaseRequest)
+	thread.C1, ok = (channels[1]).(chan common.DatabaseRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 1")
 	}
-	core.C2, ok = (channels[2]).(chan threads.DatabaseResponse)
+	thread.C2, ok = (channels[2]).(chan common.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 2")
 	}
-	core.C5, ok = (channels[3]).(chan common.ProcessorRequest)
+	thread.C5, ok = (channels[3]).(chan common.ProcessorRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 3")
 	}
-	core.C6, ok = (channels[4]).(chan common.ProcessorResponse)
+	thread.C6, ok = (channels[4]).(chan common.ProcessorResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 4")
 	}
 
-	core.databaseResponses = make(map[uint32]threads.DatabaseResponse)
-	core.supervisorResponses = make(map[uint32]threads.ProvisionerResponse)
+	thread.databaseResponses = make(map[uint32]common.DatabaseResponse)
+	thread.supervisorResponses = make(map[uint32]common.SupervisorResponse)
 
-	core.ProcessorResponseTable = utils.NewResponseTable()
-	core.DatabaseResponseTable = utils.NewResponseTable()
+	thread.ProcessorResponseTable = multithreaded.NewResponseTable()
+	thread.DatabaseResponseTable = multithreaded.NewResponseTable()
 
-	core.server = new(http.Server)
+	thread.server = new(http.Server)
 
-	core.accepting = true
-	core.counter = 0
+	thread.accepting = true
+	thread.counter = 0
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.Logger type")
 	}
-	core.logger = logger
-	core.logger.SetColour(utils.Green)
+	thread.logger = logger
+	thread.logger.SetColour(logging.Green)
 
-	return core, nil
+	return thread, nil
 }

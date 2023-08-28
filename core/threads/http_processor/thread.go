@@ -2,8 +2,7 @@ package http_processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/core/threads/common"
 	"net/http"
 )
 
@@ -34,7 +33,7 @@ func (thread *Thread) Setup() {
 	})
 
 	/* the debug endpoint is only enabled when debug is set to true */
-	if common.GetConfigInstance().Debug {
+	if thread.config.Debug {
 		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
 			thread.debugCallback(w, r)
 		})
@@ -48,10 +47,10 @@ func (thread *Thread) Start() {
 	// HTTP API SERVER
 
 	go func(thread *Thread) {
-		net := common.GetConfigInstance().Net.Processor
-		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), thread.mux)
+		err := http.ListenAndServe(fmt.Sprintf("%s:%d",
+			thread.config.Net.Host, thread.config.Net.Port), thread.mux)
 		if err != nil {
-			thread.Interrupt <- threads.Panic
+			thread.Interrupt <- common.Panic
 		}
 	}(thread)
 

@@ -2,10 +2,10 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango-core/core/components/processor"
-	"github.com/GabeCordo/mango-core/core/components/supervisor"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/components/supervisor"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )
 
@@ -30,11 +30,11 @@ func (thread *Thread) fetchSupervisor(r *common.ProcessorRequest) (*supervisor.S
 	}
 	thread.C13 <- request
 
-	rsp, didTimeout := utils.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		common.GetConfigInstance().MaxWaitForResponse)
+	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
+		thread.config.MaxWaitForResponse)
 
 	if didTimeout {
-		return nil, utils.NoResponseReceived
+		return nil, multithreaded.NoResponseReceived
 	}
 
 	response := (rsp).(common.SupervisorResponse)
@@ -80,11 +80,11 @@ func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, erro
 	//  3. send a provision request to the processor endpoint
 	thread.C13 <- request
 
-	rsp, didTimeout := utils.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		common.GetConfigInstance().MaxWaitForResponse)
+	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
+		thread.config.MaxWaitForResponse)
 
 	if didTimeout {
-		return 0, utils.NoResponseReceived
+		return 0, multithreaded.NoResponseReceived
 	}
 
 	response := (rsp).(common.SupervisorResponse)
@@ -100,8 +100,8 @@ func (thread *Thread) updateSupervisor(r *common.ProcessorRequest) error {
 	}
 	thread.C13 <- request
 
-	rsp, didTimeout := utils.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		common.GetConfigInstance().MaxWaitForResponse)
+	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
+		thread.config.MaxWaitForResponse)
 
 	if didTimeout {
 		// TODO : replace with real error

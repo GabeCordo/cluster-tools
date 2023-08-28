@@ -1,6 +1,6 @@
 package processor
 
-import "github.com/GabeCordo/mango-core/core/components/processor"
+import "github.com/GabeCordo/mango/core/components/processor"
 
 var processorTableInstance *processor.Table
 

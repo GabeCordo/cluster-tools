@@ -3,8 +3,7 @@ package http_client
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/core/threads/common"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -39,7 +38,7 @@ func (thread *Thread) Setup() {
 	})
 
 	// TODO - explore this more, fucking cool
-	if common.GetConfigInstance().Debug {
+	if thread.config.Debug {
 		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) { thread.debugCallback(w, r) })
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -48,7 +47,7 @@ func (thread *Thread) Setup() {
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
 
-	if common.GetConfigInstance().EnableCors {
+	if thread.config.EnableCors {
 		mux.HandleFunc("/cors", thread.corsCallback)
 	}
 
@@ -59,10 +58,9 @@ func (thread *Thread) Start() {
 	thread.wg.Add(1)
 
 	go func(thread *Thread) {
-		net := common.GetConfigInstance().Net.Client
-		err := http.ListenAndServe(fmt.Sprintf("%s:%d", net.Host, net.Port), thread.mux)
+		err := http.ListenAndServe(fmt.Sprintf("%s:%d", thread.config.Net.Host, thread.config.Net.Port), thread.mux)
 		if err != nil {
-			thread.Interrupt <- threads.Panic
+			thread.Interrupt <- common.Panic
 		}
 	}(thread)
 
@@ -89,7 +87,7 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) Receive(module threads.Module, nonce uint32, timeout ...float64) (any, bool) {
+func (thread *Thread) Receive(module common.Module, nonce uint32, timeout ...float64) (any, bool) {
 	startTime := time.Now()
 	flag := false
 
@@ -99,13 +97,13 @@ func (thread *Thread) Receive(module threads.Module, nonce uint32, timeout ...fl
 			break
 		}
 
-		if module == threads.Processor {
+		if module == common.Processor {
 			if value, found := thread.supervisorResponses[nonce]; found {
 				response = value
 				flag = true
 				break
 			}
-		} else if module == threads.Database {
+		} else if module == common.Database {
 			if value, found := thread.databaseResponses[nonce]; found {
 				response = value
 				flag = true
@@ -113,29 +111,30 @@ func (thread *Thread) Receive(module threads.Module, nonce uint32, timeout ...fl
 			}
 		}
 
-		time.Sleep(threads.RefreshTime * time.Millisecond)
+		// TODO - remove this code
+		time.Sleep(2 * time.Millisecond)
 	}
 
 	return response, flag
 }
 
-func (thread *Thread) Send(module threads.Module, request any) (any, bool) {
+func (thread *Thread) Send(module common.Module, request any) (any, bool) {
 	thread.mutex.Lock()
 	thread.counter++
 
 	nonce := thread.counter // make a copy of the current counter
-	if module == threads.Processor {
+	if module == common.Processor {
 		req := (request).(common.ProcessorRequest)
 		req.Nonce = nonce
 		thread.C5 <- req
-	} else if module == threads.Database {
-		req := (request).(threads.DatabaseRequest)
+	} else if module == common.Database {
+		req := (request).(common.DatabaseRequest)
 		req.Nonce = nonce
 		thread.C1 <- req
 	}
 
 	thread.mutex.Unlock()
-	return thread.Receive(module, nonce, threads.DefaultTimeout)
+	return thread.Receive(module, nonce, thread.config.Timeout)
 }
 
 func (thread *Thread) Teardown() {
@@ -148,6 +147,6 @@ func (thread *Thread) Teardown() {
 
 	err := thread.server.Shutdown(ctx)
 	if err != nil {
-		thread.Interrupt <- threads.Panic
+		thread.Interrupt <- common.Panic
 	}
 }

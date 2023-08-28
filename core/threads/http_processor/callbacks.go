@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango-core/core/components/processor"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/core"
-	processor_i "github.com/GabeCordo/mango/processor"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/components/processor"
+	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
 	"net/url"
 )
@@ -29,13 +28,13 @@ func (thread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) 
 
 func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
-	request, err := core.GetRequest(r)
+	request, err := common.GetRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	cfg := &processor_i.Config{Host: request.Host, Port: request.Port}
-	success, err := common.AddProcessor(thread.C7, thread.ProcessorResponseTable, cfg)
+	success, err := common.AddProcessor(thread.C7, thread.ProcessorResponseTable, cfg, thread.config.Timeout)
 
 	if errors.Is(err, processor.AlreadyExists) {
 		w.WriteHeader(http.StatusConflict)
@@ -43,7 +42,7 @@ func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 	if err != nil {
 		response.Description = err.Error()
 	}
@@ -61,13 +60,13 @@ func (thread *Thread) deleteProcessorCallback(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err := common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, processorName[0])
+	err := common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, processorName[0], thread.config.Timeout)
 
-	response := core.Response{Success: err == nil}
+	response := common.Response{Success: err == nil}
 
 	if errors.Is(err, processor.DoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
-	} else if errors.Is(err, utils.NoResponseReceived) {
+	} else if errors.Is(err, multithreaded.NoResponseReceived) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
@@ -95,16 +94,16 @@ func (thread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request) {
 
-	request, err := core.GetRequest(r)
+	request, err := common.GetRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	processorName := fmt.Sprintf("%s:%d", request.Host, request.Port)
-	success, err := common.AddModule(thread.C7, thread.ProcessorResponseTable, processorName, &request.Module.Config)
+	success, err := common.AddModule(thread.C7, thread.ProcessorResponseTable, processorName, &request.Module.Config, thread.config.Timeout)
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 
 	if !success && errors.Is(err, processor.ModuleAlreadyRegistered) {
 		/* the module is already registered to the processor */
@@ -135,13 +134,13 @@ func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err := common.DeleteModule(thread.C7, thread.ProcessorResponseTable, processorName[0], moduleName[0])
+	_, err := common.DeleteModule(thread.C7, thread.ProcessorResponseTable, processorName[0], moduleName[0], thread.config.Timeout)
 
-	response := core.Response{Success: err == nil}
+	response := common.Response{Success: err == nil}
 
 	if errors.Is(err, processor.DoesNotExist) || errors.Is(err, processor.ModuleDoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
-	} else if errors.Is(err, utils.NoResponseReceived) {
+	} else if errors.Is(err, multithreaded.NoResponseReceived) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
@@ -179,9 +178,9 @@ func (thread *Thread) getCacheCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, found := common.FetchFromCache(thread.C9, thread.CacheResponseTable, key[0])
+	value, found := common.FetchFromCache(thread.C9, thread.CacheResponseTable, key[0], thread.config.Timeout)
 
-	response := core.Response{Success: found}
+	response := common.Response{Success: found}
 
 	if found {
 		response.Data = value
@@ -204,14 +203,14 @@ func (thread *Thread) postCacheCallback(w http.ResponseWriter, r *http.Request) 
 	request := &CacheBody{}
 	json.NewDecoder(r.Body).Decode(request)
 
-	expiry := common.GetConfigInstance().Cache.Expiry
+	expiry := thread.config.Timeout
 	if request.Expiry != 0.0 {
 		expiry = request.Expiry
 	}
 
-	identifier, success := common.StoreInCache(thread.C9, thread.CacheResponseTable, request.Value, expiry)
+	identifier, success := common.StoreInCache(thread.C9, thread.CacheResponseTable, request.Value, expiry, thread.config.Timeout)
 
-	response := core.Response{Success: success, Data: identifier}
+	response := common.Response{Success: success, Data: identifier}
 	b, _ := json.Marshal(response)
 	w.Write(b)
 }
@@ -221,9 +220,9 @@ func (thread *Thread) putCacheCallback(w http.ResponseWriter, r *http.Request) {
 	request := &CacheBody{}
 	json.NewDecoder(r.Body).Decode(request)
 
-	success := common.SwapInCache(thread.C9, thread.CacheResponseTable, request.Key, request.Value)
+	success := common.SwapInCache(thread.C9, thread.CacheResponseTable, request.Key, request.Value, thread.config.Timeout)
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 
 	if !success {
 		w.WriteHeader(http.StatusNotFound)

@@ -2,33 +2,44 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"sync"
 )
 
+type Config struct {
+	Debug              bool
+	MaxWaitForResponse float64
+}
+
 type Thread struct {
-	Interrupt chan threads.InterruptEvent
+	Interrupt chan common.InterruptEvent
 
 	C13 chan common.SupervisorRequest
 	C14 chan common.SupervisorResponse
 
-	C15 chan threads.DatabaseRequest
-	C16 chan threads.DatabaseResponse
+	C15 chan common.DatabaseRequest
+	C16 chan common.DatabaseResponse
 
-	C17 chan threads.MessengerRequest
+	C17 chan common.MessengerRequest
 
-	Logger *utils.Logger
+	config *Config
+	Logger *logging.Logger
 
-	DatabaseResponseTable *utils.ResponseTable
+	DatabaseResponseTable *multithreaded.ResponseTable
 
 	accepting bool
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
+func NewThread(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
 	thread := new(Thread)
+
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
 
 	if logger != nil {
 		thread.Logger = logger
@@ -38,7 +49,7 @@ func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 
 	var ok bool = false
 
-	thread.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
@@ -50,20 +61,20 @@ func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorResponse' in index 2")
 	}
-	thread.C15, ok = (channels[3]).(chan threads.DatabaseRequest)
+	thread.C15, ok = (channels[3]).(chan common.DatabaseRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 3")
 	}
-	thread.C16, ok = (channels[4]).(chan threads.DatabaseResponse)
+	thread.C16, ok = (channels[4]).(chan common.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 4")
 	}
-	thread.C17, ok = (channels[5]).(chan threads.MessengerRequest)
+	thread.C17, ok = (channels[5]).(chan common.MessengerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 7")
 	}
 
-	thread.DatabaseResponseTable = utils.NewResponseTable()
+	thread.DatabaseResponseTable = multithreaded.NewResponseTable()
 
 	return thread, nil
 }

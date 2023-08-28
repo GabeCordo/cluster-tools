@@ -1,6 +1,6 @@
 package supervisor
 
-import "github.com/GabeCordo/mango/components/cluster"
+import "github.com/GabeCordo/mango/core/interfaces/cluster"
 
 func (registry *Registry) Create(processorName, moduleName, clusterName string, conf *cluster.Config) (identifier uint64) {
 

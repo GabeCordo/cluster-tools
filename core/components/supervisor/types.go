@@ -1,7 +1,7 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/mango/components/cluster"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"sync"
 )
 

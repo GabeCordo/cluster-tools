@@ -1,120 +1,119 @@
 package database
 
 import (
-	"github.com/GabeCordo/mango-core/core/components/database"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/components/cluster"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/components/database"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"log"
 	"math/rand"
 	"time"
 )
 
-func (databaseThread *Thread) Setup() {
-	databaseThread.accepting = true
+func (thread *Thread) Setup() {
+	thread.accepting = true
 
-	if err := GetConfigDatabaseInstance().Load(databaseThread.configFolderPath); err != nil {
+	if err := GetConfigDatabaseInstance().Load(thread.configFolderPath); err != nil {
 		log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
 			err.Error())
 	}
 }
 
-func (databaseThread *Thread) Teardown() {
-	databaseThread.accepting = false
+func (thread *Thread) Teardown() {
+	thread.accepting = false
 
-	if err := GetConfigDatabaseInstance().Save(databaseThread.configFolderPath); err != nil {
+	if err := GetConfigDatabaseInstance().Save(thread.configFolderPath); err != nil {
 		log.Printf("failed to save configs created during runtime %s\n", err.Error())
 	}
 
-	if err := GetStatisticDatabaseInstance().Save(databaseThread.statisticFolderPath); err != nil {
+	if err := GetStatisticDatabaseInstance().Save(thread.statisticFolderPath); err != nil {
 		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
 	}
 
-	databaseThread.wg.Wait()
+	thread.wg.Wait()
 }
 
-func (databaseThread *Thread) Start() {
+func (thread *Thread) Start() {
 
 	// LISTEN FOR INCOMING REQUESTS
 
 	go func() {
 		// request from http_server
-		for request := range databaseThread.C1 {
-			if !databaseThread.accepting {
+		for request := range thread.C1 {
+			if !thread.accepting {
 				break
 			}
-			databaseThread.wg.Add(1)
+			thread.wg.Add(1)
 
-			request.Source = threads.HttpClient
-			databaseThread.ProcessIncomingRequest(&request)
+			request.Source = common.HttpClient
+			thread.ProcessIncomingRequest(&request)
 		}
 	}()
 	go func() {
 		// request from supervisor
-		for request := range databaseThread.C11 {
-			if !databaseThread.accepting {
+		for request := range thread.C11 {
+			if !thread.accepting {
 				break
 			}
-			databaseThread.wg.Add(1)
+			thread.wg.Add(1)
 
-			request.Source = threads.HttpProcessor
-			databaseThread.ProcessIncomingRequest(&request)
+			request.Source = common.HttpProcessor
+			thread.ProcessIncomingRequest(&request)
 		}
 	}()
 	go func() {
 		// request from supervisor
-		for request := range databaseThread.C15 {
-			if !databaseThread.accepting {
+		for request := range thread.C15 {
+			if !thread.accepting {
 				break
 			}
-			databaseThread.wg.Add(1)
+			thread.wg.Add(1)
 
-			request.Source = threads.Supervisor
-			databaseThread.ProcessIncomingRequest(&request)
+			request.Source = common.Supervisor
+			thread.ProcessIncomingRequest(&request)
 		}
 	}()
 
 	// LISTEN FOR INCOMING RESPONSES
 
 	go func() {
-		for response := range databaseThread.C4 {
-			if !databaseThread.accepting {
+		for response := range thread.C4 {
+			if !thread.accepting {
 				break
 			}
-			databaseThread.ProcessIncomingResponse(&response)
+			thread.ProcessIncomingResponse(&response)
 		}
 	}()
 
-	databaseThread.wg.Wait()
+	thread.wg.Wait()
 }
 
-func (databaseThread *Thread) Request(module threads.Module, request any) (success bool) {
+func (thread *Thread) Request(module common.Module, request any) (success bool) {
 
 	success = true
 
 	switch module {
-	case threads.Messenger:
-		databaseThread.C3 <- *(request).(*threads.MessengerRequest)
+	case common.Messenger:
+		thread.C3 <- *(request).(*common.MessengerRequest)
 	default:
 		success = false
 	}
 	return success
 }
 
-func (databaseThread *Thread) Respond(request *threads.DatabaseRequest, response *threads.DatabaseResponse) (success bool) {
+func (thread *Thread) Respond(request *common.DatabaseRequest, response *common.DatabaseResponse) (success bool) {
 
 	success = true
 
 	switch request.Source {
-	case threads.HttpClient:
-		databaseThread.C2 <- *response
+	case common.HttpClient:
+		thread.C2 <- *response
 		break
-	case threads.HttpProcessor:
-		databaseThread.C12 <- *response
+	case common.HttpProcessor:
+		thread.C12 <- *response
 		break
-	case threads.Supervisor:
-		databaseThread.C16 <- *response
+	case common.Supervisor:
+		thread.C16 <- *response
 	default:
 		success = false
 	}
@@ -122,23 +121,23 @@ func (databaseThread *Thread) Respond(request *threads.DatabaseRequest, response
 	return success
 }
 
-func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRequest) {
+func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 
 	switch request.Action {
-	case threads.DatabaseStore:
+	case common.DatabaseStore:
 		{
 			switch request.Type {
-			case threads.ClusterConfig:
+			case common.ClusterConfig:
 				{
 					configData := (request.Data).(cluster.Config)
 					err := GetConfigDatabaseInstance().Create(request.Module, request.Cluster, configData)
 
-					databaseThread.Respond(request, &threads.DatabaseResponse{
+					thread.Respond(request, &common.DatabaseResponse{
 						Success: err == nil,
 						Nonce:   request.Nonce,
 					})
 				}
-			case threads.SupervisorStatistic:
+			case common.SupervisorStatistic:
 				{
 					statisticsData := (request.Data).(*cluster.Response)
 					err := GetStatisticDatabaseInstance().Create(
@@ -148,141 +147,141 @@ func (databaseThread *Thread) ProcessIncomingRequest(request *threads.DatabaseRe
 							Elapsed:   statisticsData.LapsedTime,
 							Stats:     *statisticsData.Stats,
 						})
-					databaseThread.Respond(request, &threads.DatabaseResponse{
+					thread.Respond(request, &common.DatabaseResponse{
 						Success: err == nil,
 						Nonce:   request.Nonce,
 					})
 				}
 			}
 		}
-	case threads.DatabaseFetch:
+	case common.DatabaseFetch:
 		{
-			var response threads.DatabaseResponse
+			var response common.DatabaseResponse
 
 			switch request.Type {
-			case threads.ClusterConfig:
+			case common.ClusterConfig:
 				{
 					config, err := GetConfigDatabaseInstance().Get(database.ConfigFilter{
 						Module:     request.Module,
 						Identifier: request.Cluster,
 					})
 					if err != nil {
-						response = threads.DatabaseResponse{Success: false, Nonce: request.Nonce}
+						response = common.DatabaseResponse{Success: false, Nonce: request.Nonce}
 					} else {
 						// TODO - use to expect one record, now will have many
-						response = threads.DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
+						response = common.DatabaseResponse{Success: true, Nonce: request.Nonce, Data: config}
 					}
 
-					databaseThread.Respond(request, &response)
+					thread.Respond(request, &response)
 				}
-			case threads.SupervisorStatistic:
+			case common.SupervisorStatistic:
 				{
 					records, err := GetStatisticDatabaseInstance().Get(database.StatisticFilter{
 						Module:  request.Module,
 						Cluster: request.Cluster,
 					})
-					response = threads.DatabaseResponse{Success: err == nil, Nonce: request.Nonce, Data: records}
-					databaseThread.Respond(request, &response)
+					response = common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce, Data: records}
+					thread.Respond(request, &response)
 				}
 			}
 		}
-	case threads.DatabaseDelete:
+	case common.DatabaseDelete:
 		{
 			switch request.Type {
-			case threads.ClusterConfig:
+			case common.ClusterConfig:
 				{
 					err := GetConfigDatabaseInstance().Delete(request.Module, request.Cluster)
-					response := threads.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
-					databaseThread.Respond(request, &response)
+					response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
+					thread.Respond(request, &response)
 				}
-			case threads.ClusterModule:
+			case common.ClusterModule:
 				{
 					err := GetStatisticDatabaseInstance().Delete(request.Module)
 
-					response := threads.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
-					databaseThread.Respond(request, &response)
+					response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
+					thread.Respond(request, &response)
 				}
 			}
 		}
-	case threads.DatabaseReplace:
+	case common.DatabaseReplace:
 		{
 			config := (request.Data).(cluster.Config)
 			err := GetConfigDatabaseInstance().Replace(request.Module, request.Cluster, config)
-			response := threads.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
+			response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
 
-			databaseThread.Respond(request, &response)
+			thread.Respond(request, &response)
 		}
-	case threads.DatabaseUpperPing:
+	case common.DatabaseUpperPing:
 		{
-			databaseThread.ProcessDatabaseUpperPing(request)
+			thread.ProcessDatabaseUpperPing(request)
 		}
-	case threads.DatabaseLowerPing:
+	case common.DatabaseLowerPing:
 		{
-			databaseThread.ProcessDatabaseLowerPing(request)
+			thread.ProcessDatabaseLowerPing(request)
 		}
 	}
 
-	databaseThread.wg.Done()
+	thread.wg.Done()
 }
 
-func (databaseThread *Thread) ProcessDatabaseUpperPing(request *threads.DatabaseRequest) {
+func (thread *Thread) ProcessDatabaseUpperPing(request *common.DatabaseRequest) {
 
-	if common.GetConfigInstance().Debug {
-		databaseThread.logger.Println("received ping over C1")
+	if thread.config.Debug {
+		thread.logger.Println("received ping over C1")
 	}
 
-	messengerPingRequest := &threads.MessengerRequest{
-		Action: threads.MessengerUpperPing,
+	messengerPingRequest := &common.MessengerRequest{
+		Action: common.MessengerUpperPing,
 		Nonce:  rand.Uint32(),
 	}
-	databaseThread.Request(threads.Messenger, messengerPingRequest)
+	thread.Request(common.Messenger, messengerPingRequest)
 
-	data, didTimeout := utils.SendAndWait(databaseThread.messengerResponseTable, messengerPingRequest.Nonce,
-		common.GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(thread.messengerResponseTable, messengerPingRequest.Nonce,
+		thread.config.MaxWaitForResponse)
 
 	if didTimeout {
-		databaseThread.C2 <- threads.DatabaseResponse{
+		thread.C2 <- common.DatabaseResponse{
 			Nonce:   request.Nonce,
 			Success: false,
 		}
 		return
 	}
 
-	messengerResponse := (data).(*threads.MessengerResponse)
+	messengerResponse := (data).(*common.MessengerResponse)
 
 	if !messengerResponse.Success {
-		databaseThread.C2 <- threads.DatabaseResponse{
+		thread.C2 <- common.DatabaseResponse{
 			Nonce:   request.Nonce,
 			Success: false,
 		}
 		return
 	}
 
-	if common.GetConfigInstance().Debug {
-		databaseThread.logger.Println("received ping over C4")
+	if thread.config.Debug {
+		thread.logger.Println("received ping over C4")
 	}
 
-	databaseResponse := threads.DatabaseResponse{
+	databaseResponse := common.DatabaseResponse{
 		Nonce:   request.Nonce,
 		Success: messengerResponse.Success,
 	}
-	databaseThread.C2 <- databaseResponse
+	thread.C2 <- databaseResponse
 }
 
-func (databaseThread *Thread) ProcessDatabaseLowerPing(request *threads.DatabaseRequest) {
+func (thread *Thread) ProcessDatabaseLowerPing(request *common.DatabaseRequest) {
 
 	// TODO : fix
 	//if common.GetConfigInstance().Debug {
-	//	databaseThread.logger.Println("received ping over C15")
+	//	thread.logger.Println("received ping over C15")
 	//}
 	//
-	//response := threads.DatabaseResponse{
+	//response := common.DatabaseResponse{
 	//	Nonce:   request.Nonce,
 	//	Success: true,
 	//}
-	//databaseThread.C <- response
+	//thread.C <- response
 }
 
-func (databaseThread *Thread) ProcessIncomingResponse(response *threads.MessengerResponse) {
-	databaseThread.messengerResponseTable.Write(response.Nonce, response)
+func (thread *Thread) ProcessIncomingResponse(response *common.MessengerResponse) {
+	thread.messengerResponseTable.Write(response.Nonce, response)
 }

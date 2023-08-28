@@ -3,7 +3,7 @@ package database
 import (
 	"encoding/json"
 	"errors"
-	"github.com/GabeCordo/mango/components/cluster"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"io/ioutil"
 	"os"
 	"path/filepath"

@@ -1,6 +1,6 @@
 package supervisor
 
-import "github.com/GabeCordo/mango-core/core/components/supervisor"
+import "github.com/GabeCordo/mango/core/components/supervisor"
 
 var registryInstance *supervisor.Registry
 

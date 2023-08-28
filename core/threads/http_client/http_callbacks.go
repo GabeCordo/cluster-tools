@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango-core/core/components/processor"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/components/cluster"
-	"github.com/GabeCordo/mango/core"
+	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/mango/core/threads/common"
 	"net/http"
 	"net/url"
 	"time"
@@ -28,9 +27,9 @@ func (thread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) 
 
 func (thread *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
-	processors, success := common.GetProcessors(thread.C5, thread.ProcessorResponseTable)
+	processors, success := common.GetProcessors(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 
 	if success {
 		response.Data = processors
@@ -57,9 +56,9 @@ func (thread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 func (thread *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
 
-	success, modules := common.GetModules(thread.C5, thread.ProcessorResponseTable)
+	success, modules := common.GetModules(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 	if success {
 		response.Data = modules
 	} else {
@@ -88,12 +87,12 @@ func (thread *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) 
 	var success bool = false
 
 	if request.Mounted {
-		success, err = common.MountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName)
+		success, err = common.MountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName, thread.config.Timeout)
 	} else {
-		success, err = common.UnmountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName)
+		success, err = common.UnmountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName, thread.config.Timeout)
 	}
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 
 	if errors.Is(err, processor.ModuleDoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
@@ -133,12 +132,12 @@ func (thread *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	clusterList, success := common.GetClusters(thread.C5, thread.ProcessorResponseTable, moduleName[0])
+	clusterList, success := common.GetClusters(thread.C5, thread.ProcessorResponseTable, moduleName[0], thread.config.Timeout)
 	if !success {
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	response := core.Response{Success: success}
+	response := common.Response{Success: success}
 
 	if success {
 		response.Data = clusterList
@@ -163,12 +162,12 @@ func (thread *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := core.Response{}
+	response := common.Response{}
 
 	if request.Mounted {
-		response.Success = common.MountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster)
+		response.Success = common.MountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster, thread.config.Timeout)
 	} else {
-		response.Success = common.UnmountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster)
+		response.Success = common.UnmountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster, thread.config.Timeout)
 	}
 
 	if !response.Success {
@@ -264,6 +263,7 @@ func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request)
 			request.Cluster,
 			request.Config,
 			request.Metadata,
+			thread.config.Timeout,
 		); err == nil {
 
 			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
@@ -302,7 +302,7 @@ func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 		clusterName, foundClusterName := urlMapping["config"]
 
 		if foundClusterName {
-			if config, found := common.GetConfigFromDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], clusterName[0]); found {
+			if config, found := common.GetConfigFromDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], clusterName[0], thread.config.Timeout); found {
 				bytes, _ := json.Marshal(config)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -311,7 +311,7 @@ func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			if configs, found := common.GetConfigsFromDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0]); found {
+			if configs, found := common.GetConfigsFromDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], thread.config.Timeout); found {
 				bytes, _ := json.Marshal(configs)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -323,13 +323,13 @@ func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	} else if r.Method == "POST" {
 
-		isOk := common.StoreConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request)
+		isOk := common.StoreConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request, thread.config.Timeout)
 		if !isOk {
 			w.WriteHeader(http.StatusConflict)
 		}
 
 	} else if r.Method == "PUT" {
-		isOk := common.ReplaceConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request)
+		isOk := common.ReplaceConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request, thread.config.Timeout)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -339,7 +339,7 @@ func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 		if foundClusterName {
 			if isOk := common.DeleteConfigInDatabase(thread.C1, thread.DatabaseResponseTable,
-				moduleName[0], clusterName[0]); !isOk {
+				moduleName[0], clusterName[0], thread.config.Timeout); !isOk {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
@@ -361,7 +361,7 @@ func (thread *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) 
 		clusterName, clusterNameFound := urlMapping["cluster"]
 
 		if moduleNameFound && clusterNameFound {
-			statistics, found := common.FindStatistics(thread.C1, thread.DatabaseResponseTable, moduleName[0], clusterName[0])
+			statistics, found := common.FindStatistics(thread.C1, thread.DatabaseResponseTable, moduleName[0], clusterName[0], thread.config.Timeout)
 			if found {
 				bytes, err := json.Marshal(statistics)
 				if err == nil {
@@ -422,11 +422,13 @@ func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
 			//	} else {
 			//		w.WriteHeader(http.StatusInternalServerError)
 			//	}
-		} else if request.Action == "debug" {
-			description := common.ToggleDebugMode(thread.logger)
-			if _, err := w.Write([]byte(description)); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			// TODO : fix
+			//} else if request.Action == "debug" {
+			//	description := common.ToggleDebugMode(thread.logger)
+			//	if _, err := w.Write([]byte(description)); err != nil {
+			//		w.WriteHeader(http.StatusInternalServerError)
+			//	}
+			//}
 		}
 	} else if r.Method == "OPTIONS" {
 		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, POST, GET")

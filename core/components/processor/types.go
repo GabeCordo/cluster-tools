@@ -2,7 +2,7 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango/module"
+	"github.com/GabeCordo/mango/core/interfaces/module"
 	"sync"
 	"time"
 )

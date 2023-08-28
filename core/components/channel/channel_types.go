@@ -1,7 +1,7 @@
 package channel
 
 import (
-	channel "github.com/GabeCordo/mango/components/channel"
+	channel "github.com/GabeCordo/mango/core/interfaces/channel"
 	"sync"
 	"time"
 )

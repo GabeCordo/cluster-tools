@@ -1,7 +1,7 @@
 package channel
 
 import (
-	"github.com/GabeCordo/mango/components/channel"
+	"github.com/GabeCordo/mango/core/interfaces/channel"
 	"math/rand"
 )
 

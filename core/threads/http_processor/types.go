@@ -2,36 +2,52 @@ package http_processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
 	"sync"
 )
 
+type Config struct {
+	Debug bool
+	Net   struct {
+		Host string
+		Port int
+	}
+	Timeout float64
+}
+
 type Thread struct {
 	mutex sync.Mutex
 
-	Interrupt chan<- threads.InterruptEvent
+	Interrupt chan<- common.InterruptEvent
 
 	C7 chan<- common.ProcessorRequest  // HTTP Processor is sending req to the processor_thread
 	C8 <-chan common.ProcessorResponse // HTTP Processor is rec rsp from the processor_thread
 
-	C9  chan<- threads.CacheRequest  // HTTP Processor is sending req to the cache_thread
-	C10 <-chan threads.CacheResponse // HTTP Processor is rec rsp from the cache_thread
+	C9  chan<- common.CacheRequest  // HTTP Processor is sending req to the cache_thread
+	C10 <-chan common.CacheResponse // HTTP Processor is rec rsp from the cache_thread
 
-	ProcessorResponseTable *utils.ResponseTable
-	CacheResponseTable     *utils.ResponseTable
+	ProcessorResponseTable *multithreaded.ResponseTable
+	CacheResponseTable     *multithreaded.ResponseTable
 
 	server *http.Server
 	mux    *http.ServeMux
 
-	Logger    *utils.Logger
+	config *Config
+	Logger *logging.Logger
+
 	accepting bool
 }
 
-func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
 	thread := new(Thread)
+
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
 
 	if logger != nil {
 		thread.Logger = logger
@@ -41,7 +57,7 @@ func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 
 	var ok bool = false
 
-	thread.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
@@ -56,18 +72,18 @@ func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	thread.C9, ok = (channels[3]).(chan threads.CacheRequest)
+	thread.C9, ok = (channels[3]).(chan common.CacheRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	thread.C10, ok = (channels[4]).(chan threads.CacheResponse)
+	thread.C10, ok = (channels[4]).(chan common.CacheResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	thread.ProcessorResponseTable = utils.NewResponseTable()
-	thread.CacheResponseTable = utils.NewResponseTable()
+	thread.ProcessorResponseTable = multithreaded.NewResponseTable()
+	thread.CacheResponseTable = multithreaded.NewResponseTable()
 
 	return thread, nil
 }

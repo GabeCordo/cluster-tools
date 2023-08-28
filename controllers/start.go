@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango-core/core/threads"
 	"github.com/GabeCordo/mango/core"
+	"github.com/GabeCordo/mango/core/threads/common"
 	"log"
 	"os"
 )
@@ -16,12 +16,12 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 
 	// check to see that the etl threads has been initialized with the required files
 	// if it has not, fail and tell the operator to call the 'etl init' command
-	if _, err := os.Stat(core.DefaultConfigsFolder); err != nil {
+	if _, err := os.Stat(common.DefaultConfigsFolder); err != nil {
 		fmt.Println("the etl threads has never been initialized, run 'etl init'")
 		return commandline.Terminate
 	}
 
-	c, err := threads.NewCore(core.DefaultConfigFile)
+	c, err := core.New(common.DefaultConfigFile)
 	if err != nil {
 		log.Panic(err.Error())
 	}

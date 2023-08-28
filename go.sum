@@ -2,10 +2,6 @@ github.com/GabeCordo/commandline v0.1.7 h1:Xg5wAFkuZmc1l405s5Med2kAPb1n5lybl84e9
 github.com/GabeCordo/commandline v0.1.7/go.mod h1:PpEJZ9in2hhhZKvLNViNCl26O9Aij/A0fiJmYazRmdI=
 github.com/GabeCordo/fack v0.1.4 h1:sEFZvPN0e1xBWotTKBTN15CG3sHhxdRiILEX87xfIMs=
 github.com/GabeCordo/fack v0.1.4/go.mod h1:gswPD1Ow2onkjUcNa3WVbnJDJ+hHytS3Bjmdab4fRtk=
-github.com/GabeCordo/mango v0.1.4 h1:hnrVqg8u4vVNFASCqcGdt9mGRr8bNTDNuzxb7OI8PX4=
-github.com/GabeCordo/mango v0.1.4/go.mod h1:brLJ9X0LJ/HO9Xqr3NxYdl2utwBL3yndBzSDFN8DPq4=
-github.com/GabeCordo/toolchain v0.1.5 h1:z0G1wNCSxzIvJ097OpU+heYvkA0luqNmC8Bz2pArMJ8=
-github.com/GabeCordo/toolchain v0.1.5/go.mod h1:2UmX2lHst0LFC4GyFCprBfBk0XbLo9DAQM6cuXHYh3U=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=

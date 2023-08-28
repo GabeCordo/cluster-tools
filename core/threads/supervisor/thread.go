@@ -1,9 +1,8 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/mango-core/core/components/supervisor"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/core/components/supervisor"
+	"github.com/GabeCordo/mango/core/threads/common"
 )
 
 func (thread *Thread) Setup() {
@@ -20,7 +19,7 @@ func (thread *Thread) Start() {
 				break
 			}
 
-			request.Source = threads.Processor
+			request.Source = common.Processor
 			thread.processRequest(&request)
 		}
 	}()
@@ -38,12 +37,12 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) respond(dst threads.Module, response *common.SupervisorResponse) error {
+func (thread *Thread) respond(dst common.Module, response *common.SupervisorResponse) error {
 	switch dst {
-	case threads.Processor:
+	case common.Processor:
 		thread.C14 <- *response
 	default:
-		return threads.BadResponseType
+		return common.BadResponseType
 	}
 
 	return nil
@@ -61,7 +60,7 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 		s := (request.Data).(supervisor.Supervisor)
 		response.Error = thread.updateSupervisor(&s)
 	default:
-		response.Error = threads.BadRequestType
+		response.Error = common.BadRequestType
 	}
 
 	response.Success = response.Error == nil

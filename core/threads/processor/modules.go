@@ -2,9 +2,9 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango-core/core/components/processor"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/module"
+	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/interfaces/module"
+	"github.com/GabeCordo/mango/core/threads/common"
 )
 
 func (thread *Thread) getModules() []processor.ModuleData {
@@ -24,7 +24,7 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 
 	// TODO : what should we do with the configs that we are getting?
 	for _, export := range cfg.Exports {
-		common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig())
+		common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig(), thread.config.MaxWaitForResponse)
 	}
 
 	return nil

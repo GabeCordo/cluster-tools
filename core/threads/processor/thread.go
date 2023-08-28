@@ -1,10 +1,9 @@
 package processor
 
 import (
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/module"
-	"github.com/GabeCordo/mango/processor"
-	"github.com/GabeCordo/mango/threads"
+	"github.com/GabeCordo/mango/core/interfaces/module"
+	"github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/mango/core/threads/common"
 )
 
 func (thread *Thread) Setup() {
@@ -22,7 +21,7 @@ func (thread *Thread) Start() {
 			}
 			thread.wg.Add(1)
 
-			request.Source = threads.HttpClient
+			request.Source = common.HttpClient
 			thread.processRequest(&request)
 		}
 	}()
@@ -36,7 +35,7 @@ func (thread *Thread) Start() {
 			thread.wg.Add(1)
 
 			// if this doesn't spawn its own thread we will be left waiting
-			request.Source = threads.HttpProcessor
+			request.Source = common.HttpProcessor
 			thread.processRequest(&request)
 		}
 	}()
@@ -60,27 +59,27 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) request(dest threads.Module, request any) error {
+func (thread *Thread) request(dest common.Module, request any) error {
 	switch dest {
-	case threads.Supervisor:
+	case common.Supervisor:
 		thread.C13 <- (request).(common.SupervisorRequest)
-	case threads.Database:
-		thread.C11 <- (request).(threads.DatabaseRequest)
+	case common.Database:
+		thread.C11 <- (request).(common.DatabaseRequest)
 	default:
-		return threads.BadRequestType
+		return common.BadRequestType
 	}
 
 	return nil
 }
 
-func (thread *Thread) respond(source threads.Module, response *common.ProcessorResponse) error {
+func (thread *Thread) respond(source common.Module, response *common.ProcessorResponse) error {
 	switch source {
-	case threads.HttpClient:
+	case common.HttpClient:
 		thread.C6 <- *response
-	case threads.HttpProcessor:
+	case common.HttpProcessor:
 		thread.C8 <- *response
 	default:
-		return threads.BadResponseType
+		return common.BadResponseType
 	}
 
 	return nil
@@ -123,7 +122,7 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 	case common.ProcessorSupervisorUpdate:
 		response.Error = thread.updateSupervisor(request)
 	default:
-		response.Error = threads.UnknownRequest
+		response.Error = common.UnknownRequest
 	}
 
 	response.Success = response.Error == nil

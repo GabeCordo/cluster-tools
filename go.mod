@@ -1,13 +1,12 @@
-module github.com/GabeCordo/mango-core
+module github.com/GabeCordo/mango
 
 go 1.20
 
-replace github.com/GabeCordo/mango => /Users/gabecordovado/go/src/etl-framework
+replace github.com/GabeCordo/toolchain => /Users/gabecordovado/go/src/github.com/GabeCordo/toolchain
 
 require (
 	github.com/GabeCordo/commandline v0.1.7
 	github.com/GabeCordo/fack v0.1.4
-	github.com/GabeCordo/mango v0.1.4
-	github.com/GabeCordo/toolchain v0.1.5
+	github.com/GabeCordo/toolchain v0.1.2
 	gopkg.in/yaml.v3 v3.0.1
 )

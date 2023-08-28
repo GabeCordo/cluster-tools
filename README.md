@@ -17,7 +17,7 @@ to the engine. If you are interested, feel free to reach out.
 
 ```shell
    # create a local copy of the threads
-   git clone https://github.com/GabeCordo/mango-core
+   git clone https://github.com/GabeCordo/mango
    
    # generate a threads binary in the GOPATH bin folder
    go install
@@ -25,13 +25,13 @@ to the engine. If you are interested, feel free to reach out.
    # add $(go env GOPATH)/bin to your environment PATH
    
    # generate global files used by the threads when run
-   mango-core init
+   mango init
 ```
 
 ### Running the ETL Engine
 
 ```shell
-mango-core start
+mango start
 ```
 adding the common variant will load in util and test functions that can be used to verify the framework is working.
 

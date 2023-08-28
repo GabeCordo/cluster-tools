@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango-core/controllers"
+	"github.com/GabeCordo/mango/controllers"
 )
 
 // @title Swagger Example API

@@ -2,14 +2,19 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"sync"
 )
 
+type Config struct {
+	Debug              bool
+	MaxWaitForResponse float64
+}
+
 type Thread struct {
-	Interrupt chan<- threads.InterruptEvent
+	Interrupt chan<- common.InterruptEvent
 
 	C5 <-chan common.ProcessorRequest  // Processor rec req from the http_client thread
 	C6 chan<- common.ProcessorResponse // Processor sending rsp to the http_client thread
@@ -17,79 +22,85 @@ type Thread struct {
 	C7 <-chan common.ProcessorRequest  // Processor rec req from the http_processor thread
 	C8 chan<- common.ProcessorResponse // Processor sending rsp to the http_processor thread
 
-	C11 chan<- threads.DatabaseRequest  // Processor sending req to the database thread
-	C12 <-chan threads.DatabaseResponse // Processor rec rsp from the database thread
+	C11 chan<- common.DatabaseRequest  // Processor sending req to the database thread
+	C12 <-chan common.DatabaseResponse // Processor rec rsp from the database thread
 
 	C13 chan<- common.SupervisorRequest  // Processor thread sending req to the supervisor thread
 	C14 <-chan common.SupervisorResponse // Processor thread rec rsp from the supervisor thread
 
-	SupervisorResponseTable *utils.ResponseTable
-	DatabaseResponseTable   *utils.ResponseTable
+	SupervisorResponseTable *multithreaded.ResponseTable
+	DatabaseResponseTable   *multithreaded.ResponseTable
 
-	Logger *utils.Logger
+	config *Config
+	Logger *logging.Logger
 
 	accepting bool
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
-	processor := new(Thread)
+func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
+	thread := new(Thread)
+
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
 
 	if logger != nil {
-		processor.Logger = logger
+		thread.Logger = logger
 	} else {
 		return nil, errors.New("logger cannot be nil")
 	}
 
 	var ok bool = false
 
-	processor.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
 
-	processor.C5, ok = (channels[1]).(chan common.ProcessorRequest)
+	thread.C5, ok = (channels[1]).(chan common.ProcessorRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	processor.C6, ok = (channels[2]).(chan common.ProcessorResponse)
+	thread.C6, ok = (channels[2]).(chan common.ProcessorResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	processor.C7, ok = (channels[3]).(chan common.ProcessorRequest)
+	thread.C7, ok = (channels[3]).(chan common.ProcessorRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 3")
 	}
 
-	processor.C8, ok = (channels[4]).(chan common.ProcessorResponse)
+	thread.C8, ok = (channels[4]).(chan common.ProcessorResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 4")
 	}
 
-	processor.C11, ok = (channels[5]).(chan threads.DatabaseRequest)
+	thread.C11, ok = (channels[5]).(chan common.DatabaseRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 5")
 	}
 
-	processor.C12, ok = (channels[6]).(chan threads.DatabaseResponse)
+	thread.C12, ok = (channels[6]).(chan common.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
 
-	processor.C13, ok = (channels[7]).(chan common.SupervisorRequest)
+	thread.C13, ok = (channels[7]).(chan common.SupervisorRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorRequest' in index 7")
 	}
 
-	processor.C14, ok = (channels[8]).(chan common.SupervisorResponse)
+	thread.C14, ok = (channels[8]).(chan common.SupervisorResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorResponse' in index 8")
 	}
 
-	processor.SupervisorResponseTable = utils.NewResponseTable()
-	processor.DatabaseResponseTable = utils.NewResponseTable()
+	thread.SupervisorResponseTable = multithreaded.NewResponseTable()
+	thread.DatabaseResponseTable = multithreaded.NewResponseTable()
 
-	return processor, nil
+	return thread, nil
 }

@@ -2,36 +2,46 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
 	"sync"
 )
 
+type Config struct {
+	Debug bool
+}
+
 type Thread struct {
-	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
+	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C9  <-chan threads.CacheRequest
-	C10 chan<- threads.CacheResponse
+	C9  <-chan common.CacheRequest
+	C10 chan<- common.CacheResponse
 
-	logger *utils.Logger
+	config *Config
+	logger *logging.Logger
 
 	accepting bool
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
-	cache := new(Thread)
+func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
+	thread := new(Thread)
 	var ok bool
 
-	cache.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
+
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	cache.C9, ok = (channels[1]).(chan threads.CacheRequest)
+	thread.C9, ok = (channels[1]).(chan common.CacheRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheRequest' in index 1")
 	}
-	cache.C10, ok = (channels[2]).(chan threads.CacheResponse)
+	thread.C10, ok = (channels[2]).(chan common.CacheResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheResponse' in index 2")
 	}
@@ -39,8 +49,8 @@ func NewThread(logger *utils.Logger, channels ...any) (*Thread, error) {
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.Logger type")
 	}
-	cache.logger = logger
-	cache.logger.SetColour(utils.Yellow)
+	thread.logger = logger
+	thread.logger.SetColour(logging.Yellow)
 
-	return cache, nil
+	return thread, nil
 }

@@ -3,14 +3,14 @@ package supervisor
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango-core/core/components/supervisor"
-	"github.com/GabeCordo/mango-core/core/threads/common"
+	"github.com/GabeCordo/mango/core/components/supervisor"
+	"github.com/GabeCordo/mango/core/threads/common"
 )
 
 func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string) (uint64, error) {
 
 	// TODO : change it so that configs are received via pointer over the channel
-	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName)
+	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName, thread.config.MaxWaitForResponse)
 	if !found {
 		return 0, errors.New("no config with that identifier exists")
 	}

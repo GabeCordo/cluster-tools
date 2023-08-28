@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
 	"github.com/GabeCordo/mango/core"
+	"github.com/GabeCordo/mango/core/threads/common"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -23,48 +24,48 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Net.Client.Port = 8136
 	defaultConfig.Net.Processor.Host = "localhost"
 	defaultConfig.Net.Processor.Port = 8137
-	defaultConfig.Path = core.DefaultFrameworkFolder
+	defaultConfig.Path = common.DefaultFrameworkFolder
 
-	defaultConfig.Messenger.LogFiles.Directory = core.DefaultLogsFolder
+	defaultConfig.Messenger.LogFiles.Directory = common.DefaultLogsFolder
 
-	if _, err := os.Stat(core.DefaultFrameworkFolder); err == nil {
+	if _, err := os.Stat(common.DefaultFrameworkFolder); err == nil {
 		fmt.Println("etl has already been initialized")
 		return commandline.Terminate
 	}
 
 	fmt.Println("etl has not been initialized")
 
-	if err := os.Mkdir(core.DefaultFrameworkFolder, 0700); err != nil {
-		fmt.Printf("[x] failed to create %s directory %s\n", core.DefaultFrameworkFolder, err.Error())
+	if err := os.Mkdir(common.DefaultFrameworkFolder, 0700); err != nil {
+		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultFrameworkFolder, err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created default cache folder %s\n", core.DefaultFrameworkFolder)
+		fmt.Printf("[✓] created default cache folder %s\n", common.DefaultFrameworkFolder)
 	}
 
-	if err := os.Mkdir(core.DefaultLogsFolder, 0700); err != nil {
-		fmt.Printf("[x] failed to create %s directory %s\n", core.DefaultLogsFolder, err.Error())
+	if err := os.Mkdir(common.DefaultLogsFolder, 0700); err != nil {
+		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultLogsFolder, err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created logs folder %s\n", core.DefaultLogsFolder)
+		fmt.Printf("[✓] created logs folder %s\n", common.DefaultLogsFolder)
 	}
 
-	if err := os.Mkdir(core.DefaultStatisticsFolder, 0700); err != nil {
-		fmt.Printf("[x] failed to create %s directory %s\n", core.DefaultStatisticsFolder, err.Error())
+	if err := os.Mkdir(common.DefaultStatisticsFolder, 0700); err != nil {
+		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultStatisticsFolder, err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created configs folder %s\n", core.DefaultStatisticsFolder)
+		fmt.Printf("[✓] created configs folder %s\n", common.DefaultStatisticsFolder)
 	}
 
-	if err := os.Mkdir(core.DefaultConfigsFolder, 0700); err != nil {
-		fmt.Printf("[x] failed to create %s directory %s\n", core.DefaultConfigsFolder, err.Error())
+	if err := os.Mkdir(common.DefaultConfigsFolder, 0700); err != nil {
+		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultConfigsFolder, err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created configs folder %s\n", core.DefaultConfigsFolder)
+		fmt.Printf("[✓] created configs folder %s\n", common.DefaultConfigsFolder)
 	}
 
-	dst, err := os.Create(core.DefaultConfigFile)
+	dst, err := os.Create(common.DefaultConfigFile)
 	if err != nil {
-		fmt.Printf("[x] failed to create %s %s\n", core.DefaultConfigFile, err.Error())
+		fmt.Printf("[x] failed to create %s %s\n", common.DefaultConfigFile, err.Error())
 		return commandline.Terminate
 	}
 
@@ -80,7 +81,7 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 		fmt.Printf("[x] failed to write bytes of default common to file %s\n", err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created default common %s\n", core.DefaultConfigFile)
+		fmt.Printf("[✓] created default common %s\n", common.DefaultConfigFile)
 	}
 
 	return commandline.Terminate

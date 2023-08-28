@@ -1,19 +1,9 @@
-package threads
+package core
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango-core/core/threads/cache"
-	"github.com/GabeCordo/mango-core/core/threads/common"
-	"github.com/GabeCordo/mango-core/core/threads/database"
-	"github.com/GabeCordo/mango-core/core/threads/http_client"
-	"github.com/GabeCordo/mango-core/core/threads/http_processor"
-	"github.com/GabeCordo/mango-core/core/threads/messenger"
-	"github.com/GabeCordo/mango-core/core/threads/processor"
-	"github.com/GabeCordo/mango-core/core/threads/supervisor"
-	core_i "github.com/GabeCordo/mango/core"
-	"github.com/GabeCordo/mango/threads"
-	"github.com/GabeCordo/mango/utils"
-	"log"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,110 +13,6 @@ const (
 	Version string = "v0.1.9-alpha"
 )
 
-func NewCore(configPath string) (*Core, error) {
-	core := new(Core)
-
-	core.interrupt = make(chan threads.InterruptEvent, 10)
-	core.C1 = make(chan threads.DatabaseRequest, 10)
-	core.C2 = make(chan threads.DatabaseResponse, 10)
-	core.C3 = make(chan threads.MessengerRequest, 10)
-	core.C4 = make(chan threads.MessengerResponse, 10)
-	core.C5 = make(chan common.ProcessorRequest, 10)
-	core.C6 = make(chan common.ProcessorResponse, 10)
-	core.C7 = make(chan common.ProcessorRequest, 10)
-	core.C8 = make(chan common.ProcessorResponse, 10)
-	core.C9 = make(chan threads.CacheRequest, 10)
-	core.C10 = make(chan threads.CacheResponse, 10)
-	core.C11 = make(chan threads.DatabaseRequest, 10)
-	core.C12 = make(chan threads.DatabaseResponse, 10)
-	core.C13 = make(chan common.SupervisorRequest, 10)
-	core.C14 = make(chan common.SupervisorResponse, 10)
-	core.C15 = make(chan threads.DatabaseRequest, 10)
-	core.C16 = make(chan threads.DatabaseResponse, 10)
-	core.C17 = make(chan threads.MessengerRequest, 10)
-
-	/* load the cfg in for the first time */
-	if cfg := common.GetConfigInstance(configPath); cfg == nil {
-		log.Panic("could not create cfg")
-	}
-
-	httpLogger, err := utils.NewLogger(utils.HttpClient, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.HttpClientThread, err = http_client.NewThread(httpLogger,
-		core.interrupt, core.C1, core.C2, core.C5, core.C6)
-	if err != nil {
-		return nil, err
-	}
-
-	httpProcessorLogger, err := utils.NewLogger(utils.HttpProcessor, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.HttpProcessorThread, err = http_processor.NewThread(httpProcessorLogger,
-		core.interrupt, core.C7, core.C8, core.C9, core.C10)
-	if err != nil {
-		return nil, err
-	}
-
-	processorLogger, err := utils.NewLogger(utils.Processor, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.ProcessorThread, err = processor.NewThread(processorLogger,
-		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14)
-	if err != nil {
-		return nil, err
-	}
-
-	supervisorLogger, err := utils.NewLogger(utils.Supervisor, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.SupervisorThread, err = supervisor.NewThread(supervisorLogger,
-		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17)
-	if err != nil {
-		return nil, err
-	}
-
-	messengerLogger, err := utils.NewLogger(utils.Messenger, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.MessengerThread, err = messenger.NewThread(messengerLogger, core.interrupt, core.C3, core.C4, core.C17)
-	if err != nil {
-		return nil, err
-	}
-
-	databaseLogger, err := utils.NewLogger(utils.Database, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.DatabaseThread, err = database.NewThread(databaseLogger, core_i.DefaultConfigsFolder, core_i.DefaultStatisticsFolder,
-		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C11, core.C12, core.C15, core.C16)
-	if err != nil {
-		return nil, err
-	}
-
-	cacheLogger, err := utils.NewLogger(utils.Cache, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.CacheThread, err = cache.NewThread(cacheLogger, core.interrupt, core.C9, core.C10)
-	if err != nil {
-		return nil, err
-	}
-
-	coreLogger, err := utils.NewLogger(utils.Undefined, &common.GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.logger = coreLogger
-
-	return core, nil
-}
-
 func (core *Core) Banner() {
 	fmt.Println("   ___    _____    _")
 	fmt.Println("  | __|  |_   _|  | |")
@@ -134,8 +20,8 @@ func (core *Core) Banner() {
 	fmt.Println("  |___|   _|_|_   |____|")
 	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
 	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
-	fmt.Println("[+] " + utils.Purple + "Extract Transform Load Framework " + utils.Reset + Version)
-	fmt.Println("[+]" + utils.Purple + " by Gabriel Cordovado 2022-23" + utils.Reset)
+	fmt.Println("[+] " + logging.Purple + "Extract Transform Load Framework " + logging.Reset + Version)
+	fmt.Println("[+]" + logging.Purple + " by Gabriel Cordovado 2022-23" + logging.Reset)
 	fmt.Println()
 }
 
@@ -143,9 +29,9 @@ func (core *Core) Run() {
 
 	core.Banner()
 
-	core.logger.SetColour(utils.Purple)
+	core.logger.SetColour(logging.Purple)
 
-	if common.GetConfigInstance().Debug {
+	if GetConfigInstance().Debug {
 		core.logger.Println("debug mode ON")
 	} else {
 		core.logger.Println("debug mode OFF")
@@ -154,14 +40,14 @@ func (core *Core) Run() {
 	// needed in-case the proceeding threads need logging or email capabilities during startup
 	core.MessengerThread.Setup()
 	go core.MessengerThread.Start() // event loop
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("Messenger Thread Started")
 	}
 
 	// needed in-case the supervisor or http_client threads need to populate data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("Database Thread Started")
 	}
 
@@ -170,7 +56,7 @@ func (core *Core) Run() {
 	//		has stream processes that need to start using it.
 	core.CacheThread.Setup()
 	go core.CacheThread.Start()
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("Cache Thread Started")
 	}
 
@@ -183,31 +69,31 @@ func (core *Core) Run() {
 
 	core.SupervisorThread.Setup()
 	go core.SupervisorThread.Start()
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("Supervisor Thread Started")
 	}
 
 	core.ProcessorThread.Setup()
 	go core.ProcessorThread.Start()
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("Processor Thread Started")
 	}
 
 	core.HttpProcessorThread.Setup()
 	go core.HttpProcessorThread.Start()
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("HTTP Processor API Thread Started")
 		core.logger.Printf("\t- Listening on %s:%d\n",
-			common.GetConfigInstance().Net.Processor.Host, common.GetConfigInstance().Net.Processor.Port)
+			core.config.Net.Processor.Host, core.config.Net.Processor.Port)
 	}
 
 	// the gateway to the frontend cluster should be the last startup
 	core.HttpClientThread.Setup()
 	go core.HttpClientThread.Start() // event loop
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("HTTP Client API Thread Started")
 		core.logger.Printf("\t- Listening on %s:%d\n",
-			common.GetConfigInstance().Net.Client.Host, common.GetConfigInstance().Net.Client.Port)
+			core.config.Net.Client.Host, core.config.Net.Client.Port)
 	}
 
 	go core.repl()
@@ -223,28 +109,28 @@ func (core *Core) Run() {
 
 	select {
 	case <-sigs:
-		core.interrupt <- threads.Panic
+		core.interrupt <- common.Panic
 	case interrupt := <-core.interrupt:
 		switch interrupt {
-		case threads.Panic:
+		case common.Panic:
 			core.logger.Printf("[IO] %s\n", " encountered panic")
 		default: // shutdown
 			core.logger.Printf("[IO] %s\n", " shutting down")
 		}
 	}
 
-	core.logger.SetColour(utils.Red)
+	core.logger.SetColour(logging.Red)
 
 	// close the gateway, stop new threads from flooding into the servers
 	core.HttpClientThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("http_client shutdown")
 	}
 
 	core.HttpProcessorThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("http_processor shutdown")
 	}
 
@@ -257,34 +143,34 @@ func (core *Core) Run() {
 
 	core.ProcessorThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("processor shutdown")
 	}
 
 	core.SupervisorThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("supervisor shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the data is useless, shutdown
 	core.CacheThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("cache shutdown")
 	}
 
 	// the supervisor might need to store data while finishing, close after
 	core.DatabaseThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("database shutdown")
 	}
 
 	// the preceding threads might need to log, or send alerts of failure during shutdown
 	core.MessengerThread.Teardown()
 
-	if common.GetConfigInstance().Debug {
+	if core.config.Debug {
 		core.logger.Println("messenger shutdown")
 	}
 }

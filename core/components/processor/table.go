@@ -2,8 +2,8 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango/module"
-	processor_i "github.com/GabeCordo/mango/processor"
+	"github.com/GabeCordo/mango/core/interfaces/module"
+	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
 )
 
 func (table *Table) AddProcessor(cfg *processor_i.Config) error {
