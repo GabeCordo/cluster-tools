@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/interfaces/communication"
 	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
 	"github.com/GabeCordo/mango/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -28,7 +29,7 @@ func (thread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) 
 
 func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
-	request, err := common.GetRequest(r)
+	request, err := communication.GetRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -42,7 +43,7 @@ func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 	if err != nil {
 		response.Description = err.Error()
 	}
@@ -62,7 +63,7 @@ func (thread *Thread) deleteProcessorCallback(w http.ResponseWriter, r *http.Req
 
 	err := common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, processorName[0], thread.config.Timeout)
 
-	response := common.Response{Success: err == nil}
+	response := communication.Response{Success: err == nil}
 
 	if errors.Is(err, processor.DoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
@@ -94,7 +95,7 @@ func (thread *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request) {
 
-	request, err := common.GetRequest(r)
+	request, err := communication.GetRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -103,7 +104,7 @@ func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request)
 	processorName := fmt.Sprintf("%s:%d", request.Host, request.Port)
 	success, err := common.AddModule(thread.C7, thread.ProcessorResponseTable, processorName, &request.Module.Config, thread.config.Timeout)
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 
 	if !success && errors.Is(err, processor.ModuleAlreadyRegistered) {
 		/* the module is already registered to the processor */
@@ -136,7 +137,7 @@ func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Reques
 
 	_, err := common.DeleteModule(thread.C7, thread.ProcessorResponseTable, processorName[0], moduleName[0], thread.config.Timeout)
 
-	response := common.Response{Success: err == nil}
+	response := communication.Response{Success: err == nil}
 
 	if errors.Is(err, processor.DoesNotExist) || errors.Is(err, processor.ModuleDoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
@@ -180,7 +181,7 @@ func (thread *Thread) getCacheCallback(w http.ResponseWriter, r *http.Request) {
 
 	value, found := common.FetchFromCache(thread.C9, thread.CacheResponseTable, key[0], thread.config.Timeout)
 
-	response := common.Response{Success: found}
+	response := communication.Response{Success: found}
 
 	if found {
 		response.Data = value
@@ -210,7 +211,7 @@ func (thread *Thread) postCacheCallback(w http.ResponseWriter, r *http.Request) 
 
 	identifier, success := common.StoreInCache(thread.C9, thread.CacheResponseTable, request.Value, expiry, thread.config.Timeout)
 
-	response := common.Response{Success: success, Data: identifier}
+	response := communication.Response{Success: success, Data: identifier}
 	b, _ := json.Marshal(response)
 	w.Write(b)
 }
@@ -222,7 +223,7 @@ func (thread *Thread) putCacheCallback(w http.ResponseWriter, r *http.Request) {
 
 	success := common.SwapInCache(thread.C9, thread.CacheResponseTable, request.Key, request.Value, thread.config.Timeout)
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 
 	if !success {
 		w.WriteHeader(http.StatusNotFound)

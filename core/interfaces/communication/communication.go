@@ -1,4 +1,4 @@
-package common
+package communication
 
 import (
 	"encoding/json"
@@ -21,9 +21,9 @@ type HTTPModuleRequest struct {
 }
 
 type HTTPClusterRequest struct {
-	Name       string            `json:"name"`
-	Mount      bool              `json:"mount,omitempty"`
-	Supervisor SupervisorRequest `json:"supervisor,omitempty"`
+	Name       string                `json:"name"`
+	Mount      bool                  `json:"mount,omitempty"`
+	Supervisor HTTPSupervisorRequest `json:"supervisor,omitempty"`
 }
 
 type HTTPSupervisorAction string

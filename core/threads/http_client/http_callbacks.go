@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/mango/core/components/processor"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/mango/core/interfaces/communication"
 	"github.com/GabeCordo/mango/core/threads/common"
 	"net/http"
 	"net/url"
@@ -29,7 +30,7 @@ func (thread *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Reques
 
 	processors, success := common.GetProcessors(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 
 	if success {
 		response.Data = processors
@@ -58,7 +59,7 @@ func (thread *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) 
 
 	success, modules := common.GetModules(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 	if success {
 		response.Data = modules
 	} else {
@@ -92,7 +93,7 @@ func (thread *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) 
 		success, err = common.UnmountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName, thread.config.Timeout)
 	}
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 
 	if errors.Is(err, processor.ModuleDoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
@@ -137,7 +138,7 @@ func (thread *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	response := common.Response{Success: success}
+	response := communication.Response{Success: success}
 
 	if success {
 		response.Data = clusterList
@@ -162,7 +163,7 @@ func (thread *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := common.Response{}
+	response := communication.Response{}
 
 	if request.Mounted {
 		response.Success = common.MountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster, thread.config.Timeout)

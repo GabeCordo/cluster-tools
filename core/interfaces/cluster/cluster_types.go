@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"github.com/GabeCordo/mango/core/interfaces/channel"
 	"time"
 )
 
@@ -33,38 +32,6 @@ const (
 	Batch  EtlMode = "Batch"
 	Stream         = "Stream"
 )
-
-type Transformer func(in []any) (out any, success bool)
-
-// M contains metadata about the running supervisor including any state
-// information that a devleoper might need to interact with the Supervisor.
-type M interface {
-	GetKey(key string) string
-}
-
-// Cluster is a set of functions that define an ETL process
-// cluster functions are provisioned on goroutines to run in parallel and
-// process data.
-type Cluster interface {
-	ExtractFunc(metadata M, c channel.OneWay)
-	TransformFunc(metadata M, in any) (out any, success bool)
-}
-
-type LoadAll interface {
-	LoadFunc(metadata M, in []any)
-}
-
-type LoadOne interface {
-	LoadFunc(metadata M, in any)
-}
-
-type VerifiableET interface {
-	VerifyETFunction(in any) (valid bool)
-}
-
-type VerifiableTL interface {
-	VerifyTLFunction(in any) (valid bool)
-}
 
 type Config struct {
 	Identifier                  string  `json:"identifier"`
