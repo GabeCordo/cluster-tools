@@ -2,77 +2,99 @@ package database
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/core/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"sync"
 )
 
+type Config struct {
+	Debug              bool
+	MaxWaitForResponse float64
+}
+
 type Thread struct {
-	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
+	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C1 <-chan threads.DatabaseRequest  // Database is receiving threads from the http_thread
-	C2 chan<- threads.DatabaseResponse // Database is sending responses to the http_thread
+	C1 <-chan common.DatabaseRequest  // Database is receiving threads from the http_thread
+	C2 chan<- common.DatabaseResponse // Database is sending responses to the http_thread
 
-	C3 chan<- threads.MessengerRequest  // Database is sending threads to the Messenger
-	C4 <-chan threads.MessengerResponse // Database is receiving responses from the Messenger
+	C3 chan<- common.MessengerRequest  // Database is sending threads to the Messenger
+	C4 <-chan common.MessengerResponse // Database is receiving responses from the Messenger
 
-	C7 <-chan threads.DatabaseRequest  // Database is receiving threads from the Supervisor
-	C8 chan<- threads.DatabaseResponse // Database is sending responses to the Supervisor
+	C11 <-chan common.DatabaseRequest  // Database is receiving req from the processor_thread
+	C12 chan<- common.DatabaseResponse // Database is sending rsp to the processor_thread
 
-	messengerResponseTable *utils.ResponseTable
+	C15 <-chan common.DatabaseRequest  // Database is receiving req from the supervisor_thread
+	C16 chan<- common.DatabaseResponse // Database is sending rsp from the supervisor_thread
+
+	messengerResponseTable *multithreaded.ResponseTable
 
 	configFolderPath    string
 	statisticFolderPath string
 
-	logger *utils.Logger
+	config *Config
+	logger *logging.Logger
 
 	accepting bool
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, configPath, statisticPath string, channels ...interface{}) (*Thread, error) {
-	database := new(Thread)
+func New(cfg *Config, logger *logging.Logger, configPath, statisticPath string, channels ...interface{}) (*Thread, error) {
+	thread := new(Thread)
 	var ok bool
 
-	database.configFolderPath = configPath
-	database.statisticFolderPath = statisticPath
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
 
-	database.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	thread.configFolderPath = configPath
+	thread.statisticFolderPath = statisticPath
+
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	database.C1, ok = (channels[1]).(chan threads.DatabaseRequest)
+	thread.C1, ok = (channels[1]).(chan common.DatabaseRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 1")
 	}
-	database.C2, ok = (channels[2]).(chan threads.DatabaseResponse)
+	thread.C2, ok = (channels[2]).(chan common.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 2")
 	}
-	database.C3, ok = (channels[3]).(chan threads.MessengerRequest)
+	thread.C3, ok = (channels[3]).(chan common.MessengerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 3")
 	}
-	database.C4, ok = (channels[4]).(chan threads.MessengerResponse)
+	thread.C4, ok = (channels[4]).(chan common.MessengerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 4")
 	}
-	database.C7, ok = (channels[5]).(chan threads.DatabaseRequest)
+	thread.C11, ok = (channels[5]).(chan common.DatabaseRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 5")
 	}
-	database.C8, ok = (channels[6]).(chan threads.DatabaseResponse)
+	thread.C12, ok = (channels[6]).(chan common.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
+	thread.C15, ok = (channels[7]).(chan common.DatabaseRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseRequest' in index 7")
+	}
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseResponse' in index 8")
+	}
 
-	database.messengerResponseTable = utils.NewResponseTable()
+	thread.messengerResponseTable = multithreaded.NewResponseTable()
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.Logger type")
 	}
-	database.logger = logger
-	database.logger.SetColour(utils.Purple)
+	thread.logger = logger
+	thread.logger.SetColour(logging.Purple)
 
-	return database, nil
+	return thread, nil
 }

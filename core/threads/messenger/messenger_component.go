@@ -1,37 +1,35 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/etl/core/components/messenger"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango/core/components/messenger"
 )
 
 var instance *messenger.Messenger
 
-func GetMessengerInstance() *messenger.Messenger {
+func GetMessengerInstance(cfg *Config) *messenger.Messenger {
 	if instance == nil {
-		cfg := common.GetConfigInstance()
 
 		instance = messenger.NewMessenger(
-			cfg.Messenger.EnableLogging,
-			cfg.Messenger.EnableSmtp,
+			cfg.EnableLogging,
+			cfg.EnableSmtp,
 		)
 
-		if cfg.Messenger.EnableLogging {
-			instance.LoggingDirectory(cfg.Messenger.LogFiles.Directory)
+		if cfg.EnableLogging {
+			instance.LoggingDirectory(cfg.LoggingDir)
 		}
 
-		if cfg.Messenger.EnableSmtp {
+		if cfg.EnableSmtp {
 			instance.SetupSMTP(
 				messenger.Endpoint{
-					Host: cfg.Messenger.Smtp.Endpoint.Host,
-					Port: cfg.Messenger.Smtp.Endpoint.Port,
+					Host: cfg.SmtpEndpoint.Host,
+					Port: cfg.SmtpEndpoint.Port,
 				},
 				messenger.Credentials{
-					Email:    cfg.Messenger.Smtp.Credentials.Email,
-					Password: cfg.Messenger.Smtp.Credentials.Password,
+					Email:    cfg.SmtpCredentials.Email,
+					Password: cfg.SmtpCredentials.Password,
 				},
 			).SetupReceivers(
-				cfg.Messenger.Smtp.Subscribers,
+				cfg.SmtpSubscribers,
 			)
 		}
 	}

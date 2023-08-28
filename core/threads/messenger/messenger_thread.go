@@ -1,50 +1,54 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/core/components/messenger"
-	"github.com/GabeCordo/etl/core/threads/common"
+	"github.com/GabeCordo/mango/core/components/messenger"
+	"github.com/GabeCordo/mango/core/threads/common"
 )
 
-func (messengerThread *Thread) Setup() {
-	messengerThread.accepting = true
+func (thread *Thread) Setup() {
+	thread.accepting = true
 }
 
-func (messengerThread *Thread) Start() {
-	// as long as a teardown has not been called, continue looping
+func (thread *Thread) Start() {
+
+	// LISTEN TO INCOMING REQUESTS
 
 	go func() {
 		// request coming from database
-		for request := range messengerThread.C3 {
-			if !messengerThread.accepting {
+		for request := range thread.C3 {
+			if !thread.accepting {
 				break
 			}
-			messengerThread.wg.Add(1)
-			messengerThread.ProcessIncomingRequest(&request)
+			thread.wg.Add(1)
+
+			request.Source = common.Database
+			thread.ProcessIncomingRequest(&request)
 		}
 	}()
 
 	go func() {
-		// request coming from provisioner
-		for request := range messengerThread.C11 {
-			if !messengerThread.accepting {
+		// request coming from supervisor
+		for request := range thread.C17 {
+			if !thread.accepting {
 				break
 			}
-			messengerThread.wg.Add(1)
-			messengerThread.ProcessIncomingRequest(&request)
+			thread.wg.Add(1)
+
+			request.Source = common.Supervisor
+			thread.ProcessIncomingRequest(&request)
 		}
 	}()
 
-	messengerThread.wg.Wait()
+	thread.wg.Wait()
 }
 
-func (messengerThread *Thread) Respond(module threads.Module, response any) (success bool) {
+func (thread *Thread) Respond(module common.Module, response any) (success bool) {
 
 	success = true
 
 	switch module {
-	case threads.Database:
-		messengerThread.C4 <- *(response).(*threads.MessengerResponse)
+	case common.Database:
+		thread.C4 <- *(response).(*common.MessengerResponse)
 	default:
 		success = false
 	}
@@ -52,39 +56,39 @@ func (messengerThread *Thread) Respond(module threads.Module, response any) (suc
 	return success
 }
 
-func (messengerThread *Thread) ProcessIncomingRequest(request *threads.MessengerRequest) {
+func (thread *Thread) ProcessIncomingRequest(request *common.MessengerRequest) {
 
 	switch request.Action {
-	case threads.MessengerClose:
-		messengerThread.ProcessCloseLogRequest(request)
-	case threads.MessengerUpperPing:
-		messengerThread.ProcessMessengerPing(request)
+	case common.MessengerClose:
+		thread.ProcessCloseLogRequest(request)
+	case common.MessengerUpperPing:
+		thread.ProcessMessengerPing(request)
 	default:
-		messengerThread.ProcessConsoleRequest(request)
+		thread.ProcessConsoleRequest(request)
 	}
 
-	messengerThread.wg.Done()
+	thread.wg.Done()
 }
 
-func (messengerThread *Thread) ProcessMessengerPing(request *threads.MessengerRequest) {
+func (thread *Thread) ProcessMessengerPing(request *common.MessengerRequest) {
 
-	if common.GetConfigInstance().Debug {
-		messengerThread.logger.Println("[etl_messenger] received ping over C3")
+	if thread.config.Debug {
+		thread.logger.Println("[etl_messenger] received ping over C3")
 	}
 
-	response := &threads.MessengerResponse{Nonce: request.Nonce, Success: true}
-	messengerThread.Respond(threads.Database, response)
+	response := &common.MessengerResponse{Nonce: request.Nonce, Success: true}
+	thread.Respond(common.Database, response)
 }
 
-func (messengerThread *Thread) ProcessConsoleRequest(request *threads.MessengerRequest) {
-	messengerInstance := GetMessengerInstance()
+func (thread *Thread) ProcessConsoleRequest(request *common.MessengerRequest) {
+	messengerInstance := GetMessengerInstance(thread.config)
 
 	var priority messenger.MessagePriority
 
 	switch request.Action {
-	case threads.MessengerLog:
+	case common.MessengerLog:
 		priority = messenger.Log
-	case threads.MessengerWarning:
+	case common.MessengerWarning:
 		priority = messenger.Warning
 	default:
 		priority = messenger.Fatal
@@ -93,13 +97,13 @@ func (messengerThread *Thread) ProcessConsoleRequest(request *threads.MessengerR
 	messengerInstance.Log(request.Module+"_"+request.Cluster, request.Message, priority)
 }
 
-func (messengerThread *Thread) ProcessCloseLogRequest(request *threads.MessengerRequest) {
-	messengerInstance := GetMessengerInstance()
+func (thread *Thread) ProcessCloseLogRequest(request *common.MessengerRequest) {
+	messengerInstance := GetMessengerInstance(thread.config)
 	messengerInstance.Complete(request.Module + "_" + request.Cluster)
 }
 
-func (messengerThread *Thread) Teardown() {
-	messengerThread.accepting = false
+func (thread *Thread) Teardown() {
+	thread.accepting = false
 
-	messengerThread.wg.Wait()
+	thread.wg.Wait()
 }

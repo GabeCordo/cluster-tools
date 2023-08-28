@@ -2,41 +2,63 @@ package messenger
 
 import (
 	"errors"
-	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/core/utils"
+	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/logging"
 	"sync"
 )
 
+type Config struct {
+	Debug         bool
+	EnableLogging bool
+	LoggingDir    string
+	SmtpEndpoint  struct {
+		Host string `yaml:"host"`
+		Port string `yaml:"port"`
+	} `yaml:"endpoint"`
+	SmtpCredentials struct {
+		Email    string `yaml:"email"`
+		Password string `yaml:"password"`
+	} `yaml:"credentials"`
+	SmtpSubscribers map[string][]string `yaml:"subscribers"`
+	EnableSmtp      bool                `yaml:"enable-smtp"`
+}
+
 type Thread struct {
-	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
+	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C3  <-chan threads.MessengerRequest  // Messenger is receiving threads form the Database
-	C4  chan<- threads.MessengerResponse // Messenger is sending responses to the Database
-	C11 <-chan threads.MessengerRequest  // Messenger is receiving requests from the Provisioner
+	C3  <-chan common.MessengerRequest  // Messenger is receiving threads form the Database
+	C4  chan<- common.MessengerResponse // Messenger is sending responses to the Database
+	C17 <-chan common.MessengerRequest  // Messenger is receiving requests from the Provisioner
 
-	logger *utils.Logger
+	config *Config
+	logger *logging.Logger
 
 	accepting bool
 	wg        sync.WaitGroup
 }
 
-func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
-	messenger := new(Thread)
+func New(cfg *Config, logger *logging.Logger, channels ...interface{}) (*Thread, error) {
+	thread := new(Thread)
 	var ok bool
 
-	messenger.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	if cfg == nil {
+		return nil, errors.New("expected no nil *Config type")
+	}
+	thread.config = cfg
+
+	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	messenger.C3, ok = (channels[1]).(chan threads.MessengerRequest)
+	thread.C3, ok = (channels[1]).(chan common.MessengerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 1")
 	}
-	messenger.C4, ok = (channels[2]).(chan threads.MessengerResponse)
+	thread.C4, ok = (channels[2]).(chan common.MessengerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 2")
 	}
-	messenger.C11, ok = (channels[3]).(chan threads.MessengerRequest)
+	thread.C17, ok = (channels[3]).(chan common.MessengerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MesengerRequest' in index 3")
 	}
@@ -44,8 +66,8 @@ func NewThread(logger *utils.Logger, channels ...interface{}) (*Thread, error) {
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.Logger type")
 	}
-	messenger.logger = logger
-	messenger.logger.SetColour(utils.Blue)
+	thread.logger = logger
+	thread.logger.SetColour(logging.Blue)
 
-	return messenger, nil
+	return thread, nil
 }

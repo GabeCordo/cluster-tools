@@ -1,34 +1,35 @@
 package common
 
 import (
-	"github.com/GabeCordo/etl-light/components/cluster"
-	"github.com/GabeCordo/etl-light/core/threads"
-	"github.com/GabeCordo/etl/core/components/database"
-	"github.com/GabeCordo/etl/core/components/provisioner"
-	"github.com/GabeCordo/etl/core/components/supervisor"
-	"github.com/GabeCordo/etl/core/utils"
+	"errors"
+	"github.com/GabeCordo/mango/core/components/database"
+	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/mango/core/interfaces/module"
+	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )
 
-func GetConfigFromDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable,
-	moduleName, clusterName string) (conf cluster.Config, found bool) {
+func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
+	moduleName, clusterName string, maxWaitForResponse float64) (conf cluster.Config, found bool) {
 
-	databaseRequest := threads.DatabaseRequest{
-		Action:  threads.DatabaseFetch,
-		Type:    threads.ClusterConfig,
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseFetch,
+		Type:    ClusterConfig,
 		Module:  moduleName,
 		Cluster: clusterName,
 		Nonce:   rand.Uint32(),
 	}
 	pipe <- databaseRequest
 
-	data, didTimeout := utils.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
+		maxWaitForResponse)
 	if didTimeout {
 		return cluster.Config{}, false
 	}
 
-	databaseResponse := (data).(threads.DatabaseResponse)
+	databaseResponse := (data).(DatabaseResponse)
 
 	if !databaseResponse.Success {
 		return cluster.Config{}, false
@@ -42,24 +43,24 @@ func GetConfigFromDatabase(pipe chan<- threads.DatabaseRequest, databaseResponse
 	return configs[0], true
 }
 
-func GetConfigsFromDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable,
-	moduleName string) (configs []cluster.Config, found bool) {
+func GetConfigsFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
+	moduleName string, maxWaitForResponse float64) (configs []cluster.Config, found bool) {
 
-	databaseRequest := threads.DatabaseRequest{
-		Action: threads.DatabaseFetch,
-		Type:   threads.ClusterConfig,
+	databaseRequest := DatabaseRequest{
+		Action: DatabaseFetch,
+		Type:   ClusterConfig,
 		Module: moduleName,
 		Nonce:  rand.Uint32(),
 	}
 	pipe <- databaseRequest
 
-	data, didTimeout := utils.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
+		maxWaitForResponse)
 	if didTimeout {
 		return nil, false
 	}
 
-	databaseResponse := (data).(threads.DatabaseResponse)
+	databaseResponse := (data).(DatabaseResponse)
 
 	if !databaseResponse.Success {
 		return nil, false
@@ -69,12 +70,12 @@ func GetConfigsFromDatabase(pipe chan<- threads.DatabaseRequest, databaseRespons
 	return configs, true
 }
 
-func StoreConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable,
-	moduleName string, cfg cluster.Config) (success bool) {
+func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
+	moduleName string, cfg cluster.Config, maxWaitForResponse float64) (success bool) {
 
-	databaseRequest := threads.DatabaseRequest{
-		Action:  threads.DatabaseStore,
-		Type:    threads.ClusterConfig,
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseStore,
+		Type:    ClusterConfig,
 		Module:  moduleName,
 		Cluster: cfg.Identifier,
 		Data:    cfg,
@@ -82,22 +83,22 @@ func StoreConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponse
 	}
 	pipe <- databaseRequest
 
-	data, didTimeout := utils.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
+		maxWaitForResponse)
 	if didTimeout {
 		return false
 	}
 
-	databaseResponse := (data).(threads.DatabaseResponse)
+	databaseResponse := (data).(DatabaseResponse)
 	return databaseResponse.Success
 }
 
-func ReplaceConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable,
-	moduleName string, cfg cluster.Config) (success bool) {
+func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
+	moduleName string, cfg cluster.Config, maxWaitForResponse float64) (success bool) {
 
-	databaseRequest := threads.DatabaseRequest{
-		Action:  threads.DatabaseReplace,
-		Type:    threads.ClusterConfig,
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseReplace,
+		Type:    ClusterConfig,
 		Module:  moduleName,
 		Cluster: cfg.Identifier,
 		Data:    cfg,
@@ -105,229 +106,258 @@ func ReplaceConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseRespon
 	}
 	pipe <- databaseRequest
 
-	data, didTimeout := utils.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
+		maxWaitForResponse)
 	if didTimeout {
 		return false
 	}
 
-	databaseResponse := (data).(threads.DatabaseResponse)
+	databaseResponse := (data).(DatabaseResponse)
 	return databaseResponse.Success
 }
 
-func DeleteConfigInDatabase(pipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable,
-	moduleName, configName string) (success bool) {
+func DeleteConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
+	moduleName, configName string, maxWaitForResponse float64) (success bool) {
 
-	databaseRequest := threads.DatabaseRequest{
-		Action:  threads.DatabaseDelete,
-		Type:    threads.ClusterConfig,
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseDelete,
+		Type:    ClusterConfig,
 		Module:  moduleName,
 		Cluster: configName,
 		Nonce:   rand.Uint32(),
 	}
 	pipe <- databaseRequest
 
-	data, didTimeout := utils.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce, maxWaitForResponse)
 	if didTimeout {
 		return false
 	}
 
-	databaseResponse := (data).(threads.DatabaseResponse)
+	databaseResponse := (data).(DatabaseResponse)
 	return databaseResponse.Success
 }
 
-func ClusterMount(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName, clusterName string) (success bool) {
+func GetProcessors(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	maxWaitForResponse float64) ([]processor.Processor, bool) {
 
-	provisionerThreadRequest := threads.ProvisionerRequest{
-		Action:      threads.ProvisionerMount,
-		Source:      threads.Http,
-		ModuleName:  moduleName,
-		ClusterName: clusterName,
-		Nonce:       rand.Uint32(),
-	}
-	pipe <- provisionerThreadRequest
-
-	data, didTimeout := utils.SendAndWait(responseTable, provisionerThreadRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
-	if didTimeout {
-		return false
-	}
-
-	provisionerResponse := (data).(threads.ProvisionerResponse)
-	return provisionerResponse.Success
-}
-
-func ClusterUnMount(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName, clusterName string) (success bool) {
-
-	provisionerThreadRequest := threads.ProvisionerRequest{
-		Action:      threads.ProvisionerUnMount,
-		Source:      threads.Http,
-		ModuleName:  moduleName,
-		ClusterName: clusterName,
-		Nonce:       rand.Uint32(),
-	}
-	pipe <- provisionerThreadRequest
-
-	data, didTimeout := utils.SendAndWait(responseTable, provisionerThreadRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
-	if didTimeout {
-		return false
-	}
-
-	provisionerResponse := (data).(threads.ProvisionerResponse)
-	return provisionerResponse.Success
-}
-
-func DynamicallyDeleteCluster(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	clusterName string) (success bool) {
-
-	provisionerThreadRequest := threads.ProvisionerRequest{
-		Action:      threads.ProvisionerDynamicDelete,
-		Source:      threads.Http,
-		ClusterName: clusterName,
-		Nonce:       rand.Uint32(),
-	}
-	pipe <- provisionerThreadRequest
-
-	data, didTimeout := utils.SendAndWait(responseTable, provisionerThreadRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
-	if didTimeout {
-		return false
-	}
-
-	provisionerResponse := (data).(threads.ProvisionerResponse)
-	return provisionerResponse.Success
-}
-
-func SupervisorProvision(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName, clusterName string, meta map[string]string, cfg ...string) (supervisorId uint64, success bool, description string) {
-
-	// there is a possibility the user never passed an args value to the HTTP endpoint,
-	// so we need to replace it with and empty arry
-	if meta == nil {
-		meta = make(map[string]string)
-	}
-	provisionerThreadRequest := threads.ProvisionerRequest{
-		Action:      threads.ProvisionerProvision,
-		Source:      threads.Http,
-		ModuleName:  moduleName,
-		ClusterName: clusterName,
-		Metadata: threads.ProvisionerMetadata{
-			Other: meta,
-		},
-		Nonce: rand.Uint32(),
-	}
-	if len(cfg) > 0 {
-		provisionerThreadRequest.Metadata.ConfigName = cfg[0]
-	}
-	pipe <- provisionerThreadRequest
-
-	data, didTimeout := utils.SendAndWait(responseTable, provisionerThreadRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
-	if didTimeout {
-		return 0, false, "timeout"
-	}
-
-	provisionerResponse := (data).(threads.ProvisionerResponse)
-	return provisionerResponse.SupervisorId, provisionerResponse.Success, provisionerResponse.Description
-}
-
-func GetClusters(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName string) (clusters map[string]bool, success bool) {
-
-	request := threads.ProvisionerRequest{
-		Action:     threads.ProvisionerGetClusters,
-		Source:     threads.Http,
-		ModuleName: moduleName,
-		Nonce:      rand.Uint32(),
+	request := ProcessorRequest{
+		Action: ProcessorGet,
+		Source: HttpClient,
+		Nonce:  rand.Uint32(),
 	}
 	pipe <- request
 
-	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
 	if didTimeout {
 		return nil, false
 	}
 
-	provisionerResponse := (data).(threads.ProvisionerResponse)
+	response := (data).(ProcessorResponse)
+
+	if response.Success {
+		return (response.Data).([]processor.Processor), true
+	} else {
+		return nil, false
+	}
+}
+
+func AddProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	cfg *processor_i.Config, maxWaitForResponse float64) (bool, error) {
+
+	request := ProcessorRequest{
+		Action: ProcessorAdd,
+		Source: HttpProcessor,
+		Data:   *cfg,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+	return response.Success, response.Error
+}
+
+func DeleteProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	processorName string, maxWaitForResponse float64) error {
+
+	request := ProcessorRequest{
+		Action:      ProcessorRemove,
+		Source:      HttpProcessor,
+		Identifiers: RequestIdentifiers{Processor: processorName},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (data).(ProcessorResponse)
+	return response.Error
+}
+
+func MountCluster(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	moduleName, clusterName string, maxWaitForResponse float64) (success bool) {
+
+	request := ProcessorRequest{
+		Action:      ProcessorClusterMount,
+		Source:      HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: ""},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return false
+	}
+
+	provisionerResponse := (data).(ProcessorResponse)
+	return provisionerResponse.Success
+}
+
+func UnmountCluster(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	moduleName, clusterName string, maxWaitForResponse float64) (success bool) {
+
+	request := ProcessorRequest{
+		Action:      ProcessorClusterUnmount,
+		Source:      HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: ""},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return false
+	}
+
+	provisionerResponse := (data).(ProcessorResponse)
+	return provisionerResponse.Success
+}
+
+func GetClusters(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	moduleName string, maxWaitForResponse float64) (clusters []processor.ClusterData, success bool) {
+
+	request := ProcessorRequest{
+		Action:      ProcessorClusterGet,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: "", Config: ""},
+		Source:      HttpClient,
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return nil, false
+	}
+
+	provisionerResponse := (data).(ProcessorResponse)
 
 	if !provisionerResponse.Success {
 		return nil, false
 	}
 
-	return (provisionerResponse.Data).(map[string]bool), true
+	return (provisionerResponse.Data).([]processor.ClusterData), true
 }
 
-func GetSupervisors(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName, clusterName string) (map[uint64]supervisor.Status, bool) {
+func CreateSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	moduleName, clusterName, configName string, metadata map[string]string, maxWaitForResponse float64) (uint64, error) {
 
-	request := threads.ProvisionerRequest{
-		Action:      threads.ProvisionerGetSupervisors,
-		Source:      threads.Http,
-		ModuleName:  moduleName,
-		ClusterName: clusterName,
+	request := ProcessorRequest{
+		Action:      ProcessorSupervisorCreate,
+		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: configName},
+		Data:        metadata,
 		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
-	data, timeout := utils.SendAndWait(responseTable, request.Nonce, GetConfigInstance().MaxWaitForResponse)
-	if timeout {
-		return nil, false
-	}
-	provisionerResponse := (data).(threads.ProvisionerResponse)
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
 
-	return (provisionerResponse.Data).(map[uint64]supervisor.Status), true
-}
-
-func GetSupervisor(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName, clusterName string, supervisorId uint64) (supervisorInstance *supervisor.Supervisor, success bool) {
-
-	request := threads.ProvisionerRequest{
-		Action:      threads.ProvisionerGetSupervisor,
-		Source:      threads.Http,
-		ModuleName:  moduleName,
-		ClusterName: clusterName,
-		Metadata: threads.ProvisionerMetadata{
-			SupervisorId: supervisorId,
-		},
-		Nonce: rand.Uint32(),
-	}
-	pipe <- request
-
-	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce, GetConfigInstance().MaxWaitForResponse)
 	if didTimeout {
-		return nil, false
+		return 0, multithreaded.NoResponseReceived
 	}
 
-	provisionerResponse := (data).(threads.ProvisionerResponse)
+	response := (rsp).(ProcessorResponse)
 
-	if !provisionerResponse.Success {
-		return nil, false
-	}
-
-	return (provisionerResponse.Data).(*supervisor.Supervisor), true
+	return (response.Data).(uint64), response.Error
 }
 
-func FindStatistics(pipe chan<- threads.DatabaseRequest, responseTable *utils.ResponseTable, moduleName, clusterName string) (entries []database.Statistic, found bool) {
+// TODO : fix
+//func GetSupervisors(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+//	moduleName, clusterName string) (map[uint64]supervisor.Status, bool) {
+//
+//	request := ProvisionerRequest{
+//		Action:      ProvisionerGetSupervisors,
+//		Source:      Http,
+//		ModuleName:  moduleName,
+//		ClusterName: clusterName,
+//		Nonce:       rand.Uint32(),
+//	}
+//	pipe <- request
+//
+//	data, timeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+//	if timeout {
+//		return nil, false
+//	}
+//	provisionerResponse := (data).(ProvisionerResponse)
+//
+//	return (provisionerResponse.data).(map[uint64]supervisor.Status), true
+//}
 
-	databaseRequest := threads.DatabaseRequest{
-		Action:  threads.DatabaseFetch,
-		Type:    threads.SupervisorStatistic,
+// TODO : fix
+//func GetSupervisor(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+//	moduleName, clusterName string, supervisorId uint64) (supervisorInstance *supervisor.Supervisor, success bool) {
+//
+//	request := ProvisionerRequest{
+//		Action:      ProvisionerGetSupervisor,
+//		Source:      Http,
+//		ModuleName:  moduleName,
+//		ClusterName: clusterName,
+//		Metadata: ProvisionerMetadata{
+//			SupervisorId: supervisorId,
+//		},
+//		Nonce: rand.Uint32(),
+//	}
+//	pipe <- request
+//
+//	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+//	if didTimeout {
+//		return nil, false
+//	}
+//
+//	provisionerResponse := (data).(ProvisionerResponse)
+//
+//	if !provisionerResponse.Success {
+//		return nil, false
+//	}
+//
+//	return (provisionerResponse.data).(*supervisor.Supervisor), true
+//}
+
+func FindStatistics(pipe chan<- DatabaseRequest, responseTable *multithreaded.ResponseTable,
+	moduleName, clusterName string, maxWaitForResponse float64) (entries []database.Statistic, found bool) {
+
+	databaseRequest := DatabaseRequest{
+		Action:  DatabaseFetch,
+		Type:    SupervisorStatistic,
 		Module:  moduleName,
 		Cluster: clusterName,
 		Nonce:   rand.Uint32(),
 	}
 	pipe <- databaseRequest
 
-	data, didTimeout := utils.SendAndWait(responseTable, databaseRequest.Nonce, GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(responseTable, databaseRequest.Nonce, maxWaitForResponse)
 	if didTimeout {
 		return nil, false
 	}
 
-	databaseResponse := (data).(threads.DatabaseResponse)
+	databaseResponse := (data).(DatabaseResponse)
 
 	if !databaseResponse.Success {
 		return nil, false
@@ -336,142 +366,296 @@ func FindStatistics(pipe chan<- threads.DatabaseRequest, responseTable *utils.Re
 	return (databaseResponse.Data).([]database.Statistic), true
 }
 
-func ShutdownCore(pipe chan<- threads.InterruptEvent) (response []byte, success bool) {
-	pipe <- threads.Shutdown
+func ShutdownCore(pipe chan<- InterruptEvent) (response []byte, success bool) {
+	pipe <- Shutdown
 	return nil, true
 }
 
-func PingNodeChannels(logger *utils.Logger,
-	databasePipe chan<- threads.DatabaseRequest, databaseResponseTable *utils.ResponseTable,
-	provisionerPipe chan<- threads.ProvisionerRequest, provisionerResponseTable *utils.ResponseTable) (success bool) {
+// TODO : this needs to be fixed
+//func PingNodeChannels(logger *multithreaded.Logger,
+//	databasePipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
+//	provisionerPipe chan<- ProvisionerRequest, provisionerResponseTable *multithreaded.ResponseTable) (success bool) {
+//
+//	databasePingRequest := DatabaseRequest{
+//		Action: DatabaseUpperPing,
+//		Nonce:  rand.Uint32(),
+//	}
+//	databasePipe <- databasePingRequest
+//
+//	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databasePingRequest.Nonce,
+//		maxWaitForResponse)
+//	if didTimeout {
+//		return false
+//	}
+//
+//	databaseResponse := (data).(DatabaseResponse)
+//	if !databaseResponse.Success {
+//		return false
+//	}
+//
+//	if GetConfigInstance().Debug {
+//		logger.Println("received ping over C2")
+//	}
+//
+//	provisionerPingRequest := ProvisionerRequest{
+//		Action: ProvisionerLowerPing,
+//		Source: Http,
+//		Nonce:  rand.Uint32(),
+//	}
+//	provisionerPipe <- provisionerPingRequest
+//
+//	data2, didTimeout2 := multithreaded.SendAndWait(provisionerResponseTable, provisionerPingRequest.Nonce,
+//		maxWaitForResponse)
+//	if didTimeout2 {
+//		return false
+//	}
+//
+//	provisionerResponse := (data2).(ProvisionerResponse)
+//	if !provisionerResponse.Success {
+//		return false
+//	}
+//
+//	if GetConfigInstance().Debug {
+//		logger.Println("received ping over C6")
+//	}
+//
+//	return true
+//}
 
-	databasePingRequest := threads.DatabaseRequest{
-		Action: threads.DatabaseUpperPing,
-		Nonce:  rand.Uint32(),
-	}
-	databasePipe <- databasePingRequest
+func GetModules(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, maxWaitForResponse float64) (success bool, modules []processor.ModuleData) {
 
-	data, didTimeout := utils.SendAndWait(databaseResponseTable, databasePingRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
-	if didTimeout {
-		return false
-	}
-
-	databaseResponse := (data).(threads.DatabaseResponse)
-	if !databaseResponse.Success {
-		return false
-	}
-
-	if GetConfigInstance().Debug {
-		logger.Println("received ping over C2")
-	}
-
-	provisionerPingRequest := threads.ProvisionerRequest{
-		Action: threads.ProvisionerLowerPing,
-		Source: threads.Http,
-		Nonce:  rand.Uint32(),
-	}
-	provisionerPipe <- provisionerPingRequest
-
-	data2, didTimeout2 := utils.SendAndWait(provisionerResponseTable, provisionerPingRequest.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
-	if didTimeout2 {
-		return false
-	}
-
-	provisionerResponse := (data2).(threads.ProvisionerResponse)
-	if !provisionerResponse.Success {
-		return false
-	}
-
-	if GetConfigInstance().Debug {
-		logger.Println("received ping over C6")
-	}
-
-	return true
-}
-
-func GetModules(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable) (success bool, modules []*provisioner.ModuleWrapper) {
-
-	request := threads.ProvisionerRequest{
-		Action: threads.ProvisionerGetModules,
-		Source: threads.Http,
+	request := ProcessorRequest{
+		Action: ProcessorModuleGet,
+		Source: HttpClient,
 		Nonce:  rand.Uint32(),
 	}
 	pipe <- request
 
-	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
 	if didTimeout {
 		return false, nil
 	}
 
-	provisionerResponse := (data).(threads.ProvisionerResponse)
+	provisionerResponse := (data).(ProcessorResponse)
 
 	if !provisionerResponse.Success {
 		return false, nil
 	}
 
-	return true, (provisionerResponse.Data).([]*provisioner.ModuleWrapper)
+	return true, (provisionerResponse.Data).([]processor.ModuleData)
 }
 
-func RegisterModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	modulePath string) (success bool, description string) {
+func AddModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	processorName string, cfg *module.Config, maxWaitForResponse float64) (bool, error) {
 
-	request := threads.ProvisionerRequest{
-		Action: threads.ProvisionerModuleLoad,
-		Source: threads.Http,
-		Metadata: threads.ProvisionerMetadata{
-			ModulePath: modulePath,
-		},
-		Nonce: rand.Uint32(),
+	request := ProcessorRequest{
+		Action:      ProcessorModuleAdd,
+		Source:      HttpProcessor,
+		Identifiers: RequestIdentifiers{Processor: processorName},
+		Data:        *cfg,
+		Nonce:       rand.Uint32(),
 	}
 	pipe <- request
 
-	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
 	if didTimeout {
-		return false, "timeout"
+		return false, errors.New("did not receive a response from the processor thread")
 	}
 
-	provisionerResponse := (data).(threads.ProvisionerResponse)
-	return provisionerResponse.Success, provisionerResponse.Description
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
 }
 
-func DeleteModule(pipe chan<- threads.ProvisionerRequest, responseTable *utils.ResponseTable,
-	moduleName string) (success bool, description string) {
+func MountModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	moduleName string, maxWaitForResponse float64) (bool, error) {
 
-	request := threads.ProvisionerRequest{
-		Action:     threads.ProvisionerModuleDelete,
-		Source:     threads.Http,
-		ModuleName: moduleName,
+	request := ProcessorRequest{
+		Action:      ProcessorModuleMount,
+		Source:      HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
+}
+
+func UnmountModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	moduleName string, maxWaitForResponse float64) (bool, error) {
+
+	request := ProcessorRequest{
+		Action:      ProcessorModuleUnmount,
+		Source:      HttpClient,
+		Identifiers: RequestIdentifiers{Module: moduleName},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+	if didTimeout {
+		return false, errors.New("did not receive a response from the processor thread")
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
+}
+
+func DeleteModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
+	processorName, moduleName string, maxWaitForResponse float64) (bool, error) {
+
+	request := ProcessorRequest{
+		Action:      ProcessorModuleDelete,
+		Source:      HttpProcessor,
+		Identifiers: RequestIdentifiers{Processor: processorName, Module: moduleName},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+
+	if didTimeout {
+		return false, multithreaded.NoResponseReceived
+	}
+
+	response := (data).(ProcessorResponse)
+
+	return response.Success, response.Error
+}
+
+// TODO : I believe this needs to be removed from the core
+//func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+//	modulePath string) (success bool, description string) {
+//
+//	request := ProvisionerRequest{
+//		Action: ProvisionerModuleLoad,
+//		Source: Http,
+//		Metadata: ProvisionerMetadata{
+//			ModulePath: modulePath,
+//		},
+//		Nonce: rand.Uint32(),
+//	}
+//	pipe <- request
+//
+//	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce,
+//		maxWaitForResponse)
+//	if didTimeout {
+//		return false, "timeout"
+//	}
+//
+//	provisionerResponse := (data).(ProvisionerResponse)
+//	return provisionerResponse.Success, provisionerResponse.Description
+//}
+
+// TODO : I believe this needs to be removed from the core
+//func DeleteModule(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+//	moduleName string) (success bool, description string) {
+//
+//	request := ProvisionerRequest{
+//		Action:     ProvisionerModuleDelete,
+//		Source:     Http,
+//		ModuleName: moduleName,
+//		Nonce:      rand.Uint32(),
+//	}
+//	pipe <- request
+//
+//	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce,
+//		maxWaitForResponse)
+//	if didTimeout {
+//		return false, "timeout"
+//	}
+//
+//	provisionerResponse := (data).(ProvisionerResponse)
+//
+//	return provisionerResponse.Success, provisionerResponse.Description
+//}
+
+func FetchFromCache(pipe chan<- CacheRequest, responseTable *multithreaded.ResponseTable,
+	key string, maxWaitForResponse float64) (value any, found bool) {
+
+	request := CacheRequest{
+		Action:     CacheLoadFrom,
+		Identifier: key,
 		Nonce:      rand.Uint32(),
 	}
 	pipe <- request
 
-	data, didTimeout := utils.SendAndWait(responseTable, request.Nonce,
-		GetConfigInstance().MaxWaitForResponse)
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+
 	if didTimeout {
-		return false, "timeout"
+		return nil, false
 	}
 
-	provisionerResponse := (data).(threads.ProvisionerResponse)
+	response := (rsp).(CacheResponse)
 
-	return provisionerResponse.Success, provisionerResponse.Description
+	return response.Data, response.Success
 }
 
-func ToggleDebugMode(logger *utils.Logger) (description string) {
+func StoreInCache(pipe chan<- CacheRequest, responseTable *multithreaded.ResponseTable,
+	data any, expiry float64, maxWaitForResponse float64) (identifier string, success bool) {
 
-	cfg := GetConfigInstance()
-	cfg.Debug = !cfg.Debug
+	request := CacheRequest{
+		Action:    CacheSaveIn,
+		Data:      data,
+		Nonce:     rand.Uint32(),
+		ExpiresIn: expiry,
+	}
+	pipe <- request
 
-	if cfg.Debug {
-		description = "debug mode activated"
-		logger.Println("remote change: debug mode ON")
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+
+	if didTimeout {
+		success = false
 	} else {
-		description = "debug mode disabled"
-		logger.Println("remote change: debug mode OFF")
+
 	}
 
-	return description
+	response := (rsp).(CacheResponse)
+	return response.Identifier, response.Success
 }
+
+func SwapInCache(pipe chan<- CacheRequest, responseTable *multithreaded.ResponseTable,
+	key string, data any, maxWaitForResponse float64) (success bool) {
+
+	request := CacheRequest{
+		Action:     CacheSaveIn,
+		Data:       data,
+		Identifier: key,
+		Nonce:      rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
+
+	if didTimeout {
+		return false
+	}
+
+	response := (rsp).(CacheResponse)
+	return response.Success
+}
+
+// TODO : find workaround
+//func ToggleDebugMode(logger *logging.Logger) (description string) {
+//
+//	cfg := GetConfigInstance()
+//	cfg.Debug = !cfg.Debug
+//
+//	if cfg.Debug {
+//		description = "debug mode activated"
+//		logger.Println("remote change: debug mode ON")
+//	} else {
+//		description = "debug mode disabled"
+//		logger.Println("remote change: debug mode OFF")
+//	}
+//
+//	return description
+//}

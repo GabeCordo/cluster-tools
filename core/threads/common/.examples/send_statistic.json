@@ -1,0 +1,12 @@
+{
+  "host": "127.0.0.1",
+  "port": 5023,
+  "module": {
+    "name": "common",
+    "supervisor": {
+      "action": "update",
+      "identifier": 0,
+      "statistics": {}
+    }
+  }
+}
