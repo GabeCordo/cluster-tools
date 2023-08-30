@@ -11,7 +11,7 @@ type RequestIdentifiers struct {
 type SupervisorAction uint8
 
 const (
-	SupervisorFetch SupervisorAction = iota
+	SupervisorGet SupervisorAction = iota
 	SupervisorCreate
 	SupervisorUpdate
 )
@@ -40,13 +40,13 @@ const (
 	ProcessorRemove
 	ProcessorModuleGet
 	ProcessorModuleAdd
-	ProcessorModuleDelete
+	ProcessorModuleRemove
 	ProcessorModuleMount
 	ProcessorModuleUnmount
 	ProcessorClusterGet
 	ProcessorClusterMount
 	ProcessorClusterUnmount
-	ProcessorSupervisorFetch
+	ProcessorSupervisorGet
 	ProcessorSupervisorCreate
 	ProcessorSupervisorUpdate
 )

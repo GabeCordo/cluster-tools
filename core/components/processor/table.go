@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"errors"
 	"fmt"
 	"github.com/GabeCordo/mango/core/interfaces/module"
 	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
@@ -36,6 +37,55 @@ func (table *Table) GetProcessors() []Processor {
 	}
 
 	return processors
+}
+
+// RemoveProcessor
+// this is a REALLY expensive operation that might need to be optimized in the future.
+func (table *Table) RemoveProcessor(cfg *processor_i.Config) error {
+
+	table.mutex.Lock()
+	defer table.mutex.Unlock()
+
+	idx := 0
+	var instance *Processor = nil
+	for idx, instance = range table.processors {
+		if (instance.Host == cfg.Host) && (instance.Port == cfg.Port) {
+			break
+		}
+	}
+
+	if instance == nil {
+		return errors.New("processor does not exist")
+	}
+
+	table.processors = append(table.processors[:idx], table.processors[idx+1:]...)
+
+	for moduleIdentifier, modules := range table.modules {
+
+		for clusterIdentifier, cluster := range modules.clusters {
+
+			jdx := 0
+			var processor *Processor = nil
+			for jdx, processor = range cluster.processors {
+				// compare the pointers
+				if processor == instance {
+					break
+				}
+			}
+
+			cluster.processors = append(cluster.processors[:jdx], cluster.processors[jdx+1:]...)
+
+			if len(cluster.processors) == 0 {
+				delete(modules.clusters, clusterIdentifier)
+			}
+		}
+
+		if len(modules.clusters) == 0 {
+			delete(table.modules, moduleIdentifier)
+		}
+	}
+
+	return nil
 }
 
 func (table *Table) RegisterModule(processorName string, config *module.Config) error {
@@ -124,6 +174,58 @@ func (table *Table) Get(name string) (instance *Module, found bool) {
 
 	instance, found = table.modules[name]
 	return instance, found
+}
+
+func (table *Table) Remove(processor, name string) error {
+
+	table.mutex.Lock()
+	defer table.mutex.Unlock()
+
+	var instance *Processor
+	for _, instance = range table.processors {
+
+		if instance.ToString() == processor {
+			break
+		}
+	}
+
+	if instance == nil {
+		return errors.New("processor does not exist")
+	}
+
+	module, found := table.modules[name]
+
+	if !found {
+		return errors.New("module does not exist")
+	}
+
+	for clusterIdentifier, cluster := range module.clusters {
+
+		for idx, processor := range cluster.processors {
+
+			if processor == instance {
+				cluster.processors = append(cluster.processors[:idx], cluster.processors[idx+1:]...)
+				break
+			}
+		}
+
+		if len(cluster.processors) == 0 {
+			delete(module.clusters, clusterIdentifier)
+		}
+	}
+
+	if len(module.clusters) == 0 {
+		delete(table.modules, name)
+	}
+
+	for idx, module := range instance.Modules {
+
+		if module == name {
+			instance.Modules = append(instance.Modules[:idx], instance.Modules[idx+1:]...)
+		}
+	}
+
+	return nil
 }
 
 func (table *Table) Registered() []ModuleData {

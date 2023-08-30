@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/interfaces/communication"
 	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
 	"github.com/GabeCordo/mango/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 func (thread *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
@@ -55,13 +57,27 @@ func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Reque
 func (thread *Thread) deleteProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
-	processorName, processorNameFound := urlMapping["processor"]
-	if !processorNameFound {
+
+	hostName, hostNameFound := urlMapping["host"]
+	if !hostNameFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err := common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, processorName[0], thread.config.Timeout)
+	portStr, portFound := urlMapping["port"]
+	if !portFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	port, err := strconv.Atoi(portStr[0])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	cfg := &processor_i.Config{Host: hostName[0], Port: port}
+	err = common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, cfg, thread.config.Timeout)
 
 	response := communication.Response{Success: err == nil}
 
@@ -127,15 +143,32 @@ func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request)
 func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
-	processorName, processorNameFound := urlMapping["processor"]
-	moduleName, moduleNameFound := urlMapping["module"]
 
-	if !processorNameFound || !moduleNameFound {
+	hostName, hostNameFound := urlMapping["host"]
+	if !hostNameFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, err := common.DeleteModule(thread.C7, thread.ProcessorResponseTable, processorName[0], moduleName[0], thread.config.Timeout)
+	portStr, portFound := urlMapping["port"]
+	if !portFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	port, err := strconv.Atoi(portStr[0])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	moduleName, moduleNameFound := urlMapping["module"]
+	if !moduleNameFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err = common.DeleteModule(thread.C7, thread.ProcessorResponseTable, hostName[0], port, moduleName[0], thread.config.Timeout)
 
 	response := communication.Response{Success: err == nil}
 
@@ -251,7 +284,7 @@ func (thread *Thread) postLogCallback(w http.ResponseWriter, r *http.Request) {
 func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "PUT" {
 		/* the processor requests to update a provisioned supervisor */
-
+		thread.putSupervisorCallback(w, r)
 	} else {
 		/* the http_processor cannot call any other methods on this resource */
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -259,8 +292,24 @@ func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request)
 }
 
 func (thread *Thread) putSupervisorCallback(w http.ResponseWriter, r *http.Request) {
-	// TODO
-	w.WriteHeader(http.StatusNotImplemented)
+
+	instance := &supervisor.Supervisor{}
+	err := json.NewDecoder(r.Body).Decode(instance)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	response := &communication.Response{}
+	err = common.UpdateSupervisor(thread.C7, thread.ProcessorResponseTable, thread.config.Timeout, instance)
+
+	response.Success = err == nil
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
 }
 
 func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {

@@ -2,8 +2,10 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"github.com/GabeCordo/mango/core/components/database"
 	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"github.com/GabeCordo/mango/core/interfaces/module"
 	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
@@ -182,13 +184,13 @@ func AddProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.Res
 }
 
 func DeleteProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
-	processorName string, maxWaitForResponse float64) error {
+	cfg *processor_i.Config, maxWaitForResponse float64) error {
 
 	request := ProcessorRequest{
-		Action:      ProcessorRemove,
-		Source:      HttpProcessor,
-		Identifiers: RequestIdentifiers{Processor: processorName},
-		Nonce:       rand.Uint32(),
+		Action: ProcessorRemove,
+		Source: HttpProcessor,
+		Data:   *cfg,
+		Nonce:  rand.Uint32(),
 	}
 	pipe <- request
 
@@ -288,57 +290,48 @@ func CreateSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded
 	return (response.Data).(uint64), response.Error
 }
 
-// TODO : fix
-//func GetSupervisors(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-//	moduleName, clusterName string) (map[uint64]supervisor.Status, bool) {
-//
-//	request := ProvisionerRequest{
-//		Action:      ProvisionerGetSupervisors,
-//		Source:      Http,
-//		ModuleName:  moduleName,
-//		ClusterName: clusterName,
-//		Nonce:       rand.Uint32(),
-//	}
-//	pipe <- request
-//
-//	data, timeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
-//	if timeout {
-//		return nil, false
-//	}
-//	provisionerResponse := (data).(ProvisionerResponse)
-//
-//	return (provisionerResponse.data).(map[uint64]supervisor.Status), true
-//}
+func GetSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, timeout float64,
+	id uint64) (*supervisor.Supervisor, error) {
 
-// TODO : fix
-//func GetSupervisor(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-//	moduleName, clusterName string, supervisorId uint64) (supervisorInstance *supervisor.Supervisor, success bool) {
-//
-//	request := ProvisionerRequest{
-//		Action:      ProvisionerGetSupervisor,
-//		Source:      Http,
-//		ModuleName:  moduleName,
-//		ClusterName: clusterName,
-//		Metadata: ProvisionerMetadata{
-//			SupervisorId: supervisorId,
-//		},
-//		Nonce: rand.Uint32(),
-//	}
-//	pipe <- request
-//
-//	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, maxWaitForResponse)
-//	if didTimeout {
-//		return nil, false
-//	}
-//
-//	provisionerResponse := (data).(ProvisionerResponse)
-//
-//	if !provisionerResponse.Success {
-//		return nil, false
-//	}
-//
-//	return (provisionerResponse.data).(*supervisor.Supervisor), true
-//}
+	request := ProcessorRequest{
+		Action:      ProcessorSupervisorGet,
+		Identifiers: RequestIdentifiers{Supervisor: id},
+		Nonce:       rand.Uint32(),
+	}
+	pipe <- request
+
+	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return nil, multithreaded.NoResponseReceived
+	}
+
+	response := (data).(ProcessorResponse)
+
+	if !response.Success {
+		return nil, response.Error
+	}
+
+	return (response.Data).(*supervisor.Supervisor), nil
+}
+
+func UpdateSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, timeout float64,
+	data *supervisor.Supervisor) error {
+
+	request := ProcessorRequest{
+		Action: ProcessorSupervisorUpdate,
+		Data:   data,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(ProcessorResponse)
+	return response.Error
+}
 
 func FindStatistics(pipe chan<- DatabaseRequest, responseTable *multithreaded.ResponseTable,
 	moduleName, clusterName string, maxWaitForResponse float64) (entries []database.Statistic, found bool) {
@@ -510,12 +503,12 @@ func UnmountModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.Re
 }
 
 func DeleteModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
-	processorName, moduleName string, maxWaitForResponse float64) (bool, error) {
+	host string, port int, moduleName string, maxWaitForResponse float64) (bool, error) {
 
 	request := ProcessorRequest{
-		Action:      ProcessorModuleDelete,
+		Action:      ProcessorModuleRemove,
 		Source:      HttpProcessor,
-		Identifiers: RequestIdentifiers{Processor: processorName, Module: moduleName},
+		Identifiers: RequestIdentifiers{Processor: fmt.Sprintf("%s:%d", host, port), Module: moduleName},
 		Nonce:       rand.Uint32(),
 	}
 	pipe <- request

@@ -53,12 +53,14 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 	response := &common.SupervisorResponse{Nonce: request.Nonce, Error: nil}
 
 	switch request.Action {
+	case common.SupervisorGet:
+		response.Data, response.Error = thread.getSupervisor(request.Identifiers.Supervisor)
 	case common.SupervisorCreate:
 		response.Data, response.Error = thread.createSupervisor(
-			request.Identifiers.Processor, request.Identifiers.Module, request.Identifiers.Module, request.Identifiers.Config)
+			request.Identifiers.Processor, request.Identifiers.Module, request.Identifiers.Config, request.Identifiers.Config)
 	case common.SupervisorUpdate:
-		s := (request.Data).(supervisor.Supervisor)
-		response.Error = thread.updateSupervisor(&s)
+		s := (request.Data).(*supervisor.Supervisor)
+		response.Error = thread.updateSupervisor(s)
 	default:
 		response.Error = common.BadRequestType
 	}

@@ -32,8 +32,7 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 
 func (thread *Thread) deleteModule(processorName, moduleName string) error {
 
-	// TODO : delete module logic
-	return nil
+	return GetTableInstance().Remove(processorName, moduleName)
 }
 
 func (thread *Thread) mountModule(name string) error {

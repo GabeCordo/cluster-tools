@@ -96,14 +96,14 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 		cfg := (request.Data).(processor.Config)
 		response.Error = thread.processorAdd(&cfg)
 	case common.ProcessorRemove:
-		cfg := (request.Data).(module.Config)
-		thread.processorRemove(&cfg)
+		cfg := (request.Data).(processor.Config)
+		response.Error = thread.processorRemove(&cfg)
 	case common.ProcessorModuleGet:
 		response.Data = thread.getModules()
 	case common.ProcessorModuleAdd:
 		cfg := (request.Data).(module.Config)
 		response.Error = thread.addModule(request.Identifiers.Processor, &cfg)
-	case common.ProcessorModuleDelete:
+	case common.ProcessorModuleRemove:
 		response.Error = thread.deleteModule(request.Identifiers.Processor, request.Identifiers.Module)
 	case common.ProcessorModuleMount:
 		response.Error = thread.mountModule(request.Identifiers.Module)
@@ -115,8 +115,8 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 		response.Error = thread.mountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
 	case common.ProcessorClusterUnmount:
 		response.Error = thread.unmountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
-	case common.ProcessorSupervisorFetch:
-		response.Data, response.Error = thread.fetchSupervisor(request)
+	case common.ProcessorSupervisorGet:
+		response.Data, response.Error = thread.getSupervisor(request)
 	case common.ProcessorSupervisorCreate:
 		response.Data, response.Error = thread.createSupervisor(request)
 	case common.ProcessorSupervisorUpdate:

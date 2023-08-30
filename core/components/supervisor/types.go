@@ -33,7 +33,7 @@ type Supervisor struct {
 	Module    string `json:"module,omitempty"`
 	Cluster   string `json:"cluster,omitempty"`
 
-	Config     cluster.Config      `json:"config"`
+	Config     cluster.Config      `json:"config,omitempty"`
 	Statistics *cluster.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex

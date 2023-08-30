@@ -9,7 +9,7 @@ import (
 	"math/rand"
 )
 
-func (thread *Thread) fetchSupervisor(r *common.ProcessorRequest) (*supervisor.Supervisor, error) {
+func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Supervisor, error) {
 
 	// processor -> all supervisor ids on the processor
 	//	-	id
@@ -24,9 +24,9 @@ func (thread *Thread) fetchSupervisor(r *common.ProcessorRequest) (*supervisor.S
 	//	-	full information
 
 	request := common.SupervisorRequest{
-		Action:      common.SupervisorFetch,
+		Action:      common.SupervisorGet,
 		Identifiers: r.Identifiers,
-		Data:        r.Data,
+		Nonce:       r.Nonce,
 	}
 	thread.C13 <- request
 

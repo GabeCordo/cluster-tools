@@ -10,6 +10,7 @@ import (
 	"github.com/GabeCordo/mango/core/threads/common"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -182,7 +183,7 @@ func (thread *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request)
 type SupervisorConfigJSONBody struct {
 	Module     string            `json:"module"`
 	Cluster    string            `json:"cluster"`
-	Config     string            `json:"common"`
+	Config     string            `json:"config"`
 	Supervisor uint64            `json:"id,omitempty"`
 	Metadata   map[string]string `json:"metadata,omitempty"`
 }
@@ -194,89 +195,74 @@ type SupervisorProvisionJSONResponse struct {
 
 func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
 
-	// TODO : fix
-	//urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	if r.Method == "GET" {
+		thread.getSupervisorCallback(w, r)
+	} else if r.Method == "POST" {
+		thread.postSupervisorCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
 
-	var request SupervisorConfigJSONBody
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if (r.Method != "GET") && (err != nil) {
+func (thread *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	idStr, idFound := urlMapping["id"]
+	if !idFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	//if r.Method == "GET" {
-	//
-	//	clusterName, foundClusterName := urlMapping["cluster"]
-	//	moduleName, foundModuleName := urlMapping["module"]
-	//	supervisorIdStr, foundSupervisorId := urlMapping["id"]
-	//
-	//	if !foundClusterName || !foundModuleName {
-	//		w.WriteHeader(http.StatusBadRequest)
-	//	} else {
-	//		if foundSupervisorId {
-	//			supervisorId, err := strconv.ParseUint(supervisorIdStr[0], 10, 64)
-	//			if err != nil {
-	//				w.WriteHeader(http.StatusBadRequest)
-	//				return
-	//			}
-	//
-	//			supervisorInst, success := common.GetSupervisor(thread.C5, thread.ProcessorResponseTable,
-	//				moduleName[0], clusterName[0], supervisorId)
-	//			if !success {
-	//				w.WriteHeader(http.StatusBadRequest)
-	//				return
-	//			}
-	//
-	//			supervisorBytes, err := json.Marshal(supervisorInst)
-	//			if err != nil {
-	//				w.WriteHeader(http.StatusInternalServerError)
-	//				return
-	//			}
-	//
-	//			_, err = w.Write(supervisorBytes)
-	//			if err != nil {
-	//				w.WriteHeader(http.StatusInternalServerError)
-	//			}
-	//		} else {
-	//			supervisors, success := common.GetSupervisors(thread.C5, thread.ProcessorResponseTable, moduleName[0], clusterName[0])
-	//			if !success {
-	//				w.WriteHeader(http.StatusBadRequest)
-	//				return
-	//			}
-	//
-	//			supervisorsBytes, err := json.Marshal(supervisors)
-	//			if err != nil {
-	//				w.WriteHeader(http.StatusInternalServerError)
-	//				return
-	//			}
-	//
-	//			_, err = w.Write(supervisorsBytes)
-	//			if err != nil {
-	//				w.WriteHeader(http.StatusInternalServerError)
-	//			}
-	//		}
-	//	}
-	if r.Method == "POST" {
-		if supervisorId, err := common.CreateSupervisor(
-			thread.C5,
-			thread.ProcessorResponseTable,
-			request.Module,
-			request.Cluster,
-			request.Config,
-			request.Metadata,
-			thread.config.Timeout,
-		); err == nil {
+	id, err := strconv.ParseUint(idStr[0], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-			response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
-			bytes, _ := json.Marshal(response)
-			if _, err := w.Write(bytes); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
+	response := &communication.Response{Success: true}
+
+	instance, err := common.GetSupervisor(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout, id)
+	if err != nil {
+		response.Success = false
+		response.Description = err.Error()
+	} else {
+		response.Data = instance
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
+func (thread *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+
+	var request SupervisorConfigJSONBody
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if supervisorId, err := common.CreateSupervisor(
+		thread.C5,
+		thread.ProcessorResponseTable,
+		request.Module,
+		request.Cluster,
+		request.Config,
+		request.Metadata,
+		thread.config.Timeout,
+	); err == nil {
+
+		response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
+		bytes, _ := json.Marshal(response)
+		if _, err := w.Write(bytes); err != nil {
+			// TODO : support module is not mounted
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 }
 

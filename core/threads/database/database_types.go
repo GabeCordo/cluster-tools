@@ -84,6 +84,7 @@ func New(cfg *Config, logger *logging.Logger, configPath, statisticPath string, 
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 7")
 	}
+	thread.C16, ok = (channels[8]).(chan common.DatabaseResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 8")
 	}

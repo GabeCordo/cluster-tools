@@ -2,10 +2,21 @@ package supervisor
 
 import (
 	"errors"
-	"fmt"
+	"github.com/GabeCordo/mango/api"
 	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/multithreaded"
+	"math/rand"
 )
+
+func (thread *Thread) getSupervisor(id uint64) (*supervisor.Supervisor, error) {
+
+	instance, found := GetRegistryInstance().Get(id)
+	if !found {
+		return nil, errors.New("supervisor does not exist")
+	}
+	return instance, nil
+}
 
 func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string) (uint64, error) {
 
@@ -16,15 +27,62 @@ func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, c
 	}
 
 	identifier := GetRegistryInstance().Create(processorName, moduleName, clusterName, &conf)
+	sup, _ := GetRegistryInstance().Get(identifier)
 
-	// TODO : send the request to the cluster server
-	supervisor, _ := GetRegistryInstance().Get(identifier)
-	fmt.Println(supervisor)
+	// TODO : need to support sending the received metadata
+	err := api.ProvisionSupervisor(processorName, moduleName, clusterName, identifier, &conf, make(map[string]string))
 
-	return identifier, nil
+	if err != nil {
+		thread.Logger.Printf("[%s] %s\n", sup.Id, "could not connect to the processor and is canceled")
+		sup.Status = supervisor.Cancelled
+	} else {
+		thread.Logger.Printf("[%s] %s\n", sup.Id, "connected to processor and is active")
+		sup.Status = supervisor.Active
+	}
+
+	return identifier, err
 }
 
-func (thread *Thread) updateSupervisor(supervisor *supervisor.Supervisor) error {
+func (thread *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
+
+	stored, found := GetRegistryInstance().Get(instance.Id)
+	if !found {
+		return errors.New("cannot update a supervisor that does not exist")
+	}
+
+	stored.Status = instance.Status
+	stored.Statistics = instance.Statistics
+
+	if (stored.Status == supervisor.Completed) || (stored.Status == supervisor.Crashed) {
+		// TODO : this can probably encapsulated
+		request := common.DatabaseRequest{
+			Action: common.DatabaseStore,
+			Type:   common.SupervisorStatistic,
+			Module: stored.Module,
+			Data:   stored.Statistics,
+			Nonce:  rand.Uint32(),
+		}
+		thread.C15 <- request
+
+		rsp, didTimeout := multithreaded.SendAndWait(thread.DatabaseResponseTable, request.Nonce, thread.config.MaxWaitForResponse)
+		if didTimeout {
+			return multithreaded.NoResponseReceived
+		}
+
+		// TODO : this can also be encapsulated
+		response := (rsp).(common.DatabaseResponse)
+		if !response.Success {
+			return errors.New("failed to store statistics of supervisor")
+		}
+
+		msgrRequest := common.MessengerRequest{
+			Action:  common.MessengerClose,
+			Module:  stored.Module,
+			Cluster: stored.Cluster,
+			Nonce:   rand.Uint32(),
+		}
+		thread.C17 <- msgrRequest
+	}
 
 	return nil
 }

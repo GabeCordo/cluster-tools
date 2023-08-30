@@ -4,6 +4,10 @@ import "net/http"
 
 func IsDebugEnabled(host string) bool {
 
-	_, err := http.Get(host + "/debug")
-	return err == nil
+	rsp, err := http.Get(host + "/debug")
+	if err != nil {
+		return false
+	}
+
+	return rsp.Status == "200 OK"
 }
