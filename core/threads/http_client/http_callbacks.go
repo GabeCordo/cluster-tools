@@ -261,7 +261,6 @@ func (thread *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Requ
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }

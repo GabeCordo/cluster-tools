@@ -19,7 +19,6 @@ func GenerateFileName(endpoint string) (name string) {
 func SaveToFile(dirPath, endpoint string, logs []string) bool {
 
 	if _, err := os.Stat(dirPath); err != nil {
-		log.Println(err)
 		log.Println("warning: cannot save logs to file, the save directory doesn't exist")
 		return false
 	}
@@ -34,7 +33,7 @@ func SaveToFile(dirPath, endpoint string, logs []string) bool {
 	defer file.Close()
 
 	for _, log := range logs {
-		file.WriteString(log + "\n")
+		file.WriteString(log)
 	}
 
 	return true

@@ -63,10 +63,15 @@ func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, erro
 		return 0, processor.ClusterNotMounted
 	}
 
+	if (r.Source == common.HttpClient) && clusterInstance.IsStream() {
+		return 0, processor.CanNotProvisionStreamCluster
+	}
+
 	request := common.SupervisorRequest{
 		Action:      common.SupervisorCreate,
 		Identifiers: r.Identifiers, // will contain the module, cluster
-		Data:        r.Data,        // will contain the metadata map[string]string
+		Caller:      common.User,
+		Data:        r.Data, // will contain the metadata map[string]string
 		Nonce:       rand.Uint32(),
 	}
 
@@ -97,6 +102,7 @@ func (thread *Thread) updateSupervisor(r *common.ProcessorRequest) error {
 		Action:      common.SupervisorUpdate,
 		Identifiers: r.Identifiers,
 		Data:        r.Data,
+		Nonce:       rand.Uint32(),
 	}
 	thread.C13 <- request
 
@@ -108,6 +114,27 @@ func (thread *Thread) updateSupervisor(r *common.ProcessorRequest) error {
 		return errors.New("supervisor doesn't exist")
 	}
 
+	response := (rsp).(common.SupervisorResponse)
+	return response.Error
+}
+
+func (thread *Thread) logSupervisor(r *common.ProcessorRequest) error {
+
+	request := common.SupervisorRequest{
+		Action:      common.SupervisorLog,
+		Identifiers: r.Identifiers,
+		Data:        r.Data,
+		Nonce:       rand.Uint32(),
+	}
+	thread.C13 <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
+		thread.config.MaxWaitForResponse)
+
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+	
 	response := (rsp).(common.SupervisorResponse)
 	return response.Error
 }

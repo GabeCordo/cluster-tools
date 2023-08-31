@@ -18,4 +18,6 @@ var ModuleDoesNotExist = errors.New("module does not exist")
 
 var ClusterNotMounted = errors.New("cluster is not mounted")
 
+var CanNotProvisionStreamCluster = errors.New("stream clusters cannot be called manually like batch processes")
+
 var ClusterDoesNotExist = errors.New("cluster does not exist in the module")

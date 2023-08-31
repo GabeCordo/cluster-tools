@@ -1,45 +1,51 @@
 package processor
 
-func (cluster *Cluster) Add(processor *Processor) {
+import "github.com/GabeCordo/mango/core/interfaces/cluster"
 
-	cluster.mutex.Lock()
-	defer cluster.mutex.Unlock()
+func (c *Cluster) Add(processor *Processor) {
 
-	cluster.processors = append(cluster.processors, processor)
-	cluster.numOfProcessors++
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.processors = append(c.processors, processor)
+	c.numOfProcessors++
 }
 
-func (cluster *Cluster) IsMounted() bool {
-	return cluster.data.Mounted
+func (c *Cluster) IsMounted() bool {
+	return c.data.Mounted
 }
 
-func (cluster *Cluster) Mount() {
-
-	cluster.mutex.Lock()
-	defer cluster.mutex.Unlock()
-
-	cluster.data.Mounted = true
+func (c *Cluster) IsStream() bool {
+	return c.data.Mode == cluster.Stream
 }
 
-func (cluster *Cluster) Unmount() {
+func (c *Cluster) Mount() {
 
-	cluster.mutex.Lock()
-	defer cluster.mutex.Unlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	cluster.data.Mounted = false
+	c.data.Mounted = true
 }
 
-func (cluster *Cluster) SelectProcessor() *Processor {
+func (c *Cluster) Unmount() {
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.data.Mounted = false
+}
+
+func (c *Cluster) SelectProcessor() *Processor {
 
 	// TODO : this is a simple circular shift balancer
 	// maybe consider something with the delays the current processors have
 	// or number of processes running
 
-	instance := cluster.processors[cluster.processorIndex]
-	if d := cluster.numOfProcessors - 1; d != 0 {
-		cluster.processorIndex = (cluster.processorIndex + 1) % (len(cluster.processors))
+	instance := c.processors[c.processorIndex]
+	if d := c.numOfProcessors - 1; d != 0 {
+		c.processorIndex = (c.processorIndex + 1) % (len(c.processors))
 	} else {
-		cluster.processorIndex = 0
+		c.processorIndex = 0
 	}
 
 	return instance

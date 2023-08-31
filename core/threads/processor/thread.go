@@ -121,6 +121,8 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 		response.Data, response.Error = thread.createSupervisor(request)
 	case common.ProcessorSupervisorUpdate:
 		response.Error = thread.updateSupervisor(request)
+	case common.ProcessorSupervisorLog:
+		response.Error = thread.logSupervisor(request)
 	default:
 		response.Error = common.UnknownRequest
 	}

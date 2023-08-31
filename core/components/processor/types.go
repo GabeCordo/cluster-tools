@@ -2,6 +2,7 @@ package processor
 
 import (
 	"fmt"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"github.com/GabeCordo/mango/core/interfaces/module"
 	"sync"
 	"time"
@@ -42,6 +43,7 @@ func newProcessor(host string, port int) *Processor {
 type ClusterData struct {
 	Name    string
 	Mounted bool
+	Mode    cluster.EtlMode
 }
 
 type Cluster struct {

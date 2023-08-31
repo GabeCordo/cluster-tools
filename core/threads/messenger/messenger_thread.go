@@ -94,12 +94,14 @@ func (thread *Thread) ProcessConsoleRequest(request *common.MessengerRequest) {
 		priority = messenger.Fatal
 	}
 
-	messengerInstance.Log(request.Module+"_"+request.Cluster, request.Message, priority)
+	messengerInstance.Log(request.Module, request.Cluster, request.Supervisor, request.Message, priority)
 }
 
 func (thread *Thread) ProcessCloseLogRequest(request *common.MessengerRequest) {
+
+	thread.logger.Printf("closing log for %s/%s\n", request.Module, request.Cluster)
 	messengerInstance := GetMessengerInstance(thread.config)
-	messengerInstance.Complete(request.Module + "_" + request.Cluster)
+	messengerInstance.Complete(request.Module, request.Cluster, request.Supervisor)
 }
 
 func (thread *Thread) Teardown() {

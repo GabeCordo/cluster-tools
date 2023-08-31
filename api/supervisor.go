@@ -5,21 +5,69 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/mango/core/components/messenger"
 	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"github.com/GabeCordo/mango/core/interfaces/communication"
 	"net/http"
 )
 
-func Log(host string, message string) error {
+func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, config *cluster.Config, metadata map[string]string) error {
+
+	body := &struct {
+		Module     string            `json:"module"`
+		Cluster    string            `json:"cluster"`
+		Config     cluster.Config    `json:"config"`
+		Supervisor uint64            `json:"id"`
+		Metadata   map[string]string `json:"metadata"`
+	}{
+		moduleName, clusterName, *config, supervisor, metadata,
+	}
+
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(body)
+
+	url := fmt.Sprintf("http://%s/supervisor", processor)
+	rsp, err := http.Post(url, "application/json", &buf)
+
+	if err != nil {
+		return err
+	}
+
+	if rsp.Status != "200 OK" {
+		return errors.New("failed to provision new supervisor")
+	}
 	return nil
 }
 
-func LogWarn(host string, message string) error {
-	return nil
-}
+func UpdateSupervisor(host string, id uint64, status supervisor.Status, stats *cluster.Statistics) error {
 
-func LogError(host string, message string) error {
+	url := fmt.Sprintf("%s/supervisor", host)
+	client := http.Client{}
+
+	sup := supervisor.Supervisor{
+		Id:         id,
+		Status:     status,
+		Statistics: stats,
+	}
+
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(sup)
+
+	req, err := http.NewRequest(http.MethodPut, url, &buf)
+	if err != nil {
+		return err
+	}
+
+	rsp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if rsp.Status != "200 OK" {
+		return errors.New("failed to update supervisor")
+	}
+
 	return nil
 }
 
@@ -88,22 +136,15 @@ func GetFromCache(host string, key string) (string, error) {
 	return (response.Data).(string), nil
 }
 
-func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, config *cluster.Config, metadata map[string]string) error {
+func log(host string, id uint64, level messenger.MessagePriority, message string) error {
 
-	body := &struct {
-		Module     string            `json:"module"`
-		Cluster    string            `json:"cluster"`
-		Config     cluster.Config    `json:"config"`
-		Supervisor uint64            `json:"id"`
-		Metadata   map[string]string `json:"metadata"`
-	}{
-		moduleName, clusterName, *config, supervisor, metadata,
-	}
+	url := fmt.Sprintf("%s/log", host)
+
+	data := &supervisor.Log{Id: id, Level: level, Message: message}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(body)
+	json.NewEncoder(&buf).Encode(data)
 
-	url := fmt.Sprintf("http://%s/supervisor", processor)
 	rsp, err := http.Post(url, "application/json", &buf)
 
 	if err != nil {
@@ -111,38 +152,23 @@ func ProvisionSupervisor(processor string, moduleName, clusterName string, super
 	}
 
 	if rsp.Status != "200 OK" {
-		return errors.New("failed to provision new supervisor")
+		return errors.New("was not able to send a log")
 	}
+
 	return nil
 }
 
-func UpdateSupervisor(host string, id uint64, status supervisor.Status, stats *cluster.Statistics) error {
+func Log(host string, id uint64, message string) error {
 
-	url := fmt.Sprintf("%s/supervisor", host)
-	client := http.Client{}
+	return log(host, id, messenger.Log, message)
+}
 
-	sup := supervisor.Supervisor{
-		Id:         id,
-		Status:     status,
-		Statistics: stats,
-	}
+func LogWarn(host string, id uint64, message string) error {
 
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(sup)
+	return log(host, id, messenger.Warning, message)
+}
 
-	req, err := http.NewRequest(http.MethodPut, url, &buf)
-	if err != nil {
-		return err
-	}
+func LogError(host string, id uint64, message string) error {
 
-	rsp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if rsp.Status != "200 OK" {
-		return errors.New("failed to update supervisor")
-	}
-
-	return nil
+	return log(host, id, messenger.Fatal, message)
 }

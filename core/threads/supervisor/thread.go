@@ -61,6 +61,9 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 	case common.SupervisorUpdate:
 		s := (request.Data).(*supervisor.Supervisor)
 		response.Error = thread.updateSupervisor(s)
+	case common.SupervisorLog:
+		log := (request.Data).(*supervisor.Log)
+		response.Error = thread.logSupervisor(log)
 	default:
 		response.Error = common.BadRequestType
 	}

@@ -1,6 +1,7 @@
 package supervisor
 
 import (
+	"github.com/GabeCordo/mango/core/components/messenger"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"sync"
 )
@@ -25,6 +26,12 @@ const (
 	Error          = "error"
 	Complete       = "complete"
 )
+
+type Log struct {
+	Id      uint64                    `json:"id"`
+	Level   messenger.MessagePriority `json:"level"`
+	Message string                    `json:"message"`
+}
 
 type Supervisor struct {
 	Id     uint64 `json:"id"`

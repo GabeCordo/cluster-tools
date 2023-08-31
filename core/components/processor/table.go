@@ -160,6 +160,8 @@ func (table *Table) RegisterModule(processorName string, config *module.Config) 
 		if export.StaticMount {
 			clusterInstance.Mount()
 		}
+
+		clusterInstance.data.Mode = export.Config.Mode
 	}
 
 	table.modules[config.Name] = moduleInstance

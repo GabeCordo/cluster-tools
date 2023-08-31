@@ -277,8 +277,25 @@ func (thread *Thread) logCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (thread *Thread) postLogCallback(w http.ResponseWriter, r *http.Request) {
-	// TODO
-	w.WriteHeader(http.StatusNotImplemented)
+
+	log := &supervisor.Log{}
+	err := json.NewDecoder(r.Body).Decode(log)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = common.Log(thread.C7, thread.ProcessorResponseTable, thread.config.Timeout, log)
+
+	response := communication.Response{Success: err == nil}
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response.Description = err.Error()
+	}
+
+	b, _ := json.Marshal(response)
+	w.Write(b)
 }
 
 func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {

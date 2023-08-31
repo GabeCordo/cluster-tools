@@ -3,8 +3,10 @@ package processor
 import (
 	"errors"
 	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"github.com/GabeCordo/mango/core/interfaces/module"
 	"github.com/GabeCordo/mango/core/threads/common"
+	"math/rand"
 )
 
 func (thread *Thread) getModules() []processor.ModuleData {
@@ -26,6 +28,21 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 	// this config should be used as the de-facto config unless another is specified by the operator
 	// -> send the config for storage in the database thread
 	for _, export := range cfg.Exports {
+		if export.Config.Mode == cluster.Stream {
+			thread.C13 <- common.SupervisorRequest{
+				Action: common.SupervisorCreate,
+				Identifiers: common.RequestIdentifiers{
+					Processor: processorName,
+					Module:    cfg.Name,
+					Cluster:   export.Cluster,
+					Config:    export.Cluster,
+				},
+				Caller: common.System,
+				Data:   make(map[string]string),
+				Nonce:  rand.Uint32(),
+			}
+		}
+
 		err := common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig(), thread.config.MaxWaitForResponse)
 		if err == nil {
 			thread.Logger.Printf("stored new default config for cluster %s in database\n", export.Cluster)

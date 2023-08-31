@@ -14,11 +14,20 @@ const (
 	SupervisorGet SupervisorAction = iota
 	SupervisorCreate
 	SupervisorUpdate
+	SupervisorLog
+)
+
+type Caller string
+
+const (
+	User   Caller = "user"
+	System        = "system"
 )
 
 type SupervisorRequest struct {
 	Action      SupervisorAction
 	Identifiers RequestIdentifiers
+	Caller      Caller
 	Data        any
 	Source      Module
 	Nonce       uint32
@@ -49,6 +58,7 @@ const (
 	ProcessorSupervisorGet
 	ProcessorSupervisorCreate
 	ProcessorSupervisorUpdate
+	ProcessorSupervisorLog
 )
 
 type ProcessorRequest struct {
@@ -145,8 +155,9 @@ const (
 type MessengerRequest struct {
 	Action MessengerAction `json:"action"`
 
-	Module     string   `json:"module"`
-	Cluster    string   `json:"cluster"`
+	Module     string `json:"module"`
+	Cluster    string `json:"cluster"`
+	Supervisor uint64
 	Message    string   `json:"message"`
 	Parameters []string `json:"parameters"`
 

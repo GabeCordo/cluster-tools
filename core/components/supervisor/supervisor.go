@@ -26,8 +26,17 @@ func (supervisor *Supervisor) Event(event Event) Status {
 }
 
 func (supervisor *Supervisor) GetStatus() Status {
+
 	supervisor.mutex.RLock()
 	defer supervisor.mutex.RUnlock()
 
 	return supervisor.Status
+}
+
+func (supervisor *Supervisor) IsRunning() bool {
+
+	supervisor.mutex.RLock()
+	defer supervisor.mutex.RUnlock()
+
+	return supervisor.Status == Active
 }

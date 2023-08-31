@@ -1,56 +1,9 @@
 package messenger
 
 import (
+	"errors"
 	"fmt"
-	"sync"
-	"time"
 )
-
-type MessagePriority uint
-
-const (
-	Log MessagePriority = iota
-	Warning
-	Fatal
-)
-
-func (priority MessagePriority) ToString() string {
-	if priority == Log {
-		return "-"
-	} else if priority == Warning {
-		return "?"
-	} else {
-		return "!"
-	}
-}
-
-type Messenger struct {
-	enabled struct {
-		logging bool
-		smtp    bool
-	}
-	logging struct {
-		directory string
-	}
-	smtp struct {
-		endpoint    Endpoint
-		credentials Credentials
-		receivers   map[string][]string
-	}
-
-	data  map[string][]string
-	mutex sync.Mutex
-}
-
-func NewMessenger(enableLogging, enableSmtp bool) *Messenger {
-	messenger := new(Messenger)
-	messenger.data = make(map[string][]string)
-
-	messenger.enabled.logging = enableLogging
-	messenger.enabled.smtp = enableSmtp
-
-	return messenger
-}
 
 func (messenger *Messenger) LoggingDirectory(path string) *Messenger {
 	if messenger.enabled.logging {
@@ -77,61 +30,90 @@ func (messenger *Messenger) SetupReceivers(receivers map[string][]string) *Messe
 	return messenger
 }
 
-func (messenger *Messenger) Log(endpoint, message string, priority ...MessagePriority) {
+func (messenger *Messenger) Get(identifier string) (*Module, bool) {
+
+	messenger.mutex.RLock()
+	defer messenger.mutex.RUnlock()
+
+	instance, found := messenger.modules[identifier]
+	return instance, found
+}
+
+func (messenger *Messenger) Create(identifier string) (*Module, error) {
 
 	messenger.mutex.Lock()
 	defer messenger.mutex.Unlock()
 
-	priorityStr := Log.ToString()
-	if len(priority) != 0 {
-		priorityStr = priority[0].ToString()
+	if _, found := messenger.modules[identifier]; found {
+		return nil, errors.New("module already exists")
 	}
 
-	log := fmt.Sprintf("[%s][%s] %s", time.Now().Format("2006-01-02 15:04:05"), priorityStr, message)
-
-	if logs, found := messenger.data[endpoint]; found {
-		messenger.data[endpoint] = append(logs, log)
-	} else {
-		logs := make([]string, 0)
-		logs = append(logs, log)
-		messenger.data[endpoint] = logs
-	}
+	module := NewModule()
+	messenger.modules[identifier] = module
+	return module, nil
 }
 
-func (messenger *Messenger) Warning(endpoint, message string) {
+// Log
+// a facade for generating logs for a given supervisor
+func (messenger *Messenger) Log(module, cluster string, supervisor uint64, message string, priority ...MessagePriority) error {
 
-}
+	moduleInstance, moduleFound := messenger.Get(module)
 
-func (messenger *Messenger) Complete(endpoint string) bool {
-
-	messenger.mutex.Lock()
-	defer messenger.mutex.Unlock()
-
-	var success bool = false
-
-	if logs, found := messenger.data[endpoint]; !found {
-		success = false
-	} else {
-		message := fmt.Sprintf("Cluster: %s\n", endpoint)
-
-		for _, log := range logs {
-			message += fmt.Sprintf("\n%s", log)
-		}
-
-		emailSuccess := true
-		if messenger.enabled.smtp {
-			if receivers, found := messenger.smtp.receivers[endpoint]; found {
-				emailSuccess = SendEmail(message, messenger.smtp.credentials, receivers, messenger.smtp.endpoint)
-			}
-		}
-
-		loggingSuccess := true
-		if messenger.enabled.logging {
-			loggingSuccess = SaveToFile(messenger.logging.directory, endpoint, logs)
-		}
-
-		success = emailSuccess && loggingSuccess
+	if !moduleFound {
+		moduleInstance, _ = messenger.Create(module)
 	}
 
+	clusterInstance, clusterFound := moduleInstance.Get(cluster)
+
+	if !clusterFound {
+		clusterInstance, _ = moduleInstance.Create(cluster)
+	}
+
+	level := Log
+	for _, p := range priority {
+		level = p
+	}
+
+	return clusterInstance.Add(supervisor, level, message)
+}
+
+// Complete
+// facade for closing the log and generating the log file for a supervisor
+func (messenger *Messenger) Complete(module, cluster string, supervisor uint64) (success bool) {
+
+	success = false
+	moduleInstance, moduleFound := messenger.Get(module)
+
+	if !moduleFound {
+		return success
+	}
+
+	clusterInstance, clusterFound := moduleInstance.Get(cluster)
+
+	if !clusterFound {
+		return success
+	}
+
+	logs, logsFound := clusterInstance.Get(supervisor)
+
+	if !logsFound {
+		return success
+	}
+
+	endpoint := fmt.Sprintf("%s_%s_%d", module, cluster, supervisor)
+
+	emailSuccess := true
+	if messenger.enabled.smtp {
+		if receivers, found := messenger.smtp.receivers[endpoint]; found {
+			emailSuccess = SendEmail(endpoint, messenger.smtp.credentials, receivers, messenger.smtp.endpoint)
+		}
+	}
+
+	loggingSuccess := true
+	if messenger.enabled.logging {
+		loggingSuccess = SaveToFile(messenger.logging.directory, endpoint, logs)
+	}
+
+	success = emailSuccess && loggingSuccess
 	return success
 }

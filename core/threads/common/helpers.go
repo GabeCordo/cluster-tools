@@ -641,19 +641,25 @@ func SwapInCache(pipe chan<- CacheRequest, responseTable *multithreaded.Response
 	return response.Success
 }
 
-// TODO : find workaround
-//func ToggleDebugMode(logger *logging.Logger) (description string) {
-//
-//	cfg := GetConfigInstance()
-//	cfg.Debug = !cfg.Debug
-//
-//	if cfg.Debug {
-//		description = "debug mode activated"
-//		logger.Println("remote change: debug mode ON")
-//	} else {
-//		description = "debug mode disabled"
-//		logger.Println("remote change: debug mode OFF")
-//	}
-//
-//	return description
-//}
+func Log(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, timeout float64,
+	log *supervisor.Log) error {
+
+	if log == nil {
+		return errors.New("need a valid *supervisor.Log")
+	}
+
+	request := ProcessorRequest{
+		Action: ProcessorSupervisorLog,
+		Data:   log,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(ProcessorResponse)
+	return response.Error
+}
