@@ -2,10 +2,16 @@ package messenger
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
 func TestMessenger(t *testing.T) {
+
+	_, isTestLocal := os.LookupEnv("MANGO_LOCAL_TEST")
+	if !isTestLocal {
+		t.Skip("this test can not be run on actions")
+	}
 
 	m := NewMessenger(true, true).SetupSMTP(DefaultEndpoint, Credentials{"~", "~"})
 

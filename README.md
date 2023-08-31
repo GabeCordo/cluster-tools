@@ -35,6 +35,15 @@ mango start
 ```
 adding the common variant will load in util and test functions that can be used to verify the framework is working.
 
+### Testing
+Github actions are set to run all tests located in the repository. Component tests and Integration testing are used to
+validate the health of the codebase.
+
+Some tests are only suited for local runs; tests require special permissions or need some
+form of manual intervention. To enable local tests, set the env var:
+
+    MANGO_LOCAL_TEST
+
 ### Documentation
 
 Documentation is continuously being added to the Github Wiki found [here](https://github.com/GabeCordo/mangoose-core/wiki)
