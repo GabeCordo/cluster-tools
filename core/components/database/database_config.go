@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"io/ioutil"
 	"os"
@@ -229,4 +230,16 @@ func (db *ConfigDatabase) Delete(moduleIdentifier, configIdentifier string) (err
 	delete(configMap, configIdentifier)
 
 	return err
+}
+
+func (db *ConfigDatabase) Print() {
+
+	for moduleName, module := range db.records {
+
+		fmt.Printf("├─ %s\n", moduleName)
+
+		for clusterName, _ := range module {
+			fmt.Printf("|   ├─ %s\n", clusterName)
+		}
+	}
 }

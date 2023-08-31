@@ -310,8 +310,8 @@ func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	} else if r.Method == "POST" {
 
-		isOk := common.StoreConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request, thread.config.Timeout)
-		if !isOk {
+		err := common.StoreConfigInDatabase(thread.C1, thread.DatabaseResponseTable, moduleName[0], *request, thread.config.Timeout)
+		if err != nil {
 			w.WriteHeader(http.StatusConflict)
 		}
 

@@ -133,3 +133,16 @@ func (db *StatisticDatabase) Delete(moduleId string) (err error) {
 	delete(db.records, moduleId)
 	return err
 }
+
+func (db *StatisticDatabase) Print() {
+
+	for moduleName, module := range db.records {
+
+		fmt.Printf("├─ %s\n", moduleName)
+
+		for supervisorName, statistics := range module {
+
+			fmt.Printf("|   ├─ %s (num of records: %d) \n", supervisorName, len(statistics))
+		}
+	}
+}

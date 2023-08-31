@@ -20,6 +20,10 @@ func ConnectToCore(host string, config *processor.Config) error {
 
 	rsp, err := http.Post(url, "application/json", &buf)
 
+	if err != nil {
+		return err
+	}
+
 	if rsp.Status != "200 OK" {
 		return errors.New("unexpected response code")
 	}
@@ -53,6 +57,10 @@ func DisconnectFromCore(host string, config *processor.Config) error {
 	req.URL.RawQuery = q.Encode()
 
 	rsp, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
 
 	if rsp.Status != "200 OK" {
 		return errors.New("unexpected response code")

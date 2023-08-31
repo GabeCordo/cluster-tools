@@ -8,11 +8,12 @@ import (
 type Status string
 
 const (
-	Created   Status = "created"
-	Active           = "active"
-	Crashed          = "crashed"
-	Completed        = "completed"
-	Cancelled        = "cancelled"
+	Created    Status = "created"
+	Active            = "active"
+	Crashed           = "crashed"
+	Completed         = "completed"
+	Terminated        = "terminated" // this is legacy
+	Cancelled         = "cancelled"
 )
 
 type Event string

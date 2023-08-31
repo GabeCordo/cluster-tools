@@ -17,6 +17,11 @@ func (thread *Thread) Setup() {
 		log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
 			err.Error())
 	}
+
+	// some configs may have carried over from previous runs
+	// let the operator know these configs are being loaded into the
+	// core without having to query the database over HTTP
+	GetConfigDatabaseInstance().Print()
 }
 
 func (thread *Thread) Teardown() {
@@ -132,6 +137,10 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 					configData := (request.Data).(cluster.Config)
 					err := GetConfigDatabaseInstance().Create(request.Module, request.Cluster, configData)
 
+					if err == nil {
+						GetConfigDatabaseInstance().Print()
+					}
+
 					thread.Respond(request, &common.DatabaseResponse{
 						Success: err == nil,
 						Nonce:   request.Nonce,
@@ -139,14 +148,18 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 				}
 			case common.SupervisorStatistic:
 				{
-					statisticsData := (request.Data).(*cluster.Response)
+					statisticsData := (request.Data).(*cluster.Statistics)
 					err := GetStatisticDatabaseInstance().Create(
 						request.Module, request.Cluster,
-						database.Statistic{
+						database.Statistic{ // TODO : depreciate or fix elapsed time
 							Timestamp: time.Now(),
-							Elapsed:   statisticsData.LapsedTime,
-							Stats:     *statisticsData.Stats,
+							Stats:     *statisticsData, // copy
 						})
+
+					if err == nil {
+						GetStatisticDatabaseInstance().Print()
+					}
+
 					thread.Respond(request, &common.DatabaseResponse{
 						Success: err == nil,
 						Nonce:   request.Nonce,
@@ -191,12 +204,21 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 			case common.ClusterConfig:
 				{
 					err := GetConfigDatabaseInstance().Delete(request.Module, request.Cluster)
+
+					if err == nil {
+						GetConfigDatabaseInstance().Print()
+					}
+
 					response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
 					thread.Respond(request, &response)
 				}
 			case common.ClusterModule:
 				{
 					err := GetStatisticDatabaseInstance().Delete(request.Module)
+
+					if err == nil {
+						GetConfigDatabaseInstance().Print()
+					}
 
 					response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
 					thread.Respond(request, &response)
@@ -207,8 +229,12 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 		{
 			config := (request.Data).(cluster.Config)
 			err := GetConfigDatabaseInstance().Replace(request.Module, request.Cluster, config)
-			response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
 
+			if err == nil {
+				GetConfigDatabaseInstance().Print()
+			}
+
+			response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
 			thread.Respond(request, &response)
 		}
 	case common.DatabaseUpperPing:

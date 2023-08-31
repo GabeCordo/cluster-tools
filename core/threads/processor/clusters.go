@@ -29,6 +29,9 @@ func (thread *Thread) mountCluster(moduleName, clusterName string) error {
 	}
 
 	clusterInstance.Mount()
+	thread.Logger.Printf("[%s] cluster %s was MOUNTED\n", moduleName, clusterName)
+	GetTableInstance().Print()
+
 	return nil
 }
 
@@ -45,5 +48,8 @@ func (thread *Thread) unmountCluster(moduleName, clusterName string) error {
 	}
 
 	clusterInstance.Unmount()
+	thread.Logger.Printf("[%s] cluster %s was UNMOUNTED\n", moduleName, clusterName)
+	GetTableInstance().Print()
+
 	return nil
 }

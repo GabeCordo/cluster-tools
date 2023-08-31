@@ -37,7 +37,7 @@ func (cluster *Cluster) SelectProcessor() *Processor {
 
 	instance := cluster.processors[cluster.processorIndex]
 	if d := cluster.numOfProcessors - 1; d != 0 {
-		cluster.processorIndex = (cluster.processorIndex + 1) % (len(cluster.processors) - 1)
+		cluster.processorIndex = (cluster.processorIndex + 1) % (len(cluster.processors))
 	} else {
 		cluster.processorIndex = 0
 	}

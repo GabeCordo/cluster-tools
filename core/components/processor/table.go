@@ -243,3 +243,19 @@ func (table *Table) Registered() []ModuleData {
 
 	return modules
 }
+
+func (table *Table) Print() {
+
+	for identifier, module := range table.modules {
+		fmt.Printf("├─ %s (mounted: %t) \n", identifier, module.IsMounted())
+
+		for identifier, cluster := range module.clusters {
+
+			fmt.Printf("|  ├─%s (mounted: %t)\n", identifier, cluster.IsMounted())
+
+			for _, processor := range cluster.processors {
+				fmt.Printf("|  |  ├─%s\n", processor.ToString())
+			}
+		}
+	}
+}

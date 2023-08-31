@@ -33,10 +33,10 @@ func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, c
 	err := api.ProvisionSupervisor(processorName, moduleName, clusterName, identifier, &conf, make(map[string]string))
 
 	if err != nil {
-		thread.Logger.Printf("[%s] %s\n", sup.Id, "could not connect to the processor and is canceled")
+		thread.Logger.Printf("[core -> %s][id: %d] %s\n", processorName, sup.Id, "could not connect to the processor and supervisor is canceled")
 		sup.Status = supervisor.Cancelled
 	} else {
-		thread.Logger.Printf("[%s] %s\n", sup.Id, "connected to processor and is active")
+		thread.Logger.Printf("[core -> %s][id: %d] %s\n", processorName, sup.Id, "connected to processor and supervisor is active")
 		sup.Status = supervisor.Active
 	}
 
@@ -53,14 +53,19 @@ func (thread *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
 	stored.Status = instance.Status
 	stored.Statistics = instance.Statistics
 
-	if (stored.Status == supervisor.Completed) || (stored.Status == supervisor.Crashed) {
-		// TODO : this can probably encapsulated
+	thread.Logger.Printf("[id: %d][state: %s] updated supervisor record\n", instance.Id, instance.Status)
+
+	if (stored.Status == supervisor.Completed) ||
+		(stored.Status == supervisor.Crashed) ||
+		(stored.Status == supervisor.Terminated) {
+		// TODO : this can probably encapsulate
 		request := common.DatabaseRequest{
-			Action: common.DatabaseStore,
-			Type:   common.SupervisorStatistic,
-			Module: stored.Module,
-			Data:   stored.Statistics,
-			Nonce:  rand.Uint32(),
+			Action:  common.DatabaseStore,
+			Type:    common.SupervisorStatistic,
+			Module:  stored.Module,
+			Cluster: stored.Cluster,
+			Data:    stored.Statistics,
+			Nonce:   rand.Uint32(),
 		}
 		thread.C15 <- request
 

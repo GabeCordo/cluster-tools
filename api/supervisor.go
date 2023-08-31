@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/mango/core/interfaces/communication"
 	"net/http"
 )
 
@@ -22,12 +23,69 @@ func LogError(host string, message string) error {
 	return nil
 }
 
-func Cache(host string, data any) (string, error) {
-	return "", nil
+func Cache(host string, key string, data string) (string, error) {
+
+	url := fmt.Sprintf("%s/cache", host)
+
+	body := &struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}{
+		Key: key, Value: data,
+	}
+
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(body)
+
+	rsp, err := http.Post(url, "application/json", &buf)
+	if err != nil {
+		// TODO : remove static value
+		return "", err
+	}
+
+	if rsp.Status != "200 OK" {
+		return "", errors.New("could not store in cache")
+	}
+
+	response := &communication.Response{}
+	err = json.NewDecoder(rsp.Body).Decode(response)
+	if err != nil {
+		return "", err
+	}
+
+	return (response.Data).(string), err
 }
 
-func GetFromCache(host string, key string) (any, error) {
-	return nil, nil
+func GetFromCache(host string, key string) (string, error) {
+
+	url := fmt.Sprintf("%s/cache", host)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	if err != nil {
+		return "", err
+	}
+
+	q := req.URL.Query()
+	q.Add("key", key)
+	req.URL.RawQuery = q.Encode()
+
+	rsp, err := client.Do(req)
+
+	if err != nil {
+		return "", errors.New("could not reach cache")
+	}
+
+	if rsp.Status != "200 OK" {
+		return "", errors.New("cache not found")
+	}
+
+	response := &communication.Response{}
+	json.NewDecoder(rsp.Body).Decode(response)
+
+	return (response.Data).(string), nil
 }
 
 func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, config *cluster.Config, metadata map[string]string) error {

@@ -36,7 +36,7 @@ type Config struct {
 	Name    string    `yaml:"name" json:"name"`
 	Version float64   `yaml:"version" json:"version"`
 	Contact Contact   `yaml:"contact,omitempty" json:"contact,omitempty"`
-	Exports []Cluster `yaml:"exports" json:"exports"`
+	Exports []Cluster `yaml:"exports" json:"clusters"`
 }
 
 func (c Cluster) ToClusterConfig() cluster.Config {

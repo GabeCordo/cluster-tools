@@ -73,7 +73,7 @@ func GetConfigsFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *
 }
 
 func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
-	moduleName string, cfg cluster.Config, maxWaitForResponse float64) (success bool) {
+	moduleName string, cfg cluster.Config, maxWaitForResponse float64) error {
 
 	databaseRequest := DatabaseRequest{
 		Action:  DatabaseStore,
@@ -88,11 +88,16 @@ func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *m
 	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
 		maxWaitForResponse)
 	if didTimeout {
-		return false
+		return multithreaded.NoResponseReceived
 	}
 
 	databaseResponse := (data).(DatabaseResponse)
-	return databaseResponse.Success
+	// TODO : make the database generate the errors
+	if !databaseResponse.Success {
+		return errors.New("could not store config in database")
+	}
+
+	return nil
 }
 
 func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
