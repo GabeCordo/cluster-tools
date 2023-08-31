@@ -44,46 +44,14 @@ func (thread *Thread) Respond(response *common.CacheResponse) {
 
 func (thread *Thread) ProcessIncomingRequest(request *common.CacheRequest) {
 	if request.Action == common.CacheSaveIn {
-		thread.ProcessSaveRequest(request)
+		thread.processSaveRequest(request)
 	} else if request.Action == common.CacheLoadFrom {
-		thread.ProcessLoadRequest(request)
+		thread.processLoadRequest(request)
 	} else if request.Action == common.CacheLowerPing {
-		thread.ProcessPingCache(request)
+		thread.processPingCache(request)
 	}
 
 	thread.wg.Done()
-}
-
-// ProcessSaveRequest will insert or override an existing cache record
-func (thread *Thread) ProcessSaveRequest(request *common.CacheRequest) {
-	var response common.CacheResponse
-	if _, found := GetCacheInstance().Get(request.Identifier); found {
-		GetCacheInstance().Swap(request.Identifier, request.Data, request.ExpiresIn)
-		response = common.CacheResponse{Identifier: request.Identifier, Data: nil, Nonce: request.Nonce, Success: true}
-	} else {
-		newIdentifier := GetCacheInstance().Save(request.Data, request.ExpiresIn)
-		response = common.CacheResponse{Identifier: newIdentifier, Data: nil, Nonce: request.Nonce, Success: true}
-	}
-	thread.C10 <- response
-}
-
-func (thread *Thread) ProcessLoadRequest(request *common.CacheRequest) {
-	cacheData, isFoundAndNotExpired := GetCacheInstance().Get(request.Identifier)
-	thread.C10 <- common.CacheResponse{
-		Identifier: request.Identifier,
-		Data:       cacheData,
-		Nonce:      request.Nonce,
-		Success:    isFoundAndNotExpired && (cacheData != nil),
-	}
-}
-
-func (thread *Thread) ProcessPingCache(request *common.CacheRequest) {
-
-	if thread.config.Debug {
-		thread.logger.Println("received ping over C9")
-	}
-
-	thread.C10 <- common.CacheResponse{Nonce: request.Nonce, Success: true}
 }
 
 func (thread *Thread) Teardown() {

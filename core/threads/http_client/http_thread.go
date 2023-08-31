@@ -47,10 +47,6 @@ func (thread *Thread) Setup() {
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
 
-	if thread.config.EnableCors {
-		mux.HandleFunc("/cors", thread.corsCallback)
-	}
-
 	thread.mux = mux
 }
 

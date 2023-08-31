@@ -31,7 +31,7 @@ func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Sup
 	thread.C13 <- request
 
 	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		thread.config.MaxWaitForResponse)
+		thread.config.Timeout)
 
 	if didTimeout {
 		return nil, multithreaded.NoResponseReceived
@@ -86,7 +86,7 @@ func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, erro
 	thread.C13 <- request
 
 	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		thread.config.MaxWaitForResponse)
+		thread.config.Timeout)
 
 	if didTimeout {
 		return 0, multithreaded.NoResponseReceived
@@ -107,7 +107,7 @@ func (thread *Thread) updateSupervisor(r *common.ProcessorRequest) error {
 	thread.C13 <- request
 
 	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		thread.config.MaxWaitForResponse)
+		thread.config.Timeout)
 
 	if didTimeout {
 		// TODO : replace with real error
@@ -129,12 +129,12 @@ func (thread *Thread) logSupervisor(r *common.ProcessorRequest) error {
 	thread.C13 <- request
 
 	rsp, didTimeout := multithreaded.SendAndWait(thread.SupervisorResponseTable, request.Nonce,
-		thread.config.MaxWaitForResponse)
+		thread.config.Timeout)
 
 	if didTimeout {
 		return multithreaded.NoResponseReceived
 	}
-	
+
 	response := (rsp).(common.SupervisorResponse)
 	return response.Error
 }

@@ -4,6 +4,8 @@ import (
 	"github.com/GabeCordo/mango/core/interfaces/module"
 	"github.com/GabeCordo/mango/core/interfaces/processor"
 	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/multithreaded"
+	"math/rand"
 )
 
 func (thread *Thread) Setup() {
@@ -90,6 +92,8 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 	response := &common.ProcessorResponse{Nonce: request.Nonce, Error: nil}
 
 	switch request.Action {
+	case common.ProcessorPing:
+		response.Error = thread.ping()
 	case common.ProcessorGet:
 		response.Data = thread.processorGet()
 	case common.ProcessorAdd:
@@ -130,6 +134,47 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 	response.Success = response.Error == nil
 	thread.respond(request.Source, response)
 	thread.wg.Done()
+}
+
+func (thread *Thread) ping() error {
+
+	thread.Logger.Println("received ping over C5")
+
+	// TEST DB CHANNELS
+
+	dbRequest := common.DatabaseRequest{
+		Action: common.DatabaseLowerPing,
+		Nonce:  rand.Uint32(),
+	}
+	thread.C11 <- dbRequest
+
+	rsp, didTimeout := multithreaded.SendAndWait(thread.DatabaseResponseTable, dbRequest.Nonce, thread.config.Timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	dbResponse := (rsp).(common.DatabaseResponse)
+	if dbResponse.Error != nil {
+		return dbResponse.Error
+	}
+
+	thread.Logger.Println("received ping over C12")
+
+	// TEST SUPERVISOR CHANNELS
+
+	supRequest := common.SupervisorRequest{
+		Action: common.SupervisorPing,
+		Nonce:  rand.Uint32(),
+	}
+	thread.C13 <- supRequest
+
+	rsp, didTimeout = multithreaded.SendAndWait(thread.SupervisorResponseTable, supRequest.Nonce, thread.config.Timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	supResponse := (rsp).(common.SupervisorResponse)
+	return supResponse.Error
 }
 
 func (thread *Thread) Teardown() {

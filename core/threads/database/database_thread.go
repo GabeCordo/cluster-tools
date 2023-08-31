@@ -62,7 +62,7 @@ func (thread *Thread) Start() {
 			}
 			thread.wg.Add(1)
 
-			request.Source = common.HttpProcessor
+			request.Source = common.Processor
 			thread.ProcessIncomingRequest(&request)
 		}
 	}()
@@ -114,7 +114,7 @@ func (thread *Thread) Respond(request *common.DatabaseRequest, response *common.
 	case common.HttpClient:
 		thread.C2 <- *response
 		break
-	case common.HttpProcessor:
+	case common.Processor:
 		thread.C12 <- *response
 		break
 	case common.Supervisor:
@@ -263,7 +263,7 @@ func (thread *Thread) ProcessDatabaseUpperPing(request *common.DatabaseRequest) 
 	thread.Request(common.Messenger, messengerPingRequest)
 
 	data, didTimeout := multithreaded.SendAndWait(thread.messengerResponseTable, messengerPingRequest.Nonce,
-		thread.config.MaxWaitForResponse)
+		thread.config.Timeout)
 
 	if didTimeout {
 		thread.C2 <- common.DatabaseResponse{
@@ -296,16 +296,17 @@ func (thread *Thread) ProcessDatabaseUpperPing(request *common.DatabaseRequest) 
 
 func (thread *Thread) ProcessDatabaseLowerPing(request *common.DatabaseRequest) {
 
-	// TODO : fix
-	//if common.GetConfigInstance().Debug {
-	//	thread.logger.Println("received ping over C15")
-	//}
-	//
-	//response := common.DatabaseResponse{
-	//	Nonce:   request.Nonce,
-	//	Success: true,
-	//}
-	//thread.C <- response
+	if request.Source == common.Processor {
+		thread.logger.Println("received ping over C11")
+	} else {
+		thread.logger.Println("received ping over C15")
+	}
+
+	response := &common.DatabaseResponse{
+		Nonce:   request.Nonce,
+		Success: true,
+	}
+	thread.Respond(request, response)
 }
 
 func (thread *Thread) ProcessIncomingResponse(response *common.MessengerResponse) {

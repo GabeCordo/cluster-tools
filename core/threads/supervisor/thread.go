@@ -3,6 +3,8 @@ package supervisor
 import (
 	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/toolchain/multithreaded"
+	"math/rand"
 )
 
 func (thread *Thread) Setup() {
@@ -53,6 +55,8 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 	response := &common.SupervisorResponse{Nonce: request.Nonce, Error: nil}
 
 	switch request.Action {
+	case common.SupervisorPing:
+		response.Error = thread.ping()
 	case common.SupervisorGet:
 		response.Data, response.Error = thread.getSupervisor(request.Identifiers.Supervisor)
 	case common.SupervisorCreate:
@@ -70,6 +74,27 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 
 	response.Success = response.Error == nil
 	thread.respond(request.Source, response)
+}
+
+func (thread *Thread) ping() error {
+
+	thread.Logger.Println("received ping over C13")
+
+	// TEST DATABASE CHANNELS
+
+	request := common.DatabaseRequest{
+		Action: common.DatabaseLowerPing,
+		Nonce:  rand.Uint32(),
+	}
+	thread.C15 <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(thread.DatabaseResponseTable, request.Nonce, thread.config.Timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(common.DatabaseResponse)
+	return response.Error
 }
 
 func (thread *Thread) Teardown() {

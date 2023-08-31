@@ -15,6 +15,7 @@ const (
 	SupervisorCreate
 	SupervisorUpdate
 	SupervisorLog
+	SupervisorPing
 )
 
 type Caller string
@@ -59,6 +60,7 @@ const (
 	ProcessorSupervisorCreate
 	ProcessorSupervisorUpdate
 	ProcessorSupervisorLog
+	ProcessorPing
 )
 
 type ProcessorRequest struct {
@@ -99,10 +101,11 @@ type CacheRequest struct {
 }
 
 type CacheResponse struct {
-	Identifier string
-	Nonce      uint32
-	Data       any
 	Success    bool
+	Error      error
+	Identifier string
+	Data       any
+	Nonce      uint32
 }
 
 type DatabaseAction uint8
@@ -137,9 +140,10 @@ type DatabaseRequest struct {
 }
 
 type DatabaseResponse struct {
-	Nonce   uint32 `json:"Nonce"`
-	Success bool   `json:"Success"`
+	Success bool `json:"Success"`
+	Error   error
 	Data    any    `json:"statistics"` // []database.Entry or cluster.Config
+	Nonce   uint32 `json:"Nonce"`
 }
 
 type MessengerAction uint8

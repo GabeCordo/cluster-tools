@@ -157,19 +157,19 @@ func (config *Config) FillMessengerConfig(messengerConfig *messenger.Config) {
 
 func (config *Config) FillDatabaseConfig(databaseConfig *database.Config) {
 	databaseConfig.Debug = config.Debug
-	databaseConfig.MaxWaitForResponse = config.MaxWaitForResponse
+	databaseConfig.Timeout = config.MaxWaitForResponse
 }
 
 func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {
 	// TODO - add panic check
 	processorConfig.Debug = config.Debug
-	processorConfig.MaxWaitForResponse = config.MaxWaitForResponse
+	processorConfig.Timeout = config.MaxWaitForResponse
 }
 
 func (config *Config) FillSupervisorConfig(supervisorConfig *supervisor.Config) {
 	// TODO - add panic check
 	supervisorConfig.Debug = config.Debug
-	supervisorConfig.MaxWaitForResponse = config.MaxWaitForResponse
+	supervisorConfig.Timeout = config.MaxWaitForResponse
 }
 
 func YAMLToETLConfig(config *Config, path string) error {
@@ -218,7 +218,7 @@ func GetConfigInstance(configPath ...string) *Config {
 		if err := YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
 			// the configPath we found the common for future reference
 			ConfigInstance.Path = configPath[0]
-			// if the MaxWaitForResponse is not set, then simply default to 2.0
+			// if the Timeout is not set, then simply default to 2.0
 			if ConfigInstance.MaxWaitForResponse == 0 {
 				ConfigInstance.MaxWaitForResponse = 2
 			}

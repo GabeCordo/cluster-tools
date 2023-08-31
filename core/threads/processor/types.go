@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	Debug              bool
-	MaxWaitForResponse float64
+	Debug   bool
+	Timeout float64
 }
 
 type Thread struct {

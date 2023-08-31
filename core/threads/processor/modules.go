@@ -43,7 +43,7 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 			}
 		}
 
-		err := common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig(), thread.config.MaxWaitForResponse)
+		err := common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig(), thread.config.Timeout)
 		if err == nil {
 			thread.Logger.Printf("stored new default config for cluster %s in database\n", export.Cluster)
 		} else {

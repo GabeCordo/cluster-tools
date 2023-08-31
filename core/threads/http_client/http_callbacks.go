@@ -368,6 +368,25 @@ func (thread *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "GET" {
+		thread.getDebugCallback(w, r)
+	} else if r.Method == "POST" {
+		thread.postDebugCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) getDebugCallback(w http.ResponseWriter, r *http.Request) {
+
+	thread.logger.Printf("ping from %s\n", r.RemoteAddr)
+	response := communication.Response{Success: true, Description: "bonjour"}
+	b, _ := json.Marshal(response)
+	w.Write(b)
+}
+
 type DebugJSONBody struct {
 	Action string `json:"action"`
 }
@@ -377,55 +396,36 @@ type DebugJSONResponse struct {
 	Success  bool          `json:"success"`
 }
 
-func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) {
 
 	var request DebugJSONBody
 	err := json.NewDecoder(r.Body).Decode(&request)
-	if (r.Method != "OPTIONS") && (r.Method != "GET") && err != nil {
+	if err != nil {
 		fmt.Println("missing body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	response := communication.Response{Success: true}
 
-	if r.Method == "GET" {
-		fmt.Println(r.RemoteAddr)
-		// treat this as a probe to the http server
-	} else if r.Method == "POST" {
-		if request.Action == "shutdown" {
-			common.ShutdownCore(thread.Interrupt)
-			// TODO : fix
-			//} else if request.Action == "ping" {
-			//	startTime := time.Now()
-			//	success := common.PingNodeChannels(thread.logger, thread.C1, thread.DatabaseResponseTable, thread.C5, thread.ProcessorResponseTable)
-			//	response := DebugJSONResponse{Success: success, Duration: time.Now().Sub(startTime)}
-			//	bytes, err := json.Marshal(response)
-			//	if err == nil {
-			//		if _, err := w.Write(bytes); err != nil {
-			//			w.WriteHeader(http.StatusInternalServerError)
-			//		}
-			//	} else {
-			//		w.WriteHeader(http.StatusInternalServerError)
-			//	}
-			// TODO : fix
-			//} else if request.Action == "debug" {
-			//	description := common.ToggleDebugMode(thread.logger)
-			//	if _, err := w.Write([]byte(description)); err != nil {
-			//		w.WriteHeader(http.StatusInternalServerError)
-			//	}
-			//}
+	if request.Action == "shutdown" {
+		err = common.ShutdownCore(thread.Interrupt)
+		if err != nil {
+			response.Description = err.Error()
 		}
-	} else if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, POST, GET")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
-	} else {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	} else if request.Action == "ping" {
+		startTime := time.Now()
+		err = common.PingNodeChannels(thread.C1, thread.DatabaseResponseTable,
+			thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
+		if err == nil {
+			duration := time.Now().Sub(startTime)
+			response.Data = duration
+		} else {
+			response.Description = err.Error()
+		}
 	}
-}
 
-func (thread *Thread) corsCallback(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-	}
+	response.Success = err == nil
+	b, _ := json.Marshal(response)
+	w.Write(b)
 }

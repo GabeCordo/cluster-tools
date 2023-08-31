@@ -364,61 +364,52 @@ func FindStatistics(pipe chan<- DatabaseRequest, responseTable *multithreaded.Re
 	return (databaseResponse.Data).([]database.Statistic), true
 }
 
-func ShutdownCore(pipe chan<- InterruptEvent) (response []byte, success bool) {
+func ShutdownCore(pipe chan<- InterruptEvent) error {
 	pipe <- Shutdown
-	return nil, true
+	return nil
 }
 
-// TODO : this needs to be fixed
-//func PingNodeChannels(logger *multithreaded.Logger,
-//	databasePipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
-//	provisionerPipe chan<- ProvisionerRequest, provisionerResponseTable *multithreaded.ResponseTable) (success bool) {
-//
-//	databasePingRequest := DatabaseRequest{
-//		Action: DatabaseUpperPing,
-//		Nonce:  rand.Uint32(),
-//	}
-//	databasePipe <- databasePingRequest
-//
-//	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databasePingRequest.Nonce,
-//		maxWaitForResponse)
-//	if didTimeout {
-//		return false
-//	}
-//
-//	databaseResponse := (data).(DatabaseResponse)
-//	if !databaseResponse.Success {
-//		return false
-//	}
-//
-//	if GetConfigInstance().Debug {
-//		logger.Println("received ping over C2")
-//	}
-//
-//	provisionerPingRequest := ProvisionerRequest{
-//		Action: ProvisionerLowerPing,
-//		Source: Http,
-//		Nonce:  rand.Uint32(),
-//	}
-//	provisionerPipe <- provisionerPingRequest
-//
-//	data2, didTimeout2 := multithreaded.SendAndWait(provisionerResponseTable, provisionerPingRequest.Nonce,
-//		maxWaitForResponse)
-//	if didTimeout2 {
-//		return false
-//	}
-//
-//	provisionerResponse := (data2).(ProvisionerResponse)
-//	if !provisionerResponse.Success {
-//		return false
-//	}
-//
-//	if GetConfigInstance().Debug {
-//		logger.Println("received ping over C6")
-//	}
-//
-//	return true
-//}
+func PingNodeChannels(databasePipe chan<- DatabaseRequest, databaseRT *multithreaded.ResponseTable,
+	processorPipe chan<- ProcessorRequest, processorRT *multithreaded.ResponseTable, timeout float64) error {
+
+	databasePingRequest := DatabaseRequest{
+		Action: DatabaseUpperPing,
+		Nonce:  rand.Uint32(),
+	}
+	databasePipe <- databasePingRequest
+
+	data, didTimeout := multithreaded.SendAndWait(databaseRT, databasePingRequest.Nonce, timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	databaseResponse := (data).(DatabaseResponse)
+	if !databaseResponse.Success {
+		return databaseResponse.Error
+	}
+
+	fmt.Println("received ping over C2")
+
+	processorRequest := ProcessorRequest{
+		Action: ProcessorPing,
+		Nonce:  rand.Uint32(),
+	}
+	processorPipe <- processorRequest
+
+	data2, didTimeout2 := multithreaded.SendAndWait(processorRT, processorRequest.Nonce, timeout)
+	if didTimeout2 {
+		return multithreaded.NoResponseReceived
+	}
+
+	processorResponse := (data2).(ProcessorResponse)
+	if !processorResponse.Success {
+		return processorResponse.Error
+	}
+
+	fmt.Println("received ping over C6")
+
+	return nil
+}
 
 func GetModules(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, maxWaitForResponse float64) (success bool, modules []processor.ModuleData) {
 

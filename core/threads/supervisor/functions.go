@@ -22,7 +22,7 @@ func (thread *Thread) getSupervisor(id uint64) (*supervisor.Supervisor, error) {
 func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string) (uint64, error) {
 
 	// TODO : change it so that configs are received via pointer over the channel
-	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName, thread.config.MaxWaitForResponse)
+	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName, thread.config.Timeout)
 	if !found {
 		return 0, errors.New("no config with that identifier exists")
 	}
@@ -70,7 +70,7 @@ func (thread *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
 		}
 		thread.C15 <- request
 
-		rsp, didTimeout := multithreaded.SendAndWait(thread.DatabaseResponseTable, request.Nonce, thread.config.MaxWaitForResponse)
+		rsp, didTimeout := multithreaded.SendAndWait(thread.DatabaseResponseTable, request.Nonce, thread.config.Timeout)
 		if didTimeout {
 			return multithreaded.NoResponseReceived
 		}
