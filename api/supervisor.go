@@ -160,7 +160,7 @@ func log(host string, id uint64, level messenger.MessagePriority, message string
 
 func Log(host string, id uint64, message string) error {
 
-	return log(host, id, messenger.Log, message)
+	return log(host, id, messenger.Normal, message)
 }
 
 func LogWarn(host string, id uint64, message string) error {

@@ -69,7 +69,7 @@ func (messenger *Messenger) Log(module, cluster string, supervisor uint64, messa
 		clusterInstance, _ = moduleInstance.Create(cluster)
 	}
 
-	level := Log
+	level := Normal
 	for _, p := range priority {
 		level = p
 	}

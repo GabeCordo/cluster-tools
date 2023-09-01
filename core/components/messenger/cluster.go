@@ -1,7 +1,6 @@
 package messenger
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -20,13 +19,13 @@ func (cluster *Cluster) Add(supervisor uint64, level MessagePriority, message st
 	defer cluster.mutex.Unlock()
 
 	logs, found := cluster.supervisors[supervisor]
-	log := fmt.Sprintf("[%s][%s] %s", time.Now().Format("2006-01-02 15:04:05"), level.ToString(), message)
+	log := Log{Timestamp: time.Now(), Priority: level, Message: message}
 
 	if !found {
 		logs = make([]string, 1)
-		logs[0] = log
+		logs[0] = log.ToString()
 	} else {
-		logs = append(logs, log)
+		logs = append(logs, log.ToString())
 	}
 
 	cluster.supervisors[supervisor] = logs

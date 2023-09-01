@@ -87,7 +87,7 @@ func (thread *Thread) ProcessConsoleRequest(request *common.MessengerRequest) {
 
 	switch request.Action {
 	case common.MessengerLog:
-		priority = messenger.Log
+		priority = messenger.Normal
 	case common.MessengerWarning:
 		priority = messenger.Warning
 	default:
