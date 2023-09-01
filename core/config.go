@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/fack"
 	"github.com/GabeCordo/mango/core/threads/cache"
 	"github.com/GabeCordo/mango/core/threads/database"
 	"github.com/GabeCordo/mango/core/threads/http_client"
@@ -73,11 +72,11 @@ func NewConfig(name string) *Config {
 	config.Name = name
 	config.Version = 1.0
 
-	config.Net.Client.Port = 8136           // default
-	config.Net.Client.Host = fack.Localhost // default
+	config.Net.Client.Port = 8136        // default
+	config.Net.Client.Host = "localhost" // default
 
 	config.Net.Processor.Port = 8137
-	config.Net.Processor.Host = fack.Localhost
+	config.Net.Processor.Host = "localhost"
 
 	return config
 }

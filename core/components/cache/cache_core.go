@@ -1,14 +1,37 @@
 package cache
 
 import (
-	"github.com/GabeCordo/fack"
+	"bytes"
 	"log"
+	"math/rand"
 	"time"
 )
 
+// cache constants
 const (
 	DefaultCacheRecordIdentifierSize = 15
 )
+
+// integer constants
+const (
+	maxGeneratedStringLength = 32
+	lowerASCIIBound          = 97
+	upperASCIIBound          = 122
+)
+
+func RandInteger(min int, max int) int {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Intn(max-min)
+}
+
+func GenerateRandomString(seed int) string {
+	buffer := new(bytes.Buffer)
+	for i := 0; i < maxGeneratedStringLength; i++ {
+		char := RandInteger(lowerASCIIBound, upperASCIIBound)
+		buffer.WriteString(string(char))
+	}
+	return buffer.String()
+}
 
 func (cache *Cache) Save(data any, expiry ...float64) string {
 	cache.m.Lock()
@@ -24,7 +47,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 		// might indicate that they need to increase the ram on their production environment
 		log.Println("(warning) cache miss, increase the maximum number of records allowed.")
 		log.Println("[ increasing the maximum records on low-ram machines will degrade performance, be careful ]")
-		return fack.EmptyString
+		return ""
 	}
 
 	var record Record
@@ -36,7 +59,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 
 	var identifier string
 	for {
-		identifier = fack.GenerateRandomString(DefaultCacheRecordIdentifierSize)
+		identifier = GenerateRandomString(DefaultCacheRecordIdentifierSize)
 
 		// in the odd case the cache identifier already exists, try again until we find a unique id
 		// Note: this should not hit as records (should) consistently be deleted

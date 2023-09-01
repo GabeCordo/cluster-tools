@@ -2,11 +2,10 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/GabeCordo/fack"
 )
 
 var DefaultConfig Config = Config{
-	Identifier:                  fack.EmptyString,
+	Identifier:                  "",
 	OnCrash:                     DoNothing,
 	OnLoad:                      CompleteAndPush,
 	StartWithNTransformClusters: 1,
