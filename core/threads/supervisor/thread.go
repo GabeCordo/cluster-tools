@@ -1,6 +1,7 @@
 package supervisor
 
 import (
+	"errors"
 	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -60,8 +61,15 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 	case common.SupervisorGet:
 		response.Data, response.Error = thread.getSupervisor(request.Identifiers.Supervisor)
 	case common.SupervisorCreate:
-		response.Data, response.Error = thread.createSupervisor(
-			request.Identifiers.Processor, request.Identifiers.Module, request.Identifiers.Config, request.Identifiers.Config)
+		metadata, success := (request.Data).(map[string]string)
+		if !success {
+			response.Error = errors.New("SupervisorCreate expected a map[string]string data type")
+		} else {
+			response.Data, response.Error = thread.createSupervisor(
+				request.Identifiers.Processor, request.Identifiers.Module,
+				request.Identifiers.Config, request.Identifiers.Config,
+				metadata)
+		}
 	case common.SupervisorUpdate:
 		s := (request.Data).(*supervisor.Supervisor)
 		response.Error = thread.updateSupervisor(s)

@@ -19,7 +19,7 @@ func (thread *Thread) getSupervisor(id uint64) (*supervisor.Supervisor, error) {
 	return instance, nil
 }
 
-func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string) (uint64, error) {
+func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string, metadata map[string]string) (uint64, error) {
 
 	// TODO : change it so that configs are received via pointer over the channel
 	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName, thread.config.Timeout)
@@ -31,7 +31,7 @@ func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, c
 	sup, _ := GetRegistryInstance().Get(identifier)
 
 	// TODO : need to support sending the received metadata
-	err := api.ProvisionSupervisor(processorName, moduleName, clusterName, identifier, &conf, make(map[string]string))
+	err := api.ProvisionSupervisor(processorName, moduleName, clusterName, identifier, &conf, metadata)
 
 	if err != nil {
 		thread.Logger.Printf("[core -> %s][id: %d] %s\n", processorName, sup.Id, "could not connect to the processor and supervisor is canceled")
