@@ -20,9 +20,9 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Messenger.EnableLogging = true
 	defaultConfig.Messenger.LogFiles.Directory = "/var/mangoose/logs"
 	defaultConfig.Messenger.EnableSmtp = false
-	defaultConfig.Net.Client.Host = "localhost"
+	defaultConfig.Net.Client.Host = "0.0.0.0"
 	defaultConfig.Net.Client.Port = 8136
-	defaultConfig.Net.Processor.Host = "localhost"
+	defaultConfig.Net.Processor.Host = "0.0.0.0"
 	defaultConfig.Net.Processor.Port = 8137
 	defaultConfig.Path = common.DefaultFrameworkFolder
 
