@@ -164,6 +164,10 @@ func (table *Table) RegisterModule(processorName string, config *module.Config) 
 		clusterInstance.data.Mode = export.Config.Mode
 	}
 
+	// TODO : allow the user to specify whether they want modules to be mounted by default
+	// for now modules will be mounted by default to make docker deployments easier
+	moduleInstance.Mount()
+
 	table.modules[config.Name] = moduleInstance
 
 	return nil
