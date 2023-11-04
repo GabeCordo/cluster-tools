@@ -26,6 +26,7 @@ type Config struct {
 	MaxWaitForResponse float64 `yaml:"max-wait-for-response"`
 	MountByDefault     bool    `yaml:"mount-by-default"`
 	EnableCors         bool    `yaml:"enable-cors"`
+	EnableRepl         bool    `yaml:"enable-repl"`
 	Cache              struct {
 		Expiry  float64 `yaml:"expire-in"`
 		MaxSize uint32  `yaml:"max-size"`
@@ -71,6 +72,9 @@ func NewConfig(name string) *Config {
 
 	config.Name = name
 	config.Version = 1.0
+
+	config.EnableCors = false
+	config.EnableRepl = false
 
 	config.Net.Client.Port = 8136        // default
 	config.Net.Client.Host = "localhost" // default

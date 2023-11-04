@@ -60,13 +60,6 @@ func (core *Core) Run() {
 		core.logger.Println("Cache Thread Started")
 	}
 
-	// we need a way to provision clusters if we are receiving threads before we can
-	//core.ProvisionerThread.Setup()
-	//go core.ProvisionerThread.Start() // event loop
-	//if common.GetConfigInstance().Debug {
-	//	core.logger.Println("Provisioner Thread Started")
-	//}
-
 	core.SupervisorThread.Setup()
 	go core.SupervisorThread.Start()
 	if core.config.Debug {
@@ -96,7 +89,13 @@ func (core *Core) Run() {
 			core.config.Net.Client.Host, core.config.Net.Client.Port)
 	}
 
-	go core.repl()
+	// HOTFIX: 3 - weird output for docker
+	// bug: on docker having the REPL enabled causes the @etl prefix to
+	// 		be spammed. Issue with docker giving the program the impression
+	//		it is being fed empty lines?
+	if core.config.EnableRepl {
+		go core.repl()
+	}
 
 	// monitor system calls being sent to the process, if the etl is being
 	// run on a local machine, the developer might attempt to kill the process with SIGINT

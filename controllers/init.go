@@ -17,6 +17,8 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig := core.Config{Debug: true, HardTerminateTime: 2}
 	defaultConfig.Cache.Expiry = 2
 	defaultConfig.Cache.MaxSize = 1000
+	defaultConfig.EnableCors = false
+	defaultConfig.EnableRepl = false
 	defaultConfig.Messenger.EnableLogging = true
 	defaultConfig.Messenger.LogFiles.Directory = "/var/mangoose/logs"
 	defaultConfig.Messenger.EnableSmtp = false

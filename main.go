@@ -31,5 +31,8 @@ func main() {
 	sc := cli.AddCommand("start", controllers.StartCommand{})
 	sc.SetCategory("utils").SetDescription("start the core on the local system")
 
+	rc := cli.AddCommand("repl", controllers.ReplController{})
+	rc.SetCategory("utils").SetDescription("enable or disable the repl when running mango start")
+
 	cli.Run()
 }

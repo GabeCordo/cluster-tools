@@ -13,6 +13,9 @@ import (
 func (thread *Thread) Setup() {
 	thread.accepting = true
 
+	thread.configFolderPath = common.DefaultConfigsFolder
+	thread.statisticFolderPath = common.DefaultStatisticsFolder
+
 	if err := GetConfigDatabaseInstance().Load(thread.configFolderPath); err != nil {
 		log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
 			err.Error())

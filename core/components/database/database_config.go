@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -74,6 +76,8 @@ func (db *ConfigDatabase) Save(path string) error {
 
 func (db *ConfigDatabase) Load(path string) error {
 
+	fmt.Println(path)
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("path doesn't exist or isn't a directory")
 	}
@@ -91,7 +95,24 @@ func (db *ConfigDatabase) Load(path string) error {
 			return nil
 		}
 
-		tmp := strings.Split(curPath, "/")
+		// HOTFIX: 2
+		// this hotfix was put in place on 2023-11-03 by Gabriel Cordovado
+		//
+		// bug: org. had the separator as '/' which broke causing an index out of
+		// 		bounds bug on windows devices.
+		// fix: add the option for the \ separators on windows runtimes, also add check
+		//		for index out of bounds in case future bugs arise.
+		separator := "/"
+		if runtime.GOOS == "windows" {
+			separator = "\\"
+		}
+		tmp := strings.Split(curPath, separator)
+
+		// if len is less than 2, then next operation would cause an index out of bounds
+		if len(tmp) < 2 {
+			log.Println("HOTFIX BUG! notify developers that there is another edge case for database separator")
+			return nil
+		}
 		moduleIdentifier := tmp[len(tmp)-2]
 
 		fBytes, err := ioutil.ReadFile(curPath)
