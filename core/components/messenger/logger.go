@@ -5,6 +5,7 @@ import (
 	"github.com/GabeCordo/toolchain/files"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -33,7 +34,8 @@ func SaveToFile(dirPath, endpoint string, logs []string) bool {
 	defer file.Close()
 
 	for _, log := range logs {
-		file.WriteString(log)
+		cleanedLog := strings.ReplaceAll(log, "\n", "")
+		file.WriteString(cleanedLog + "\n")
 	}
 
 	return true

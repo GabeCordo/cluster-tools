@@ -37,7 +37,7 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, e
 	thread := new(Thread)
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *Config type")
+		return nil, errors.New("expected no nil *config type")
 	}
 	thread.config = cfg
 

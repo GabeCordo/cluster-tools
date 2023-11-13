@@ -10,6 +10,7 @@ import (
 	"github.com/GabeCordo/mango/core/threads/http_processor"
 	"github.com/GabeCordo/mango/core/threads/messenger"
 	"github.com/GabeCordo/mango/core/threads/processor"
+	"github.com/GabeCordo/mango/core/threads/scheduler"
 	"github.com/GabeCordo/mango/core/threads/supervisor"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -173,6 +174,11 @@ func (config *Config) FillSupervisorConfig(supervisorConfig *supervisor.Config) 
 	// TODO - add panic check
 	supervisorConfig.Debug = config.Debug
 	supervisorConfig.Timeout = config.MaxWaitForResponse
+}
+
+func (config *Config) FillSchedulerConfig(schedulerConfig *scheduler.Config) {
+	schedulerConfig.Debug = config.Debug
+	schedulerConfig.Timeout = config.MaxWaitForResponse
 }
 
 func YAMLToETLConfig(config *Config, path string) error {

@@ -28,6 +28,9 @@ type Thread struct {
 	C13 chan<- common.SupervisorRequest  // Processor thread sending req to the supervisor thread
 	C14 <-chan common.SupervisorResponse // Processor thread rec rsp from the supervisor thread
 
+	C18 <-chan common.ProcessorRequest  // Processor rec req from the scheduler thread
+	C19 chan<- common.ProcessorResponse // Processor sending rsp to the scheduler thread
+
 	SupervisorResponseTable *multithreaded.ResponseTable
 	DatabaseResponseTable   *multithreaded.ResponseTable
 
@@ -42,7 +45,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	thread := new(Thread)
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *Config type")
+		return nil, errors.New("expected no nil *config type")
 	}
 	thread.config = cfg
 
@@ -97,6 +100,16 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	thread.C14, ok = (channels[8]).(chan common.SupervisorResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorResponse' in index 8")
+	}
+
+	thread.C18, ok = (channels[9]).(chan common.ProcessorRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan ProcessorRequest' in index 9")
+	}
+
+	thread.C19, ok = (channels[10]).(chan common.ProcessorResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}
 
 	thread.SupervisorResponseTable = multithreaded.NewResponseTable()

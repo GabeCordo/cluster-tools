@@ -34,5 +34,8 @@ func main() {
 	rc := cli.AddCommand("repl", controllers.ReplController{})
 	rc.SetCategory("utils").SetDescription("enable or disable the repl when running mango start")
 
+	shc := cli.AddCommand("schedule", controllers.ScheduleController{})
+	shc.SetCategory("utils").SetDescription("create or delete schedules for when clusters should be provisioned")
+
 	cli.Run()
 }

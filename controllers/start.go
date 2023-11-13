@@ -17,7 +17,7 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	// check to see that the etl threads has been initialized with the required files
 	// if it has not, fail and tell the operator to call the 'etl init' command
 	if _, err := os.Stat(common.DefaultConfigsFolder); err != nil {
-		fmt.Println("the etl threads has never been initialized, run 'etl init'")
+		fmt.Println("the mango threads has never been initialized, run 'etl init'")
 		return commandline.Terminate
 	}
 

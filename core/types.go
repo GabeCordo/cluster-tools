@@ -8,6 +8,7 @@ import (
 	"github.com/GabeCordo/mango/core/threads/http_processor"
 	"github.com/GabeCordo/mango/core/threads/messenger"
 	"github.com/GabeCordo/mango/core/threads/processor"
+	"github.com/GabeCordo/mango/core/threads/scheduler"
 	"github.com/GabeCordo/mango/core/threads/supervisor"
 	"github.com/GabeCordo/toolchain/logging"
 )
@@ -22,6 +23,7 @@ const (
 	Database
 	Messenger
 	Cache
+	Scheduler
 	Undefined
 )
 
@@ -41,6 +43,8 @@ func (threadType ThreadType) ToString() string {
 		return "DATABASE"
 	case Cache:
 		return "CACHE"
+	case Scheduler:
+		return "SCHEDULER"
 	default:
 		return "-"
 	}
@@ -54,6 +58,7 @@ type Core struct {
 	MessengerThread     *messenger.Thread
 	DatabaseThread      *database.Thread
 	CacheThread         *cache.Thread
+	SchedulerThread     *scheduler.Thread
 
 	C1        chan common.DatabaseRequest
 	C2        chan common.DatabaseResponse
@@ -72,6 +77,8 @@ type Core struct {
 	C15       chan common.DatabaseRequest
 	C16       chan common.DatabaseResponse
 	C17       chan common.MessengerRequest
+	C18       chan common.ProcessorRequest
+	C19       chan common.ProcessorResponse
 	interrupt chan common.InterruptEvent
 
 	config *Config
@@ -99,6 +106,8 @@ func New(configPath string) (*Core, error) {
 	core.C15 = make(chan common.DatabaseRequest, 10)
 	core.C16 = make(chan common.DatabaseResponse, 10)
 	core.C17 = make(chan common.MessengerRequest, 10)
+	core.C18 = make(chan common.ProcessorRequest, 10)
+	core.C19 = make(chan common.ProcessorResponse, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)
@@ -134,7 +143,7 @@ func New(configPath string) (*Core, error) {
 	processorConfig := &processor.Config{}
 	core.config.FillProcessorConfig(processorConfig)
 	core.ProcessorThread, err = processor.New(processorConfig, processorLogger,
-		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14)
+		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14, core.C18, core.C19)
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +193,17 @@ func New(configPath string) (*Core, error) {
 	core.config.FillCacheConfig(cacheConfig)
 	core.CacheThread, err = cache.New(cacheConfig, cacheLogger,
 		core.interrupt, core.C9, core.C10)
+	if err != nil {
+		return nil, err
+	}
+
+	schedulerLogger, err := logging.NewLogger(Scheduler.ToString(), &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+	schedulerConig := &scheduler.Config{}
+	core.config.FillSchedulerConfig(schedulerConig)
+	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, core.interrupt, core.C18, core.C19)
 	if err != nil {
 		return nil, err
 	}

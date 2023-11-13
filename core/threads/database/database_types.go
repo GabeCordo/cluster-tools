@@ -45,7 +45,7 @@ func New(cfg *Config, logger *logging.Logger, configPath, statisticPath string, 
 	var ok bool
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *Config type")
+		return nil, errors.New("expected no nil *config type")
 	}
 	thread.config = cfg
 

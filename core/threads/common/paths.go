@@ -9,4 +9,5 @@ var (
 	DefaultConfigFile       = DefaultFrameworkFolder + "global.etl.yml"
 	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
 	DefaultStatisticsFolder = DefaultFrameworkFolder + "statistics/"
+	DefaultSchedulesFolder  = DefaultFrameworkFolder + "schedules/"
 )

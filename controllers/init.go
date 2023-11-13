@@ -31,11 +31,11 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Messenger.LogFiles.Directory = common.DefaultLogsFolder
 
 	if _, err := os.Stat(common.DefaultFrameworkFolder); err == nil {
-		fmt.Println("etl has already been initialized")
+		fmt.Println("mango has already been initialized")
 		return commandline.Terminate
 	}
 
-	fmt.Println("etl has not been initialized")
+	fmt.Println("mango has not been initialized")
 
 	if err := os.Mkdir(common.DefaultFrameworkFolder, 0700); err != nil {
 		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultFrameworkFolder, err.Error())
@@ -55,7 +55,14 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultStatisticsFolder, err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created configs folder %s\n", common.DefaultStatisticsFolder)
+		fmt.Printf("[✓] created statistics folder %s\n", common.DefaultStatisticsFolder)
+	}
+
+	if err := os.Mkdir(common.DefaultSchedulesFolder, 0700); err != nil {
+		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultSchedulesFolder, err.Error())
+		return commandline.Terminate
+	} else {
+		fmt.Printf("[✓] created scheduels folder %s\n", common.DefaultSchedulesFolder)
 	}
 
 	if err := os.Mkdir(common.DefaultConfigsFolder, 0700); err != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/GabeCordo/mango/core/components/supervisor"
 	"github.com/GabeCordo/mango/core/interfaces/cluster"
 	"github.com/GabeCordo/mango/core/interfaces/communication"
+	"io"
 	"net/http"
 )
 
@@ -33,6 +34,10 @@ func ProvisionSupervisor(processor string, moduleName, clusterName string, super
 	if err != nil {
 		return err
 	}
+
+	b, _ := io.ReadAll(rsp.Body)
+	fmt.Println(rsp.Status)
+	fmt.Println(string(b))
 
 	if rsp.Status != "200 OK" {
 		return errors.New("failed to provision new supervisor")

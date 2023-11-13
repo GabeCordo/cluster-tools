@@ -16,7 +16,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(common.DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] etl has never been initialized, run 'etl init'")
+		fmt.Println("[x] mango has never been initialized, run 'mango init'")
 		return commandline.Terminate
 	}
 
@@ -36,6 +36,12 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 		fmt.Printf("[x] the statistics folder is missing (%s)\n", common.DefaultStatisticsFolder)
 	} else {
 		fmt.Printf("[✓] the statistics folder exists (%s)\n", common.DefaultStatisticsFolder)
+	}
+
+	if _, err := os.Stat(common.DefaultSchedulesFolder); err != nil {
+		fmt.Printf("[x] the scheduels folder is missing (%s)\n", common.DefaultSchedulesFolder)
+	} else {
+		fmt.Printf("[✓] the scheduels folder exists (%s)\n", common.DefaultSchedulesFolder)
 	}
 
 	if _, err := os.Stat(common.DefaultConfigFile); err != nil {

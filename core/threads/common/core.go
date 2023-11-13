@@ -17,6 +17,7 @@ const (
 	Supervisor
 	Messenger
 	Cache
+	Scheduler
 )
 
 type Thread interface {

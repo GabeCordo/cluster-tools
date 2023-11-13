@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	Version string = "v0.1.9-alpha"
+	Version string = "v0.2.4-alpha"
 )
 
 func (core *Core) Banner() {
 	fmt.Println("   ___    _____    _")
 	fmt.Println("  | __|  |_   _|  | |")
 	fmt.Println("  | _|     | |    | |__")
-	fmt.Println("  |___|   _|_|_   |____|")
+	fmt.Println("  |___|   _|_|_   |____|\taka. 'mango'")
 	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
 	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
 	fmt.Println("[+] " + logging.Purple + "Extract Transform Load Framework " + logging.Reset + Version)
@@ -70,6 +70,13 @@ func (core *Core) Run() {
 	go core.ProcessorThread.Start()
 	if core.config.Debug {
 		core.logger.Println("Processor Thread Started")
+	}
+
+	core.SchedulerThread.Setup()
+	go core.SchedulerThread.Start()
+	if core.config.Debug {
+		core.logger.Println("Scheduler Thread Starting")
+		core.SchedulerThread.Scheduler.Print()
 	}
 
 	core.HttpProcessorThread.Setup()
@@ -140,6 +147,12 @@ func (core *Core) Run() {
 	//	core.logger.Println("provisioner shutdown")
 	//}
 
+	core.SchedulerThread.Teardown()
+
+	if core.config.Debug {
+		core.logger.Println("scheduler shutdown")
+	}
+
 	core.ProcessorThread.Teardown()
 
 	if core.config.Debug {
@@ -175,7 +188,7 @@ func (core *Core) Run() {
 }
 
 // TODO : no longer support on the core
-//func (core *Core) Cluster(identifier string, mode cluster.EtlMode, implementation cluster.Cluster, configs ...cluster.Config) {
+//func (core *Core) Cluster(identifier string, mode cluster.EtlMode, implementation cluster.Cluster, configs ...cluster.config) {
 //
 //	p := provisioner.GetProvisionerInstance()
 //	defaultModule, _ := p.GetModule(provisioner_component.DefaultFrameworkModule) // the default threads module should always be found

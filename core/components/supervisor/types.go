@@ -75,3 +75,27 @@ func NewRegistry() *Registry {
 	registry.counter = 1
 	return registry
 }
+
+type Schedule struct {
+	Minute int `json:"minute", yaml:"minute"`
+	Hour   int `json:"hour", yaml:"hour"`
+	Day    int `json:"day", yaml:"day"`
+	Month  int `json:"month", yaml:"month"`
+}
+
+type Job struct {
+	Cluster  string   `json:"cluster", yaml:"cluster"`
+	Config   string   `json:"config", yaml:"config"`
+	Schedule Schedule `json:"schedule", yaml:"schedule"`
+}
+
+type Scheduler struct {
+	jobs  []Job `json:"jobs", yaml:"jobs"`
+	mutex sync.RWMutex
+}
+
+func NewScheduler() *Scheduler {
+
+	scheduler := new(Scheduler)
+	return scheduler
+}

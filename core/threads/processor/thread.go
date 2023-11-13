@@ -42,6 +42,20 @@ func (thread *Thread) Start() {
 		}
 	}()
 
+	go func() {
+		// request coming from http_processor
+		for request := range thread.C18 {
+			if !thread.accepting {
+				break
+			}
+			thread.wg.Add(1)
+
+			// if this doesn't spawn its own thread we will be left waiting
+			request.Source = common.Scheduler
+			thread.processRequest(&request)
+		}
+	}()
+
 	// RESPONSE THREADS
 
 	go func() {
@@ -80,6 +94,8 @@ func (thread *Thread) respond(source common.Module, response *common.ProcessorRe
 		thread.C6 <- *response
 	case common.HttpProcessor:
 		thread.C8 <- *response
+	case common.Scheduler:
+		thread.C19 <- *response
 	default:
 		return common.BadResponseType
 	}
