@@ -1,11 +1,11 @@
 package scheduler
 
 import (
+	"fmt"
 	"github.com/GabeCordo/mango/core/components/processor"
 	"github.com/GabeCordo/mango/core/components/scheduler"
 	"github.com/GabeCordo/mango/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"log"
 )
 
 func (thread *Thread) Setup() {
@@ -36,10 +36,17 @@ func (thread *Thread) Start() {
 	go scheduler.Watch(thread.Scheduler)
 
 	go scheduler.Loop(thread.Scheduler, func(job *scheduler.Job) error {
-		log.Println(job)
+
+		fmt.Println(job)
 
 		_, err := common.CreateSupervisor(thread.C18, thread.responseTable,
 			job.Module, job.Cluster, job.Config, job.Metadata, thread.config.Timeout)
+
+		e := ""
+		if err != nil {
+			e = err.Error()
+		}
+		fmt.Printf("%s (%s,%s,%s) %s\n", job.Identifier, job.Module, job.Cluster, job.Config, e)
 
 		if (err != nil) && thread.config.Debug {
 			thread.logger.Printf("job for %s.%s run\n", job.Module, job.Identifier)

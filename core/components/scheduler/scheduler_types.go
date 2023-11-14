@@ -44,7 +44,7 @@ type Scheduler struct {
 	jobs   []Job  // A static list of jobs registered to the scheduler.
 	queue  []*Job // A dynamic list of jobs waiting to be run.
 	config Config // Dynamic information that tells the Scheduler how to run.
-	mutex  sync.Mutex
+	mutex  sync.RWMutex
 }
 
 // New

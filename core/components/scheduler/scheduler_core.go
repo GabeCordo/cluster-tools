@@ -114,10 +114,14 @@ func Watch(scheduler *Scheduler) {
 
 		// TODO: at the moment this only works with minute scheduling
 
-		for _, job := range scheduler.jobs {
+		for idx, job := range scheduler.jobs {
 
 			if IsTimeToRun(&job) {
-				scheduler.queue = append(scheduler.queue, &job)
+				scheduler.mutex.Lock()
+				fmt.Printf("%s is ready to run\n", job.Identifier)
+				scheduler.queue = append(scheduler.queue, &scheduler.jobs[idx])
+				fmt.Println(scheduler.queue)
+				scheduler.mutex.Unlock()
 			}
 		}
 
@@ -131,6 +135,8 @@ func Loop(scheduler *Scheduler, f func(job *Job) error) (err error) {
 
 	// loop over the job queue until one of the elements hits an error
 	for {
+
+		scheduler.mutex.RLock()
 		if len(scheduler.queue) >= 1 {
 			// pop the first element of the queue (FIFO) and remove the
 			// first element by slicing out the first element
@@ -142,6 +148,7 @@ func Loop(scheduler *Scheduler, f func(job *Job) error) (err error) {
 				break
 			}
 		}
+		scheduler.mutex.RUnlock()
 		// the time till the next queue check is defined in the Scheduler config
 		time.Sleep(time.Duration(scheduler.config.RefreshInterval) * time.Millisecond)
 	}
