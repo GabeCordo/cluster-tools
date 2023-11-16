@@ -28,11 +28,18 @@ func ProvisionSupervisor(processor string, moduleName, clusterName string, super
 	json.NewEncoder(&buf).Encode(body)
 
 	url := fmt.Sprintf("http://%s/supervisor", processor)
-	rsp, err := http.Post(url, "application/json", &buf)
-
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
 	if err != nil {
 		return err
 	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rsp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("failed to provision new supervisor")
@@ -43,7 +50,6 @@ func ProvisionSupervisor(processor string, moduleName, clusterName string, super
 func UpdateSupervisor(host string, id uint64, status supervisor.Status, stats *cluster.Statistics) error {
 
 	url := fmt.Sprintf("%s/supervisor", host)
-	client := http.Client{}
 
 	sup := supervisor.Supervisor{
 		Id:         id,
@@ -63,6 +69,7 @@ func UpdateSupervisor(host string, id uint64, status supervisor.Status, stats *c
 	if err != nil {
 		return err
 	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("failed to update supervisor")
@@ -85,11 +92,18 @@ func Cache(host string, key string, data string) (string, error) {
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(body)
 
-	rsp, err := http.Post(url, "application/json", &buf)
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	rsp, err := client.Do(req)
 	if err != nil {
 		// TODO : remove static value
 		return "", err
 	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return "", errors.New("could not store in cache")
@@ -108,8 +122,6 @@ func GetFromCache(host string, key string) (string, error) {
 
 	url := fmt.Sprintf("%s/cache", host)
 
-	client := http.Client{}
-
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 
 	if err != nil {
@@ -125,6 +137,7 @@ func GetFromCache(host string, key string) (string, error) {
 	if err != nil {
 		return "", errors.New("could not reach cache")
 	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return "", errors.New("cache not found")
@@ -145,11 +158,18 @@ func log(host string, id uint64, level messenger.MessagePriority, message string
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(data)
 
-	rsp, err := http.Post(url, "application/json", &buf)
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	rsp, err := client.Do(req)
 
 	if err != nil {
 		return err
 	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("was not able to send a log")
@@ -160,15 +180,18 @@ func log(host string, id uint64, level messenger.MessagePriority, message string
 
 func Log(host string, id uint64, message string) error {
 
-	return log(host, id, messenger.Normal, message)
+	//return log(host, id, messenger.Normal, message)
+	return nil
 }
 
 func LogWarn(host string, id uint64, message string) error {
 
-	return log(host, id, messenger.Warning, message)
+	//return log(host, id, messenger.Warning, message)
+	return nil
 }
 
 func LogError(host string, id uint64, message string) error {
 
-	return log(host, id, messenger.Fatal, message)
+	//return log(host, id, messenger.Fatal, message)
+	return nil
 }

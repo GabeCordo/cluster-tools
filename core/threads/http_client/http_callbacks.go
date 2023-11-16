@@ -244,8 +244,6 @@ func (thread *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	fmt.Println(request.Metadata)
-
 	if supervisorId, err := common.CreateSupervisor(
 		thread.C5,
 		thread.ProcessorResponseTable,

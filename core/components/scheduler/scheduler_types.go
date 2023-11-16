@@ -57,3 +57,10 @@ func New() (*Scheduler, error) {
 	scheduler.config.RefreshInterval = 1 // ms
 	return scheduler, nil
 }
+
+func (scheduler Scheduler) ItemsInQueue() int {
+	scheduler.mutex.RLock()
+	defer scheduler.mutex.RUnlock()
+	
+	return len(scheduler.queue)
+}

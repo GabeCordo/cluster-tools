@@ -646,6 +646,8 @@ func Log(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTabl
 	}
 	pipe <- request
 
+	//HOTFIX : too long to response to the log request
+
 	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
 	if didTimeout {
 		return multithreaded.NoResponseReceived
@@ -653,4 +655,5 @@ func Log(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTabl
 
 	response := (rsp).(ProcessorResponse)
 	return response.Error
+	//return nil
 }

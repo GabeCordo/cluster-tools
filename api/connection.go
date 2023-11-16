@@ -9,7 +9,10 @@ import (
 	"github.com/GabeCordo/mango/core/interfaces/processor"
 	"net/http"
 	"strconv"
+	"time"
 )
+
+var client http.Client = http.Client{Timeout: 2 * time.Second}
 
 func ConnectToCore(host string, config *processor.Config) error {
 
@@ -18,11 +21,17 @@ func ConnectToCore(host string, config *processor.Config) error {
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(config)
 
-	rsp, err := http.Post(url, "application/json", &buf)
-
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
 	if err != nil {
 		return err
 	}
+	req.Header.Add("Content-Type", "application/json")
+
+	rsp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("unexpected response code")
@@ -42,8 +51,6 @@ func DisconnectFromCore(host string, config *processor.Config) error {
 
 	url := fmt.Sprintf("%s/processor", host)
 
-	client := &http.Client{}
-
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 
 	if err != nil {
@@ -61,6 +68,7 @@ func DisconnectFromCore(host string, config *processor.Config) error {
 	if err != nil {
 		return err
 	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("unexpected response code")

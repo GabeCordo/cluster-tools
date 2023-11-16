@@ -37,19 +37,17 @@ func (thread *Thread) Start() {
 
 	go scheduler.Loop(thread.Scheduler, func(job *scheduler.Job) error {
 
-		fmt.Println(job)
-
 		_, err := common.CreateSupervisor(thread.C18, thread.responseTable,
 			job.Module, job.Cluster, job.Config, job.Metadata, thread.config.Timeout)
 
 		e := ""
 		if err != nil {
-			e = err.Error()
+			e = fmt.Sprintf("but encountered an error, %s", err.Error())
 		}
-		fmt.Printf("%s (%s,%s,%s) %s\n", job.Identifier, job.Module, job.Cluster, job.Config, e)
 
 		if (err != nil) && thread.config.Debug {
-			thread.logger.Printf("job for %s.%s run\n", job.Module, job.Identifier)
+			thread.logger.Printf("scheduled cluster is ready: %s (%s,%s,%s) %s\n", job.Identifier, job.Module, job.Cluster, job.Config, e)
+			thread.logger.Printf("%d clusters are waiting to be provisioned\n", thread.Scheduler.ItemsInQueue())
 		}
 
 		// if err is not nil, the Scheduler will stop running, so output to console

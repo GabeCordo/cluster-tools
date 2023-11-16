@@ -118,9 +118,7 @@ func Watch(scheduler *Scheduler) {
 
 			if IsTimeToRun(&job) {
 				scheduler.mutex.Lock()
-				fmt.Printf("%s is ready to run\n", job.Identifier)
 				scheduler.queue = append(scheduler.queue, &scheduler.jobs[idx])
-				fmt.Println(scheduler.queue)
 				scheduler.mutex.Unlock()
 			}
 		}

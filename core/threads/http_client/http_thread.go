@@ -37,7 +37,7 @@ func (thread *Thread) Setup() {
 		thread.configCallback(w, r)
 	})
 
-	// TODO - explore this more, fucking cool
+	// TODO - explore this more, fucking cool - removed for now
 	if thread.config.Debug {
 		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) { thread.debugCallback(w, r) })
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -48,13 +48,20 @@ func (thread *Thread) Setup() {
 	}
 
 	thread.mux = mux
+
+	thread.server = &http.Server{
+		Addr:        fmt.Sprintf("%s:%d", thread.config.Net.Host, thread.config.Net.Port),
+		Handler:     thread.mux,
+		ReadTimeout: 2 * time.Second,
+	}
+	thread.server.SetKeepAlivesEnabled(false)
 }
 
 func (thread *Thread) Start() {
 	thread.wg.Add(1)
 
 	go func(thread *Thread) {
-		err := http.ListenAndServe(fmt.Sprintf("%s:%d", thread.config.Net.Host, thread.config.Net.Port), thread.mux)
+		err := thread.server.ListenAndServe()
 		if err != nil {
 			thread.Interrupt <- common.Panic
 		}

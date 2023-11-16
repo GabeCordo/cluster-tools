@@ -30,7 +30,18 @@ func CreateModule(host string, processor *processor_i.Config, config *module.Con
 		return err
 	}
 
-	rsp, err := http.Post(url, "application/json", &buf)
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	rsp, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("unexpected response code")
@@ -49,8 +60,6 @@ func CreateModule(host string, processor *processor_i.Config, config *module.Con
 func DeleteModule(host string, processor *processor_i.Config, module *module.Config) error {
 	url := fmt.Sprintf("%s/module", host)
 
-	client := &http.Client{}
-
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 
 	if err != nil {
@@ -65,6 +74,11 @@ func DeleteModule(host string, processor *processor_i.Config, module *module.Con
 	req.URL.RawQuery = q.Encode()
 
 	rsp, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
 		return errors.New("unexpected response code")

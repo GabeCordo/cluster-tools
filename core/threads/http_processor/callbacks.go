@@ -267,6 +267,9 @@ func (thread *Thread) putCacheCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (thread *Thread) logCallback(w http.ResponseWriter, r *http.Request) {
+
+	defer r.Body.Close()
+
 	if r.Method == "POST" {
 		/* the program wants to log a new event */
 		thread.postLogCallback(w, r)

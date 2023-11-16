@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/mango/core/threads/common"
 	"net/http"
+	"time"
 )
 
 func (thread *Thread) Setup() {
@@ -14,22 +15,27 @@ func (thread *Thread) Setup() {
 
 	mux.HandleFunc("/processor", func(w http.ResponseWriter, r *http.Request) {
 		thread.processorCallback(w, r)
+		r.Body.Close()
 	})
 
 	mux.HandleFunc("/module", func(w http.ResponseWriter, r *http.Request) {
 		thread.moduleCallback(w, r)
+		r.Body.Close()
 	})
 
 	mux.HandleFunc("/cache", func(w http.ResponseWriter, r *http.Request) {
 		thread.cacheCallback(w, r)
+		r.Body.Close()
 	})
 
 	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
 		thread.supervisorCallback(w, r)
+		r.Body.Close()
 	})
 
 	mux.HandleFunc("/log", func(w http.ResponseWriter, r *http.Request) {
 		thread.logCallback(w, r)
+		r.Body.Close()
 	})
 
 	/* the debug endpoint is only enabled when debug is set to true */
@@ -40,6 +46,13 @@ func (thread *Thread) Setup() {
 	}
 
 	thread.mux = mux
+
+	thread.server = &http.Server{
+		Addr:        fmt.Sprintf("%s:%d", thread.config.Net.Host, thread.config.Net.Port),
+		ReadTimeout: 2 * time.Second,
+		Handler:     thread.mux,
+	}
+	thread.server.SetKeepAlivesEnabled(false)
 }
 
 func (thread *Thread) Start() {
@@ -47,8 +60,8 @@ func (thread *Thread) Start() {
 	// HTTP API SERVER
 
 	go func(thread *Thread) {
-		err := http.ListenAndServe(fmt.Sprintf("%s:%d",
-			thread.config.Net.Host, thread.config.Net.Port), thread.mux)
+
+		err := thread.server.ListenAndServe()
 		if err != nil {
 			thread.Interrupt <- common.Panic
 		}

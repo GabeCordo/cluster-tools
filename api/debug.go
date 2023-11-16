@@ -8,6 +8,7 @@ func IsDebugEnabled(host string) bool {
 	if err != nil {
 		return false
 	}
+	defer rsp.Body.Close()
 
 	return rsp.Status == "200 OK"
 }
