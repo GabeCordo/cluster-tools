@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -143,7 +144,7 @@ func Loop(scheduler *Scheduler, f func(job *Job) error) (err error) {
 			// to abide by the pattern, if the called function returns an
 			// error stop the scheduler loop
 			if err = f(popped); err != nil {
-				break
+				log.Println(err.Error())
 			}
 		}
 		scheduler.mutex.RUnlock()
