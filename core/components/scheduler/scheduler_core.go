@@ -140,14 +140,23 @@ func Loop(scheduler *Scheduler, f func(job *Job) error) (err error) {
 			// pop the first element of the queue (FIFO) and remove the
 			// first element by slicing out the first element
 			popped := scheduler.queue[0]
-			scheduler.queue = scheduler.queue[1:]
+
 			// to abide by the pattern, if the called function returns an
 			// error stop the scheduler loop
 			if err = f(popped); err != nil {
 				log.Println(err.Error())
 			}
+
+			// if we receive a non-nil code, an error has occurred, so re-append
+			// the popped job to the back of the queue to try again later
+			scheduler.queue = scheduler.queue[1:]
+			if err != nil {
+				scheduler.queue = append(scheduler.queue, popped)
+			}
+
 		}
 		scheduler.mutex.RUnlock()
+
 		// the time till the next queue check is defined in the Scheduler config
 		time.Sleep(time.Duration(scheduler.config.RefreshInterval) * time.Millisecond)
 	}

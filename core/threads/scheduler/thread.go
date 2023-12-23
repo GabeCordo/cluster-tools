@@ -37,6 +37,7 @@ func (thread *Thread) Start() {
 
 	go scheduler.Loop(thread.Scheduler, func(job *scheduler.Job) error {
 
+		// will return have a maximum of Timeout, so worst-case takes thread.config.Timeout
 		_, err := common.CreateSupervisor(thread.C18, thread.responseTable,
 			job.Module, job.Cluster, job.Config, job.Metadata, thread.config.Timeout)
 
