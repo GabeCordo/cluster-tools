@@ -54,7 +54,7 @@ func (thread *Thread) Start() {
 		// if err is not nil, the Scheduler will stop running, so output to console
 		// if debug is enabled so the operator is aware of the runtime change
 		if ((err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived)) && thread.config.Debug {
-			thread.logger.Panicf("the Scheduler stopped after encountering %s\n", err.Error())
+			thread.logger.Printf("the Scheduler stopped after encountering %s\n", err.Error())
 		}
 
 		// I only care about errors that might indicate a compromised state of the threads, the others
