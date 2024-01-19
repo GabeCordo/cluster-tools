@@ -1,6 +1,6 @@
-# Mango ETL Batch & Stream Engine
+# Cluster.tools Batch & Stream Engine
 An open source software orchestration framework for cloud functions implementing
-the Extract Transform Load (ETL) data transformation pattern.
+the Extract Transform Load (ETL) and Lambda data transformation pattern.
 
 The main advantage of the ETLFramework is the ability for developers to independent functions focused on
 data transformations that can behave like cloud functions but are deployed locally. The ETLFramework acts as
