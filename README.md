@@ -1,6 +1,6 @@
-# Cluster.tools Batch & Stream Engine
+# Cluster.tools (aka. mango) Batch & Stream Engine
 An open source software orchestration framework for cloud functions implementing
-the Extract Transform Load (ETL) and Lambda data transformation pattern.
+the Extract Transform Load (ETL) data transformation pattern. 
 
 The main advantage of the ETLFramework is the ability for developers to independent functions focused on
 data transformations that can behave like cloud functions but are deployed locally. The ETLFramework acts as
@@ -13,7 +13,7 @@ around unexpected data loads, and performance monitoring for the functions devel
 This framework is still a work in progress with hopes of adding more SRE functionality such as SLIs and SLAs
 to the engine. If you are interested, feel free to reach out.
 
-### Installation
+### Local Installation
 
 ```shell
    # create a local copy of the threads
@@ -26,6 +26,13 @@ to the engine. If you are interested, feel free to reach out.
    
    # generate global files used by the threads when run
    mango init
+```
+
+### Docker Installation
+
+```shell
+docker pull gabecordo/mango:main
+docker exec gabecordo/mango:main mango help
 ```
 
 ### Running the ETL Engine
@@ -51,3 +58,7 @@ Documentation is continuously being added to the Github Wiki found [here](https:
 ### Disclosure
 
 This repository is not related to the contributing members (of the repository) to the organizations they currently belong, the work they have, currently, or will perform at such organizations. All work completed within this repository pre-dates these organizations. All work completed withon this repository shall not be through company resources. Where "company resources" includes but is not limited to working hours, intellectual property, and electronic devices.
+
+### Comercial Use
+
+There are no limits on comercial use of this product. I highly discourage its use unless there is an intention of assisting with development in its current state. Bugs both seen-and-unseen do exist, and will likely be prevalent until extensive code coverage is completed. **If you are interested in using cluster.tools in your organization feel free to email me.**
