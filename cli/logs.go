@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/core/components/messenger"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango/core/components/messenger"
-	"github.com/GabeCordo/mango/core/threads/common"
 	"io/fs"
 	"os"
 	"path/filepath"

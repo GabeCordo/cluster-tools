@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/core/components/scheduler"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango/core/components/scheduler"
-	"github.com/GabeCordo/mango/core/threads/common"
 	"gopkg.in/yaml.v3"
 	"os"
 	"strconv"
