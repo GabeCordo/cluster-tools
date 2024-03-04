@@ -1,6 +1,8 @@
 # This config was automatically generated from your source code - update to test
 # Stacks detected: artifact:go-executable:,cicd:github-actions:.github/workflows,deps:go:.
 version: 2.1
+orbs:
+  codecov: codecov/codecov@4.0.1
 jobs:
   test-go:
     # Install go modules and run tests
@@ -26,6 +28,15 @@ jobs:
           command: gotestsum --junitfile junit.xml
       - store_test_results:
           path: junit.xml
+  coverage:
+    docker:
+      - image: circleci/golang:1.18
+    steps:
+      - checkout
+      - run:
+          name: Run tests and coverage
+          command: go test -race -coverprofile=coverage.out -covermode=atomic
+      - codecov/upload
   build-go-executables:
     # Build go executables and store them as artifacts
     docker:
@@ -66,12 +77,11 @@ jobs:
       - run:
           name: found github actions config
           command: ':'
-orbs:
-  codecov: codecov/codecov@4.0.1
 workflows:
   build-and-test:
     jobs:
       - test-go
+      - coverage
       - build-go-executables:
           requires:
             - test-go
