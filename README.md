@@ -1,6 +1,6 @@
 # Cluster.tools Cloud Framework
 
-[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/QC84aUAiJyQjmR73kpY2Vo/Vnh9fUxspVZXcLZeW3SfSR/tree/main.svg?style=svg&circle-token=6bc46c7e268594646b3f38a6519d2209b7399ae2)](https://dl.circleci.com/status-badge/redirect/circleci/QC84aUAiJyQjmR73kpY2Vo/Vnh9fUxspVZXcLZeW3SfSR/tree/main)
+[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/QC84aUAiJyQjmR73kpY2Vo/Vnh9fUxspVZXcLZeW3SfSR/tree/main.svg?style=svg&circle-token=6bc46c7e268594646b3f38a6519d2209b7399ae2)](https://dl.circleci.com/status-badge/redirect/circleci/QC84aUAiJyQjmR73kpY2Vo/Vnh9fUxspVZXcLZeW3SfSR/tree/main) [![codecov](https://codecov.io/gh/GabeCordo/cluster-tools/graph/badge.svg?token=OCLP5E8E4J)](https://codecov.io/gh/GabeCordo/cluster-tools)
 
 An open source software orchestration framework for cloud functions implementing
 the Extract Transform Load (ETL) data transformation pattern. 
@@ -28,35 +28,26 @@ to the engine. If you are interested, feel free to reach out.
    # add $(go env GOPATH)/bin to your environment PATH
    
    # generate global files used by the threads when run
-   mango init
+   cluster-tools init
 ```
 
-### Docker Installation
+### Running the Cluster.tools Process
 
 ```shell
-docker pull gabecordo/mango:main
-docker exec gabecordo/mango:main mango help
-```
-
-### Running the ETL Engine
-
-```shell
-mango start
+cluster-tools start
 ```
 adding the common variant will load in util and test functions that can be used to verify the framework is working.
 
 ### Testing
-Github actions are set to run all tests located in the repository. Component tests and Integration testing are used to
+Test are being migrated from Github Actions to CircleCI. Component tests and Integration testing are used to
 validate the health of the codebase.
 
-Some tests are only suited for local runs; tests require special permissions or need some
-form of manual intervention. To enable local tests, set the env var:
-
-    MANGO_LOCAL_TEST
+Code Coverage improvements are underway to improve confiendence in code correctness. We believe maintaining a reasonable level
+of code coverage is a crucial step in convincing individuals to try cluster.tools as an infrastructure solution.
 
 ### Documentation
 
-Documentation is continuously being added to the Github Wiki found [here](https://github.com/GabeCordo/mangoose-core/wiki)
+Documentation is continuously being added to the Github Wiki found [here](https://cluster.tools)
 
 ### Disclosure
 
