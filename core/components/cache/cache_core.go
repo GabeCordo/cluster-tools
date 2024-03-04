@@ -2,6 +2,7 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -28,7 +29,7 @@ func GenerateRandomString(seed int) string {
 	buffer := new(bytes.Buffer)
 	for i := 0; i < maxGeneratedStringLength; i++ {
 		char := RandInteger(lowerASCIIBound, upperASCIIBound)
-		buffer.WriteString(string(char))
+		buffer.WriteString(fmt.Sprint(char))
 	}
 	return buffer.String()
 }
