@@ -1,4 +1,7 @@
 # Cluster.tools (aka. mango) Batch & Stream Engine
+
+[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/QC84aUAiJyQjmR73kpY2Vo/Vnh9fUxspVZXcLZeW3SfSR/tree/main.svg?style=svg&circle-token=6bc46c7e268594646b3f38a6519d2209b7399ae2)](https://dl.circleci.com/status-badge/redirect/circleci/QC84aUAiJyQjmR73kpY2Vo/Vnh9fUxspVZXcLZeW3SfSR/tree/main)
+
 An open source software orchestration framework for cloud functions implementing
 the Extract Transform Load (ETL) data transformation pattern. 
 
