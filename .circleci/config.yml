@@ -66,6 +66,8 @@ jobs:
       - run:
           name: found github actions config
           command: ':'
+orbs:
+  codecov: codecov/codecov@4.0.1
 workflows:
   build-and-test:
     jobs:
