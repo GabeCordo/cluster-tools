@@ -1,4 +1,4 @@
-# This config was automatically generated from your source code
+# This config was automatically generated from your source code - update to test
 # Stacks detected: artifact:go-executable:,cicd:github-actions:.github/workflows,deps:go:.
 version: 2.1
 jobs:
