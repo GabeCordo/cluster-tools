@@ -75,7 +75,3 @@ workflows:
       - build-go-executables:
           requires:
             - test-go
-  upload-to-codecov:
-    jobs:
-      - checkout 
-      - codecov/upload
