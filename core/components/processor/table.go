@@ -3,8 +3,8 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/interfaces/module"
-	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
+	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
 )
 
 func (table *Table) AddProcessor(cfg *processor_i.Config) error {
@@ -20,6 +20,7 @@ func (table *Table) AddProcessor(cfg *processor_i.Config) error {
 
 	processor := newProcessor(cfg.Host, cfg.Port)
 	table.processors = append(table.processors, processor)
+	table.NumOfProcessors++
 
 	return nil
 }

@@ -3,12 +3,12 @@ package common
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/components/database"
-	"github.com/GabeCordo/mango/core/components/processor"
-	"github.com/GabeCordo/mango/core/components/supervisor"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/interfaces/module"
-	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/database"
+	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
+	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )

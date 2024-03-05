@@ -2,10 +2,10 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango/api"
-	"github.com/GabeCordo/mango/core/components/messenger"
-	"github.com/GabeCordo/mango/core/components/supervisor"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/api"
+	"github.com/GabeCordo/cluster-tools/core/components/messenger"
+	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )

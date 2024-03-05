@@ -1,7 +1,7 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/mango/core/components/messenger"
+	"github.com/GabeCordo/cluster-tools/core/components/messenger"
 )
 
 var instance *messenger.Messenger

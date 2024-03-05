@@ -1,8 +1,8 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/mango/core/components/messenger"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/components/messenger"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 )
 
 func (thread *Thread) Setup() {

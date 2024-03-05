@@ -2,7 +2,7 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/processor"
 )
 
 func (thread *Thread) getClusters(name string) ([]processor.ClusterData, error) {

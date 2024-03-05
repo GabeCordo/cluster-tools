@@ -124,10 +124,9 @@ func (cache *Cache) Remove(identifier string) {
 
 	if _, found := cache.records.Load(identifier); found {
 		cache.records.Delete(identifier)
+		// one less record in the cache, "release" that space for another record
+		cache.numOfRecords--
 	}
-
-	// one less record in the cache, "release" that space for another record
-	cache.numOfRecords--
 }
 
 // Clean

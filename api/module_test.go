@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/GabeCordo/mango/core/interfaces/module"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
 	"testing"
 )
 

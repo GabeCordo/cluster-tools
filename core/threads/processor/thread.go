@@ -1,9 +1,9 @@
 package processor
 
 import (
-	"github.com/GabeCordo/mango/core/interfaces/module"
-	"github.com/GabeCordo/mango/core/interfaces/processor"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )

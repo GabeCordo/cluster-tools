@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/components/messenger"
-	"github.com/GabeCordo/mango/core/components/supervisor"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/interfaces/communication"
+	"github.com/GabeCordo/cluster-tools/core/components/messenger"
+	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/communication"
 	"net/http"
 )
 

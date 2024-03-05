@@ -2,8 +2,8 @@ package communication
 
 import (
 	"encoding/json"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/interfaces/module"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
 	"net/http"
 )
 

@@ -3,7 +3,7 @@ package http_client
 import (
 	"context"
 	"errors"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"

@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/logging"
 	"os"
 	"os/signal"
@@ -14,14 +14,9 @@ const (
 )
 
 func (core *Core) Banner() {
-	fmt.Println("   ___    _____    _")
-	fmt.Println("  | __|  |_   _|  | |")
-	fmt.Println("  | _|     | |    | |__")
-	fmt.Println("  |___|   _|_|_   |____|\taka. 'mango'")
-	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
-	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
-	fmt.Println("[+] " + logging.Purple + "Extract Transform Load Framework " + logging.Reset + Version)
-	fmt.Println("[+]" + logging.Purple + " by Gabriel Cordovado 2022-23" + logging.Reset)
+	fmt.Println("        __           __            __              __    \n  _____/ /_  _______/ /____  _____/ /_____  ____  / /____\n / ___/ / / / / ___/ __/ _ \\/ ___/ __/ __ \\/ __ \\/ / ___/\n/ /__/ / /_/ (__  ) /_/  __/ /  / /_/ /_/ / /_/ / (__  ) \n\\___/_/\\__,_/____/\\__/\\___/_(_) \\__/\\____/\\____/_/____/ ")
+	fmt.Println("[+] " + logging.Purple + "Cluster.tools Cloud Framework " + logging.Reset + Version)
+	fmt.Println("[+]" + logging.Purple + " by Gabriel Cordovado 2022-24" + logging.Reset)
 	fmt.Println()
 }
 

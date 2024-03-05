@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/interfaces/communication"
-	"github.com/GabeCordo/mango/core/interfaces/module"
-	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/communication"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
+	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
 	"net/http"
 	"strconv"
 )

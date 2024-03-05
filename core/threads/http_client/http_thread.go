@@ -3,7 +3,7 @@ package http_client
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"net/http"
 	"net/http/pprof"
 	"time"

@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"github.com/GabeCordo/mango/core/components/processor"
-	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
 )
 
 func (thread *Thread) processorGet() []processor.Processor {

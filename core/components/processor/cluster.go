@@ -1,6 +1,6 @@
 package processor
 
-import "github.com/GabeCordo/mango/core/interfaces/cluster"
+import "github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
 
 func (c *Cluster) Add(processor *Processor) {
 

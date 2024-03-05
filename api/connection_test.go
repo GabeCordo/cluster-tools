@@ -1,7 +1,7 @@
 package api
 
 import (
-	processor_i "github.com/GabeCordo/mango/core/interfaces/processor"
+	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
 	"testing"
 )
 

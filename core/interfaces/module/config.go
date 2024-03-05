@@ -1,6 +1,6 @@
 package module
 
-import "github.com/GabeCordo/mango/core/interfaces/cluster"
+import "github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
 
 type DynamicFeatures struct {
 	Threshold    int `yaml:"threshold" json:"threshold"`

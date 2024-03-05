@@ -1,6 +1,6 @@
 package cache
 
-import "github.com/GabeCordo/mango/core/components/cache"
+import "github.com/GabeCordo/cluster-tools/core/components/cache"
 
 var instance *cache.Cache
 

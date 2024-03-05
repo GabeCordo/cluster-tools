@@ -1,7 +1,7 @@
 package cluster
 
 import (
-	"github.com/GabeCordo/mango/core/interfaces/channel"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/channel"
 	"sort"
 	"time"
 )

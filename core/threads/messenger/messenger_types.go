@@ -2,7 +2,7 @@ package messenger
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/logging"
 	"sync"
 )

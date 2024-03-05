@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
 	"os"
 	"sync"
 	"time"

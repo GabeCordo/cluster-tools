@@ -1,15 +1,15 @@
 package core
 
 import (
-	"github.com/GabeCordo/mango/core/threads/cache"
-	"github.com/GabeCordo/mango/core/threads/common"
-	"github.com/GabeCordo/mango/core/threads/database"
-	"github.com/GabeCordo/mango/core/threads/http_client"
-	"github.com/GabeCordo/mango/core/threads/http_processor"
-	"github.com/GabeCordo/mango/core/threads/messenger"
-	"github.com/GabeCordo/mango/core/threads/processor"
-	"github.com/GabeCordo/mango/core/threads/scheduler"
-	"github.com/GabeCordo/mango/core/threads/supervisor"
+	"github.com/GabeCordo/cluster-tools/core/threads/cache"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/threads/database"
+	"github.com/GabeCordo/cluster-tools/core/threads/http_client"
+	"github.com/GabeCordo/cluster-tools/core/threads/http_processor"
+	"github.com/GabeCordo/cluster-tools/core/threads/messenger"
+	"github.com/GabeCordo/cluster-tools/core/threads/processor"
+	"github.com/GabeCordo/cluster-tools/core/threads/scheduler"
+	"github.com/GabeCordo/cluster-tools/core/threads/supervisor"
 	"github.com/GabeCordo/toolchain/logging"
 )
 

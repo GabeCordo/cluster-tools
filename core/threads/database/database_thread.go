@@ -1,9 +1,9 @@
 package database
 
 import (
-	"github.com/GabeCordo/mango/core/components/database"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/components/database"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"log"
 	"math/rand"
@@ -137,36 +137,50 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 			switch request.Type {
 			case common.ClusterConfig:
 				{
-					configData := (request.Data).(cluster.Config)
-					err := GetConfigDatabaseInstance().Create(request.Module, request.Cluster, configData)
+					if configData, ok := (request.Data).(cluster.Config); ok {
+						err := GetConfigDatabaseInstance().Create(request.Module, request.Cluster, configData)
 
-					if err == nil {
-						GetConfigDatabaseInstance().Print()
+						if err == nil {
+							GetConfigDatabaseInstance().Print()
+						}
+
+						thread.Respond(request, &common.DatabaseResponse{
+							Success: err == nil,
+							Nonce:   request.Nonce,
+						})
+					} else {
+						thread.Respond(request, &common.DatabaseResponse{
+							Success: false,
+							Nonce:   request.Nonce,
+							Error:   StoreTypeMismatch,
+						})
 					}
-
-					thread.Respond(request, &common.DatabaseResponse{
-						Success: err == nil,
-						Nonce:   request.Nonce,
-					})
 				}
 			case common.SupervisorStatistic:
 				{
-					statisticsData := (request.Data).(*cluster.Statistics)
-					err := GetStatisticDatabaseInstance().Create(
-						request.Module, request.Cluster,
-						database.Statistic{ // TODO : depreciate or fix elapsed time
-							Timestamp: time.Now(),
-							Stats:     *statisticsData, // copy
+					if statisticsData, ok := (request.Data).(*cluster.Statistics); ok {
+						err := GetStatisticDatabaseInstance().Create(
+							request.Module, request.Cluster,
+							database.Statistic{ // TODO : depreciate or fix elapsed time
+								Timestamp: time.Now(),
+								Stats:     *statisticsData, // copy
+							})
+
+						if err == nil {
+							GetStatisticDatabaseInstance().Print()
+						}
+
+						thread.Respond(request, &common.DatabaseResponse{
+							Success: err == nil,
+							Nonce:   request.Nonce,
 						})
-
-					if err == nil {
-						GetStatisticDatabaseInstance().Print()
+					} else {
+						thread.Respond(request, &common.DatabaseResponse{
+							Success: false,
+							Nonce:   request.Nonce,
+							Error:   StoreTypeMismatch,
+						})
 					}
-
-					thread.Respond(request, &common.DatabaseResponse{
-						Success: err == nil,
-						Nonce:   request.Nonce,
-					})
 				}
 			}
 		}
@@ -215,7 +229,7 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 					response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
 					thread.Respond(request, &response)
 				}
-			case common.ClusterModule:
+			case common.SupervisorStatistic:
 				{
 					err := GetStatisticDatabaseInstance().Delete(request.Module)
 
@@ -230,15 +244,18 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 		}
 	case common.DatabaseReplace:
 		{
-			config := (request.Data).(cluster.Config)
-			err := GetConfigDatabaseInstance().Replace(request.Module, request.Cluster, config)
+			switch request.Type {
+			case common.ClusterConfig:
+				config := (request.Data).(cluster.Config)
+				err := GetConfigDatabaseInstance().Replace(request.Module, request.Cluster, config)
 
-			if err == nil {
-				GetConfigDatabaseInstance().Print()
+				if err == nil {
+					GetConfigDatabaseInstance().Print()
+				}
+
+				response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
+				thread.Respond(request, &response)
 			}
-
-			response := common.DatabaseResponse{Success: err == nil, Nonce: request.Nonce}
-			thread.Respond(request, &response)
 		}
 	case common.DatabaseUpperPing:
 		{

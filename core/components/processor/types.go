@@ -2,8 +2,8 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/interfaces/module"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
 	"sync"
 	"time"
 )
