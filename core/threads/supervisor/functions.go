@@ -2,7 +2,7 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/api"
+	"github.com/GabeCordo/cluster-tools/core/api"
 	"github.com/GabeCordo/cluster-tools/core/components/messenger"
 	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"

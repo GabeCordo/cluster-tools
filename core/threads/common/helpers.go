@@ -521,7 +521,7 @@ func DeleteModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.Res
 }
 
 // TODO : I believe this needs to be removed from the core
-//func RegisterModule(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+//func AddModule(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
 //	modulePath string) (success bool, description string) {
 //
 //	request := ProvisionerRequest{

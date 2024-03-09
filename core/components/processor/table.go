@@ -7,6 +7,21 @@ import (
 	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
 )
 
+func (table *Table) GetProcessors() []Processor {
+
+	table.mutex.RLock()
+	defer table.mutex.RUnlock()
+
+	processors := make([]Processor, len(table.processors))
+
+	// make a copy of the processor list
+	for idx, processor := range table.processors {
+		processors[idx] = *processor
+	}
+
+	return processors
+}
+
 func (table *Table) AddProcessor(cfg *processor_i.Config) error {
 
 	table.mutex.Lock()
@@ -23,21 +38,6 @@ func (table *Table) AddProcessor(cfg *processor_i.Config) error {
 	table.NumOfProcessors++
 
 	return nil
-}
-
-func (table *Table) GetProcessors() []Processor {
-
-	table.mutex.RLock()
-	defer table.mutex.RUnlock()
-
-	processors := make([]Processor, len(table.processors))
-
-	// make a copy of the processor list
-	for idx, processor := range table.processors {
-		processors[idx] = *processor
-	}
-
-	return processors
 }
 
 // RemoveProcessor
@@ -61,6 +61,15 @@ func (table *Table) RemoveProcessor(cfg *processor_i.Config) error {
 
 	table.processors = append(table.processors[:idx], table.processors[idx+1:]...)
 
+	// Removing a processor modifies the Module / Cluster records as follows:
+	//
+	// 1. The processor was the last to support the cluster in the module
+	//		=> the cluster record is removed from the module
+	// 2. The processor was the last to support the module
+	//		=> the module record is removed from the table
+	// 3. The processor was not the last to support the module or cluster
+	//		=> the processor is removed from the cluster records processor list
+	//
 	for moduleIdentifier, modules := range table.modules {
 
 		for clusterIdentifier, cluster := range modules.clusters {
@@ -89,7 +98,21 @@ func (table *Table) RemoveProcessor(cfg *processor_i.Config) error {
 	return nil
 }
 
-func (table *Table) RegisterModule(processorName string, config *module.Config) error {
+// GetModule
+// n/a
+func (table *Table) GetModule(name string) (instance *Module, found bool) {
+
+	table.mutex.RLock()
+	defer table.mutex.RUnlock()
+
+	instance, found = table.modules[name]
+	return instance, found
+}
+
+// AddModule
+// inform the core that the processor now supports provisioning calls
+// for a module and all its listed clusters
+func (table *Table) AddModule(processorName string, config *module.Config) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -115,7 +138,7 @@ func (table *Table) RegisterModule(processorName string, config *module.Config) 
 		}
 	}
 
-	/* add the module name to the provisioner for reference */
+	/* addCluster the module name to the provisioner for reference */
 	processorInstance.Modules = append(processorInstance.Modules, config.Name)
 
 	var moduleInstance *Module
@@ -143,14 +166,14 @@ func (table *Table) RegisterModule(processorName string, config *module.Config) 
 
 		/* does the cluster association already exist in the module? */
 		/* Note: this can be the case if the module already existed */
-		if clusterInstance, found := moduleInstance.Get(export.Cluster); found {
+		if clusterInstance, found := moduleInstance.GetCluster(export.Cluster); found {
 			clusterInstance.Add(processorInstance)
 			continue
 		}
 
 		/* if the cluster doesn't exist this is the first time we will have the record */
-		moduleInstance.add(export.Cluster)
-		clusterInstance, _ := moduleInstance.Get(export.Cluster)
+		moduleInstance.addCluster(export.Cluster)
+		clusterInstance, _ := moduleInstance.GetCluster(export.Cluster)
 
 		/* associate the processor as one of the executors for this cluster */
 		clusterInstance.Add(processorInstance)
@@ -174,16 +197,9 @@ func (table *Table) RegisterModule(processorName string, config *module.Config) 
 	return nil
 }
 
-func (table *Table) Get(name string) (instance *Module, found bool) {
-
-	table.mutex.RLock()
-	defer table.mutex.RUnlock()
-
-	instance, found = table.modules[name]
-	return instance, found
-}
-
-func (table *Table) Remove(processor, name string) error {
+// RemoveModule
+// remove a module from a processor
+func (table *Table) RemoveModule(processor, name string) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -235,7 +251,9 @@ func (table *Table) Remove(processor, name string) error {
 	return nil
 }
 
-func (table *Table) Registered() []ModuleData {
+// RegisteredModules
+// Fetch a copy of all modules stored on the core.
+func (table *Table) RegisteredModules() []ModuleData {
 
 	table.mutex.RLock()
 	defer table.mutex.RUnlock()
@@ -251,6 +269,8 @@ func (table *Table) Registered() []ModuleData {
 	return modules
 }
 
+// Print
+// visual representation of the state of the table
 func (table *Table) Print() {
 
 	for identifier, module := range table.modules {

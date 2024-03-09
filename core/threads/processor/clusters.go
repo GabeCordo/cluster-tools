@@ -7,7 +7,7 @@ import (
 
 func (thread *Thread) getClusters(name string) ([]processor.ClusterData, error) {
 
-	instance, found := GetTableInstance().Get(name)
+	instance, found := GetTableInstance().GetModule(name)
 	if !found {
 		// TODO : replace with proper error
 		return nil, errors.New("no cluster found with that module name")
@@ -18,12 +18,12 @@ func (thread *Thread) getClusters(name string) ([]processor.ClusterData, error) 
 
 func (thread *Thread) mountCluster(moduleName, clusterName string) error {
 
-	moduleInstance, found := GetTableInstance().Get(moduleName)
+	moduleInstance, found := GetTableInstance().GetModule(moduleName)
 	if !found {
 		return processor.ModuleDoesNotExist
 	}
 
-	clusterInstance, found := moduleInstance.Get(clusterName)
+	clusterInstance, found := moduleInstance.GetCluster(clusterName)
 	if !found {
 		return processor.ClusterDoesNotExist
 	}
@@ -37,12 +37,12 @@ func (thread *Thread) mountCluster(moduleName, clusterName string) error {
 
 func (thread *Thread) unmountCluster(moduleName, clusterName string) error {
 
-	moduleInstance, found := GetTableInstance().Get(moduleName)
+	moduleInstance, found := GetTableInstance().GetModule(moduleName)
 	if !found {
 		return processor.ModuleDoesNotExist
 	}
 
-	clusterInstance, found := moduleInstance.Get(clusterName)
+	clusterInstance, found := moduleInstance.GetCluster(clusterName)
 	if !found {
 		return processor.ClusterDoesNotExist
 	}

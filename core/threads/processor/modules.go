@@ -11,7 +11,7 @@ import (
 
 func (thread *Thread) getModules() []processor.ModuleData {
 
-	return GetTableInstance().Registered()
+	return GetTableInstance().RegisteredModules()
 }
 
 func (thread *Thread) addModule(processorName string, cfg *module.Config) error {
@@ -20,7 +20,7 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 		return errors.New("module config is not valid")
 	}
 
-	if err := GetTableInstance().RegisterModule(processorName, cfg); err != nil {
+	if err := GetTableInstance().AddModule(processorName, cfg); err != nil {
 		return err
 	}
 
@@ -64,12 +64,12 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 
 func (thread *Thread) deleteModule(processorName, moduleName string) error {
 
-	return GetTableInstance().Remove(processorName, moduleName)
+	return GetTableInstance().RemoveModule(processorName, moduleName)
 }
 
 func (thread *Thread) mountModule(name string) error {
 
-	instance, found := GetTableInstance().Get(name)
+	instance, found := GetTableInstance().GetModule(name)
 	if !found {
 		return processor.ModuleDoesNotExist
 	}
@@ -83,7 +83,7 @@ func (thread *Thread) mountModule(name string) error {
 
 func (thread *Thread) unmountModule(name string) error {
 
-	instance, found := GetTableInstance().Get(name)
+	instance, found := GetTableInstance().GetModule(name)
 	if !found {
 		return processor.ModuleDoesNotExist
 	}

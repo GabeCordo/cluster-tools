@@ -45,7 +45,7 @@ func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Sup
 func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, error) {
 
 	// we need to pick out a processor we want to assign the work to
-	moduleInstance, found := GetTableInstance().Get(r.Identifiers.Module)
+	moduleInstance, found := GetTableInstance().GetModule(r.Identifiers.Module)
 	if !found {
 		return 0, processor.ModuleDoesNotExist
 	}
@@ -54,7 +54,7 @@ func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, erro
 		return 0, processor.ModuleNotMounted
 	}
 
-	clusterInstance, found := moduleInstance.Get(r.Identifiers.Cluster)
+	clusterInstance, found := moduleInstance.GetCluster(r.Identifiers.Cluster)
 	if !found {
 		return 0, processor.ClusterDoesNotExist
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 // TestTable_AddProcessor
-// The processor shall add the new config and increment its counter.
+// The processor shall addCluster the new config and increment its counter.
 func TestTable_AddProcessor(t *testing.T) {
 
 	table := NewTable()
