@@ -25,24 +25,17 @@ func GenerateTestCacheThread(in chan common.CacheRequest, out chan common.CacheR
 func TestNewNilArguments(t *testing.T) {
 
 	_, err := New(nil, nil)
-	if err != nil {
+	if err == nil {
 		t.Error("excepted thread to reject nil arguments for config or logger")
 	}
 }
 
 func TestNew(t *testing.T) {
 
-	var logger *logging.Logger
-	if l, err := logging.NewLogger("cache"); err != nil {
-		t.Error(err)
-		return
-	} else {
-		logger = l
-	}
+	c1 := make(chan common.CacheRequest, 1)
+	c2 := make(chan common.CacheResponse, 1)
 
-	cfg := &Config{}
-
-	if _, err := New(cfg, logger); err != nil {
-		t.Error(err)
+	if thread := GenerateTestCacheThread(c1, c2); thread == nil {
+		t.Error("expected success when creating cache thread")
 	}
 }

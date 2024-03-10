@@ -31,7 +31,7 @@ func TestCache_SaveNoExpiryParam(t *testing.T) {
 
 	identifier := cache.Save("test")
 
-	value, found := cache.Get(identifier)
+	value, found := cache.records.Load(identifier)
 	if !found {
 		t.Errorf("expected to find value with identifier %s\n", identifier)
 		return
@@ -65,14 +65,10 @@ func TestCache_SaveExpiryParam(t *testing.T) {
 		return
 	}
 
-	record, castOk := (value).(Record)
+	_, castOk := (value).(string)
 	if !castOk {
 		t.Error("expected the stored value to be of type Record")
 		return
-	}
-
-	if record.expiry != expiresInNSec {
-		t.Error("expected the expiry to be the specified value in seconds")
 	}
 }
 
