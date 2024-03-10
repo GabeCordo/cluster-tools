@@ -1,6 +1,6 @@
-package processor
+package interfaces
 
-type Config struct {
+type ProcessorConfig struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`
 }

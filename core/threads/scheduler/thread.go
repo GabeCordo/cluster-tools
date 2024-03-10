@@ -2,9 +2,9 @@ package scheduler
 
 import (
 	"fmt"
-	"github.com/GabeCordo/mango/core/components/processor"
-	"github.com/GabeCordo/mango/core/components/scheduler"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/scheduler"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 )
 

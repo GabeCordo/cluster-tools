@@ -1,6 +1,8 @@
 package cache
 
-import "github.com/GabeCordo/mango/core/threads/common"
+import (
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
+)
 
 // processSaveRequest
 // will insert or override an existing cache record
@@ -10,7 +12,13 @@ func (thread *Thread) processSaveRequest(request *common.CacheRequest) {
 		GetCacheInstance().Swap(request.Identifier, request.Data, request.ExpiresIn)
 		response = common.CacheResponse{Identifier: request.Identifier, Data: nil, Nonce: request.Nonce, Success: true}
 	} else {
-		newIdentifier := GetCacheInstance().Save(request.Data, request.ExpiresIn)
+		// what if the user forgets to pass in an expiry time that's now set to 0?
+		var newIdentifier string
+		if request.ExpiresIn == 0 {
+			newIdentifier = GetCacheInstance().Save(request.Data)
+		} else {
+			newIdentifier = GetCacheInstance().Save(request.Data, request.ExpiresIn)
+		}
 		response = common.CacheResponse{Identifier: newIdentifier, Data: nil, Nonce: request.Nonce, Success: true}
 	}
 	thread.C10 <- response

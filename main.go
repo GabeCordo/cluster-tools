@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/GabeCordo/cluster-tools/controllers"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango/controllers"
 )
 
 // @title Swagger Example API

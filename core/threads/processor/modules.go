@@ -2,25 +2,24 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/mango/core/components/processor"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/interfaces/module"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"math/rand"
 )
 
 func (thread *Thread) getModules() []processor.ModuleData {
 
-	return GetTableInstance().Registered()
+	return GetTableInstance().RegisteredModules()
 }
 
-func (thread *Thread) addModule(processorName string, cfg *module.Config) error {
+func (thread *Thread) addModule(processorName string, cfg *interfaces.ModuleConfig) error {
 
 	if !cfg.Verify() {
 		return errors.New("module config is not valid")
 	}
 
-	if err := GetTableInstance().RegisterModule(processorName, cfg); err != nil {
+	if err := GetTableInstance().AddModule(processorName, cfg); err != nil {
 		return err
 	}
 
@@ -28,7 +27,7 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 	// this config should be used as the de-facto config unless another is specified by the operator
 	// -> send the config for storage in the database thread
 	for _, export := range cfg.Exports {
-		if export.Config.Mode == cluster.Stream {
+		if export.Config.Mode == interfaces.Stream {
 			thread.C13 <- common.SupervisorRequest{
 				Action: common.SupervisorCreate,
 				Identifiers: common.RequestIdentifiers{
@@ -64,12 +63,12 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 
 func (thread *Thread) deleteModule(processorName, moduleName string) error {
 
-	return GetTableInstance().Remove(processorName, moduleName)
+	return GetTableInstance().RemoveModule(processorName, moduleName)
 }
 
 func (thread *Thread) mountModule(name string) error {
 
-	instance, found := GetTableInstance().Get(name)
+	instance, found := GetTableInstance().GetModule(name)
 	if !found {
 		return processor.ModuleDoesNotExist
 	}
@@ -83,7 +82,7 @@ func (thread *Thread) mountModule(name string) error {
 
 func (thread *Thread) unmountModule(name string) error {
 
-	instance, found := GetTableInstance().Get(name)
+	instance, found := GetTableInstance().GetModule(name)
 	if !found {
 		return processor.ModuleDoesNotExist
 	}

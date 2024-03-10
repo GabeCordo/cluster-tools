@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,7 +15,7 @@ import (
 )
 
 type ConfigDatabase struct {
-	records map[string]map[string]cluster.Config
+	records map[string]map[string]interfaces.Config
 
 	mutex sync.RWMutex
 }
@@ -23,7 +23,7 @@ type ConfigDatabase struct {
 func NewConfigDatabase() *ConfigDatabase {
 
 	db := new(ConfigDatabase)
-	db.records = make(map[string]map[string]cluster.Config)
+	db.records = make(map[string]map[string]interfaces.Config)
 
 	return db
 }
@@ -120,7 +120,7 @@ func (db *ConfigDatabase) Load(path string) error {
 			return err
 		}
 
-		cfg := &cluster.Config{}
+		cfg := &interfaces.Config{}
 		if err = json.Unmarshal(fBytes, cfg); err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ type ConfigFilter struct {
 	Identifier string
 }
 
-func (db *ConfigDatabase) Get(filter ConfigFilter) (records []cluster.Config, err error) {
+func (db *ConfigDatabase) Get(filter ConfigFilter) (records []interfaces.Config, err error) {
 
 	records = nil
 	err = nil
@@ -164,10 +164,10 @@ func (db *ConfigDatabase) Get(filter ConfigFilter) (records []cluster.Config, er
 			err = errors.New("no config with that identifier in this module")
 			return records, err
 		}
-		records = make([]cluster.Config, 1)
+		records = make([]interfaces.Config, 1)
 		records[0] = cnf
 	} else {
-		records = make([]cluster.Config, len(module))
+		records = make([]interfaces.Config, len(module))
 
 		idx := 0
 		for _, cfg := range module {
@@ -179,7 +179,7 @@ func (db *ConfigDatabase) Get(filter ConfigFilter) (records []cluster.Config, er
 	return records, err
 }
 
-func (db *ConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg cluster.Config) (err error) {
+func (db *ConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg interfaces.Config) (err error) {
 
 	err = nil
 
@@ -191,7 +191,7 @@ func (db *ConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg 
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]cluster.Config)
+		idToCfgMap := make(map[string]interfaces.Config)
 		db.records[moduleIdentifier] = idToCfgMap
 		module = idToCfgMap
 	}
@@ -209,7 +209,7 @@ func (db *ConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg 
 	return err
 }
 
-func (db *ConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg cluster.Config) (err error) {
+func (db *ConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg interfaces.Config) (err error) {
 
 	err = nil
 
@@ -221,7 +221,7 @@ func (db *ConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]cluster.Config)
+		idToCfgMap := make(map[string]interfaces.Config)
 		db.records[moduleIdentifier] = idToCfgMap
 	}
 

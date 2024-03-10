@@ -1,8 +1,7 @@
 package core
 
 import (
-	"fmt"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/logging"
 	"os"
 	"os/signal"
@@ -12,18 +11,6 @@ import (
 const (
 	Version string = "v0.2.4-alpha"
 )
-
-func (core *Core) Banner() {
-	fmt.Println("   ___    _____    _")
-	fmt.Println("  | __|  |_   _|  | |")
-	fmt.Println("  | _|     | |    | |__")
-	fmt.Println("  |___|   _|_|_   |____|\taka. 'mango'")
-	fmt.Println("_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|")
-	fmt.Println("\"`-0-0-'\"`-0-0-'\"`-0-0-'")
-	fmt.Println("[+] " + logging.Purple + "Extract Transform Load Framework " + logging.Reset + Version)
-	fmt.Println("[+]" + logging.Purple + " by Gabriel Cordovado 2022-23" + logging.Reset)
-	fmt.Println()
-}
 
 func (core *Core) Run() {
 
@@ -186,37 +173,3 @@ func (core *Core) Run() {
 		core.logger.Println("messenger shutdown")
 	}
 }
-
-// TODO : no longer support on the core
-//func (core *Core) Cluster(identifier string, mode cluster.EtlMode, implementation cluster.Cluster, configs ...cluster.config) {
-//
-//	p := provisioner.GetProvisionerInstance()
-//	defaultModule, _ := p.GetModule(provisioner_component.DefaultFrameworkModule) // the default threads module should always be found
-//
-//	clusterWrapper, _ := defaultModule.AddCluster(identifier, mode, implementation)
-//	if common.GetConfigInstance().MountByDefault {
-//		clusterWrapper.Mount()
-//	} else {
-//		clusterWrapper.UnMount()
-//	}
-//
-//	clusterImplementation := clusterWrapper.GetClusterImplementation()
-//	if helperImplementation, ok := (clusterImplementation).(cluster.Helper); ok {
-//		helper, _ := provisioner.NewHelper(provisioner_component.DefaultFrameworkModule, clusterWrapper.Identifier,
-//			core.C9, core.C17)
-//		helperImplementation.SetHelper(helper)
-//	}
-//
-//	d := database.GetConfigDatabaseInstance()
-//
-//	for _, config := range configs {
-//		d.Create(provisioner_component.DefaultFrameworkModule, identifier, config)
-//	}
-//}
-
-// TODO : no longer support on the core
-//func (core *Core) Module(path string) (success bool, description string) {
-//
-//	success, description = common.RegisterModule(core.HttpClientThread.C5, core.HttpClientThread.ProcessorResponseTable, path)
-//	return success, description
-//}

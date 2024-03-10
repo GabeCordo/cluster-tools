@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/core"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango/core"
-	"github.com/GabeCordo/mango/core/threads/common"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -20,7 +20,7 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.EnableCors = false
 	defaultConfig.EnableRepl = false
 	defaultConfig.Messenger.EnableLogging = true
-	defaultConfig.Messenger.LogFiles.Directory = "/var/mangoose/logs"
+	defaultConfig.Messenger.LogFiles.Directory = common.DefaultLogsFolder
 	defaultConfig.Messenger.EnableSmtp = false
 	defaultConfig.Net.Client.Host = "0.0.0.0"
 	defaultConfig.Net.Client.Port = 8136
@@ -28,14 +28,12 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Net.Processor.Port = 8137
 	defaultConfig.Path = common.DefaultFrameworkFolder
 
-	defaultConfig.Messenger.LogFiles.Directory = common.DefaultLogsFolder
-
 	if _, err := os.Stat(common.DefaultFrameworkFolder); err == nil {
-		fmt.Println("mango has already been initialized")
+		fmt.Println("cluster.tools has already been initialized")
 		return commandline.Terminate
 	}
 
-	fmt.Println("mango has not been initialized")
+	fmt.Println("cluster.tools has not been initialized")
 
 	if err := os.Mkdir(common.DefaultFrameworkFolder, 0700); err != nil {
 		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultFrameworkFolder, err.Error())

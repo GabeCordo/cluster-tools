@@ -1,4 +1,4 @@
-module github.com/GabeCordo/mango
+module github.com/GabeCordo/cluster-tools
 
 go 1.20
 

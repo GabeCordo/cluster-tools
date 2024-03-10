@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/core"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/commandline"
-	"github.com/GabeCordo/mango/core"
-	"github.com/GabeCordo/mango/core/threads/common"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -16,7 +16,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(common.DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] mango has never been initialized, run 'mango init'")
+		fmt.Println("[x] cluster.tools has never been initialized, run 'cluster-tools init'")
 		return commandline.Terminate
 	}
 

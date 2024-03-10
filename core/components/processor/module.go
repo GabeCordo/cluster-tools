@@ -1,6 +1,6 @@
 package processor
 
-func (module *Module) add(name string) (success bool) {
+func (module *Module) addCluster(name string) (success bool) {
 
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
@@ -33,7 +33,7 @@ func (module *Module) Unmount() {
 	module.data.Mounted = false
 }
 
-func (module *Module) Get(name string) (instance *Cluster, found bool) {
+func (module *Module) GetCluster(name string) (instance *Cluster, found bool) {
 
 	module.mutex.RLock()
 	defer module.mutex.RUnlock()

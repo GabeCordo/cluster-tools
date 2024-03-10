@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"os"
 	"sync"
 	"time"
 )
 
 type Statistic struct {
-	Timestamp time.Time          `json:"timestamp"`
-	Elapsed   time.Duration      `json:"elapsed"`
-	Stats     cluster.Statistics `json:"statistics"`
+	Timestamp time.Time             `json:"timestamp"`
+	Elapsed   time.Duration         `json:"elapsed"`
+	Stats     interfaces.Statistics `json:"statistics"`
 }
 
 type StatisticDatabase struct {

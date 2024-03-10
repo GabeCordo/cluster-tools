@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/mango/core/components/processor"
-	"github.com/GabeCordo/mango/core/interfaces/cluster"
-	"github.com/GabeCordo/mango/core/interfaces/communication"
-	"github.com/GabeCordo/mango/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
+	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -31,7 +30,7 @@ func (thread *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Reques
 
 	processors, success := common.GetProcessors(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
 
-	response := communication.Response{Success: success}
+	response := interfaces.HTTPResponse{Success: success}
 
 	if success {
 		response.Data = processors
@@ -60,7 +59,7 @@ func (thread *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) 
 
 	success, modules := common.GetModules(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout)
 
-	response := communication.Response{Success: success}
+	response := interfaces.HTTPResponse{Success: success}
 	if success {
 		response.Data = modules
 	} else {
@@ -94,7 +93,7 @@ func (thread *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) 
 		success, err = common.UnmountModule(thread.C5, thread.ProcessorResponseTable, request.ModuleName, thread.config.Timeout)
 	}
 
-	response := communication.Response{Success: success}
+	response := interfaces.HTTPResponse{Success: success}
 
 	if errors.Is(err, processor.ModuleDoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
@@ -139,7 +138,7 @@ func (thread *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	response := communication.Response{Success: success}
+	response := interfaces.HTTPResponse{Success: success}
 
 	if success {
 		response.Data = clusterList
@@ -164,7 +163,7 @@ func (thread *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := communication.Response{}
+	response := interfaces.HTTPResponse{}
 
 	if request.Mounted {
 		response.Success = common.MountCluster(thread.C5, thread.ProcessorResponseTable, request.Module, request.Cluster, thread.config.Timeout)
@@ -220,7 +219,7 @@ func (thread *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	response := &communication.Response{Success: true}
+	response := &interfaces.HTTPResponse{Success: true}
 
 	instance, err := common.GetSupervisor(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout, id)
 	if err != nil {
@@ -269,7 +268,7 @@ func (thread *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	request := &cluster.Config{}
+	request := &interfaces.Config{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if (r.Method != "GET") && (r.Method != "DELETE") && (err != nil) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -382,7 +381,7 @@ func (thread *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
 func (thread *Thread) getDebugCallback(w http.ResponseWriter, r *http.Request) {
 
 	thread.logger.Printf("ping from %s\n", r.RemoteAddr)
-	response := communication.Response{Success: true, Description: "bonjour"}
+	response := interfaces.HTTPResponse{Success: true, Description: "bonjour"}
 	b, _ := json.Marshal(response)
 	w.Write(b)
 }
@@ -406,7 +405,7 @@ func (thread *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	response := communication.Response{Success: true}
+	response := interfaces.HTTPResponse{Success: true}
 
 	if request.Action == "shutdown" {
 		err = common.ShutdownCore(thread.Interrupt)
