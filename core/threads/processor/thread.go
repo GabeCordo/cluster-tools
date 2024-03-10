@@ -1,8 +1,7 @@
 package processor
 
 import (
-	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
@@ -113,15 +112,15 @@ func (thread *Thread) processRequest(request *common.ProcessorRequest) {
 	case common.ProcessorGet:
 		response.Data = thread.processorGet()
 	case common.ProcessorAdd:
-		cfg := (request.Data).(processor.Config)
+		cfg := (request.Data).(interfaces.ProcessorConfig)
 		response.Error = thread.processorAdd(&cfg)
 	case common.ProcessorRemove:
-		cfg := (request.Data).(processor.Config)
+		cfg := (request.Data).(interfaces.ProcessorConfig)
 		response.Error = thread.processorRemove(&cfg)
 	case common.ProcessorModuleGet:
 		response.Data = thread.getModules()
 	case common.ProcessorModuleAdd:
-		cfg := (request.Data).(module.Config)
+		cfg := (request.Data).(interfaces.ModuleConfig)
 		response.Error = thread.addModule(request.Identifiers.Processor, &cfg)
 	case common.ProcessorModuleRemove:
 		response.Error = thread.deleteModule(request.Identifiers.Processor, request.Identifiers.Module)

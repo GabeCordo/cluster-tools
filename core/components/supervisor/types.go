@@ -2,7 +2,7 @@ package supervisor
 
 import (
 	"github.com/GabeCordo/cluster-tools/core/components/messenger"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"sync"
 )
 
@@ -41,13 +41,13 @@ type Supervisor struct {
 	Module    string `json:"module,omitempty"`
 	Cluster   string `json:"cluster,omitempty"`
 
-	Config     cluster.Config      `json:"config,omitempty"`
-	Statistics *cluster.Statistics `json:"statistics"`
+	Config     interfaces.Config      `json:"config,omitempty"`
+	Statistics *interfaces.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func newSupervisor(id uint64, processorName, moduleName, clusterName string, conf *cluster.Config) *Supervisor {
+func newSupervisor(id uint64, processorName, moduleName, clusterName string, conf *interfaces.Config) *Supervisor {
 	supervisor := new(Supervisor)
 
 	supervisor.Status = Created
@@ -56,7 +56,7 @@ func newSupervisor(id uint64, processorName, moduleName, clusterName string, con
 	supervisor.Module = moduleName
 	supervisor.Cluster = clusterName
 	supervisor.Config = *conf // make a copy
-	supervisor.Statistics = cluster.NewStatistics()
+	supervisor.Statistics = interfaces.NewStatistics()
 
 	return supervisor
 }

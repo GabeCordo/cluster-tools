@@ -1,6 +1,8 @@
 package processor
 
-import "github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+import (
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
+)
 
 func (c *Cluster) Add(processor *Processor) {
 
@@ -16,7 +18,7 @@ func (c *Cluster) IsMounted() bool {
 }
 
 func (c *Cluster) IsStream() bool {
-	return c.data.Mode == cluster.Stream
+	return c.data.Mode == interfaces.Stream
 }
 
 func (c *Cluster) Mount() {

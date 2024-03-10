@@ -1,8 +1,10 @@
 package supervisor
 
-import "github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+import (
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
+)
 
-func (registry *Registry) Create(processorName, moduleName, clusterName string, conf *cluster.Config) (identifier uint64) {
+func (registry *Registry) Create(processorName, moduleName, clusterName string, conf *interfaces.Config) (identifier uint64) {
 
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()

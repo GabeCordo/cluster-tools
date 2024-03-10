@@ -3,8 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
-	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 )
 
 func (table *Table) GetProcessors() []Processor {
@@ -22,7 +21,7 @@ func (table *Table) GetProcessors() []Processor {
 	return processors
 }
 
-func (table *Table) AddProcessor(cfg *processor_i.Config) error {
+func (table *Table) AddProcessor(cfg *interfaces.ProcessorConfig) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -42,7 +41,7 @@ func (table *Table) AddProcessor(cfg *processor_i.Config) error {
 
 // RemoveProcessor
 // this is a REALLY expensive operation that might need to be optimized in the future.
-func (table *Table) RemoveProcessor(cfg *processor_i.Config) error {
+func (table *Table) RemoveProcessor(cfg *interfaces.ProcessorConfig) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -61,7 +60,7 @@ func (table *Table) RemoveProcessor(cfg *processor_i.Config) error {
 
 	table.processors = append(table.processors[:idx], table.processors[idx+1:]...)
 
-	// Removing a processor modifies the Module / Cluster records as follows:
+	// Removing a processor modifies the Module / ModuleCluster records as follows:
 	//
 	// 1. The processor was the last to support the cluster in the module
 	//		=> the cluster record is removed from the module
@@ -112,7 +111,7 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 // AddModule
 // inform the core that the processor now supports provisioning calls
 // for a module and all its listed clusters
-func (table *Table) AddModule(processorName string, config *module.Config) error {
+func (table *Table) AddModule(processorName string, config *interfaces.ModuleConfig) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()

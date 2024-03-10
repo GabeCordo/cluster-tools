@@ -16,7 +16,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(common.DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] mango has never been initialized, run 'mango init'")
+		fmt.Println("[x] cluster.tools has never been initialized, run 'cluster-tools init'")
 		return commandline.Terminate
 	}
 

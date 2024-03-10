@@ -3,8 +3,7 @@ package processor
 import (
 	"errors"
 	"github.com/GabeCordo/cluster-tools/core/components/processor"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"math/rand"
 )
@@ -14,7 +13,7 @@ func (thread *Thread) getModules() []processor.ModuleData {
 	return GetTableInstance().RegisteredModules()
 }
 
-func (thread *Thread) addModule(processorName string, cfg *module.Config) error {
+func (thread *Thread) addModule(processorName string, cfg *interfaces.ModuleConfig) error {
 
 	if !cfg.Verify() {
 		return errors.New("module config is not valid")
@@ -28,7 +27,7 @@ func (thread *Thread) addModule(processorName string, cfg *module.Config) error 
 	// this config should be used as the de-facto config unless another is specified by the operator
 	// -> send the config for storage in the database thread
 	for _, export := range cfg.Exports {
-		if export.Config.Mode == cluster.Stream {
+		if export.Config.Mode == interfaces.Stream {
 			thread.C13 <- common.SupervisorRequest{
 				Action: common.SupervisorCreate,
 				Identifiers: common.RequestIdentifiers{

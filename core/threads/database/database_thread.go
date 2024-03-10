@@ -2,7 +2,7 @@ package database
 
 import (
 	"github.com/GabeCordo/cluster-tools/core/components/database"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"log"
@@ -137,7 +137,7 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 			switch request.Type {
 			case common.ClusterConfig:
 				{
-					if configData, ok := (request.Data).(cluster.Config); ok {
+					if configData, ok := (request.Data).(interfaces.Config); ok {
 						err := GetConfigDatabaseInstance().Create(request.Module, request.Cluster, configData)
 
 						if err == nil {
@@ -158,7 +158,7 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 				}
 			case common.SupervisorStatistic:
 				{
-					if statisticsData, ok := (request.Data).(*cluster.Statistics); ok {
+					if statisticsData, ok := (request.Data).(*interfaces.Statistics); ok {
 						err := GetStatisticDatabaseInstance().Create(
 							request.Module, request.Cluster,
 							database.Statistic{ // TODO : depreciate or fix elapsed time
@@ -246,7 +246,7 @@ func (thread *Thread) ProcessIncomingRequest(request *common.DatabaseRequest) {
 		{
 			switch request.Type {
 			case common.ClusterConfig:
-				config := (request.Data).(cluster.Config)
+				config := (request.Data).(interfaces.Config)
 				err := GetConfigDatabaseInstance().Replace(request.Module, request.Cluster, config)
 
 				if err == nil {

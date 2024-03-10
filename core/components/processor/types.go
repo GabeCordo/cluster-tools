@@ -2,8 +2,7 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"sync"
 	"time"
 )
@@ -43,7 +42,7 @@ func newProcessor(host string, port int) *Processor {
 type ClusterData struct {
 	Name    string
 	Mounted bool
-	Mode    cluster.EtlMode
+	Mode    interfaces.EtlMode
 }
 
 type Cluster struct {
@@ -70,7 +69,7 @@ func newCluster(name string) *Cluster {
 type ModuleData struct {
 	Name    string
 	Version float64
-	Contact module.Contact
+	Contact interfaces.ModuleContact
 	Mounted bool
 }
 
@@ -81,7 +80,7 @@ type Module struct {
 	mutex    sync.RWMutex
 }
 
-func newModule(name string, version float64, contact ...module.Contact) *Module {
+func newModule(name string, version float64, contact ...interfaces.ModuleContact) *Module {
 	module := new(Module)
 
 	module.data.Name = name

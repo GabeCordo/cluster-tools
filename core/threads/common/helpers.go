@@ -6,15 +6,13 @@ import (
 	"github.com/GabeCordo/cluster-tools/core/components/database"
 	"github.com/GabeCordo/cluster-tools/core/components/processor"
 	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
-	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )
 
 func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
-	moduleName, clusterName string, maxWaitForResponse float64) (conf cluster.Config, found bool) {
+	moduleName, clusterName string, maxWaitForResponse float64) (conf interfaces.Config, found bool) {
 
 	databaseRequest := DatabaseRequest{
 		Action:  DatabaseFetch,
@@ -28,25 +26,25 @@ func GetConfigFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *m
 	data, didTimeout := multithreaded.SendAndWait(databaseResponseTable, databaseRequest.Nonce,
 		maxWaitForResponse)
 	if didTimeout {
-		return cluster.Config{}, false
+		return interfaces.Config{}, false
 	}
 
 	databaseResponse := (data).(DatabaseResponse)
 
 	if !databaseResponse.Success {
-		return cluster.Config{}, false
+		return interfaces.Config{}, false
 	}
 
-	configs := (databaseResponse.Data).([]cluster.Config)
+	configs := (databaseResponse.Data).([]interfaces.Config)
 	if len(configs) != 1 {
-		return cluster.Config{}, false
+		return interfaces.Config{}, false
 	}
 
 	return configs[0], true
 }
 
 func GetConfigsFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
-	moduleName string, maxWaitForResponse float64) (configs []cluster.Config, found bool) {
+	moduleName string, maxWaitForResponse float64) (configs []interfaces.Config, found bool) {
 
 	databaseRequest := DatabaseRequest{
 		Action: DatabaseFetch,
@@ -68,12 +66,12 @@ func GetConfigsFromDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *
 		return nil, false
 	}
 
-	configs = (databaseResponse.Data).([]cluster.Config)
+	configs = (databaseResponse.Data).([]interfaces.Config)
 	return configs, true
 }
 
 func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
-	moduleName string, cfg cluster.Config, maxWaitForResponse float64) error {
+	moduleName string, cfg interfaces.Config, maxWaitForResponse float64) error {
 
 	databaseRequest := DatabaseRequest{
 		Action:  DatabaseStore,
@@ -101,7 +99,7 @@ func StoreConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *m
 }
 
 func ReplaceConfigInDatabase(pipe chan<- DatabaseRequest, databaseResponseTable *multithreaded.ResponseTable,
-	moduleName string, cfg cluster.Config, maxWaitForResponse float64) (success bool) {
+	moduleName string, cfg interfaces.Config, maxWaitForResponse float64) (success bool) {
 
 	databaseRequest := DatabaseRequest{
 		Action:  DatabaseReplace,
@@ -169,7 +167,7 @@ func GetProcessors(pipe chan<- ProcessorRequest, responseTable *multithreaded.Re
 }
 
 func AddProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
-	cfg *processor_i.Config, maxWaitForResponse float64) (bool, error) {
+	cfg *interfaces.ProcessorConfig, maxWaitForResponse float64) (bool, error) {
 
 	request := ProcessorRequest{
 		Action: ProcessorAdd,
@@ -189,7 +187,7 @@ func AddProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.Res
 }
 
 func DeleteProcessor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
-	cfg *processor_i.Config, maxWaitForResponse float64) error {
+	cfg *interfaces.ProcessorConfig, maxWaitForResponse float64) error {
 
 	request := ProcessorRequest{
 		Action: ProcessorRemove,
@@ -435,7 +433,7 @@ func GetModules(pipe chan<- ProcessorRequest, responseTable *multithreaded.Respo
 }
 
 func AddModule(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable,
-	processorName string, cfg *module.Config, maxWaitForResponse float64) (bool, error) {
+	processorName string, cfg *interfaces.ModuleConfig, maxWaitForResponse float64) (bool, error) {
 
 	request := ProcessorRequest{
 		Action:      ProcessorModuleAdd,

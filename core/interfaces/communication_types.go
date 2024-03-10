@@ -1,9 +1,7 @@
-package communication
+package interfaces
 
 import (
 	"encoding/json"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/cluster"
-	"github.com/GabeCordo/cluster-tools/core/interfaces/module"
 	"net/http"
 )
 
@@ -15,7 +13,7 @@ type HTTPRequest struct {
 
 type HTTPModuleRequest struct {
 	Name    string             `json:"name"`
-	Config  module.Config      `json:"config,omitempty"`
+	Config  ModuleConfig       `json:"config,omitempty"`
 	Mount   bool               `json:"mount,omitempty"`
 	Cluster HTTPClusterRequest `json:"cluster,omitempty"`
 }
@@ -37,7 +35,7 @@ const (
 type HTTPSupervisorRequest struct {
 	Identifier uint64               `json:"identifier"`
 	Action     HTTPSupervisorAction `json:"action,omitempty"`
-	Statistics cluster.Statistics   `json:"statistics,omitempty"`
+	Statistics Statistics           `json:"statistics,omitempty"`
 	Log        HTTPLogRequest       `json:"log,omitempty"`
 	Cache      HTTPCacheRequest     `json:"cache,omitempty"`
 }
@@ -59,7 +57,7 @@ type HTTPCacheRequest struct {
 	Data any `json:"data"`
 }
 
-type Response struct {
+type HTTPResponse struct {
 	Success     bool   `json:"success"`
 	Description string `json:"description"`
 	Data        any    `json:"data"`

@@ -2,7 +2,7 @@ package processor
 
 import (
 	"github.com/GabeCordo/cluster-tools/core/components/processor"
-	processor_i "github.com/GabeCordo/cluster-tools/core/interfaces/processor"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 )
 
 func (thread *Thread) processorGet() []processor.Processor {
@@ -10,7 +10,7 @@ func (thread *Thread) processorGet() []processor.Processor {
 	return GetTableInstance().GetProcessors()
 }
 
-func (thread *Thread) processorAdd(config *processor_i.Config) error {
+func (thread *Thread) processorAdd(config *interfaces.ProcessorConfig) error {
 
 	err := GetTableInstance().AddProcessor(config)
 
@@ -24,7 +24,7 @@ func (thread *Thread) processorAdd(config *processor_i.Config) error {
 	return err
 }
 
-func (thread *Thread) processorRemove(config *processor_i.Config) error {
+func (thread *Thread) processorRemove(config *interfaces.ProcessorConfig) error {
 
 	err := GetTableInstance().RemoveProcessor(config)
 
