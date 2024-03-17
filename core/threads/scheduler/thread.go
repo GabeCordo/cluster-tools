@@ -46,8 +46,8 @@ func (thread *Thread) Start() {
 	go scheduler.Loop(thread.Scheduler, func(job *scheduler.Job) error {
 
 		// will return have a maximum of Timeout, so worst-case takes thread.config.Timeout
-		_, err := common.CreateSupervisor(thread.C18, thread.responseTable,
-			job.Module, job.Cluster, job.Config, job.Metadata, thread.config.Timeout)
+		mandatory := common.ThreadMandatory{thread.C18, thread.responseTable, thread.config.Timeout}
+		_, err := common.CreateSupervisor(mandatory, job.Module, job.Cluster, job.Config, job.Metadata)
 
 		e := ""
 		if err != nil {
@@ -77,26 +77,26 @@ func (thread *Thread) Start() {
 	})
 }
 
-func (thread *Thread) ProcessRequest(request *common.SchedulerRequest) {
+func (thread *Thread) ProcessRequest(request *common.ThreadRequest) {
 
-	response := common.SchedulerResponse{Nonce: request.Nonce}
+	response := common.ThreadResponse{Nonce: request.Nonce}
 
 	switch request.Action {
-	case common.SchedulerGet:
+	case common.GetAction:
 		switch request.Type {
-		case common.SchedulerJob:
+		case common.JobRecord:
 			if filter, ok := (request.Data).(scheduler.Filter); ok {
 				response.Data = thread.get(&filter)
 			} else {
 				response.Success = false
 				response.Error = common.BadRequestType
 			}
-		case common.SchedulerQueue:
+		case common.QueueRecord:
 			response.Data = thread.queue()
 			response.Success = true
 		}
 
-	case common.SchedulerCreate:
+	case common.CreateAction:
 		if job, ok := (request.Data).(scheduler.Job); ok {
 			response.Error = thread.create(&job)
 			response.Success = response.Error == nil
@@ -104,7 +104,7 @@ func (thread *Thread) ProcessRequest(request *common.SchedulerRequest) {
 			response.Success = false
 			response.Error = common.BadRequestType
 		}
-	case common.SchedulerDelete:
+	case common.DeleteAction:
 		if filter, ok := (request.Data).(scheduler.Filter); ok {
 			response.Error = thread.delete(&filter)
 			response.Success = response.Error == nil

@@ -60,32 +60,32 @@ type Core struct {
 	CacheThread         *cache.Thread
 	SchedulerThread     *scheduler.Thread
 
-	C1        chan common.DatabaseRequest
-	C2        chan common.DatabaseResponse
-	C3        chan common.MessengerRequest
-	C4        chan common.MessengerResponse
-	C5        chan common.ProcessorRequest
-	C6        chan common.ProcessorResponse
-	C7        chan common.ProcessorRequest
-	C8        chan common.ProcessorResponse
-	C9        chan common.CacheRequest
-	C10       chan common.CacheResponse
-	C11       chan common.DatabaseRequest
-	C12       chan common.DatabaseResponse
-	C13       chan common.SupervisorRequest
-	C14       chan common.SupervisorResponse
-	C15       chan common.DatabaseRequest
-	C16       chan common.DatabaseResponse
-	C17       chan common.MessengerRequest
-	C18       chan common.ProcessorRequest
-	C19       chan common.ProcessorResponse
-	C20       chan common.SchedulerRequest
-	C21       chan common.SchedulerResponse
-	C22       chan common.MessengerRequest
-	C23       chan common.MessengerResponse
-	C24       chan common.CacheRequest
-	C25       chan common.CacheResponse
-	interrupt chan common.InterruptEvent
+	C1        chan common.ThreadRequest  // DatabaseRequest
+	C2        chan common.ThreadResponse // DatabaseResponse
+	C3        chan common.ThreadRequest  // MessengerRequest
+	C4        chan common.ThreadResponse // MessengerResponse
+	C5        chan common.ThreadRequest  // ProcessorRequest
+	C6        chan common.ThreadResponse // ProcessorResponse
+	C7        chan common.ThreadRequest  // ProcessorRequest
+	C8        chan common.ThreadResponse // ProcessorResponse
+	C9        chan common.ThreadRequest  // CacheRequest
+	C10       chan common.ThreadResponse // CacheResponse
+	C11       chan common.ThreadRequest  // DatabaseRequest
+	C12       chan common.ThreadResponse // DatabaseResponse
+	C13       chan common.ThreadRequest  // SupervisorRequest
+	C14       chan common.ThreadResponse // SupervisorResponse
+	C15       chan common.ThreadRequest  // DatabaseRequest
+	C16       chan common.ThreadResponse // DatabaseResponse
+	C17       chan common.ThreadRequest  // MessengerRequest
+	C18       chan common.ThreadRequest  // ProcessorRequest
+	C19       chan common.ThreadResponse // ProcessorResponse
+	C20       chan common.ThreadRequest  // SchedulerRequest
+	C21       chan common.ThreadResponse // SchedulerResponse
+	C22       chan common.ThreadRequest  // MessengerRequest
+	C23       chan common.ThreadResponse // MessengerResponse
+	C24       chan common.ThreadRequest  // CacheRequest
+	C25       chan common.ThreadResponse // CacheResponse
+	interrupt chan common.InterruptEvent // InterruptEvent
 
 	config *Config
 	logger *logging.Logger
@@ -95,31 +95,31 @@ func New(configPath string) (*Core, error) {
 	core := new(Core)
 
 	core.interrupt = make(chan common.InterruptEvent, 10)
-	core.C1 = make(chan common.DatabaseRequest, 10)
-	core.C2 = make(chan common.DatabaseResponse, 10)
-	core.C3 = make(chan common.MessengerRequest, 10)
-	core.C4 = make(chan common.MessengerResponse, 10)
-	core.C5 = make(chan common.ProcessorRequest, 10)
-	core.C6 = make(chan common.ProcessorResponse, 10)
-	core.C7 = make(chan common.ProcessorRequest, 10)
-	core.C8 = make(chan common.ProcessorResponse, 10)
-	core.C9 = make(chan common.CacheRequest, 10)
-	core.C10 = make(chan common.CacheResponse, 10)
-	core.C11 = make(chan common.DatabaseRequest, 10)
-	core.C12 = make(chan common.DatabaseResponse, 10)
-	core.C13 = make(chan common.SupervisorRequest, 10)
-	core.C14 = make(chan common.SupervisorResponse, 10)
-	core.C15 = make(chan common.DatabaseRequest, 10)
-	core.C16 = make(chan common.DatabaseResponse, 10)
-	core.C17 = make(chan common.MessengerRequest, 10)
-	core.C18 = make(chan common.ProcessorRequest, 10)
-	core.C19 = make(chan common.ProcessorResponse, 10)
-	core.C20 = make(chan common.SchedulerRequest, 10)
-	core.C21 = make(chan common.SchedulerResponse, 10)
-	core.C22 = make(chan common.MessengerRequest, 10)
-	core.C23 = make(chan common.MessengerResponse, 10)
-	core.C24 = make(chan common.CacheRequest, 10)
-	core.C25 = make(chan common.CacheResponse, 10)
+	core.C1 = make(chan common.ThreadRequest, 10)
+	core.C2 = make(chan common.ThreadResponse, 10)
+	core.C3 = make(chan common.ThreadRequest, 10)
+	core.C4 = make(chan common.ThreadResponse, 10)
+	core.C5 = make(chan common.ThreadRequest, 10)
+	core.C6 = make(chan common.ThreadResponse, 10)
+	core.C7 = make(chan common.ThreadRequest, 10)
+	core.C8 = make(chan common.ThreadResponse, 10)
+	core.C9 = make(chan common.ThreadRequest, 10)
+	core.C10 = make(chan common.ThreadResponse, 10)
+	core.C11 = make(chan common.ThreadRequest, 10)
+	core.C12 = make(chan common.ThreadResponse, 10)
+	core.C13 = make(chan common.ThreadRequest, 10)
+	core.C14 = make(chan common.ThreadResponse, 10)
+	core.C15 = make(chan common.ThreadRequest, 10)
+	core.C16 = make(chan common.ThreadResponse, 10)
+	core.C17 = make(chan common.ThreadRequest, 10)
+	core.C18 = make(chan common.ThreadRequest, 10)
+	core.C19 = make(chan common.ThreadResponse, 10)
+	core.C20 = make(chan common.ThreadRequest, 10)
+	core.C21 = make(chan common.ThreadResponse, 10)
+	core.C22 = make(chan common.ThreadRequest, 10)
+	core.C23 = make(chan common.ThreadResponse, 10)
+	core.C24 = make(chan common.ThreadRequest, 10)
+	core.C25 = make(chan common.ThreadResponse, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)

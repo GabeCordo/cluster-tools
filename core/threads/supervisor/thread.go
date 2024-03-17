@@ -4,8 +4,6 @@ import (
 	"errors"
 	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"
-	"github.com/GabeCordo/toolchain/multithreaded"
-	"math/rand"
 )
 
 func (thread *Thread) Setup() {
@@ -40,7 +38,7 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) respond(dst common.Module, response *common.SupervisorResponse) error {
+func (thread *Thread) respond(dst common.Module, response *common.ThreadResponse) error {
 	switch dst {
 	case common.Processor:
 		thread.C14 <- *response
@@ -51,63 +49,60 @@ func (thread *Thread) respond(dst common.Module, response *common.SupervisorResp
 	return nil
 }
 
-func (thread *Thread) processRequest(request *common.SupervisorRequest) {
+func (thread *Thread) processRequest(request *common.ThreadRequest) {
 
-	response := &common.SupervisorResponse{Nonce: request.Nonce, Error: nil}
+	response := &common.ThreadResponse{Nonce: request.Nonce, Error: nil}
 
 	switch request.Action {
-	case common.SupervisorPing:
-		response.Error = thread.ping()
-	case common.SupervisorGet:
-		f := &supervisor.Filter{
-			Module:  request.Identifiers.Module,
-			Cluster: request.Identifiers.Cluster,
-			Id:      request.Identifiers.Supervisor,
+	case common.GetAction:
+		switch request.Type {
+		case common.SupervisorRecord:
+			f := &supervisor.Filter{
+				Module:  request.Identifiers.Module,
+				Cluster: request.Identifiers.Cluster,
+				Id:      request.Identifiers.Supervisor,
+			}
+			response.Data, response.Error = thread.getSupervisor(f)
+		default:
+			response.Error = common.BadRequestType
 		}
-		response.Data, response.Error = thread.getSupervisor(f)
-	case common.SupervisorCreate:
-		metadata, success := (request.Data).(map[string]string)
-		if !success {
-			response.Error = errors.New("SupervisorCreate expected a map[string]string data type")
-		} else {
-			response.Data, response.Error = thread.createSupervisor(
-				request.Identifiers.Processor, request.Identifiers.Module,
-				request.Identifiers.Config, request.Identifiers.Config,
-				metadata)
+	case common.CreateAction:
+		switch request.Type {
+		case common.SupervisorRecord:
+			metadata, success := (request.Data).(map[string]string)
+			if !success {
+				response.Error = errors.New("SupervisorCreate expected a map[string]string data type")
+			} else {
+				response.Data, response.Error = thread.createSupervisor(
+					request.Identifiers.Processor, request.Identifiers.Module,
+					request.Identifiers.Config, request.Identifiers.Config,
+					metadata)
+			}
+		default:
+			response.Error = common.BadRequestType
 		}
-	case common.SupervisorUpdate:
-		s := (request.Data).(*supervisor.Supervisor)
-		response.Error = thread.updateSupervisor(s)
-	case common.SupervisorLog:
-		log := (request.Data).(*supervisor.Log)
-		response.Error = thread.logSupervisor(log)
+	case common.UpdateAction:
+		switch request.Type {
+		case common.SupervisorRecord:
+			s := (request.Data).(*supervisor.Supervisor)
+			response.Error = thread.updateSupervisor(s)
+		default:
+			response.Error = common.BadRequestType
+		}
+	case common.LogAction:
+		switch request.Type {
+		case common.SupervisorRecord:
+			log := (request.Data).(*supervisor.Log)
+			response.Error = thread.logSupervisor(log)
+		default:
+			response.Error = common.BadRequestType
+		}
 	default:
 		response.Error = common.BadRequestType
 	}
 
 	response.Success = response.Error == nil
 	thread.respond(request.Source, response)
-}
-
-func (thread *Thread) ping() error {
-
-	thread.Logger.Println("received ping over C13")
-
-	// TEST DATABASE CHANNELS
-
-	request := common.DatabaseRequest{
-		Action: common.DatabaseLowerPing,
-		Nonce:  rand.Uint32(),
-	}
-	thread.C15 <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(thread.DatabaseResponseTable, request.Nonce, thread.config.Timeout)
-	if didTimeout {
-		return multithreaded.NoResponseReceived
-	}
-
-	response := (rsp).(common.DatabaseResponse)
-	return response.Error
 }
 
 func (thread *Thread) Teardown() {

@@ -21,13 +21,13 @@ type Config struct {
 type Thread struct {
 	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C3 <-chan common.MessengerRequest  // Messenger is receiving threads form the Database
-	C4 chan<- common.MessengerResponse // Messenger is sending responses to the Database
+	C3 <-chan common.ThreadRequest  // Messenger is receiving threads form the Database
+	C4 chan<- common.ThreadResponse // Messenger is sending responses to the Database
 
-	C17 <-chan common.MessengerRequest // Messenger is receiving requests from the Provisioner
+	C17 <-chan common.ThreadRequest // Messenger is receiving requests from the Provisioner
 
-	C22 <-chan common.MessengerRequest  // Messenger is receiving requests from the HTTP Client
-	C23 chan<- common.MessengerResponse // Messenger is sending responses to the HTTP Client
+	C22 <-chan common.ThreadRequest  // Messenger is receiving requests from the HTTP Client
+	C23 chan<- common.ThreadResponse // Messenger is sending responses to the HTTP Client
 
 	config *Config
 	logger *logging.Logger
@@ -49,23 +49,23 @@ func New(cfg *Config, logger *logging.Logger, channels ...interface{}) (*Thread,
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	thread.C3, ok = (channels[1]).(chan common.MessengerRequest)
+	thread.C3, ok = (channels[1]).(chan common.ThreadRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 1")
 	}
-	thread.C4, ok = (channels[2]).(chan common.MessengerResponse)
+	thread.C4, ok = (channels[2]).(chan common.ThreadResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 2")
 	}
-	thread.C17, ok = (channels[3]).(chan common.MessengerRequest)
+	thread.C17, ok = (channels[3]).(chan common.ThreadRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 3")
 	}
-	thread.C22, ok = (channels[4]).(chan common.MessengerRequest)
+	thread.C22, ok = (channels[4]).(chan common.ThreadRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 4")
 	}
-	thread.C23, ok = (channels[5]).(chan common.MessengerResponse)
+	thread.C23, ok = (channels[5]).(chan common.ThreadResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 5")
 	}

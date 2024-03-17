@@ -50,17 +50,17 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) Respond(response *common.CacheResponse) {
+func (thread *Thread) Respond(response *common.ThreadResponse) {
 
 	thread.C10 <- *response
 }
 
-func (thread *Thread) ProcessIncomingRequest(request *common.CacheRequest) {
-	if request.Action == common.CacheSaveIn {
+func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
+	if request.Action == common.CreateAction {
 		thread.processSaveRequest(request)
-	} else if request.Action == common.CacheLoadFrom {
+	} else if request.Action == common.GetAction {
 		thread.processLoadRequest(request)
-	} else if request.Action == common.CacheLowerPing {
+	} else if request.Action == common.PingAction {
 		thread.processPingCache(request)
 	}
 

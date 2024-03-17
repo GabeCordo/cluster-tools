@@ -36,7 +36,13 @@ func (thread *Thread) postProcessorCallback(w http.ResponseWriter, r *http.Reque
 	}
 
 	cfg := &interfaces.ProcessorConfig{Host: request.Host, Port: request.Port}
-	success, err := common.AddProcessor(thread.C7, thread.ProcessorResponseTable, cfg, thread.config.Timeout)
+	success, err := common.AddProcessor(
+		common.ThreadMandatory{
+			thread.C7,
+			thread.ProcessorResponseTable,
+			thread.config.Timeout},
+		cfg,
+	)
 
 	if errors.Is(err, processor.AlreadyExists) {
 		w.WriteHeader(http.StatusConflict)
@@ -76,7 +82,14 @@ func (thread *Thread) deleteProcessorCallback(w http.ResponseWriter, r *http.Req
 	}
 
 	cfg := &interfaces.ProcessorConfig{Host: hostName[0], Port: port}
-	err = common.DeleteProcessor(thread.C7, thread.ProcessorResponseTable, cfg, thread.config.Timeout)
+	err = common.DeleteProcessor(
+		common.ThreadMandatory{
+			thread.C7,
+			thread.ProcessorResponseTable,
+			thread.config.Timeout,
+		},
+		cfg,
+	)
 
 	response := interfaces.HTTPResponse{Success: err == nil}
 
@@ -117,7 +130,15 @@ func (thread *Thread) postModuleCallback(w http.ResponseWriter, r *http.Request)
 	}
 
 	processorName := fmt.Sprintf("%s:%d", request.Host, request.Port)
-	success, err := common.AddModule(thread.C7, thread.ProcessorResponseTable, processorName, &request.Module.Config, thread.config.Timeout)
+	success, err := common.AddModule(
+		common.ThreadMandatory{
+			thread.C7,
+			thread.ProcessorResponseTable,
+			thread.config.Timeout,
+		},
+		processorName,
+		&request.Module.Config,
+	)
 
 	response := interfaces.HTTPResponse{Success: success}
 
@@ -167,7 +188,16 @@ func (thread *Thread) deleteModuleCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err = common.DeleteModule(thread.C7, thread.ProcessorResponseTable, hostName[0], port, moduleName[0], thread.config.Timeout)
+	_, err = common.DeleteModule(
+		common.ThreadMandatory{
+			thread.C7,
+			thread.ProcessorResponseTable,
+			thread.config.Timeout,
+		},
+		hostName[0],
+		port,
+		moduleName[0],
+	)
 
 	response := interfaces.HTTPResponse{Success: err == nil}
 
@@ -211,7 +241,14 @@ func (thread *Thread) getCacheCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, found := common.FetchFromCache(thread.C9, thread.CacheResponseTable, key[0], thread.config.Timeout)
+	value, found := common.FetchFromCache(
+		common.ThreadMandatory{
+			thread.C9,
+			thread.CacheResponseTable,
+			thread.config.Timeout,
+		},
+		key[0],
+	)
 
 	response := interfaces.HTTPResponse{Success: found}
 
@@ -241,7 +278,15 @@ func (thread *Thread) postCacheCallback(w http.ResponseWriter, r *http.Request) 
 		expiry = request.Expiry
 	}
 
-	identifier, success := common.StoreInCache(thread.C9, thread.CacheResponseTable, request.Value, expiry, thread.config.Timeout)
+	identifier, success := common.StoreInCache(
+		common.ThreadMandatory{
+			thread.C9,
+			thread.CacheResponseTable,
+			thread.config.Timeout,
+		},
+		request.Value,
+		expiry,
+	)
 
 	response := interfaces.HTTPResponse{Success: success, Data: identifier}
 	b, _ := json.Marshal(response)
@@ -253,7 +298,15 @@ func (thread *Thread) putCacheCallback(w http.ResponseWriter, r *http.Request) {
 	request := &CacheBody{}
 	json.NewDecoder(r.Body).Decode(request)
 
-	success := common.SwapInCache(thread.C9, thread.CacheResponseTable, request.Key, request.Value, thread.config.Timeout)
+	success := common.SwapInCache(
+		common.ThreadMandatory{
+			thread.C9,
+			thread.CacheResponseTable,
+			thread.config.Timeout,
+		},
+		request.Key,
+		request.Value,
+	)
 
 	response := interfaces.HTTPResponse{Success: success}
 
@@ -287,7 +340,14 @@ func (thread *Thread) postLogCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = common.Log(thread.C7, thread.ProcessorResponseTable, thread.config.Timeout, log)
+	err = common.Log(
+		common.ThreadMandatory{
+			thread.C7,
+			thread.ProcessorResponseTable,
+			thread.config.Timeout,
+		},
+		log,
+	)
 
 	response := interfaces.HTTPResponse{Success: err == nil}
 
@@ -320,7 +380,14 @@ func (thread *Thread) putSupervisorCallback(w http.ResponseWriter, r *http.Reque
 	}
 
 	response := &interfaces.HTTPResponse{}
-	err = common.UpdateSupervisor(thread.C7, thread.ProcessorResponseTable, thread.config.Timeout, instance)
+	err = common.UpdateSupervisor(
+		common.ThreadMandatory{
+			thread.C7,
+			thread.ProcessorResponseTable,
+			thread.config.Timeout,
+		},
+		instance,
+	)
 
 	response.Success = err == nil
 	if err != nil {
