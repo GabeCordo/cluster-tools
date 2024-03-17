@@ -31,11 +31,23 @@ type Thread struct {
 	C5 chan<- common.ProcessorRequest  // Core is sending threads to the Database
 	C6 <-chan common.ProcessorResponse // Core is receiving responses from the Database
 
+	C20 chan<- common.SchedulerRequest
+	C21 <-chan common.SchedulerResponse
+
+	C22 chan<- common.MessengerRequest
+	C23 <-chan common.MessengerResponse
+
+	C24 chan<- common.CacheRequest
+	C25 <-chan common.CacheResponse
+
 	databaseResponses   map[uint32]common.DatabaseResponse
 	supervisorResponses map[uint32]common.SupervisorResponse
 
 	ProcessorResponseTable *multithreaded.ResponseTable
 	DatabaseResponseTable  *multithreaded.ResponseTable
+	SchedulerResponseTable *multithreaded.ResponseTable
+	MessengerResponseTable *multithreaded.ResponseTable
+	CacheResponseTable     *multithreaded.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
@@ -80,12 +92,39 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 4")
 	}
+	thread.C20, ok = (channels[5]).(chan common.SchedulerRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan ProcessorRequest' in index 5")
+	}
+	thread.C21, ok = (channels[6]).(chan common.SchedulerResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan ProcessorResponse' in index 6")
+	}
+	thread.C22, ok = (channels[7]).(chan common.MessengerRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan MessengerRequest' in index 7")
+	}
+	thread.C23, ok = (channels[8]).(chan common.MessengerResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan MessengerResponse' in index 8")
+	}
+	thread.C24, ok = (channels[9]).(chan common.CacheRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan CacheRequest' in index 9")
+	}
+	thread.C25, ok = (channels[10]).(chan common.CacheResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan CacheResponse' in index 10")
+	}
 
 	thread.databaseResponses = make(map[uint32]common.DatabaseResponse)
 	thread.supervisorResponses = make(map[uint32]common.SupervisorResponse)
 
 	thread.ProcessorResponseTable = multithreaded.NewResponseTable()
 	thread.DatabaseResponseTable = multithreaded.NewResponseTable()
+	thread.SchedulerResponseTable = multithreaded.NewResponseTable()
+	thread.MessengerResponseTable = multithreaded.NewResponseTable()
+	thread.CacheResponseTable = multithreaded.NewResponseTable()
 
 	thread.server = new(http.Server)
 

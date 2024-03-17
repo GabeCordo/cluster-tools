@@ -9,7 +9,7 @@ import (
 	"math/rand"
 )
 
-func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Supervisor, error) {
+func (thread *Thread) getSupervisor(r *common.ProcessorRequest) ([]*supervisor.Supervisor, error) {
 
 	// processor -> all supervisor ids on the processor
 	//	-	id
@@ -39,7 +39,7 @@ func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Sup
 
 	response := (rsp).(common.SupervisorResponse)
 
-	return (response.Data).(*supervisor.Supervisor), nil
+	return (response.Data).([]*supervisor.Supervisor), nil
 }
 
 func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, error) {

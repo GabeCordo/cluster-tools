@@ -1,6 +1,9 @@
 package scheduler
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // Interval
 // Contains information about how often a job should be run.
@@ -15,13 +18,14 @@ type Interval struct {
 // Contains information about how often a module/cluster pair should
 // and what config should be used during that scheduled interval.
 type Job struct {
-	Identifier string            `yaml:"identifier"`
-	Module     string            `yaml:"module"`
-	Cluster    string            `yaml:"cluster"`
-	Config     string            `yaml:"config"`
-	Interval   Interval          `yaml:"interval"`
-	Metadata   map[string]string `yaml:"metadata"`
-	running    bool
+	Identifier       string            `yaml:"identifier"`
+	Module           string            `yaml:"module"`
+	Cluster          string            `yaml:"cluster"`
+	Config           string            `yaml:"config"`
+	Interval         Interval          `yaml:"interval"`
+	Metadata         map[string]string `yaml:"metadata"`
+	lastAttemptedRun time.Time         `yaml:"lastAttemptedRun"`
+	running          bool
 }
 
 // Dump
@@ -29,6 +33,15 @@ type Job struct {
 type Dump struct {
 	Config Config `yaml:"config"`
 	Jobs   []Job  `yaml:"jobs"`
+}
+
+// Filter
+// A struct containing the ways one can filter out jobs upon search
+type Filter struct {
+	Identifier string
+	Module     string
+	Cluster    string
+	Interval   Interval
 }
 
 // Config
@@ -58,9 +71,9 @@ func New() (*Scheduler, error) {
 	return scheduler, nil
 }
 
-func (scheduler Scheduler) ItemsInQueue() int {
+func (scheduler *Scheduler) ItemsInQueue() int {
 	scheduler.mutex.RLock()
 	defer scheduler.mutex.RUnlock()
-	
+
 	return len(scheduler.queue)
 }

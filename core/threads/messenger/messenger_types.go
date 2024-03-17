@@ -2,33 +2,32 @@ package messenger
 
 import (
 	"errors"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"github.com/GabeCordo/toolchain/logging"
 	"sync"
 )
 
 type Config struct {
-	Debug         bool
-	EnableLogging bool
-	LoggingDir    string
-	SmtpEndpoint  struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
-	} `yaml:"endpoint"`
-	SmtpCredentials struct {
-		Email    string `yaml:"email"`
-		Password string `yaml:"password"`
-	} `yaml:"credentials"`
-	SmtpSubscribers map[string][]string `yaml:"subscribers"`
-	EnableSmtp      bool                `yaml:"enable-smtp"`
+	Debug           bool
+	EnableLogging   bool
+	LoggingDir      string
+	SmtpEndpoint    interfaces.SmtpEndpoint    `yaml:"endpoint"`
+	SmtpCredentials interfaces.SmtpCredentials `yaml:"credentials"`
+	SmtpSubscribers map[string][]string        `yaml:"subscribers"`
+	EnableSmtp      bool                       `yaml:"enable-smtp"`
 }
 
 type Thread struct {
 	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C3  <-chan common.MessengerRequest  // Messenger is receiving threads form the Database
-	C4  chan<- common.MessengerResponse // Messenger is sending responses to the Database
-	C17 <-chan common.MessengerRequest  // Messenger is receiving requests from the Provisioner
+	C3 <-chan common.MessengerRequest  // Messenger is receiving threads form the Database
+	C4 chan<- common.MessengerResponse // Messenger is sending responses to the Database
+
+	C17 <-chan common.MessengerRequest // Messenger is receiving requests from the Provisioner
+
+	C22 <-chan common.MessengerRequest  // Messenger is receiving requests from the HTTP Client
+	C23 chan<- common.MessengerResponse // Messenger is sending responses to the HTTP Client
 
 	config *Config
 	logger *logging.Logger
@@ -60,7 +59,15 @@ func New(cfg *Config, logger *logging.Logger, channels ...interface{}) (*Thread,
 	}
 	thread.C17, ok = (channels[3]).(chan common.MessengerRequest)
 	if !ok {
-		return nil, errors.New("expected type 'chan MesengerRequest' in index 3")
+		return nil, errors.New("expected type 'chan MessengerRequest' in index 3")
+	}
+	thread.C22, ok = (channels[4]).(chan common.MessengerRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan MessengerRequest' in index 4")
+	}
+	thread.C23, ok = (channels[5]).(chan common.MessengerResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan MessengerResponse' in index 5")
 	}
 
 	if logger == nil {

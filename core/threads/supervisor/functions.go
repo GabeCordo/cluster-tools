@@ -10,13 +10,13 @@ import (
 	"math/rand"
 )
 
-func (thread *Thread) getSupervisor(id uint64) (*supervisor.Supervisor, error) {
+func (thread *Thread) getSupervisor(filter *supervisor.Filter) ([]*supervisor.Supervisor, error) {
 
-	instance, found := GetRegistryInstance().Get(id)
-	if !found {
-		return nil, errors.New("supervisor does not exist")
+	if filter == nil {
+		return nil, errors.New("given nil pointer filter")
 	}
-	return instance, nil
+	instances := GetRegistryInstance().GetBy(filter)
+	return instances, nil
 }
 
 func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string, metadata map[string]string) (uint64, error) {

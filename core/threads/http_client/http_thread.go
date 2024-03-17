@@ -37,6 +37,14 @@ func (thread *Thread) Setup() {
 		thread.configCallback(w, r)
 	})
 
+	mux.HandleFunc("/job", func(w http.ResponseWriter, r *http.Request) {
+		thread.jobCallback(w, r)
+	})
+
+	mux.HandleFunc("/job/queue", func(w http.ResponseWriter, r *http.Request) {
+		thread.jobQueueCallback(w, r)
+	})
+
 	// TODO - explore this more, fucking cool - removed for now
 	if thread.config.Debug {
 		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) { thread.debugCallback(w, r) })
@@ -87,57 +95,34 @@ func (thread *Thread) Start() {
 		}
 	}()
 
+	go func() {
+		for schedulerResponse := range thread.C21 {
+			if !thread.accepting {
+				break
+			}
+			thread.SchedulerResponseTable.Write(schedulerResponse.Nonce, schedulerResponse)
+		}
+	}()
+
+	go func() {
+		for messengerResponse := range thread.C23 {
+			if !thread.accepting {
+				break
+			}
+			thread.MessengerResponseTable.Write(messengerResponse.Nonce, messengerResponse)
+		}
+	}()
+
+	go func() {
+		for cacheResponse := range thread.C25 {
+			if !thread.accepting {
+				break
+			}
+			thread.SchedulerResponseTable.Write(cacheResponse.Nonce, cacheResponse)
+		}
+	}()
+
 	thread.wg.Wait()
-}
-
-func (thread *Thread) Receive(module common.Module, nonce uint32, timeout ...float64) (any, bool) {
-	startTime := time.Now()
-	flag := false
-
-	var response any
-	for {
-		if (len(timeout) > 0) && (time.Now().Sub(startTime).Minutes() > timeout[0]) {
-			break
-		}
-
-		if module == common.Processor {
-			if value, found := thread.supervisorResponses[nonce]; found {
-				response = value
-				flag = true
-				break
-			}
-		} else if module == common.Database {
-			if value, found := thread.databaseResponses[nonce]; found {
-				response = value
-				flag = true
-				break
-			}
-		}
-
-		// TODO - remove this code
-		time.Sleep(2 * time.Millisecond)
-	}
-
-	return response, flag
-}
-
-func (thread *Thread) Send(module common.Module, request any) (any, bool) {
-	thread.mutex.Lock()
-	thread.counter++
-
-	nonce := thread.counter // make a copy of the current counter
-	if module == common.Processor {
-		req := (request).(common.ProcessorRequest)
-		req.Nonce = nonce
-		thread.C5 <- req
-	} else if module == common.Database {
-		req := (request).(common.DatabaseRequest)
-		req.Nonce = nonce
-		thread.C1 <- req
-	}
-
-	thread.mutex.Unlock()
-	return thread.Receive(module, nonce, thread.config.Timeout)
 }
 
 func (thread *Thread) Teardown() {

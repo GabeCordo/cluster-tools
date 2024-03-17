@@ -59,7 +59,12 @@ func (thread *Thread) processRequest(request *common.SupervisorRequest) {
 	case common.SupervisorPing:
 		response.Error = thread.ping()
 	case common.SupervisorGet:
-		response.Data, response.Error = thread.getSupervisor(request.Identifiers.Supervisor)
+		f := &supervisor.Filter{
+			Module:  request.Identifiers.Module,
+			Cluster: request.Identifiers.Cluster,
+			Id:      request.Identifiers.Supervisor,
+		}
+		response.Data, response.Error = thread.getSupervisor(f)
 	case common.SupervisorCreate:
 		metadata, success := (request.Data).(map[string]string)
 		if !success {

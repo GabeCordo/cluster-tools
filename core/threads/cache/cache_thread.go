@@ -25,6 +25,19 @@ func (thread *Thread) Start() {
 	}()
 
 	go func() {
+		// request from http_server
+		for request := range thread.C24 {
+			if !thread.accepting {
+				break
+			}
+			thread.wg.Add(1)
+
+			request.Source = common.HttpClient
+			thread.ProcessIncomingRequest(&request)
+		}
+	}()
+
+	go func() {
 		// cleaning the thread of expired records
 		for thread.accepting {
 			time.Sleep(1 * time.Minute)

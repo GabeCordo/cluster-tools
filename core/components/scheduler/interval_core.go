@@ -19,6 +19,23 @@ func FormatToCrontab(value int) string {
 	return DefaultPlaceholder + postfix + " "
 }
 
+func (interval Interval) Empty() bool {
+
+	return (interval.Month == 0) && (interval.Day == 0) && (interval.Hour == 0) && (interval.Minute == 0)
+}
+
+func (interval Interval) Equals(other *Interval) bool {
+
+	if other == nil {
+		return false
+	}
+
+	return interval.Hour == other.Hour &&
+		interval.Day == other.Day &&
+		interval.Month == other.Month &&
+		interval.Minute == other.Minute
+}
+
 func (interval Interval) ToString() string {
 
 	var sb strings.Builder

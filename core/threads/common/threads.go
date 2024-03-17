@@ -1,11 +1,30 @@
 package common
 
+type RequestAction uint16
+
+type RequestType uint16
+
 type RequestIdentifiers struct {
 	Processor  string
 	Module     string
 	Cluster    string
 	Config     string
 	Supervisor uint64
+}
+
+type TheadRequest struct {
+	Action      RequestAction
+	Type        RequestType
+	Identifiers RequestIdentifiers
+	Data        any
+	Nonce       uint32
+}
+
+type ThreadResponse struct {
+	Success bool
+	Error   error
+	Data    any
+	Nonce   uint32
 }
 
 type SupervisorAction uint8
@@ -154,6 +173,9 @@ const (
 	MessengerFatal
 	MessengerClose
 	MessengerUpperPing
+	MessengerGetSubscribers
+	MessengerGetSmtp
+	MessengerToggleSmtp
 )
 
 type MessengerRequest struct {
@@ -165,11 +187,45 @@ type MessengerRequest struct {
 	Message    string   `json:"message"`
 	Parameters []string `json:"parameters"`
 
+	Data any `json:"data"`
+
 	Source Module `json:"source"`
 	Nonce  uint32 `json:"nonce"`
 }
 
 type MessengerResponse struct {
-	Nonce   uint32 `json:"Nonce"`
 	Success bool   `json:"Success"`
+	Error   error  `json:"Error"`
+	Data    any    `json:"Data"`
+	Nonce   uint32 `json:"Nonce"`
+}
+
+type SchedulerAction uint8
+
+const (
+	SchedulerGet SchedulerAction = iota
+	SchedulerCreate
+	SchedulerDelete
+)
+
+type SchedulerType uint8
+
+const (
+	SchedulerJob SchedulerType = iota
+	SchedulerQueue
+)
+
+type SchedulerRequest struct {
+	Action      SchedulerAction
+	Type        SchedulerType
+	Identifiers RequestIdentifiers
+	Data        any
+	Nonce       uint32
+}
+
+type SchedulerResponse struct {
+	Success bool
+	Error   error
+	Data    any
+	Nonce   uint32
 }

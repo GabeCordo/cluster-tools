@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/scheduler"
+	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
 	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/core/threads/common"
 	"net/http"
@@ -207,21 +209,37 @@ func (thread *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Reque
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	idStr, idFound := urlMapping["id"]
-	if !idFound {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	module := ""
+	if moduleStr, found := urlMapping["module"]; found {
+		module = moduleStr[0]
 	}
 
-	id, err := strconv.ParseUint(idStr[0], 10, 64)
-	if err != nil {
+	cluster := ""
+	if clusterStr, found := urlMapping["cluster"]; found {
+		cluster = clusterStr[0]
+	}
+
+	var id uint64
+	if idStr, found := urlMapping["id"]; found {
+		if tmp, err := strconv.ParseUint(idStr[0], 10, 64); err == nil {
+			id = tmp
+		} else {
+			id = 0
+		}
+	} else {
+		id = 0
+	}
+
+	if (module == "") && (cluster == "") && (id == 0) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	response := &interfaces.HTTPResponse{Success: true}
 
-	instance, err := common.GetSupervisor(thread.C5, thread.ProcessorResponseTable, thread.config.Timeout, id)
+	instance, err := common.GetSupervisor(
+		thread.C5, thread.ProcessorResponseTable, thread.config.Timeout,
+		supervisor.Filter{Module: module, Cluster: cluster, Id: id})
 	if err != nil {
 		response.Success = false
 		response.Description = err.Error()
@@ -427,4 +445,166 @@ func (thread *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) 
 	response.Success = err == nil
 	b, _ := json.Marshal(response)
 	w.Write(b)
+}
+
+func (thread *Thread) jobCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodGet {
+		thread.getJobCallback(w, r)
+	} else if r.Method == http.MethodPost {
+		thread.postJobCallback(w, r)
+	} else if r.Method == http.MethodDelete {
+		thread.deleteJobCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	identifier := ""
+	if tmp, found := urlMapping["id"]; found {
+		identifier = tmp[0]
+	}
+	module := ""
+	if tmp, found := urlMapping["module"]; found {
+		module = tmp[0]
+	}
+	cluster := ""
+	if tmp, found := urlMapping["cluster"]; found {
+		cluster = tmp[0]
+	}
+	minutes := 0
+	if tmp, found := urlMapping["minutes"]; found {
+		if i, err := strconv.Atoi(tmp[0]); err != nil {
+			minutes = i
+		}
+	}
+
+	filter := &scheduler.Filter{
+		Identifier: identifier,
+		Module:     module,
+		Cluster:    cluster,
+		Interval: scheduler.Interval{
+			Minute: minutes,
+		}}
+
+	var err error
+
+	response := interfaces.HTTPResponse{}
+	response.Data, err = common.GetJobs(thread.C20, thread.SchedulerResponseTable, thread.config.Timeout, filter)
+
+	response.Success = err == nil
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	if b, err := json.Marshal(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.Write(b)
+	}
+}
+
+func (thread *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
+
+	var job scheduler.Job
+	err := json.NewDecoder(r.Body).Decode(&job)
+	if err != nil {
+		fmt.Println("missing job passed to body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	response := interfaces.HTTPResponse{}
+	if err := common.CreateJob(thread.C20, thread.SchedulerResponseTable, thread.config.Timeout, &job); err != nil {
+		response.Success = false
+		response.Data = err.Error()
+	} else {
+		response.Success = true
+	}
+
+	if b, err := json.Marshal(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.Write(b)
+	}
+}
+
+func (thread *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	identifier := ""
+	if tmp, found := urlMapping["id"]; found {
+		identifier = tmp[0]
+	}
+	module := ""
+	if tmp, found := urlMapping["module"]; found {
+		module = tmp[0]
+	}
+	cluster := ""
+	if tmp, found := urlMapping["cluster"]; found {
+		cluster = tmp[0]
+	}
+	minutes := 0
+	if tmp, found := urlMapping["minutes"]; found {
+		if i, err := strconv.Atoi(tmp[0]); err != nil {
+			minutes = i
+		}
+	}
+
+	filter := &scheduler.Filter{
+		Identifier: identifier,
+		Module:     module,
+		Cluster:    cluster,
+		Interval: scheduler.Interval{
+			Minute: minutes,
+		}}
+
+	var err error
+
+	response := interfaces.HTTPResponse{}
+	response.Data, err = common.GetJobs(thread.C20, thread.SchedulerResponseTable, thread.config.Timeout, filter)
+
+	response.Success = err == nil
+	if err != nil {
+		response.Description = err.Error()
+	}
+
+	if b, err := json.Marshal(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.Write(b)
+	}
+}
+
+func (thread *Thread) jobQueueCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodGet {
+		thread.getJobQueueCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
+
+	response := interfaces.HTTPResponse{}
+
+	var err error
+	response.Data, err = common.JobQueue(thread.C20, thread.SchedulerResponseTable, thread.config.Timeout)
+
+	if err != nil {
+		response.Description = err.Error()
+	}
+	response.Success = err == nil
+
+	if b, err := json.Marshal(response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.Write(b)
+	}
 }

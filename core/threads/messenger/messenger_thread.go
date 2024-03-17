@@ -39,6 +39,19 @@ func (thread *Thread) Start() {
 		}
 	}()
 
+	go func() {
+		// request coming from supervisor
+		for request := range thread.C22 {
+			if !thread.accepting {
+				break
+			}
+			thread.wg.Add(1)
+
+			request.Source = common.HttpClient
+			thread.ProcessIncomingRequest(&request)
+		}
+	}()
+
 	thread.wg.Wait()
 }
 
@@ -49,6 +62,8 @@ func (thread *Thread) Respond(module common.Module, response any) (success bool)
 	switch module {
 	case common.Database:
 		thread.C4 <- *(response).(*common.MessengerResponse)
+	case common.HttpClient:
+		thread.C23 <- *(response).(*common.MessengerResponse)
 	default:
 		success = false
 	}

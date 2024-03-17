@@ -79,6 +79,12 @@ type Core struct {
 	C17       chan common.MessengerRequest
 	C18       chan common.ProcessorRequest
 	C19       chan common.ProcessorResponse
+	C20       chan common.SchedulerRequest
+	C21       chan common.SchedulerResponse
+	C22       chan common.MessengerRequest
+	C23       chan common.MessengerResponse
+	C24       chan common.CacheRequest
+	C25       chan common.CacheResponse
 	interrupt chan common.InterruptEvent
 
 	config *Config
@@ -108,6 +114,12 @@ func New(configPath string) (*Core, error) {
 	core.C17 = make(chan common.MessengerRequest, 10)
 	core.C18 = make(chan common.ProcessorRequest, 10)
 	core.C19 = make(chan common.ProcessorResponse, 10)
+	core.C20 = make(chan common.SchedulerRequest, 10)
+	core.C21 = make(chan common.SchedulerResponse, 10)
+	core.C22 = make(chan common.MessengerRequest, 10)
+	core.C23 = make(chan common.MessengerResponse, 10)
+	core.C24 = make(chan common.CacheRequest, 10)
+	core.C25 = make(chan common.CacheResponse, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)
@@ -119,7 +131,7 @@ func New(configPath string) (*Core, error) {
 	httpConfig := &http_client.Config{}
 	core.config.FillHttpClientConfig(httpConfig)
 	core.HttpClientThread, err = http_client.New(httpConfig, httpLogger,
-		core.interrupt, core.C1, core.C2, core.C5, core.C6)
+		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23, core.C24, core.C25)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +179,7 @@ func New(configPath string) (*Core, error) {
 	messengerConfig := &messenger.Config{}
 	core.config.FillMessengerConfig(messengerConfig)
 	core.MessengerThread, err = messenger.New(messengerConfig, messengerLogger,
-		core.interrupt, core.C3, core.C4, core.C17)
+		core.interrupt, core.C3, core.C4, core.C17, core.C22, core.C23)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +204,7 @@ func New(configPath string) (*Core, error) {
 	cacheConfig := &cache.Config{}
 	core.config.FillCacheConfig(cacheConfig)
 	core.CacheThread, err = cache.New(cacheConfig, cacheLogger,
-		core.interrupt, core.C9, core.C10)
+		core.interrupt, core.C9, core.C10, core.C24, core.C25)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +215,7 @@ func New(configPath string) (*Core, error) {
 	}
 	schedulerConig := &scheduler.Config{}
 	core.config.FillSchedulerConfig(schedulerConig)
-	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, core.interrupt, core.C18, core.C19)
+	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, core.interrupt, core.C18, core.C19, core.C20, core.C21)
 	if err != nil {
 		return nil, err
 	}

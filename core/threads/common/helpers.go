@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/core/components/database"
 	"github.com/GabeCordo/cluster-tools/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/core/components/scheduler"
 	"github.com/GabeCordo/cluster-tools/core/components/supervisor"
 	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -294,12 +295,16 @@ func CreateSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded
 }
 
 func GetSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, timeout float64,
-	id uint64) (*supervisor.Supervisor, error) {
+	filter supervisor.Filter) ([]*supervisor.Supervisor, error) {
 
 	request := ProcessorRequest{
-		Action:      ProcessorSupervisorGet,
-		Identifiers: RequestIdentifiers{Supervisor: id},
-		Nonce:       rand.Uint32(),
+		Action: ProcessorSupervisorGet,
+		Identifiers: RequestIdentifiers{
+			Module:     filter.Module,
+			Cluster:    filter.Cluster,
+			Supervisor: filter.Id,
+		},
+		Nonce: rand.Uint32(),
 	}
 	pipe <- request
 
@@ -314,7 +319,7 @@ func GetSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded.Re
 		return nil, response.Error
 	}
 
-	return (response.Data).(*supervisor.Supervisor), nil
+	return (response.Data).([]*supervisor.Supervisor), nil
 }
 
 func UpdateSupervisor(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTable, timeout float64,
@@ -654,4 +659,106 @@ func Log(pipe chan<- ProcessorRequest, responseTable *multithreaded.ResponseTabl
 	response := (rsp).(ProcessorResponse)
 	return response.Error
 	//return nil
+}
+
+func GetJobs(pipe chan<- SchedulerRequest, responseTable *multithreaded.ResponseTable, timeout float64,
+	filter *scheduler.Filter) ([]scheduler.Job, error) {
+
+	request := SchedulerRequest{
+		Action: SchedulerGet,
+		Data:   *filter,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return nil, multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(SchedulerResponse)
+
+	return (response.Data).([]scheduler.Job), nil
+}
+
+func CreateJob(pipe chan<- SchedulerRequest, responseTable *multithreaded.ResponseTable, timeout float64,
+	job *scheduler.Job) error {
+
+	request := SchedulerRequest{
+		Action: SchedulerCreate,
+		Data:   *job,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(SchedulerResponse)
+	return response.Error
+}
+
+func DeleteJob(pipe chan<- SchedulerRequest, responseTable *multithreaded.ResponseTable, timeout float64,
+	filter *scheduler.Filter) error {
+
+	request := SchedulerRequest{
+		Action: SchedulerDelete,
+		Data:   *filter,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(SchedulerResponse)
+	return response.Error
+}
+
+func JobQueue(pipe chan<- SchedulerRequest, responseTable *multithreaded.ResponseTable, timeout float64) ([]scheduler.Job, error) {
+
+	request := SchedulerRequest{
+		Action: SchedulerGet,
+		Type:   SchedulerQueue,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return nil, multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(SchedulerResponse)
+	return (response.Data).([]scheduler.Job), response.Error
+}
+
+func GetSubscribers(pipe chan<- MessengerRequest, responseTable *multithreaded.ResponseTable, timeout float64) ([]string, error) {
+
+	request := MessengerRequest{
+		Action: MessengerGetSubscribers,
+		Nonce:  rand.Uint32(),
+	}
+	pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return nil, multithreaded.NoResponseReceived
+	}
+
+	response, ok := (rsp).(MessengerResponse)
+	if !ok {
+		return nil, InternalError
+	}
+
+	subscribers, ok := (response.Data).([]string)
+	if !ok {
+		return nil, InternalError
+	}
+
+	return subscribers, response.Error
 }

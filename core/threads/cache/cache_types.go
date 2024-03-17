@@ -17,6 +17,9 @@ type Thread struct {
 	C9  <-chan common.CacheRequest
 	C10 chan<- common.CacheResponse
 
+	C24 <-chan common.CacheRequest
+	C25 chan<- common.CacheResponse
+
 	config *Config
 	logger *logging.Logger
 
@@ -44,6 +47,14 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	thread.C10, ok = (channels[2]).(chan common.CacheResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheResponse' in index 2")
+	}
+	thread.C24, ok = (channels[3]).(chan common.CacheRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan CacheRequest' in index 3")
+	}
+	thread.C25, ok = (channels[4]).(chan common.CacheResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan CacheResponse' in index 4")
 	}
 
 	if logger == nil {
