@@ -1,6 +1,7 @@
 package messenger
 
 import (
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"strings"
 	"sync"
 	"time"
@@ -102,11 +103,7 @@ type Messenger struct {
 	logging struct {
 		directory string
 	}
-	smtp struct {
-		endpoint    Endpoint
-		credentials Credentials
-		receivers   map[string][]string
-	}
+	smtp interfaces.SmtpRecord
 
 	modules map[string]*Module
 	mutex   sync.RWMutex

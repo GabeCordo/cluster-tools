@@ -55,15 +55,15 @@ func (thread *Thread) Start() {
 	thread.wg.Wait()
 }
 
-func (thread *Thread) Respond(module common.Module, response any) (success bool) {
+func (thread *Thread) Respond(request *common.ThreadRequest, response *common.ThreadResponse) (success bool) {
 
 	success = true
 
-	switch module {
+	switch request.Source {
 	case common.Database:
-		thread.C4 <- *(response).(*common.ThreadResponse)
+		thread.C4 <- *response
 	case common.HttpClient:
-		thread.C23 <- *(response).(*common.ThreadResponse)
+		thread.C23 <- *response
 	default:
 		success = false
 	}
@@ -73,13 +73,23 @@ func (thread *Thread) Respond(module common.Module, response any) (success bool)
 
 func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 
+	response := &common.ThreadResponse{Nonce: request.Nonce, Source: common.Messenger}
+
 	switch request.Action {
+	case common.GetAction:
+		switch request.Type {
+		case common.SmtpRecord:
+			response.Data = thread.getSmtpRecord()
+		default:
+			response.Error = common.BadRequestType
+		}
 	case common.CloseAction:
 		thread.ProcessCloseLogRequest(request)
 	default:
 		thread.ProcessConsoleRequest(request)
 	}
 
+	thread.Respond(request, response)
 	thread.wg.Done()
 }
 

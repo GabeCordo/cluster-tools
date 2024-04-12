@@ -1,34 +1,15 @@
 package messenger
 
 import (
-	"fmt"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 	"log"
 	"net/smtp"
 )
 
-type Credentials struct {
-	Email    string
-	Password string
-}
-
-type Endpoint struct {
-	Host string
-	Port string
-}
-
-func (endpoint Endpoint) ToUrl() string {
-	return fmt.Sprintf("%s:%s", endpoint.Host, endpoint.Port)
-}
-
-var DefaultEndpoint Endpoint = Endpoint{
-	Host: "smtp.gmail.com",
-	Port: "587",
-}
-
 // SendEmail
 // Returns a boolean representing whether an email was sent successfully
-func SendEmail(message string, credentials Credentials, receivers []string, endpoints ...Endpoint) bool {
-	endpoint := DefaultEndpoint
+func SendEmail(message string, credentials interfaces.SmtpCredentials, receivers []string, endpoints ...interfaces.SmtpEndpoint) bool {
+	endpoint := interfaces.DefaultSmtpEndpoint
 	if len(endpoints) == 1 {
 		endpoint = endpoints[0]
 	}

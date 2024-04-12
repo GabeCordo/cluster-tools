@@ -40,6 +40,9 @@ const (
 	WarningLogRecord
 	FatalLogRecord
 	SubscriberRecord
+	ContactRecord
+	EmailRecord
+	SubscriptionRecord
 )
 
 type RequestIdentifiers struct {
