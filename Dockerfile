@@ -4,10 +4,10 @@ WORKDIR /home/app
 
 COPY . .
 RUN go install
-RUN mango init
-RUN mango doctor
+RUN cluster-tools init
+RUN cluster-tools doctor
 
 EXPOSE 8136
 EXPOSE 8137
 
-ENTRYPOINT ["mango", "start"]
+ENTRYPOINT ["cluster-tools", "start"]
