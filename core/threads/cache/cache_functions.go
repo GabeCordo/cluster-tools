@@ -19,14 +19,14 @@ func (thread *Thread) processSaveRequest(request *common.ThreadRequest) {
 	response.Data = common.CacheResponseData{Identifier: cacheRequestData.Identifier}
 
 	if _, found := GetCacheInstance().Get(cacheRequestData.Identifier); found {
-		response.Success = GetCacheInstance().Swap(cacheRequestData.Identifier, request.Data, cacheRequestData.ExpiresIn)
+		response.Success = GetCacheInstance().Swap(cacheRequestData.Identifier, cacheRequestData.Data, cacheRequestData.ExpiresIn)
 	} else {
 		// what if the user forgets to pass in an expiry time that's now set to 0?
 		var newIdentifier string
 		if cacheRequestData.ExpiresIn == 0 {
-			newIdentifier = GetCacheInstance().Save(request.Data)
+			newIdentifier = GetCacheInstance().Save(cacheRequestData.Data)
 		} else {
-			newIdentifier = GetCacheInstance().Save(request.Data, cacheRequestData.ExpiresIn)
+			newIdentifier = GetCacheInstance().Save(cacheRequestData.Data, cacheRequestData.ExpiresIn)
 		}
 		response.Success = true
 		response.Data = common.CacheResponseData{Identifier: newIdentifier}

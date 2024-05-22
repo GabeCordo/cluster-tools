@@ -9,11 +9,11 @@ import (
 	"testing"
 )
 
-func generateDatabaseThread(in chan common.DatabaseRequest, out chan common.DatabaseResponse) *Thread {
+func generateDatabaseThread(in chan common.ThreadRequest, out chan common.ThreadResponse) *Thread {
 
 	irc := make(chan common.InterruptEvent, 1)
-	min := make(chan common.MessengerRequest)
-	mout := make(chan common.MessengerResponse)
+	min := make(chan common.ThreadRequest, 1)
+	mout := make(chan common.ThreadResponse, 1)
 
 	cfg := &Config{Debug: true, Timeout: 2.0}
 	logger, _ := logging.NewLogger("database")
@@ -25,8 +25,8 @@ func generateDatabaseThread(in chan common.DatabaseRequest, out chan common.Data
 
 func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -34,9 +34,9 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 
 	clusterConfig := interfaces.Config{}
 
-	request := common.DatabaseRequest{
-		Action: common.DatabaseStore,
-		Type:   common.ClusterConfig,
+	request := common.ThreadRequest{
+		Action: common.CreateAction,
+		Type:   common.ConfigRecord,
 		Data:   clusterConfig,
 		Nonce:  1,
 	}
@@ -51,16 +51,16 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 
 func TestThread_DatabaseStore_ClusterConfig2(t *testing.T) {
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
 	go thread.Start()
 
-	request := common.DatabaseRequest{
-		Action: common.DatabaseStore,
-		Type:   common.ClusterConfig,
+	request := common.ThreadRequest{
+		Action: common.CreateAction,
+		Type:   common.ConfigRecord,
 		Nonce:  1,
 	}
 	in <- request
@@ -78,8 +78,8 @@ func TestThread_DatabaseStore_ClusterConfig2(t *testing.T) {
 
 func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -87,9 +87,9 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 
 	clusterStatistic := &interfaces.Statistics{}
 
-	request := common.DatabaseRequest{
-		Action: common.DatabaseStore,
-		Type:   common.SupervisorStatistic,
+	request := common.ThreadRequest{
+		Action: common.CreateAction,
+		Type:   common.StatisticRecord,
 		Data:   clusterStatistic,
 		Nonce:  1,
 	}
@@ -104,8 +104,8 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 
 func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -113,9 +113,9 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
 	clusterStatistic := &interfaces.Statistics{}
 
-	request := common.DatabaseRequest{
-		Action: common.DatabaseStore,
-		Type:   common.ClusterConfig,
+	request := common.ThreadRequest{
+		Action: common.CreateAction,
+		Type:   common.ConfigRecord,
 		Data:   clusterStatistic,
 		Nonce:  1,
 	}
@@ -134,8 +134,8 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
 func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -146,22 +146,20 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	m := "test_module"
 	c := "test_cluster"
 
-	in <- common.DatabaseRequest{
-		Action:  common.DatabaseStore,
-		Type:    common.ClusterConfig,
-		Module:  m,
-		Cluster: c,
-		Data:    clusterConfig,
-		Nonce:   1,
+	in <- common.ThreadRequest{
+		Action:      common.CreateAction,
+		Type:        common.ConfigRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Data:        clusterConfig,
+		Nonce:       1,
 	}
 	<-out
 
-	request := common.DatabaseRequest{
-		Action:  common.DatabaseFetch,
-		Type:    common.ClusterConfig,
-		Module:  m,
-		Cluster: c,
-		Nonce:   2,
+	request := common.ThreadRequest{
+		Action:      common.GetAction,
+		Type:        common.ConfigRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Nonce:       2,
 	}
 	in <- request
 	response := <-out
@@ -189,8 +187,8 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 
 func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -202,22 +200,20 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	m := "test_module"
 	c := "test_cluster"
 
-	in <- common.DatabaseRequest{
-		Action:  common.DatabaseStore,
-		Type:    common.SupervisorStatistic,
-		Module:  m,
-		Cluster: c,
-		Data:    clusterStat,
-		Nonce:   1,
+	in <- common.ThreadRequest{
+		Action:      common.CreateAction,
+		Type:        common.StatisticRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Data:        clusterStat,
+		Nonce:       1,
 	}
 	<-out
 
-	request := common.DatabaseRequest{
-		Action:  common.DatabaseFetch,
-		Type:    common.SupervisorStatistic,
-		Module:  m,
-		Cluster: c,
-		Nonce:   2,
+	request := common.ThreadRequest{
+		Action:      common.GetAction,
+		Type:        common.StatisticRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Nonce:       2,
 	}
 	in <- request
 	response := <-out
@@ -248,8 +244,8 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 	// TODO - fix
 	return
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -259,30 +255,27 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 	c := "test_cluster"
 	clusterConfig := interfaces.Config{Identifier: c}
 
-	in <- common.DatabaseRequest{
-		Action:  common.DatabaseStore,
-		Type:    common.ClusterConfig,
-		Module:  m,
-		Cluster: c,
-		Data:    clusterConfig,
-		Nonce:   1,
+	in <- common.ThreadRequest{
+		Action:      common.CreateAction,
+		Type:        common.ConfigRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Data:        clusterConfig,
+		Nonce:       1,
 	}
 	<-out
 
-	in <- common.DatabaseRequest{
-		Action:  common.DatabaseDelete,
-		Type:    common.ClusterConfig,
-		Module:  m,
-		Cluster: c,
-		Nonce:   2,
+	in <- common.ThreadRequest{
+		Action:      common.DeleteAction,
+		Type:        common.ClusterRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Nonce:       2,
 	}
 
-	request := common.DatabaseRequest{
-		Action:  common.DatabaseFetch,
-		Type:    common.ClusterConfig,
-		Module:  m,
-		Cluster: c,
-		Nonce:   2,
+	request := common.ThreadRequest{
+		Action:      common.GetAction,
+		Type:        common.ConfigRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Nonce:       2,
 	}
 	in <- request
 	response := <-out
@@ -298,8 +291,8 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	// TODO - must be fixed in future
 	return
 
-	in := make(chan common.DatabaseRequest, 1)
-	out := make(chan common.DatabaseResponse, 1)
+	in := make(chan common.ThreadRequest, 1)
+	out := make(chan common.ThreadResponse, 1)
 
 	thread := generateDatabaseThread(in, out)
 	thread.accepting = true
@@ -310,30 +303,27 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	clusterStat := &interfaces.Statistics{}
 	clusterStat.Threads.NumProvisionedLoadRoutines = 5
 
-	in <- common.DatabaseRequest{
-		Action:  common.DatabaseStore,
-		Type:    common.SupervisorStatistic,
-		Module:  m,
-		Cluster: c,
-		Data:    clusterStat,
-		Nonce:   1,
+	in <- common.ThreadRequest{
+		Action:      common.CreateAction,
+		Type:        common.StatisticRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Data:        clusterStat,
+		Nonce:       1,
 	}
 	<-out
 
-	in <- common.DatabaseRequest{
-		Action:  common.DatabaseDelete,
-		Type:    common.SupervisorStatistic,
-		Module:  m,
-		Cluster: c,
-		Nonce:   2,
+	in <- common.ThreadRequest{
+		Action:      common.DeleteAction,
+		Type:        common.StatisticRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Nonce:       2,
 	}
 
-	request := common.DatabaseRequest{
-		Action:  common.DatabaseFetch,
-		Type:    common.SupervisorStatistic,
-		Module:  m,
-		Cluster: c,
-		Nonce:   2,
+	request := common.ThreadRequest{
+		Action:      common.GetAction,
+		Type:        common.StatisticRecord,
+		Identifiers: common.RequestIdentifiers{Module: m, Cluster: c},
+		Nonce:       2,
 	}
 	in <- request
 	response := <-out

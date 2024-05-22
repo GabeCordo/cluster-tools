@@ -7,11 +7,13 @@ var DuplicateContact = errors.New("a contact with the same identifier already ex
 var ContactNotFound = errors.New("a contact with the same identifier cannot be found")
 
 func (directory *Directory) Save(path string) error {
-	
+	// TODO - not important feature currently
+	return nil
 }
 
 func (directory *Directory) Load(path string) error {
-
+	// TODO - not important feature currently
+	return nil
 }
 
 func (directory *Directory) GetContacts() []*Contact {
