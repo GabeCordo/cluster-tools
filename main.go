@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/GabeCordo/cluster-tools/controllers"
+	controllers "github.com/GabeCordo/cluster-tools/internal/cli"
 	"github.com/GabeCordo/commandline"
 )
 
