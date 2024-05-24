@@ -28,8 +28,9 @@ func (thread *Thread) addModule(processorName string, cfg *interfaces.ModuleConf
 	// -> send the config for storage in the database thread
 	for _, export := range cfg.Exports {
 		if export.Config.Mode == interfaces.Stream {
-			thread.C13 <- common.SupervisorRequest{
-				Action: common.SupervisorCreate,
+			thread.C13 <- common.ThreadRequest{
+				Action: common.CreateAction,
+				Type:   common.SupervisorRecord,
 				Identifiers: common.RequestIdentifiers{
 					Processor: processorName,
 					Module:    cfg.Name,
@@ -42,7 +43,8 @@ func (thread *Thread) addModule(processorName string, cfg *interfaces.ModuleConf
 			}
 		}
 
-		err := common.StoreConfigInDatabase(thread.C11, thread.DatabaseResponseTable, cfg.Name, export.ToClusterConfig(), thread.config.Timeout)
+		mandatory := common.ThreadMandatory{thread.C11, thread.DatabaseResponseTable, thread.config.Timeout}
+		err := common.StoreConfigInDatabase(mandatory, cfg.Name, export.ToClusterConfig())
 		if err == nil {
 			thread.Logger.Printf("stored new default config for cluster %s in database\n", export.Cluster)
 		} else {

@@ -140,20 +140,24 @@ func Loop(scheduler *Scheduler, f func(job *Job) error) (err error) {
 			// pop the first element of the queue (FIFO) and remove the
 			// first element by slicing out the first element
 			popped := scheduler.queue[0]
-
-			// to abide by the pattern, if the called function returns an
-			// error stop the scheduler loop
-			if err = f(popped); err != nil {
-				log.Println(err.Error())
-			}
-
-			// if we receive a non-nil code, an error has occurred, so re-append
-			// the popped job to the back of the queue to try again later
 			scheduler.queue = scheduler.queue[1:]
-			if err != nil {
-				scheduler.queue = append(scheduler.queue, popped)
-			}
 
+			// outdated;
+			// to abide by the pattern, if the called function returns an
+			// error stop the scheduler loop.
+			//
+			// note: stopping the scheduler silently can create problems
+			// 		 during long runtimes. How does the operator know when
+			//		 the scheduler no longer operates? it doesn't.
+			if err = f(popped); err != nil {
+				log.Println(err)
+				// outdated:
+				// if we receive a non-nil code, an error has occurred, so re-append
+				// the popped job to the back of the queue to try again later
+				//if err != nil {
+				//	scheduler.queue = append(scheduler.queue, popped)
+				//}
+			}
 		}
 		scheduler.mutex.RUnlock()
 
@@ -164,7 +168,117 @@ func Loop(scheduler *Scheduler, f func(job *Job) error) (err error) {
 	return err
 }
 
-func (scheduler Scheduler) Print() {
+func (scheduler *Scheduler) GetBy(filter *Filter) []Job {
+
+	jobs := make([]Job, 0)
+	if filter == nil {
+		return jobs
+	}
+
+	scheduler.mutex.RLock()
+	defer scheduler.mutex.RUnlock()
+
+	useId := filter.UseIdentifier()
+	useModule := filter.UseModule()
+	useCluster := filter.UseCluster()
+	useInterval := filter.UseInterval()
+
+	for _, job := range scheduler.jobs {
+
+		moduleMatch := job.Module == filter.Module
+		clusterMatch := job.Cluster == filter.Cluster
+		intervalMatch := job.Interval.Equals(&filter.Interval)
+
+		if useId && (job.Identifier == filter.Identifier) {
+			jobs = append(jobs, job)
+			break
+		} else if (useModule && moduleMatch) ||
+			(useCluster && moduleMatch && clusterMatch) ||
+			(useInterval && moduleMatch && clusterMatch && intervalMatch) {
+			jobs = append(jobs, job)
+		}
+	}
+
+	return jobs
+}
+
+func (scheduler *Scheduler) Create(job *Job) error {
+
+	// only create a read lock for the duration we are validating
+	// no other equivalent job exists within the scheduler as to
+	// no interrupt parallel read tasks
+	scheduler.mutex.RLock()
+
+	found := false
+
+	for _, jobInstance := range scheduler.jobs {
+		if jobInstance.Equals(job) {
+			found = true
+			break
+		}
+	}
+
+	if found {
+		scheduler.mutex.RUnlock()
+		return errors.New("identical job already exists")
+	}
+
+	scheduler.mutex.RUnlock()
+
+	// we need to modify the jobs list, so NOW risk interrupting
+	// other threads attempting to use the job list
+	scheduler.mutex.Lock()
+	defer scheduler.mutex.Unlock()
+
+	scheduler.jobs = append(scheduler.jobs, *job) // create an owning copy
+	return nil
+}
+
+func (scheduler *Scheduler) Delete(filter *Filter) error {
+
+	if filter == nil {
+		return errors.New("received nil filter pointer")
+	}
+
+	scheduler.mutex.Lock()
+	defer scheduler.mutex.Unlock()
+
+	useId := filter.UseIdentifier()
+	useModule := filter.UseModule()
+	useCluster := filter.UseCluster()
+	useInterval := filter.UseInterval()
+
+	for idx, jobInstance := range scheduler.jobs {
+
+		moduleSame := jobInstance.Module == filter.Module
+		clusterSame := jobInstance.Cluster == filter.Cluster
+		intervalSame := jobInstance.Interval.Equals(&filter.Interval)
+
+		if useId && (jobInstance.Identifier == filter.Identifier) {
+			scheduler.jobs = append(scheduler.jobs[:idx], scheduler.jobs[idx+1:]...)
+			break
+		} else if (useModule && moduleSame) || (useCluster && moduleSame && clusterSame) || (useInterval && moduleSame && clusterSame && intervalSame) {
+			scheduler.jobs = append(scheduler.jobs[:idx], scheduler.jobs[idx+1:]...)
+		}
+	}
+
+	return nil
+}
+
+func (scheduler *Scheduler) GetQueue() []Job {
+
+	scheduler.mutex.RLock()
+	defer scheduler.mutex.RUnlock()
+
+	jobs := make([]Job, len(scheduler.queue))
+	for idx, job := range scheduler.queue {
+		jobs[idx] = *job // make a copy
+	}
+
+	return jobs
+}
+
+func (scheduler *Scheduler) Print() {
 
 	for _, job := range scheduler.jobs {
 		fmt.Printf("├─ %s\n", job.ToString())

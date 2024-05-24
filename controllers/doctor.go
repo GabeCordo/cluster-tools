@@ -44,6 +44,12 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 		fmt.Printf("[✓] the scheduels folder exists (%s)\n", common.DefaultSchedulesFolder)
 	}
 
+	if _, err := os.Stat(common.DefaultMessengerFolder); err != nil {
+		fmt.Printf("[x] the messenger folder is missing (%s)\n", common.DefaultMessengerFolder)
+	} else {
+		fmt.Printf("[✓] the messenger folder exists (%s)\n", common.DefaultMessengerFolder)
+	}
+
 	if _, err := os.Stat(common.DefaultConfigFile); err != nil {
 		fmt.Printf("[x] the global common file is missing (%s)\n", common.DefaultConfigFile)
 		return commandline.Terminate

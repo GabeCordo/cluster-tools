@@ -3,6 +3,7 @@ package messenger
 import (
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 )
 
 func (messenger *Messenger) LoggingDirectory(path string) *Messenger {
@@ -13,21 +14,40 @@ func (messenger *Messenger) LoggingDirectory(path string) *Messenger {
 	return messenger
 }
 
-func (messenger *Messenger) SetupSMTP(endpoint Endpoint, credentials Credentials) *Messenger {
+func (messenger *Messenger) SetupSMTP(endpoint interfaces.SmtpEndpoint, credentials interfaces.SmtpCredentials) *Messenger {
 	if messenger.enabled.smtp {
-		messenger.smtp.endpoint = endpoint
-		messenger.smtp.credentials = credentials
+		messenger.smtp.Endpoint = endpoint
+		messenger.smtp.Credentials = credentials
 	}
 
 	return messenger
 }
 
 func (messenger *Messenger) SetupReceivers(receivers map[string][]string) *Messenger {
+
+	messenger.mutex.Lock()
+	defer messenger.mutex.Unlock()
+
 	if messenger.enabled.smtp {
-		messenger.smtp.receivers = receivers
+		messenger.smtp.Receivers = receivers
 	}
 
 	return messenger
+}
+
+func (messenger *Messenger) GetReceivers() map[string][]string {
+
+	messenger.mutex.RLock()
+	defer messenger.mutex.RUnlock()
+
+	copyOfReceivers := make(map[string][]string)
+
+	for endpoint, receivers := range messenger.smtp.Receivers {
+		copyOfReceivers[endpoint] = make([]string, len(receivers))
+		copy(copyOfReceivers[endpoint], receivers)
+	}
+
+	return copyOfReceivers
 }
 
 func (messenger *Messenger) Get(identifier string) (*Module, bool) {
@@ -104,8 +124,8 @@ func (messenger *Messenger) Complete(module, cluster string, supervisor uint64) 
 
 	emailSuccess := true
 	if messenger.enabled.smtp {
-		if receivers, found := messenger.smtp.receivers[endpoint]; found {
-			emailSuccess = SendEmail(endpoint, messenger.smtp.credentials, receivers, messenger.smtp.endpoint)
+		if receivers, found := messenger.smtp.Receivers[endpoint]; found {
+			emailSuccess = SendEmail(endpoint, messenger.smtp.Credentials, receivers, messenger.smtp.Endpoint)
 		}
 	}
 

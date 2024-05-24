@@ -63,6 +63,13 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 		fmt.Printf("[✓] created scheduels folder %s\n", common.DefaultSchedulesFolder)
 	}
 
+	if err := os.Mkdir(common.DefaultMessengerFolder, 0700); err != nil {
+		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultMessengerFolder, err.Error())
+		return commandline.Terminate
+	} else {
+		fmt.Printf("[✓] created scheduels folder %s\n", common.DefaultMessengerFolder)
+	}
+
 	if err := os.Mkdir(common.DefaultConfigsFolder, 0700); err != nil {
 		fmt.Printf("[x] failed to create %s directory %s\n", common.DefaultConfigsFolder, err.Error())
 		return commandline.Terminate

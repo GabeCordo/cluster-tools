@@ -10,4 +10,5 @@ var (
 	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
 	DefaultStatisticsFolder = DefaultFrameworkFolder + "statistics/"
 	DefaultSchedulesFolder  = DefaultFrameworkFolder + "schedules/"
+	DefaultMessengerFolder  = DefaultFrameworkFolder + "messenger/"
 )

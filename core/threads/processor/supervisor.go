@@ -9,7 +9,7 @@ import (
 	"math/rand"
 )
 
-func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Supervisor, error) {
+func (thread *Thread) getSupervisor(r *common.ThreadRequest) ([]*supervisor.Supervisor, error) {
 
 	// processor -> all supervisor ids on the processor
 	//	-	id
@@ -23,8 +23,9 @@ func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Sup
 	// id -> the entire record of the supervisor
 	//	-	full information
 
-	request := common.SupervisorRequest{
-		Action:      common.SupervisorGet,
+	request := common.ThreadRequest{
+		Action:      common.GetAction,
+		Type:        common.SupervisorRecord,
 		Identifiers: r.Identifiers,
 		Nonce:       r.Nonce,
 	}
@@ -37,12 +38,12 @@ func (thread *Thread) getSupervisor(r *common.ProcessorRequest) (*supervisor.Sup
 		return nil, multithreaded.NoResponseReceived
 	}
 
-	response := (rsp).(common.SupervisorResponse)
+	response := (rsp).(common.ThreadResponse)
 
-	return (response.Data).(*supervisor.Supervisor), nil
+	return (response.Data).([]*supervisor.Supervisor), nil
 }
 
-func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, error) {
+func (thread *Thread) createSupervisor(r *common.ThreadRequest) (uint64, error) {
 
 	// we need to pick out a processor we want to assign the work to
 	moduleInstance, found := GetTableInstance().GetModule(r.Identifiers.Module)
@@ -67,8 +68,9 @@ func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, erro
 		return 0, processor.CanNotProvisionStreamCluster
 	}
 
-	request := common.SupervisorRequest{
-		Action:      common.SupervisorCreate,
+	request := common.ThreadRequest{
+		Action:      common.CreateAction,
+		Type:        common.SupervisorRecord,
 		Identifiers: r.Identifiers, // will contain the module, cluster
 		Caller:      common.User,
 		Data:        r.Data, // will contain the metadata map[string]string
@@ -92,14 +94,15 @@ func (thread *Thread) createSupervisor(r *common.ProcessorRequest) (uint64, erro
 		return 0, multithreaded.NoResponseReceived
 	}
 
-	response := (rsp).(common.SupervisorResponse)
+	response := (rsp).(common.ThreadResponse)
 	return (response.Data).(uint64), response.Error
 }
 
-func (thread *Thread) updateSupervisor(r *common.ProcessorRequest) error {
+func (thread *Thread) updateSupervisor(r *common.ThreadRequest) error {
 
-	request := common.SupervisorRequest{
-		Action:      common.SupervisorUpdate,
+	request := common.ThreadRequest{
+		Action:      common.UpdateAction,
+		Type:        common.SupervisorRecord,
 		Identifiers: r.Identifiers,
 		Data:        r.Data,
 		Nonce:       rand.Uint32(),
@@ -114,14 +117,15 @@ func (thread *Thread) updateSupervisor(r *common.ProcessorRequest) error {
 		return errors.New("supervisor doesn't exist")
 	}
 
-	response := (rsp).(common.SupervisorResponse)
+	response := (rsp).(common.ThreadResponse)
 	return response.Error
 }
 
-func (thread *Thread) logSupervisor(r *common.ProcessorRequest) error {
+func (thread *Thread) logSupervisor(r *common.ThreadRequest) error {
 
-	request := common.SupervisorRequest{
-		Action:      common.SupervisorLog,
+	request := common.ThreadRequest{
+		Action:      common.LogAction,
+		Type:        common.SupervisorRecord,
 		Identifiers: r.Identifiers,
 		Data:        r.Data,
 		Nonce:       rand.Uint32(),
@@ -135,6 +139,6 @@ func (thread *Thread) logSupervisor(r *common.ProcessorRequest) error {
 		return multithreaded.NoResponseReceived
 	}
 
-	response := (rsp).(common.SupervisorResponse)
+	response := (rsp).(common.ThreadResponse)
 	return response.Error
 }

@@ -23,11 +23,11 @@ type Thread struct {
 
 	Interrupt chan<- common.InterruptEvent
 
-	C7 chan<- common.ProcessorRequest  // HTTP Processor is sending req to the processor_thread
-	C8 <-chan common.ProcessorResponse // HTTP Processor is rec rsp from the processor_thread
+	C7 chan<- common.ThreadRequest  // HTTP Processor is sending req to the processor_thread
+	C8 <-chan common.ThreadResponse // HTTP Processor is rec rsp from the processor_thread
 
-	C9  chan<- common.CacheRequest  // HTTP Processor is sending req to the cache_thread
-	C10 <-chan common.CacheResponse // HTTP Processor is rec rsp from the cache_thread
+	C9  chan<- common.ThreadRequest  // HTTP Processor is sending req to the cache_thread
+	C10 <-chan common.ThreadResponse // HTTP Processor is rec rsp from the cache_thread
 
 	ProcessorResponseTable *multithreaded.ResponseTable
 	CacheResponseTable     *multithreaded.ResponseTable
@@ -62,22 +62,22 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
 
-	thread.C7, ok = (channels[1]).(chan common.ProcessorRequest)
+	thread.C7, ok = (channels[1]).(chan common.ThreadRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	thread.C8, ok = (channels[2]).(chan common.ProcessorResponse)
+	thread.C8, ok = (channels[2]).(chan common.ThreadResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	thread.C9, ok = (channels[3]).(chan common.CacheRequest)
+	thread.C9, ok = (channels[3]).(chan common.ThreadRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	thread.C10, ok = (channels[4]).(chan common.CacheResponse)
+	thread.C10, ok = (channels[4]).(chan common.ThreadResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}

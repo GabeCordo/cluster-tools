@@ -39,16 +39,31 @@ func (thread *Thread) Start() {
 		}
 	}()
 
+	go func() {
+		// request coming from supervisor
+		for request := range thread.C22 {
+			if !thread.accepting {
+				break
+			}
+			thread.wg.Add(1)
+
+			request.Source = common.HttpClient
+			thread.ProcessIncomingRequest(&request)
+		}
+	}()
+
 	thread.wg.Wait()
 }
 
-func (thread *Thread) Respond(module common.Module, response any) (success bool) {
+func (thread *Thread) Respond(request *common.ThreadRequest, response *common.ThreadResponse) (success bool) {
 
 	success = true
 
-	switch module {
+	switch request.Source {
 	case common.Database:
-		thread.C4 <- *(response).(*common.MessengerResponse)
+		thread.C4 <- *response
+	case common.HttpClient:
+		thread.C23 <- *response
 	default:
 		success = false
 	}
@@ -56,52 +71,56 @@ func (thread *Thread) Respond(module common.Module, response any) (success bool)
 	return success
 }
 
-func (thread *Thread) ProcessIncomingRequest(request *common.MessengerRequest) {
+func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
+
+	response := &common.ThreadResponse{Nonce: request.Nonce, Source: common.Messenger}
 
 	switch request.Action {
-	case common.MessengerClose:
+	case common.GetAction:
+		switch request.Type {
+		case common.SmtpRecord:
+			response.Data = thread.getSmtpRecord()
+		default:
+			response.Error = common.BadRequestType
+		}
+	case common.CloseAction:
 		thread.ProcessCloseLogRequest(request)
-	case common.MessengerUpperPing:
-		thread.ProcessMessengerPing(request)
 	default:
 		thread.ProcessConsoleRequest(request)
 	}
 
+	thread.Respond(request, response)
 	thread.wg.Done()
 }
 
-func (thread *Thread) ProcessMessengerPing(request *common.MessengerRequest) {
-
-	if thread.config.Debug {
-		thread.logger.Println("[etl_messenger] received ping over C3")
-	}
-
-	response := &common.MessengerResponse{Nonce: request.Nonce, Success: true}
-	thread.Respond(common.Database, response)
-}
-
-func (thread *Thread) ProcessConsoleRequest(request *common.MessengerRequest) {
+func (thread *Thread) ProcessConsoleRequest(request *common.ThreadRequest) {
 	messengerInstance := GetMessengerInstance(thread.config)
 
 	var priority messenger.MessagePriority
 
-	switch request.Action {
-	case common.MessengerLog:
+	switch request.Type {
+	case common.DefaultLogRecord:
 		priority = messenger.Normal
-	case common.MessengerWarning:
+	case common.WarningLogRecord:
 		priority = messenger.Warning
 	default:
 		priority = messenger.Fatal
 	}
 
-	messengerInstance.Log(request.Module, request.Cluster, request.Supervisor, request.Message, priority)
+	messengerInstance.Log(
+		request.Identifiers.Module,
+		request.Identifiers.Cluster,
+		request.Identifiers.Supervisor,
+		(request.Data).(string),
+		priority,
+	)
 }
 
-func (thread *Thread) ProcessCloseLogRequest(request *common.MessengerRequest) {
+func (thread *Thread) ProcessCloseLogRequest(request *common.ThreadRequest) {
 
-	thread.logger.Printf("closing log for %s/%s\n", request.Module, request.Cluster)
+	thread.logger.Printf("closing log for %s/%s\n", request.Identifiers.Module, request.Identifiers.Cluster)
 	messengerInstance := GetMessengerInstance(thread.config)
-	messengerInstance.Complete(request.Module, request.Cluster, request.Supervisor)
+	messengerInstance.Complete(request.Identifiers.Module, request.Identifiers.Cluster, request.Identifiers.Supervisor)
 }
 
 func (thread *Thread) Teardown() {

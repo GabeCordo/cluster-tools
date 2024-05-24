@@ -10,19 +10,20 @@ import (
 	"math/rand"
 )
 
-func (thread *Thread) getSupervisor(id uint64) (*supervisor.Supervisor, error) {
+func (thread *Thread) getSupervisor(filter *supervisor.Filter) ([]*supervisor.Supervisor, error) {
 
-	instance, found := GetRegistryInstance().Get(id)
-	if !found {
-		return nil, errors.New("supervisor does not exist")
+	if filter == nil {
+		return nil, errors.New("given nil pointer filter")
 	}
-	return instance, nil
+	instances := GetRegistryInstance().GetBy(filter)
+	return instances, nil
 }
 
 func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, configName string, metadata map[string]string) (uint64, error) {
 
 	// TODO : change it so that configs are received via pointer over the channel
-	conf, found := common.GetConfigFromDatabase(thread.C15, thread.DatabaseResponseTable, moduleName, configName, thread.config.Timeout)
+	mandatory := common.ThreadMandatory{thread.C15, thread.DatabaseResponseTable, thread.config.Timeout}
+	conf, found := common.GetConfigFromDatabase(mandatory, moduleName, configName)
 	if !found {
 		return 0, errors.New("no config with that identifier exists")
 	}
@@ -60,13 +61,15 @@ func (thread *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
 		(stored.Status == supervisor.Crashed) ||
 		(stored.Status == supervisor.Terminated) {
 		// TODO : this can probably encapsulate
-		request := common.DatabaseRequest{
-			Action:  common.DatabaseStore,
-			Type:    common.SupervisorStatistic,
-			Module:  stored.Module,
-			Cluster: stored.Cluster,
-			Data:    stored.Statistics,
-			Nonce:   rand.Uint32(),
+		request := common.ThreadRequest{
+			Action: common.CreateAction,
+			Type:   common.StatisticRecord,
+			Identifiers: common.RequestIdentifiers{
+				Module:  stored.Module,
+				Cluster: stored.Cluster,
+			},
+			Data:  stored.Statistics,
+			Nonce: rand.Uint32(),
 		}
 		thread.C15 <- request
 
@@ -76,17 +79,19 @@ func (thread *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
 		}
 
 		// TODO : this can also be encapsulated
-		response := (rsp).(common.DatabaseResponse)
+		response := (rsp).(common.ThreadResponse)
 		if !response.Success {
 			return errors.New("failed to store statistics of supervisor")
 		}
 
-		msgrRequest := common.MessengerRequest{
-			Action:     common.MessengerClose,
-			Module:     stored.Module,
-			Cluster:    stored.Cluster,
-			Supervisor: instance.Id,
-			Nonce:      rand.Uint32(),
+		msgrRequest := common.ThreadRequest{
+			Action: common.CloseAction,
+			Identifiers: common.RequestIdentifiers{
+				Module:     stored.Module,
+				Cluster:    stored.Cluster,
+				Supervisor: instance.Id,
+			},
+			Nonce: rand.Uint32(),
 		}
 		thread.C17 <- msgrRequest
 	}
@@ -107,22 +112,25 @@ func (thread *Thread) logSupervisor(log *supervisor.Log) error {
 	}
 
 	// TODO : I think we can do better than this, I just want a bullet tracer
-	var action common.MessengerAction
+	var logType common.RequestType
 	if log.Level == messenger.Fatal {
-		action = common.MessengerFatal
+		logType = common.FatalLogRecord
 	} else if log.Level == messenger.Warning {
-		action = common.MessengerWarning
+		logType = common.WarningLogRecord
 	} else {
-		action = common.MessengerLog
+		logType = common.DefaultLogRecord
 	}
 
-	request := common.MessengerRequest{
-		Action:     action,
-		Module:     instance.Module,
-		Cluster:    instance.Cluster,
-		Supervisor: instance.Id,
-		Message:    log.Message,
-		Nonce:      rand.Uint32(),
+	request := common.ThreadRequest{
+		Action: common.LogAction,
+		Type:   logType,
+		Identifiers: common.RequestIdentifiers{
+			Module:     instance.Module,
+			Cluster:    instance.Cluster,
+			Supervisor: instance.Id,
+		},
+		Data:  log.Message,
+		Nonce: rand.Uint32(),
 	}
 	thread.C17 <- request
 

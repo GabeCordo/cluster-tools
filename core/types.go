@@ -60,26 +60,32 @@ type Core struct {
 	CacheThread         *cache.Thread
 	SchedulerThread     *scheduler.Thread
 
-	C1        chan common.DatabaseRequest
-	C2        chan common.DatabaseResponse
-	C3        chan common.MessengerRequest
-	C4        chan common.MessengerResponse
-	C5        chan common.ProcessorRequest
-	C6        chan common.ProcessorResponse
-	C7        chan common.ProcessorRequest
-	C8        chan common.ProcessorResponse
-	C9        chan common.CacheRequest
-	C10       chan common.CacheResponse
-	C11       chan common.DatabaseRequest
-	C12       chan common.DatabaseResponse
-	C13       chan common.SupervisorRequest
-	C14       chan common.SupervisorResponse
-	C15       chan common.DatabaseRequest
-	C16       chan common.DatabaseResponse
-	C17       chan common.MessengerRequest
-	C18       chan common.ProcessorRequest
-	C19       chan common.ProcessorResponse
-	interrupt chan common.InterruptEvent
+	C1        chan common.ThreadRequest  // DatabaseRequest
+	C2        chan common.ThreadResponse // DatabaseResponse
+	C3        chan common.ThreadRequest  // MessengerRequest
+	C4        chan common.ThreadResponse // MessengerResponse
+	C5        chan common.ThreadRequest  // ProcessorRequest
+	C6        chan common.ThreadResponse // ProcessorResponse
+	C7        chan common.ThreadRequest  // ProcessorRequest
+	C8        chan common.ThreadResponse // ProcessorResponse
+	C9        chan common.ThreadRequest  // CacheRequest
+	C10       chan common.ThreadResponse // CacheResponse
+	C11       chan common.ThreadRequest  // DatabaseRequest
+	C12       chan common.ThreadResponse // DatabaseResponse
+	C13       chan common.ThreadRequest  // SupervisorRequest
+	C14       chan common.ThreadResponse // SupervisorResponse
+	C15       chan common.ThreadRequest  // DatabaseRequest
+	C16       chan common.ThreadResponse // DatabaseResponse
+	C17       chan common.ThreadRequest  // MessengerRequest
+	C18       chan common.ThreadRequest  // ProcessorRequest
+	C19       chan common.ThreadResponse // ProcessorResponse
+	C20       chan common.ThreadRequest  // SchedulerRequest
+	C21       chan common.ThreadResponse // SchedulerResponse
+	C22       chan common.ThreadRequest  // MessengerRequest
+	C23       chan common.ThreadResponse // MessengerResponse
+	C24       chan common.ThreadRequest  // CacheRequest
+	C25       chan common.ThreadResponse // CacheResponse
+	interrupt chan common.InterruptEvent // InterruptEvent
 
 	config *Config
 	logger *logging.Logger
@@ -89,25 +95,31 @@ func New(configPath string) (*Core, error) {
 	core := new(Core)
 
 	core.interrupt = make(chan common.InterruptEvent, 10)
-	core.C1 = make(chan common.DatabaseRequest, 10)
-	core.C2 = make(chan common.DatabaseResponse, 10)
-	core.C3 = make(chan common.MessengerRequest, 10)
-	core.C4 = make(chan common.MessengerResponse, 10)
-	core.C5 = make(chan common.ProcessorRequest, 10)
-	core.C6 = make(chan common.ProcessorResponse, 10)
-	core.C7 = make(chan common.ProcessorRequest, 10)
-	core.C8 = make(chan common.ProcessorResponse, 10)
-	core.C9 = make(chan common.CacheRequest, 10)
-	core.C10 = make(chan common.CacheResponse, 10)
-	core.C11 = make(chan common.DatabaseRequest, 10)
-	core.C12 = make(chan common.DatabaseResponse, 10)
-	core.C13 = make(chan common.SupervisorRequest, 10)
-	core.C14 = make(chan common.SupervisorResponse, 10)
-	core.C15 = make(chan common.DatabaseRequest, 10)
-	core.C16 = make(chan common.DatabaseResponse, 10)
-	core.C17 = make(chan common.MessengerRequest, 10)
-	core.C18 = make(chan common.ProcessorRequest, 10)
-	core.C19 = make(chan common.ProcessorResponse, 10)
+	core.C1 = make(chan common.ThreadRequest, 10)
+	core.C2 = make(chan common.ThreadResponse, 10)
+	core.C3 = make(chan common.ThreadRequest, 10)
+	core.C4 = make(chan common.ThreadResponse, 10)
+	core.C5 = make(chan common.ThreadRequest, 10)
+	core.C6 = make(chan common.ThreadResponse, 10)
+	core.C7 = make(chan common.ThreadRequest, 10)
+	core.C8 = make(chan common.ThreadResponse, 10)
+	core.C9 = make(chan common.ThreadRequest, 10)
+	core.C10 = make(chan common.ThreadResponse, 10)
+	core.C11 = make(chan common.ThreadRequest, 10)
+	core.C12 = make(chan common.ThreadResponse, 10)
+	core.C13 = make(chan common.ThreadRequest, 10)
+	core.C14 = make(chan common.ThreadResponse, 10)
+	core.C15 = make(chan common.ThreadRequest, 10)
+	core.C16 = make(chan common.ThreadResponse, 10)
+	core.C17 = make(chan common.ThreadRequest, 10)
+	core.C18 = make(chan common.ThreadRequest, 10)
+	core.C19 = make(chan common.ThreadResponse, 10)
+	core.C20 = make(chan common.ThreadRequest, 10)
+	core.C21 = make(chan common.ThreadResponse, 10)
+	core.C22 = make(chan common.ThreadRequest, 10)
+	core.C23 = make(chan common.ThreadResponse, 10)
+	core.C24 = make(chan common.ThreadRequest, 10)
+	core.C25 = make(chan common.ThreadResponse, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)
@@ -119,7 +131,7 @@ func New(configPath string) (*Core, error) {
 	httpConfig := &http_client.Config{}
 	core.config.FillHttpClientConfig(httpConfig)
 	core.HttpClientThread, err = http_client.New(httpConfig, httpLogger,
-		core.interrupt, core.C1, core.C2, core.C5, core.C6)
+		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23, core.C24, core.C25)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +179,7 @@ func New(configPath string) (*Core, error) {
 	messengerConfig := &messenger.Config{}
 	core.config.FillMessengerConfig(messengerConfig)
 	core.MessengerThread, err = messenger.New(messengerConfig, messengerLogger,
-		core.interrupt, core.C3, core.C4, core.C17)
+		core.interrupt, core.C3, core.C4, core.C17, core.C22, core.C23)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +204,7 @@ func New(configPath string) (*Core, error) {
 	cacheConfig := &cache.Config{}
 	core.config.FillCacheConfig(cacheConfig)
 	core.CacheThread, err = cache.New(cacheConfig, cacheLogger,
-		core.interrupt, core.C9, core.C10)
+		core.interrupt, core.C9, core.C10, core.C24, core.C25)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +215,7 @@ func New(configPath string) (*Core, error) {
 	}
 	schedulerConig := &scheduler.Config{}
 	core.config.FillSchedulerConfig(schedulerConig)
-	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, core.interrupt, core.C18, core.C19)
+	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, core.interrupt, core.C18, core.C19, core.C20, core.C21)
 	if err != nil {
 		return nil, err
 	}

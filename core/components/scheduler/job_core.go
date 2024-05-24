@@ -26,6 +26,25 @@ func IsTimeToRun(job *Job) bool {
 	return (curr % job.Interval.Minute) == 0
 }
 
+func (job Job) Equals(other *Job) bool {
+
+	if other == nil {
+		return false
+	}
+
+	// the identifier is a hard comparison;
+	// it doesn't matter what the other contents are, we cannot have two duplicate identifiers
+	if job.Identifier == other.Identifier {
+		return true
+	}
+
+	if (job.Module != other.Module) || (job.Cluster != other.Cluster) {
+		return false
+	}
+
+	return job.Interval.Equals(&other.Interval)
+}
+
 func (job Job) ToString() string {
 
 	return fmt.Sprintf("%s %s.%s (cluster: %s, config: %s)",

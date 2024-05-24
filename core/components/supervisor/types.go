@@ -61,6 +61,12 @@ func newSupervisor(id uint64, processorName, moduleName, clusterName string, con
 	return supervisor
 }
 
+type Filter struct {
+	Module  string
+	Cluster string
+	Id      uint64
+}
+
 type Registry struct {
 	supervisors map[uint64]*Supervisor
 

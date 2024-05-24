@@ -1,12 +1,15 @@
 package messenger
 
 import (
+	"github.com/GabeCordo/cluster-tools/core/components/directory"
 	"github.com/GabeCordo/cluster-tools/core/components/messenger"
+	"github.com/GabeCordo/cluster-tools/core/interfaces"
 )
 
 var instance *messenger.Messenger
 
 func GetMessengerInstance(cfg *Config) *messenger.Messenger {
+
 	if instance == nil {
 
 		instance = messenger.NewMessenger(
@@ -20,11 +23,11 @@ func GetMessengerInstance(cfg *Config) *messenger.Messenger {
 
 		if cfg.EnableSmtp {
 			instance.SetupSMTP(
-				messenger.Endpoint{
+				interfaces.SmtpEndpoint{
 					Host: cfg.SmtpEndpoint.Host,
 					Port: cfg.SmtpEndpoint.Port,
 				},
-				messenger.Credentials{
+				interfaces.SmtpCredentials{
 					Email:    cfg.SmtpCredentials.Email,
 					Password: cfg.SmtpCredentials.Password,
 				},
@@ -33,5 +36,17 @@ func GetMessengerInstance(cfg *Config) *messenger.Messenger {
 			)
 		}
 	}
+
 	return instance
+}
+
+var contactDirectoryInstance *directory.Directory
+
+func GetContactDirectory() *directory.Directory {
+
+	if contactDirectoryInstance == nil {
+		contactDirectoryInstance = directory.NewDirectory()
+	}
+	
+	return contactDirectoryInstance
 }
