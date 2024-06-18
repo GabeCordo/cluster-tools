@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/processor"
 	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
@@ -51,6 +52,7 @@ func (thread *Thread) addModule(processorName string, cfg *interfaces.ModuleConf
 			// the config could have already been stored in a previous module register
 			// note: configs are not deleted when the processor is disconnected at the moment
 			//		-> the idea is we can re-use them s.t. performance can be improved
+			fmt.Println(err)
 			thread.Logger.Printf("failed to store default config for cluster %s in database\n", export.Cluster)
 		}
 	}
