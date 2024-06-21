@@ -35,6 +35,7 @@ func (thread *Thread) createSupervisor(processorName, moduleName, clusterName, c
 	err := api.ProvisionSupervisor(processorName, moduleName, clusterName, identifier, &conf, metadata)
 
 	if err != nil {
+		thread.Logger.Print(err.Error())
 		thread.Logger.Printf("[core -> %s][id: %d] %s\n", processorName, sup.Id, "could not connect to the processor and supervisor is canceled")
 		sup.Status = supervisor.Cancelled
 	} else {
