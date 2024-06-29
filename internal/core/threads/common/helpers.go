@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/database"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/processor"
-	"github.com/GabeCordo/cluster-tools/internal/core/components/scheduler"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/supervisor"
 	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -591,7 +590,7 @@ func Log(mandatory ThreadMandatory, log *supervisor.Log) error {
 	//return nil
 }
 
-func GetJobs(mandatory ThreadMandatory, filter *scheduler.Filter) ([]scheduler.Job, error) {
+func GetJobs(mandatory ThreadMandatory, filter *interfaces.Filter) ([]interfaces.Job, error) {
 
 	request := ThreadRequest{
 		Action: GetAction,
@@ -608,10 +607,10 @@ func GetJobs(mandatory ThreadMandatory, filter *scheduler.Filter) ([]scheduler.J
 
 	response := (rsp).(ThreadResponse)
 
-	return (response.Data).([]scheduler.Job), nil
+	return (response.Data).([]interfaces.Job), nil
 }
 
-func CreateJob(mandatory ThreadMandatory, job *scheduler.Job) error {
+func CreateJob(mandatory ThreadMandatory, job *interfaces.Job) error {
 
 	request := ThreadRequest{
 		Action: CreateAction,
@@ -630,7 +629,7 @@ func CreateJob(mandatory ThreadMandatory, job *scheduler.Job) error {
 	return response.Error
 }
 
-func DeleteJob(mandatory ThreadMandatory, filter *scheduler.Filter) error {
+func DeleteJob(mandatory ThreadMandatory, filter *interfaces.Filter) error {
 
 	request := ThreadRequest{
 		Action: DeleteAction,
@@ -649,7 +648,7 @@ func DeleteJob(mandatory ThreadMandatory, filter *scheduler.Filter) error {
 	return response.Error
 }
 
-func JobQueue(mandatory ThreadMandatory) ([]scheduler.Job, error) {
+func JobQueue(mandatory ThreadMandatory) ([]interfaces.Job, error) {
 
 	request := ThreadRequest{
 		Action: GetAction,
@@ -664,7 +663,7 @@ func JobQueue(mandatory ThreadMandatory) ([]scheduler.Job, error) {
 	}
 
 	response := (rsp).(ThreadResponse)
-	return (response.Data).([]scheduler.Job), response.Error
+	return (response.Data).([]interfaces.Job), response.Error
 }
 
 func GetSubscribers(mandatory ThreadMandatory) ([]string, error) {

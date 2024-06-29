@@ -51,6 +51,8 @@ type Core struct {
 	C23       chan common.ThreadResponse // MessengerResponse
 	C24       chan common.ThreadRequest  // CacheRequest
 	C25       chan common.ThreadResponse // CacheResponse
+	C26       chan common.ThreadRequest  // CacheRequest
+	C27       chan common.ThreadResponse // CacheResponse
 	interrupt chan common.InterruptEvent // InterruptEvent
 
 	config *Config
@@ -86,6 +88,8 @@ func New(configPath string) (*Core, error) {
 	core.C23 = make(chan common.ThreadResponse, 10)
 	core.C24 = make(chan common.ThreadRequest, 10)
 	core.C25 = make(chan common.ThreadResponse, 10)
+	core.C26 = make(chan common.ThreadRequest, 10)
+	core.C27 = make(chan common.ThreadResponse, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)
@@ -158,7 +162,7 @@ func New(configPath string) (*Core, error) {
 	core.config.FillDatabaseConfig(databaseConfig)
 	core.DatabaseThread, err = database.New(databaseConfig, databaseLogger,
 		common.DefaultConfigsFolder, common.DefaultStatisticsFolder,
-		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C11, core.C12, core.C15, core.C16)
+		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C11, core.C12, core.C15, core.C16, core.C26, core.C27)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +185,8 @@ func New(configPath string) (*Core, error) {
 	}
 	schedulerConig := &scheduler.Config{}
 	core.config.FillSchedulerConfig(schedulerConig)
-	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, core.interrupt, core.C18, core.C19, core.C20, core.C21)
+	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger,
+		core.interrupt, core.C18, core.C19, core.C20, core.C21, core.C26, core.C27)
 	if err != nil {
 		return nil, err
 	}

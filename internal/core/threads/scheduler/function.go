@@ -1,25 +1,26 @@
 package scheduler
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/components/scheduler"
+	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 )
 
-func (thread *Thread) get(filter *scheduler.Filter) []scheduler.Job {
+func (thread *Thread) get(filter *interfaces.Filter) []interfaces.Job {
 
-	return thread.Scheduler.GetBy(filter)
+	jobs, _ := thread.Scheduler.Jobs.GetBy(filter)
+	return jobs
 }
 
-func (thread *Thread) create(job *scheduler.Job) error {
+func (thread *Thread) create(job *interfaces.Job) error {
 
-	return thread.Scheduler.Create(job)
+	return thread.Scheduler.Jobs.Create(job)
 }
 
-func (thread *Thread) delete(filter *scheduler.Filter) error {
+func (thread *Thread) delete(filter *interfaces.Filter) error {
 
-	return thread.Scheduler.Delete(filter)
+	return thread.Scheduler.Jobs.Delete(filter)
 }
 
-func (thread *Thread) queue() []scheduler.Job {
+func (thread *Thread) queue() []interfaces.Job {
 
 	return thread.Scheduler.GetQueue()
 }

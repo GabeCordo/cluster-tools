@@ -14,26 +14,37 @@ func (thread *Thread) Setup() {
 	thread.configFolderPath = common.DefaultConfigsFolder
 	thread.statisticFolderPath = common.DefaultStatisticsFolder
 
-	if err := GetConfigDatabaseInstance().Load(thread.configFolderPath); err != nil {
-		log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
-			err.Error())
+	if db, ok := (GetConfigDatabaseInstance()).(database.Database); ok {
+
+		if err := db.Load(thread.configFolderPath); err != nil {
+			log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
+				err.Error())
+		}
 	}
 
 	// some configs may have carried over from previous runs
 	// let the operator know these configs are being loaded into the
 	// core without having to query the database over HTTP
-	GetConfigDatabaseInstance().Print()
+	if db, ok := (GetConfigDatabaseInstance()).(database.Database); ok {
+		db.Print()
+	}
 }
 
 func (thread *Thread) Teardown() {
 	thread.accepting = false
 
-	if err := GetConfigDatabaseInstance().Save(thread.configFolderPath); err != nil {
-		log.Printf("failed to save configs created during runtime %s\n", err.Error())
+	if db, ok := (GetConfigDatabaseInstance()).(database.Database); ok {
+
+		if err := db.Save(thread.configFolderPath); err != nil {
+			log.Printf("failed to save configs created during runtime %s\n", err.Error())
+		}
 	}
 
-	if err := GetStatisticDatabaseInstance().Save(thread.statisticFolderPath); err != nil {
-		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
+	if db, ok := (GetStatisticDatabaseInstance()).(database.Database); ok {
+
+		if err := db.Save(thread.statisticFolderPath); err != nil {
+			log.Printf("failed to save statistics created during runtime %s\n", err.Error())
+		}
 	}
 
 	thread.wg.Wait()
@@ -70,6 +81,18 @@ func (thread *Thread) Start() {
 	go func() {
 		// request from supervisor
 		for request := range thread.C15 {
+			if !thread.accepting {
+				break
+			}
+			thread.wg.Add(1)
+
+			request.Source = common.Supervisor
+			thread.ProcessIncomingRequest(&request)
+		}
+	}()
+	go func() {
+		// request from scheduler
+		for request := range thread.C26 {
 			if !thread.accepting {
 				break
 			}
@@ -120,6 +143,10 @@ func (thread *Thread) Respond(request *common.ThreadRequest, response *common.Th
 		break
 	case common.Supervisor:
 		thread.C16 <- *response
+		break
+	case common.Scheduler:
+		thread.C27 <- *response
+		break
 	default:
 		success = false
 	}
@@ -138,8 +165,8 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 					if configData, ok := (request.Data).(interfaces.Config); ok {
 						err := GetConfigDatabaseInstance().Create(request.Identifiers.Module, request.Identifiers.Cluster, configData)
 
-						if err == nil {
-							GetConfigDatabaseInstance().Print()
+						if db, ok := (GetConfigDatabaseInstance()).(database.Database); (err == nil) && ok {
+							db.Print()
 						}
 
 						thread.Respond(request, &common.ThreadResponse{
@@ -164,8 +191,8 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 								Stats:     *statisticsData, // copy
 							})
 
-						if err == nil {
-							GetStatisticDatabaseInstance().Print()
+						if db, ok := (GetStatisticDatabaseInstance()).(database.Database); (err == nil) && ok {
+							db.Print()
 						}
 
 						thread.Respond(request, &common.ThreadResponse{
@@ -179,6 +206,10 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 							Error:   StoreTypeMismatch,
 						})
 					}
+				}
+			case common.JobRecord:
+				{
+
 				}
 			}
 		}
@@ -211,6 +242,10 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 					response = common.ThreadResponse{Success: err == nil, Nonce: request.Nonce, Data: records}
 					thread.Respond(request, &response)
 				}
+			case common.JobRecord:
+				{
+
+				}
 			}
 		}
 	case common.DeleteAction:
@@ -220,8 +255,8 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 				{
 					err := GetConfigDatabaseInstance().Delete(request.Identifiers.Module, request.Identifiers.Cluster)
 
-					if err == nil {
-						GetConfigDatabaseInstance().Print()
+					if db, ok := (GetConfigDatabaseInstance()).(database.Database); (err == nil) && ok {
+						db.Print()
 					}
 
 					response := common.ThreadResponse{Success: err == nil, Nonce: request.Nonce}
@@ -231,12 +266,16 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 				{
 					err := GetStatisticDatabaseInstance().Delete(request.Identifiers.Module)
 
-					if err == nil {
-						GetConfigDatabaseInstance().Print()
+					if db, ok := (GetStatisticDatabaseInstance()).(database.Database); (err == nil) && ok {
+						db.Print()
 					}
 
 					response := common.ThreadResponse{Success: err == nil, Nonce: request.Nonce}
 					thread.Respond(request, &response)
+				}
+			case common.JobRecord:
+				{
+
 				}
 			}
 		}
@@ -247,8 +286,8 @@ func (thread *Thread) ProcessIncomingRequest(request *common.ThreadRequest) {
 				config := (request.Data).(interfaces.Config)
 				err := GetConfigDatabaseInstance().Replace(request.Identifiers.Module, request.Identifiers.Cluster, config)
 
-				if err == nil {
-					GetConfigDatabaseInstance().Print()
+				if db, ok := (GetConfigDatabaseInstance()).(database.Database); (err == nil) && ok {
+					db.Print()
 				}
 
 				response := common.ThreadResponse{Success: err == nil, Nonce: request.Nonce}

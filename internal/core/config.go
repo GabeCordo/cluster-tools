@@ -28,7 +28,10 @@ type Config struct {
 	MountByDefault     bool    `yaml:"mount-by-default"`
 	EnableCors         bool    `yaml:"enable-cors"`
 	EnableRepl         bool    `yaml:"enable-repl"`
-	Cache              struct {
+	Database           struct {
+		Type string `yaml:"type"`
+	} `yaml:"database"`
+	Cache struct {
 		Expiry  float64 `yaml:"expire-in"`
 		MaxSize uint32  `yaml:"max-size"`
 	} `yaml:"cache"`
@@ -76,6 +79,8 @@ func NewConfig(name string) *Config {
 
 	config.EnableCors = false
 	config.EnableRepl = false
+
+	config.Database.Type = "file"
 
 	config.Net.Client.Port = 8136        // default
 	config.Net.Client.Host = "localhost" // default
@@ -162,6 +167,7 @@ func (config *Config) FillMessengerConfig(messengerConfig *messenger.Config) {
 func (config *Config) FillDatabaseConfig(databaseConfig *database.Config) {
 	databaseConfig.Debug = config.Debug
 	databaseConfig.Timeout = config.MaxWaitForResponse
+	databaseConfig.Type = config.Database.Type
 }
 
 func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {

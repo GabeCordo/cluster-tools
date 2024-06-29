@@ -2,7 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/components/scheduler"
+	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
@@ -37,7 +37,7 @@ func (controller ScheduleController) ParseTime(input string) int {
 func (controller ScheduleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	// PARSE THE INCOMING CLI ARGUMENTS
-	job := scheduler.Job{}
+	job := interfaces.Job{}
 
 	// the Identifier field is required by both the CREATE and DELETE flags
 	job.Identifier = cli.NextArg()
@@ -78,7 +78,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 		}
 	}
 
-	dump := &scheduler.Dump{}
+	dump := &interfaces.Dump{}
 
 	filePath := fmt.Sprintf("%s/%s.yml", common.DefaultSchedulesFolder, job.Module)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) && cli.Flag(commandline.Delete) {
@@ -96,17 +96,12 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 		}
 	}
 
-	// TODO : better way to validate / fix bad data needed
-	if dump.Config.RefreshInterval == 0 {
-		dump.Config.RefreshInterval = 2
-	}
-
 	// DETERMINE IF THE MODULE FILE EXISTS IN THE SCHEDULER FOLDER
 
 	if cli.Flag(commandline.Create) {
 
 		if dump.Jobs == nil {
-			dump.Jobs = make([]scheduler.Job, 0)
+			dump.Jobs = make([]interfaces.Job, 0)
 		}
 		dump.Jobs = append(dump.Jobs, job)
 
@@ -125,7 +120,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 
 	} else {
 
-		modifiedJobsList := make([]scheduler.Job, 0)
+		modifiedJobsList := make([]interfaces.Job, 0)
 		for _, j := range dump.Jobs {
 			if j.Identifier != job.Identifier {
 				modifiedJobsList = append(modifiedJobsList, j)

@@ -38,3 +38,8 @@ func (thread *Thread) processorRemove(config *interfaces.ProcessorConfig) error 
 	}
 	return err
 }
+
+func (thread *Thread) processorPing() error {
+
+	//table := GetTableInstance()
+}

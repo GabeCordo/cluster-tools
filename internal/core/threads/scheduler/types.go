@@ -23,14 +23,19 @@ type Thread struct {
 	C20 <-chan common.ThreadRequest  // Processor receives request from http_client thread
 	C21 chan<- common.ThreadResponse // Processor sends response to http_client thread
 
+	C26 chan<- common.ThreadRequest  // Scheduler sends request to database_thread
+	C27 <-chan common.ThreadResponse // Scheduler receives response from database_thread
+
 	wg sync.WaitGroup
 
 	config *Config
 
 	logger *logging.Logger
 
-	responseTable *multithreaded.ResponseTable
-	Scheduler     *scheduler.Scheduler
+	processorResponseTable *multithreaded.ResponseTable
+	databaseResponseTable  *multithreaded.ResponseTable
+
+	Scheduler *scheduler.Scheduler
 }
 
 func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
@@ -73,7 +78,18 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan SchedulerResponse' in index 4")
 	}
 
-	thread.responseTable = multithreaded.NewResponseTable()
+	thread.C26, ok = (channels[5]).(chan common.ThreadRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseRequest' in index 5")
+	}
+
+	thread.C27, ok = (channels[6]).(chan common.ThreadResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
+	}
+
+	thread.processorResponseTable = multithreaded.NewResponseTable()
+	thread.databaseResponseTable = multithreaded.NewResponseTable()
 
 	return thread, nil
 }

@@ -1,12 +1,15 @@
 package scheduler
 
-import "testing"
+import (
+	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
+	"testing"
+)
 
-var testInterval = &Interval{
+var testInterval = &interfaces.Interval{
 	Minute: 10,
 }
 
-var testJob = &Job{
+var testJob = &interfaces.Job{
 	Identifier: "test",
 	Module:     "common",
 	Cluster:    "vec",
@@ -15,7 +18,7 @@ var testJob = &Job{
 	Metadata:   make(map[string]string),
 }
 
-var testDupJob = &Job{
+var testDupJob = &interfaces.Job{
 	Identifier: "test2",
 	Module:     "common",
 	Cluster:    "vec",
@@ -24,11 +27,11 @@ var testDupJob = &Job{
 	Metadata:   make(map[string]string),
 }
 
-var testInterval2 = &Interval{
+var testInterval2 = &interfaces.Interval{
 	Minute: 5,
 }
 
-var testJob2 = &Job{
+var testJob2 = &interfaces.Job{
 	Identifier: "test2",
 	Module:     "common",
 	Cluster:    "vec",
@@ -37,7 +40,7 @@ var testJob2 = &Job{
 	Metadata:   make(map[string]string),
 }
 
-var testJob3 = &Job{
+var testJob3 = &interfaces.Job{
 	Identifier: "test3",
 	Module:     "common",
 	Cluster:    "hello",
@@ -97,26 +100,26 @@ func TestScheduler_GetBy(t *testing.T) {
 	}
 
 	// Attempt to Get All 3 By Module //
-	f1 := &Filter{Module: "common"}
+	f1 := &interfaces.Filter{Module: "common"}
 	if foundJobs := scheduler.GetBy(f1); len(foundJobs) != 3 {
-		t.Error("expected 3 jobs to be found for this module")
+		t.Error("expected 3 Jobs to be found for this module")
 		return
 	}
 
 	// Attempt to Get 2 Jobs By Their Similar Cluster //
-	f2 := &Filter{Module: "common", Cluster: "vec"}
+	f2 := &interfaces.Filter{Module: "common", Cluster: "vec"}
 	if foundJobs := scheduler.GetBy(f2); len(foundJobs) != 2 {
-		t.Error("expected 2 jobs to be found with the same module/cluster pair")
+		t.Error("expected 2 Jobs to be found with the same module/cluster pair")
 		return
 	}
 
 	// Attempt to Get 1 Job By Their //
-	f3 := &Filter{Module: "common", Cluster: "vec", Interval: *testInterval}
+	f3 := &interfaces.Filter{Module: "common", Cluster: "vec", Interval: *testInterval}
 	if foundJobs := scheduler.GetBy(f3); len(foundJobs) != 1 {
 		t.Error("expected 1 job to be found with the module/cluster/interval combo")
 	}
 
-	f4 := &Filter{Identifier: "test3"}
+	f4 := &interfaces.Filter{Identifier: "test3"}
 	if foundJobs := scheduler.GetBy(f4); len(foundJobs) != 1 {
 		t.Error("expected 1 job to exist with the identifier test3")
 	}
@@ -159,26 +162,26 @@ func TestScheduler_Delete(t *testing.T) {
 	}
 
 	// Attempt to Get All 3 By Module //
-	f1 := &Filter{Module: "common"}
+	f1 := &interfaces.Filter{Module: "common"}
 	if foundJobs := scheduler.GetBy(f1); len(foundJobs) != 3 {
-		t.Error("expected 3 jobs to be found for this module")
+		t.Error("expected 3 Jobs to be found for this module")
 		return
 	}
 
 	// Attempt to Get 2 Jobs By Their Similar Cluster //
-	f2 := &Filter{Module: "common", Cluster: "vec"}
+	f2 := &interfaces.Filter{Module: "common", Cluster: "vec"}
 	if foundJobs := scheduler.GetBy(f2); len(foundJobs) != 2 {
-		t.Error("expected 2 jobs to be found with the same module/cluster pair")
+		t.Error("expected 2 Jobs to be found with the same module/cluster pair")
 		return
 	}
 
 	// Attempt to Get 1 Job By Their //
-	f3 := &Filter{Module: "common", Cluster: "vec", Interval: *testInterval}
+	f3 := &interfaces.Filter{Module: "common", Cluster: "vec", Interval: *testInterval}
 	if foundJobs := scheduler.GetBy(f3); len(foundJobs) != 1 {
 		t.Error("expected 1 job to be found with the module/cluster/interval combo")
 	}
 
-	f4 := &Filter{Identifier: "test3"}
+	f4 := &interfaces.Filter{Identifier: "test3"}
 	if foundJobs := scheduler.GetBy(f4); len(foundJobs) != 1 {
 		t.Error("expected 1 job to exist with the identifier test3")
 	}
@@ -190,15 +193,15 @@ func TestScheduler_Delete(t *testing.T) {
 	}
 
 	// validate the only common/hello record is deleted //
-	f5 := &Filter{Module: "common", Cluster: "hello"}
+	f5 := &interfaces.Filter{Module: "common", Cluster: "hello"}
 	if foundJobs := scheduler.GetBy(f5); len(foundJobs) != 0 {
-		t.Error("expected 0 jobs to exist with the common/hello pair")
+		t.Error("expected 0 Jobs to exist with the common/hello pair")
 		return
 	}
 
 	// validate the other records are not affected //
 	if foundJobs := scheduler.GetBy(f2); len(foundJobs) != 2 {
-		t.Error("expected 2 jobs to be left alone")
+		t.Error("expected 2 Jobs to be left alone")
 		return
 	}
 

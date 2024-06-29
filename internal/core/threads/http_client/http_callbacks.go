@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/processor"
-	"github.com/GabeCordo/cluster-tools/internal/core/components/scheduler"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/supervisor"
 	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
@@ -502,11 +501,11 @@ func (thread *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	filter := &scheduler.Filter{
+	filter := &interfaces.Filter{
 		Identifier: identifier,
 		Module:     module,
 		Cluster:    cluster,
-		Interval: scheduler.Interval{
+		Interval: interfaces.Interval{
 			Minute: minutes,
 		}}
 
@@ -529,7 +528,7 @@ func (thread *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 
 func (thread *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 
-	var job scheduler.Job
+	var job interfaces.Job
 	err := json.NewDecoder(r.Body).Decode(&job)
 	if err != nil {
 		fmt.Println("missing job passed to body")
@@ -575,18 +574,24 @@ func (thread *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	filter := &scheduler.Filter{
+	filter := &interfaces.Filter{
 		Identifier: identifier,
 		Module:     module,
 		Cluster:    cluster,
-		Interval: scheduler.Interval{
+		Interval: interfaces.Interval{
 			Minute: minutes,
 		}}
 
 	var err error
 
 	response := interfaces.HTTPResponse{}
-	response.Data, err = common.GetJobs(common.ThreadMandatory{thread.C20, thread.SchedulerResponseTable, thread.config.Timeout}, filter)
+	err = common.DeleteJob(
+		common.ThreadMandatory{
+			thread.C20,
+			thread.SchedulerResponseTable,
+			thread.config.Timeout},
+		filter,
+	)
 
 	response.Success = err == nil
 	if err != nil {

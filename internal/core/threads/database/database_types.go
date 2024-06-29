@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Debug   bool
 	Timeout float64
+	Type    string
 }
 
 type Thread struct {
@@ -27,6 +28,9 @@ type Thread struct {
 
 	C15 <-chan common.ThreadRequest  // Database is receiving req from the supervisor_thread
 	C16 chan<- common.ThreadResponse // Database is sending rsp from the supervisor_thread
+
+	C26 <-chan common.ThreadRequest  // Database is receiving req from the scheduler_thread
+	C27 chan<- common.ThreadResponse // Database is sending rsp to the scheduler_thread
 
 	messengerResponseTable *multithreaded.ResponseTable
 
@@ -87,6 +91,14 @@ func New(cfg *Config, logger *logging.Logger, configPath, statisticPath string, 
 	thread.C16, ok = (channels[8]).(chan common.ThreadResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 8")
+	}
+	thread.C26, ok = (channels[9]).(chan common.ThreadRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseRequest' in index 9")
+	}
+	thread.C27, ok = (channels[10]).(chan common.ThreadResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan DatabaseResponse' in index 10")
 	}
 
 	thread.messengerResponseTable = multithreaded.NewResponseTable()

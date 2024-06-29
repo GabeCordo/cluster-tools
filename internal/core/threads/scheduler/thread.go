@@ -2,8 +2,10 @@ package scheduler
 
 import (
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/internal/core/components/database"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/processor"
 	"github.com/GabeCordo/cluster-tools/internal/core/components/scheduler"
+	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
 	"github.com/GabeCordo/toolchain/multithreaded"
 )
@@ -11,12 +13,14 @@ import (
 func (thread *Thread) Setup() {
 
 	var err error
-	if thread.Scheduler, err = scheduler.New(); err != nil {
+	if thread.Scheduler, err = scheduler.New(GetJobDatabaseInstance()); err != nil {
 		panic(err)
 	}
 
-	if err = scheduler.Load(thread.Scheduler, common.DefaultSchedulesFolder); err != nil {
-		panic(err)
+	if db, ok := (thread.Scheduler.Jobs).(database.Database); ok {
+		if err = db.Load(common.DefaultSchedulesFolder); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -35,7 +39,14 @@ func (thread *Thread) Start() {
 	go func() {
 		// response coming from the processor thread
 		for response := range thread.C19 {
-			thread.responseTable.Write(response.Nonce, response)
+			thread.processorResponseTable.Write(response.Nonce, response)
+		}
+	}()
+
+	go func() {
+		// response coming from the processor thread
+		for response := range thread.C27 {
+			thread.databaseResponseTable.Write(response.Nonce, response)
 		}
 	}()
 
@@ -43,10 +54,10 @@ func (thread *Thread) Start() {
 
 	go scheduler.Watch(thread.Scheduler)
 
-	go scheduler.Loop(thread.Scheduler, func(job *scheduler.Job) error {
+	go scheduler.Loop(thread.Scheduler, func(job *interfaces.Job) error {
 
 		// will return have a maximum of Timeout, so worst-case takes thread.config.Timeout
-		mandatory := common.ThreadMandatory{thread.C18, thread.responseTable, thread.config.Timeout}
+		mandatory := common.ThreadMandatory{thread.C18, thread.processorResponseTable, thread.config.Timeout}
 		_, err := common.CreateSupervisor(mandatory, job.Module, job.Cluster, job.Config, job.Metadata)
 
 		e := ""
@@ -85,7 +96,7 @@ func (thread *Thread) ProcessRequest(request *common.ThreadRequest) {
 	case common.GetAction:
 		switch request.Type {
 		case common.JobRecord:
-			if filter, ok := (request.Data).(scheduler.Filter); ok {
+			if filter, ok := (request.Data).(interfaces.Filter); ok {
 				response.Data = thread.get(&filter)
 			} else {
 				response.Success = false
@@ -97,17 +108,19 @@ func (thread *Thread) ProcessRequest(request *common.ThreadRequest) {
 		}
 
 	case common.CreateAction:
-		if job, ok := (request.Data).(scheduler.Job); ok {
+		if job, ok := (request.Data).(interfaces.Job); ok {
 			response.Error = thread.create(&job)
 			response.Success = response.Error == nil
+			thread.logger.Printf("created job:%s\n", job.Identifier)
 		} else {
 			response.Success = false
 			response.Error = common.BadRequestType
 		}
 	case common.DeleteAction:
-		if filter, ok := (request.Data).(scheduler.Filter); ok {
+		if filter, ok := (request.Data).(interfaces.Filter); ok {
 			response.Error = thread.delete(&filter)
 			response.Success = response.Error == nil
+			thread.logger.Printf("deleted job:%s\n", filter.Identifier)
 		} else {
 			response.Success = false
 			response.Error = common.BadResponseType
@@ -122,8 +135,10 @@ func (thread *Thread) Teardown() {
 	// do not complete teardown until all requests have been completed
 	thread.wg.Wait()
 
-	if err := scheduler.Save(thread.Scheduler, common.DefaultSchedulesFolder); err != nil {
-		thread.logger.Panicln(err.Error())
-	}
+	if db, ok := (thread.Scheduler.Jobs).(database.Database); ok {
 
+		if err := db.Save(common.DefaultSchedulesFolder); err != nil {
+			thread.logger.Panicln(err.Error())
+		}
+	}
 }
