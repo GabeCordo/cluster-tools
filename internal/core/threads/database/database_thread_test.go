@@ -18,7 +18,7 @@ func generateDatabaseThread(in chan common.ThreadRequest, out chan common.Thread
 	cfg := &Config{Debug: true, Timeout: 2.0}
 	logger, _ := logging.NewLogger("database")
 	thread, _ := New(cfg, logger, "/test/path", "/test/path2",
-		irc, in, out, min, mout, in, out, in, out)
+		irc, in, out, min, mout, in, out, in, out, in, out)
 
 	return thread
 }

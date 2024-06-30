@@ -150,7 +150,7 @@ func DeleteConfigInDatabase(mandatory ThreadMandatory, moduleName, configName st
 	return databaseResponse.Success
 }
 
-func GetProcessors(mandatory ThreadMandatory) ([]processor.Processor, bool) {
+func GetProcessors(mandatory ThreadMandatory) ([]*processor.Processor, bool) {
 
 	request := ThreadRequest{
 		Action: GetAction,
@@ -168,7 +168,7 @@ func GetProcessors(mandatory ThreadMandatory) ([]processor.Processor, bool) {
 	response := (data).(ThreadResponse)
 
 	if response.Success {
-		return (response.Data).([]processor.Processor), true
+		return (response.Data).([]*processor.Processor), true
 	} else {
 		return nil, false
 	}

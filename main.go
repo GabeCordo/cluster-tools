@@ -37,5 +37,8 @@ func main() {
 	shc := cli.AddCommand("schedule", controllers.ScheduleController{})
 	shc.SetCategory("utils").SetDescription("create or delete schedules for when clusters should be provisioned")
 
+	cc := cli.AddCommand("config", controllers.ConfigCommand{})
+	cc.SetCategory("utils").SetDescription("update the global cluster-tools configuration")
+
 	cli.Run()
 }

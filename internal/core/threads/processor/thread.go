@@ -3,6 +3,7 @@ package processor
 import (
 	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
+	"time"
 )
 
 func (thread *Thread) Setup() {
@@ -66,6 +67,17 @@ func (thread *Thread) Start() {
 		// response coming from the database thread
 		for response := range thread.C12 {
 			thread.DatabaseResponseTable.Write(response.Nonce, response)
+		}
+	}()
+
+	// PROCESSOR PROBE LOOP
+
+	go func() {
+		sleepDuration := time.Duration(thread.config.ProbeEvery) * time.Second
+
+		for {
+			thread.processorPing()
+			time.Sleep(sleepDuration)
 		}
 	}()
 

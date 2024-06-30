@@ -21,6 +21,7 @@ type Processor struct {
 	Status     Status
 	LastUpdate time.Time
 	Modules    []string
+	Retries    uint32
 }
 
 func (processor Processor) ToString() string {

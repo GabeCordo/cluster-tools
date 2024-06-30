@@ -6,19 +6,19 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
 )
 
-func (table *Table) GetProcessors() []Processor {
+func (table *Table) GetProcessors() []*Processor {
 
 	table.mutex.RLock()
 	defer table.mutex.RUnlock()
 
-	processors := make([]Processor, len(table.processors))
+	//processors := make([]Processor, len(table.processors))
+	//
+	//// make a copy of the processor list
+	//for idx, processor := range table.processors {
+	//	processors[idx] = *processor
+	//}
 
-	// make a copy of the processor list
-	for idx, processor := range table.processors {
-		processors[idx] = *processor
-	}
-
-	return processors
+	return table.processors
 }
 
 func (table *Table) AddProcessor(cfg *interfaces.ProcessorConfig) error {

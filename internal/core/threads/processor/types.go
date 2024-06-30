@@ -9,8 +9,10 @@ import (
 )
 
 type Config struct {
-	Debug   bool
-	Timeout float64
+	Debug      bool
+	Timeout    float64
+	ProbeEvery uint32
+	MaxRetry   uint32
 }
 
 type Thread struct {

@@ -63,6 +63,10 @@ type Config struct {
 			Port int    `yaml:"port"`
 		} `yaml:"processor"`
 	} `yaml:"net"`
+	Processor struct {
+		ProbeEvery uint32 `yaml:"probe-every"`
+		MaxRetry   uint32 `yaml:"max-retry"`
+	} `yaml:"processor"`
 	Path string
 }
 
@@ -81,6 +85,9 @@ func NewConfig(name string) *Config {
 	config.EnableRepl = false
 
 	config.Database.Type = "file"
+
+	config.Processor.ProbeEvery = 10
+	config.Processor.MaxRetry = 5
 
 	config.Net.Client.Port = 8136        // default
 	config.Net.Client.Host = "localhost" // default
@@ -174,6 +181,8 @@ func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {
 	// TODO - add panic check
 	processorConfig.Debug = config.Debug
 	processorConfig.Timeout = config.MaxWaitForResponse
+	processorConfig.MaxRetry = config.Processor.MaxRetry
+	processorConfig.ProbeEvery = config.Processor.ProbeEvery
 }
 
 func (config *Config) FillSupervisorConfig(supervisorConfig *supervisor.Config) {
