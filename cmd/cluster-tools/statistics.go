@@ -1,8 +1,8 @@
-package cli
+package main
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/threads/common"
 	"github.com/GabeCordo/commandline"
 	"io/fs"
 	"path/filepath"

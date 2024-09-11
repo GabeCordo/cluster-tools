@@ -1,9 +1,9 @@
-package cli
+package main
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/threads/common"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
 	"os"

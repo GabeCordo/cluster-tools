@@ -40,9 +40,9 @@ type Config struct {
 	StartWithNTransformClusters int     `json:"start-with-n-t-channels"`
 	StartWithNLoadClusters      int     `json:"start-with-n-l-channels"`
 	ETChannelThreshold          int     `json:"et-channel-threshold"`
-	ETChannelGrowthFactor       int     `json:"et-channel-growth-factor"`
+	ETChannelGrowthFactor       float64 `json:"et-channel-growth-factor"`
 	TLChannelThreshold          int     `json:"tl-channel-threshold"`
-	TLChannelGrowthFactor       int     `json:"tl-channel-growth-factor"`
+	TLChannelGrowthFactor       float64 `json:"tl-channel-growth-factor"`
 }
 
 type Status uint8

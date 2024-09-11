@@ -1,10 +1,10 @@
-package cli
+package main
 
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal"
+	"github.com/GabeCordo/cluster-tools/internal/threads/common"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
 	"io"

@@ -6,8 +6,8 @@ import (
 )
 
 type DynamicFeatures struct {
-	Threshold    int `yaml:"threshold" json:"threshold"`
-	GrowthFactor int `yaml:"growth-factor" json:"growth-factor"`
+	Threshold    int     `yaml:"threshold" json:"threshold"`
+	GrowthFactor float64 `yaml:"growth-factor" json:"growth-factor"`
 }
 
 type ModuleClusterConfig struct {

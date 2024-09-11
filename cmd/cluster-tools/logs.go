@@ -1,9 +1,9 @@
-package cli
+package main
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/components/messenger"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/components/messenger"
+	"github.com/GabeCordo/cluster-tools/internal/threads/common"
 	"github.com/GabeCordo/commandline"
 	"io/fs"
 	"os"
