@@ -19,15 +19,15 @@ to the engine. If you are interested, feel free to reach out.
 ### Local Installation
 
 ```shell
-   # create a local copy of the threads
+   # create a log copy of the thread
    git clone https://github.com/GabeCordo/mango
    
-   # generate a threads binary in the GOPATH bin folder
+   # generate a thread binary in the GOPATH bin folder
    go install
    
    # add $(go env GOPATH)/bin to your environment PATH
    
-   # generate global files used by the threads when run
+   # generate global files used by the thread when run
    cluster-tools init
 ```
 

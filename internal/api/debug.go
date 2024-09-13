@@ -3,7 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/components/processor"
+	"github.com/GabeCordo/cluster-tools/internal/processor"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ func Probe(processor *processor.Processor) error {
 		return errors.New("nil processor")
 	}
 
-	url := fmt.Sprintf("http://%s:%d/debug", processor.Host, processor.Port)
+	url := fmt.Sprintf("http://%s/debug", processor.ToString())
 	rsp, err := http.Get(url)
 	if err != nil {
 		return PingFailedError

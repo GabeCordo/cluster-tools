@@ -35,10 +35,10 @@ jobs:
       - checkout
       - run:
           name: Run tests and coverage
-          command: go test -race -coverprofile=coverage.out -covermode=atomic
+          command: go test ./... -race -coverprofile=coverage.out -covermode=atomic
       - codecov/upload
   build-go-executables:
-    # Build go executables and store them as artifacts
+    # Build go executables and database them as artifacts
     docker:
       - image: cimg/go:1.20
     steps:

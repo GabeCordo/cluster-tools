@@ -5,22 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/database/config"
 	"net/http"
 )
 
 var client = http.Client{}
 
-func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, config *interfaces.Config, metadata map[string]string) error {
+func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, cfg *config.Config, metadata map[string]string) error {
 
 	body := &struct {
 		Module     string            `json:"module"`
 		Cluster    string            `json:"cluster"`
-		Config     interfaces.Config `json:"config"`
+		Config     config.Config     `json:"config"`
 		Supervisor uint64            `json:"id"`
 		Metadata   map[string]string `json:"metadata"`
 	}{
-		moduleName, clusterName, *config, supervisor, metadata,
+		moduleName, clusterName, *cfg, supervisor, metadata,
 	}
 
 	var buf bytes.Buffer

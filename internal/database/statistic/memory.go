@@ -1,0 +1,152 @@
+package statistic
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/GabeCordo/cluster-tools/internal/database"
+	"os"
+	"sync"
+	"time"
+)
+
+type LocalStatisticDatabase struct {
+	records map[string]map[string][]Wrapper
+	mutex   sync.RWMutex
+}
+
+func NewLocalStatisticDatabase() *LocalStatisticDatabase {
+
+	db := new(LocalStatisticDatabase)
+	db.records = make(map[string]map[string][]Wrapper)
+
+	return db
+}
+
+func (db *LocalStatisticDatabase) Save(path string) error {
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	}
+
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+
+	outputFilePath := fmt.Sprintf("%s/etl_stats_%s.json", path, time.Now().Format(time.RFC3339))
+
+	if _, err := os.Stat(outputFilePath); os.IsExist(err) {
+		return err
+	}
+
+	f, err := os.Create(outputFilePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	statisticBytes, _ := json.Marshal(db.records)
+	f.Write(statisticBytes)
+
+	return nil
+}
+
+func (db *LocalStatisticDatabase) Load(path string) error {
+	panic("implement me")
+}
+
+type StatisticFilter struct {
+	Module  string
+	Cluster string
+	Verbose bool
+}
+
+func (db *LocalStatisticDatabase) Get(filter database.Filter) []any {
+
+	// (records []Wrapper, err error)
+	results := make([]any, 0)
+
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+
+	if filter.Module == "" {
+		return results
+	}
+
+	module, found := db.records[filter.Module]
+
+	if !found {
+		return results
+	}
+
+	if filter.Cluster == "" {
+		return results
+	}
+
+	records, found := module[filter.Cluster]
+	if !found {
+		return results
+	}
+
+	for _, record := range records {
+		results = append(results, record.Stats)
+	}
+
+	return results
+}
+
+func (db *LocalStatisticDatabase) Create(filter database.Filter, record any) (any, error) {
+
+	// old: moduleId, clusterId string, statistic Wrapper
+
+	statistic, ok := record.(Wrapper)
+	if !ok {
+		return nil, errors.New("invalid record type")
+	}
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	if _, found := db.records[filter.Module]; !found {
+		db.records[filter.Module] = make(map[string][]Wrapper)
+	}
+
+	if _, found := db.records[filter.Module][filter.Cluster]; !found {
+		statistics := make([]Wrapper, 1)
+		statistics[0] = statistic
+		db.records[filter.Module][filter.Cluster] = statistics
+	} else {
+		db.records[filter.Module][filter.Cluster] = append(db.records[filter.Module][filter.Cluster], statistic)
+	}
+
+	return filter.Cluster, nil
+}
+
+func (db *LocalStatisticDatabase) Delete(filter database.Filter) error {
+
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	if _, found := db.records[filter.Module]; !found {
+		return errors.New("module does not exist")
+	}
+
+	delete(db.records, filter.Module)
+	return nil
+}
+
+func (db *LocalStatisticDatabase) Replace(filter database.Filter, record any) error {
+	panic("implement me")
+}
+
+func (db *LocalStatisticDatabase) Print() {
+
+	for moduleName, module := range db.records {
+
+		fmt.Printf("├─ %s\n", moduleName)
+
+		for supervisorName, statistics := range module {
+
+			fmt.Printf("|   ├─ %s (num of records: %d) \n", supervisorName, len(statistics))
+		}
+	}
+}

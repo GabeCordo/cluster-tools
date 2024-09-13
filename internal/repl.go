@@ -3,7 +3,7 @@ package core
 import (
 	"bufio"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/thread"
 	"os"
 	"strings"
 )
@@ -32,7 +32,7 @@ func (core *Core) repl() {
 			//}
 			fmt.Println("not implemented")
 		} else if text == "stop" {
-			core.interrupt <- common.Shutdown
+			core.interrupt <- thread.Shutdown
 			break
 		}
 	}

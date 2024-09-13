@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/cache"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/database"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/http_client"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/http_processor"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/messenger"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/processor"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/scheduler"
-	"github.com/GabeCordo/cluster-tools/internal/core/threads/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/thread/cache"
+	"github.com/GabeCordo/cluster-tools/internal/thread/database"
+	"github.com/GabeCordo/cluster-tools/internal/thread/messenger"
+	"github.com/GabeCordo/cluster-tools/internal/thread/processor"
+	http_client "github.com/GabeCordo/cluster-tools/internal/thread/rest/client"
+	http_processor "github.com/GabeCordo/cluster-tools/internal/thread/rest/processor"
+	"github.com/GabeCordo/cluster-tools/internal/thread/scheduler"
+	"github.com/GabeCordo/cluster-tools/internal/thread/supervisor"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -67,7 +67,14 @@ type Config struct {
 		ProbeEvery uint32 `yaml:"probe-every"`
 		MaxRetry   uint32 `yaml:"max-retry"`
 	} `yaml:"processor"`
-	Path string
+	Paths struct {
+		Root       string `yaml:"root"`
+		Configs    string `yaml:"configs"`
+		Logs       string `yaml:"logs"`
+		Statistics string `yaml:"statistics"`
+		Schedules  string `yaml:"schedules"`
+		Messenger  string `yaml:"messenger"`
+	} `yaml:"paths"`
 }
 
 // TODO : should this be here?
@@ -86,6 +93,9 @@ func NewConfig(name string) *Config {
 
 	config.Database.Type = "file"
 
+	config.MaxWaitForResponse = 2
+	config.MountByDefault = true
+
 	config.Processor.ProbeEvery = 10
 	config.Processor.MaxRetry = 5
 
@@ -94,6 +104,9 @@ func NewConfig(name string) *Config {
 
 	config.Net.Processor.Port = 8137
 	config.Net.Processor.Host = "localhost"
+
+	config.Processor.ProbeEvery = 2
+	config.Processor.MaxRetry = 10
 
 	return config
 }
@@ -106,7 +119,7 @@ func (config *Config) Print() {
 
 func (config *Config) ToYAML(path string) {
 
-	// if a core already exists, delete it
+	// if a cluster-tools already exists, delete it
 	if _, err := os.Stat(path); err == nil {
 		os.Remove(path)
 	}
@@ -119,8 +132,8 @@ func (config *Config) ToYAML(path string) {
 }
 
 func (config *Config) Store() bool {
-	// verify that the core file we initially loaded from has not been deleted
-	if _, err := os.Stat(config.Path); errors.Is(err, os.ErrNotExist) {
+	// verify that the cluster-tools file we initially loaded from has not been deleted
+	if _, err := os.Stat(config.Paths.Root); errors.Is(err, os.ErrNotExist) {
 		return false
 	}
 
@@ -129,7 +142,7 @@ func (config *Config) Store() bool {
 		return false
 	}
 
-	err = os.WriteFile(config.Path, jsonRepOfConfig, 0666)
+	err = os.WriteFile(config.Paths.Root, jsonRepOfConfig, 0666)
 	if err != nil {
 		return false
 	}
@@ -175,6 +188,8 @@ func (config *Config) FillDatabaseConfig(databaseConfig *database.Config) {
 	databaseConfig.Debug = config.Debug
 	databaseConfig.Timeout = config.MaxWaitForResponse
 	databaseConfig.Type = config.Database.Type
+	databaseConfig.ConfigsFolder = config.Paths.Configs
+	databaseConfig.StatisticsFolder = config.Paths.Statistics
 }
 
 func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {
@@ -183,6 +198,8 @@ func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {
 	processorConfig.Timeout = config.MaxWaitForResponse
 	processorConfig.MaxRetry = config.Processor.MaxRetry
 	processorConfig.ProbeEvery = config.Processor.ProbeEvery
+	processorConfig.Net.Host = config.Net.Processor.Host
+	processorConfig.Net.Port = config.Net.Processor.Port
 }
 
 func (config *Config) FillSupervisorConfig(supervisorConfig *supervisor.Config) {
@@ -194,6 +211,7 @@ func (config *Config) FillSupervisorConfig(supervisorConfig *supervisor.Config) 
 func (config *Config) FillSchedulerConfig(schedulerConfig *scheduler.Config) {
 	schedulerConfig.Debug = config.Debug
 	schedulerConfig.Timeout = config.MaxWaitForResponse
+	schedulerConfig.SchedulesFolder = config.Paths.Schedules
 }
 
 func YAMLToETLConfig(config *Config, path string) error {
@@ -212,7 +230,7 @@ func YAMLToETLConfig(config *Config, path string) error {
 
 	err = yaml.Unmarshal([]byte(file), config)
 	if err != nil {
-		// the file is not a JSON or is a malformed (fields missing) core
+		// the file is not a JSON or is a malformed (fields missing) cluster-tools
 		log.Println(err)
 		return err
 	}
@@ -241,7 +259,7 @@ func GetConfigInstance(configPath ...string) *Config {
 
 		if err := YAMLToETLConfig(ConfigInstance, configPath[0]); err == nil {
 			// the configPath we found the common for future reference
-			ConfigInstance.Path = configPath[0]
+			ConfigInstance.Paths.Root = configPath[0]
 			// if the Timeout is not set, then simply default to 2.0
 			if ConfigInstance.MaxWaitForResponse == 0 {
 				ConfigInstance.MaxWaitForResponse = 2
