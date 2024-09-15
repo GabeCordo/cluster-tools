@@ -40,6 +40,8 @@ type Thread struct {
 	jobDatabase database.Database
 
 	Scheduler *job.Scheduler
+
+	accepting bool
 }
 
 func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...any) (*Thread, error) {

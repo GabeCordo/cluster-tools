@@ -17,16 +17,24 @@ func (t *Thread) Start() {
 
 	// INCOMING REQUESTS
 
-	go func() {
-		for request := range t.C13 {
-			if !t.accepting {
-				break
-			}
+	thread.SetupListener(t.C13, t.C14, &t.accepting, &t.wg, thread.Supervisor, t.Handle)
 
-			request.Source = thread.Processor
-			t.processRequest(&request)
-		}
-	}()
+	//go func() {
+	//	for request := range t.C13 {
+	//		if !t.accepting {
+	//			break
+	//		}
+	//
+	//		t.wg.Add(1)
+	//
+	//		request.Source = thread.Processor
+	//		response := thread.Response{Source: thread.Supervisor, Nonce: request.Nonce}
+	//		t.Handle(&request, &response)
+	//
+	//		t.C14 <- response
+	//		t.wg.Done()
+	//	}
+	//}()
 
 	// INCOMING RESPONSES
 
@@ -39,71 +47,88 @@ func (t *Thread) Start() {
 	}()
 }
 
-func (t *Thread) respond(dst thread.Module, response *thread.Response) error {
-	switch dst {
-	case thread.Processor:
-		t.C14 <- *response
-	default:
-		return thread.BadResponseType
-	}
-
-	return nil
-}
-
-func (t *Thread) processRequest(request *thread.Request) {
-
-	response := &thread.Response{Nonce: request.Nonce, Error: nil}
+func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 
 	switch request.Action {
 	case thread.GetAction:
-		switch request.Type {
-		case thread.SupervisorRecord:
-			f := &database.Filter{
-				Module:     request.Identifiers.Module,
-				Cluster:    request.Identifiers.Cluster,
-				Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10),
+		{
+			switch request.Type {
+			case thread.SupervisorRecord:
+				{
+					f := &database.Filter{
+						Module:     request.Identifiers.Module,
+						Cluster:    request.Identifiers.Cluster,
+						Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10),
+					}
+					response.Data, response.Error = t.getSupervisor(f)
+				}
+			default:
+				{
+					t.Logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.BadRequestType
+				}
 			}
-			response.Data, response.Error = t.getSupervisor(f)
-		default:
-			response.Error = thread.BadRequestType
 		}
 	case thread.CreateAction:
-		switch request.Type {
-		case thread.SupervisorRecord:
-			metadata, success := (request.Data).(map[string]string)
-			if !success {
-				response.Error = errors.New("SupervisorCreate expected a map[string]string data type")
-			} else {
-				response.Data, response.Error = t.createSupervisor(
-					request.Identifiers.Processor, request.Identifiers.Module,
-					request.Identifiers.Config, request.Identifiers.Config,
-					metadata)
+		{
+			switch request.Type {
+			case thread.SupervisorRecord:
+				{
+					metadata, success := (request.Data).(map[string]string)
+					if !success {
+						response.Error = errors.New("SupervisorCreate expected a map[string]string data type")
+					} else {
+						response.Data, response.Error = t.createSupervisor(
+							request.Identifiers.Processor, request.Identifiers.Module,
+							request.Identifiers.Config, request.Identifiers.Config,
+							metadata)
+					}
+				}
+			default:
+				{
+					t.Logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.BadRequestType
+				}
 			}
-		default:
-			response.Error = thread.BadRequestType
 		}
 	case thread.UpdateAction:
-		switch request.Type {
-		case thread.SupervisorRecord:
-			s := (request.Data).(*supervisor.Supervisor)
-			response.Error = t.updateSupervisor(s)
-		default:
-			response.Error = thread.BadRequestType
+		{
+			switch request.Type {
+			case thread.SupervisorRecord:
+				{
+					s := (request.Data).(*supervisor.Supervisor)
+					response.Error = t.updateSupervisor(s)
+				}
+			default:
+				{
+					t.Logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.BadRequestType
+				}
+			}
 		}
 	case thread.LogAction:
-		switch request.Type {
-		case thread.SupervisorRecord:
-			l := (request.Data).(*log.Log)
-			response.Error = t.logSupervisor(l)
-		default:
-			response.Error = thread.BadRequestType
+		{
+			switch request.Type {
+			case thread.SupervisorRecord:
+				{
+					l := (request.Data).(*log.Log)
+					response.Error = t.logSupervisor(l)
+				}
+			default:
+				{
+					t.Logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.BadRequestType
+				}
+			}
 		}
 	default:
-		response.Error = thread.BadRequestType
+		{
+			t.Logger.Warn(thread.UnknownRequest.Error())
+			response.Error = thread.BadRequestType
+		}
 	}
 
 	response.Success = response.Error == nil
-	t.respond(request.Source, response)
 }
 
 func (t *Thread) Teardown() {

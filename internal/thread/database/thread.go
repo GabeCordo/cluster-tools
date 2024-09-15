@@ -41,54 +41,13 @@ func (t *Thread) Start() {
 
 	// LISTEN FOR INCOMING REQUESTS
 
-	go func() {
-		// request from http_server
-		for request := range t.C1 {
-			if !t.accepting {
-				break
-			}
-			t.wg.Add(1)
+	thread.SetupListener(t.C1, t.C2, &t.accepting, &t.wg, thread.Database, t.Handle)
 
-			request.Source = thread.HttpClient
-			t.ProcessIncomingRequest(&request)
-		}
-	}()
-	go func() {
-		// request from supervisor
-		for request := range t.C11 {
-			if !t.accepting {
-				break
-			}
-			t.wg.Add(1)
+	thread.SetupListener(t.C11, t.C12, &t.accepting, &t.wg, thread.Database, t.Handle)
 
-			request.Source = thread.Processor
-			t.ProcessIncomingRequest(&request)
-		}
-	}()
-	go func() {
-		// request from supervisor
-		for request := range t.C15 {
-			if !t.accepting {
-				break
-			}
-			t.wg.Add(1)
+	thread.SetupListener(t.C15, t.C16, &t.accepting, &t.wg, thread.Database, t.Handle)
 
-			request.Source = thread.Supervisor
-			t.ProcessIncomingRequest(&request)
-		}
-	}()
-	go func() {
-		// request from scheduler
-		for request := range t.C26 {
-			if !t.accepting {
-				break
-			}
-			t.wg.Add(1)
-
-			request.Source = thread.Supervisor
-			t.ProcessIncomingRequest(&request)
-		}
-	}()
+	thread.SetupListener(t.C26, t.C27, &t.accepting, &t.wg, thread.Database, t.Handle)
 
 	// LISTEN FOR INCOMING RESPONSES
 
@@ -115,31 +74,7 @@ func (t *Thread) Request(module thread.Module, request any) (success bool) {
 	return success
 }
 
-func (t *Thread) Respond(request *thread.Request, response *thread.Response) (success bool) {
-
-	success = true
-
-	switch request.Source {
-	case thread.HttpClient:
-		t.C2 <- *response
-		break
-	case thread.Processor:
-		t.C12 <- *response
-		break
-	case thread.Supervisor:
-		t.C16 <- *response
-		break
-	case thread.Scheduler:
-		t.C27 <- *response
-		break
-	default:
-		success = false
-	}
-
-	return success
-}
-
-func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
+func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 
 	switch request.Action {
 	case thread.CreateAction:
@@ -160,16 +95,10 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 							t.configDatabase.Print()
 						}
 
-						t.Respond(request, &thread.Response{
-							Success: err == nil,
-							Nonce:   request.Nonce,
-						})
+						response.Success = err == nil
 					} else {
-						t.Respond(request, &thread.Response{
-							Success: false,
-							Nonce:   request.Nonce,
-							Error:   StoreTypeMismatch,
-						})
+						response.Success = false
+						response.Error = StoreTypeMismatch
 					}
 				}
 			case thread.StatisticRecord:
@@ -186,32 +115,23 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 							},
 						)
 
-						if db, ok := (t.statisticDatabase).(database.Database); (err == nil) && ok {
-							db.Print()
+						if err == nil {
+							t.statisticDatabase.Print()
 						}
-
-						t.Respond(request, &thread.Response{
-							Success: err == nil,
-							Nonce:   request.Nonce,
-						})
+						response.Success = err == nil
 					} else {
-						t.Respond(request, &thread.Response{
-							Success: false,
-							Nonce:   request.Nonce,
-							Error:   StoreTypeMismatch,
-						})
+						response.Success = false
+						response.Error = StoreTypeMismatch
 					}
 				}
-			case thread.JobRecord:
+			default:
 				{
-
+					t.logger.Warn(thread.UnknownRequest.Error())
 				}
 			}
 		}
 	case thread.GetAction:
 		{
-			var response thread.Response
-
 			switch request.Type {
 			case thread.ConfigRecord:
 				{
@@ -225,8 +145,8 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 						configs[i] = result.(config.Config)
 					}
 
-					response = thread.Response{Success: len(results) > 0, Nonce: request.Nonce, Data: configs}
-					t.Respond(request, &response)
+					response.Success = len(results) > 0
+					response.Data = configs
 				}
 			case thread.StatisticRecord:
 				{
@@ -240,12 +160,12 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 						statistics[i] = result.(statistic.Statistics)
 					}
 
-					response = thread.Response{Success: len(results) > 0, Nonce: request.Nonce, Data: statistics}
-					t.Respond(request, &response)
+					response.Success = len(results) > 0
+					response.Data = statistics
 				}
-			case thread.JobRecord:
+			default:
 				{
-
+					t.logger.Warn(thread.UnknownRequest.Error())
 				}
 			}
 		}
@@ -260,8 +180,7 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 						db.Print()
 					}
 
-					response := thread.Response{Success: err == nil, Nonce: request.Nonce}
-					t.Respond(request, &response)
+					response.Success = err == nil
 				}
 			case thread.StatisticRecord:
 				{
@@ -271,12 +190,11 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 						db.Print()
 					}
 
-					response := thread.Response{Success: err == nil, Nonce: request.Nonce}
-					t.Respond(request, &response)
+					response.Success = err == nil
 				}
-			case thread.JobRecord:
+			default:
 				{
-
+					t.logger.Warn(thread.UnknownRequest.Error())
 				}
 			}
 		}
@@ -284,20 +202,25 @@ func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
 		{
 			switch request.Type {
 			case thread.ConfigRecord:
-				cfg := (request.Data).(config.Config)
-				err := t.configDatabase.Replace(database.Filter{Module: request.Identifiers.Module, Cluster: request.Identifiers.Cluster}, &cfg)
+				{
+					cfg := (request.Data).(config.Config)
+					err := t.configDatabase.Replace(database.Filter{Module: request.Identifiers.Module, Cluster: request.Identifiers.Cluster}, &cfg)
 
-				if db, ok := (t.configDatabase).(database.Database); (err == nil) && ok {
-					db.Print()
+					if db, ok := (t.configDatabase).(database.Database); (err == nil) && ok {
+						db.Print()
+					}
+
+					response.Success = err == nil
 				}
-
-				response := thread.Response{Success: err == nil, Nonce: request.Nonce}
-				t.Respond(request, &response)
+			default:
+				{
+					t.logger.Warn(thread.UnknownRequest.Error())
+				}
 			}
 		}
+	default:
+		t.logger.Warn(thread.UnknownRequest.Error())
 	}
-
-	t.wg.Done()
 }
 
 func (t *Thread) ProcessIncomingResponse(response *thread.Response) {

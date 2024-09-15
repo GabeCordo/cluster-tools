@@ -11,31 +11,9 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	go func() {
-		// request from http_server
-		for request := range t.C9 {
-			if !t.accepting {
-				break
-			}
-			t.wg.Add(1)
+	thread.SetupListener(t.C9, t.C10, &t.accepting, &t.wg, thread.Cache, t.Handle)
 
-			request.Source = thread.HttpProcessor
-			t.ProcessIncomingRequest(&request)
-		}
-	}()
-
-	go func() {
-		// request from http_server
-		for request := range t.C24 {
-			if !t.accepting {
-				break
-			}
-			t.wg.Add(1)
-
-			request.Source = thread.HttpClient
-			t.ProcessIncomingRequest(&request)
-		}
-	}()
+	thread.SetupListener(t.C24, t.C25, &t.accepting, &t.wg, thread.Cache, t.Handle)
 
 	go func() {
 		// cleaning the t of expired records
@@ -53,16 +31,26 @@ func (t *Thread) Respond(response *thread.Response) {
 	t.C10 <- *response
 }
 
-func (t *Thread) ProcessIncomingRequest(request *thread.Request) {
-	if request.Action == thread.CreateAction {
-		t.processSaveRequest(request)
-	} else if request.Action == thread.GetAction {
-		t.processLoadRequest(request)
-	} else if request.Action == thread.PingAction {
-		t.processPingCache(request)
-	}
+func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 
-	t.wg.Done()
+	switch request.Action {
+	case thread.CreateAction:
+		{
+			t.processSaveRequest(request, response)
+		}
+	case thread.GetAction:
+		{
+			t.processLoadRequest(request, response)
+		}
+	case thread.PingAction:
+		{
+			t.processPingCache(request, response)
+		}
+	default:
+		{
+			t.logger.Warn(thread.UnknownRequest.Error())
+		}
+	}
 }
 
 func (t *Thread) Teardown() {

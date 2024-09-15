@@ -20,19 +20,17 @@ func (t *Thread) Setup() {
 	if err = t.Scheduler.Jobs.Load(t.config.SchedulesFolder); err != nil {
 		panic(err)
 	}
+
+	t.accepting = true
 }
 
 func (t *Thread) Start() {
 
-	// RESPONSE THREADS
+	// LISTENER THREADS
 
-	go func() {
-		for request := range t.C20 {
-			t.wg.Add(1)
-			t.ProcessRequest(&request)
-			t.wg.Done()
-		}
-	}()
+	thread.SetupListener(t.C20, t.C21, &t.accepting, &t.wg, thread.Scheduler, t.Handle)
+
+	// RESPONSE THREADS
 
 	go func() {
 		// response coming from the processor thread
@@ -86,49 +84,64 @@ func (t *Thread) Start() {
 	})
 }
 
-func (t *Thread) ProcessRequest(request *thread.Request) {
-
-	response := thread.Response{Nonce: request.Nonce}
+func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 
 	switch request.Action {
 	case thread.GetAction:
-		switch request.Type {
-		case thread.JobRecord:
-			if filter, ok := (request.Data).(database.Filter); ok {
-				response.Data = t.get(filter)
+		{
+			switch request.Type {
+			case thread.JobRecord:
+				{
+					if filter, ok := (request.Data).(database.Filter); ok {
+						response.Data = t.get(filter)
+					} else {
+						response.Success = false
+						response.Error = thread.BadRequestType
+					}
+				}
+			case thread.QueueRecord:
+				{
+					response.Data = t.queue()
+					response.Success = true
+				}
+			default:
+				{
+					t.logger.Warn(thread.UnknownRequest.Error())
+				}
+			}
+		}
+	case thread.CreateAction:
+		{
+			if jb, ok := (request.Data).(job.Job); ok {
+				response.Error = t.create(&jb)
+				response.Success = response.Error == nil
+				t.logger.Printf("created job:%s\n", jb.Identifier)
 			} else {
 				response.Success = false
 				response.Error = thread.BadRequestType
 			}
-		case thread.QueueRecord:
-			response.Data = t.queue()
-			response.Success = true
-		}
-
-	case thread.CreateAction:
-		if jb, ok := (request.Data).(job.Job); ok {
-			response.Error = t.create(&jb)
-			response.Success = response.Error == nil
-			t.logger.Printf("created job:%s\n", jb.Identifier)
-		} else {
-			response.Success = false
-			response.Error = thread.BadRequestType
 		}
 	case thread.DeleteAction:
-		if filter, ok := (request.Data).(database.Filter); ok {
-			response.Error = t.delete(filter)
-			response.Success = response.Error == nil
-			t.logger.Printf("deleted job:%s\n", filter.Identifier)
-		} else {
-			response.Success = false
-			response.Error = thread.BadResponseType
+		{
+			if filter, ok := (request.Data).(database.Filter); ok {
+				response.Error = t.delete(filter)
+				response.Success = response.Error == nil
+				t.logger.Printf("deleted job:%s\n", filter.Identifier)
+			} else {
+				response.Success = false
+				response.Error = thread.BadResponseType
+			}
+		}
+	default:
+		{
+			t.logger.Warn(thread.UnknownRequest.Error())
 		}
 	}
-
-	t.C21 <- response
 }
 
 func (t *Thread) Teardown() {
+
+	t.accepting = false
 
 	// do not complete teardown until all requests have been completed
 	t.wg.Wait()

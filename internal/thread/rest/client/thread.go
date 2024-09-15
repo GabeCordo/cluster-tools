@@ -65,6 +65,11 @@ func (t *Thread) Setup() {
 	t.server.SetKeepAlivesEnabled(false)
 }
 
+func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+	// note: this isn't needed at this time but keep the plain definition to satisfy the interface
+	panic("implement me")
+}
+
 func (t *Thread) Start() {
 	t.wg.Add(1)
 

@@ -6,14 +6,11 @@ import (
 
 // processSaveRequest
 // will insert or override an existing cache record
-func (t *Thread) processSaveRequest(request *thread.Request) {
-
-	response := thread.Response{Source: thread.Cache, Nonce: request.Nonce}
+func (t *Thread) processSaveRequest(request *thread.Request, response *thread.Response) {
 
 	cacheRequestData, ok := (request.Data).(thread.CacheRequestData)
 	if !ok {
 		response.Success = false
-		t.C10 <- response
 		return
 	}
 	response.Data = thread.CacheResponseData{Identifier: cacheRequestData.Identifier}
@@ -31,10 +28,9 @@ func (t *Thread) processSaveRequest(request *thread.Request) {
 		response.Success = true
 		response.Data = thread.CacheResponseData{Identifier: newIdentifier}
 	}
-	t.C10 <- response
 }
 
-func (t *Thread) processLoadRequest(request *thread.Request) {
+func (t *Thread) processLoadRequest(request *thread.Request, response *thread.Response) {
 
 	cacheRequestData, ok := (request.Data).(thread.CacheRequestData)
 	if !ok {
@@ -42,21 +38,17 @@ func (t *Thread) processLoadRequest(request *thread.Request) {
 	}
 
 	cacheData, isFoundAndNotExpired := t.cache.Get(cacheRequestData.Identifier)
-	t.C10 <- thread.Response{
-		Data: thread.CacheResponseData{
-			Identifier: cacheRequestData.Identifier,
-			Data:       cacheData,
-		},
-		Success: isFoundAndNotExpired && (cacheData != nil),
-		Nonce:   request.Nonce,
+	response.Data = thread.CacheResponseData{
+		Identifier: cacheRequestData.Identifier,
+		Data:       cacheData,
 	}
+	response.Success = isFoundAndNotExpired && (cacheData != nil)
 }
 
-func (t *Thread) processPingCache(request *thread.Request) {
+func (t *Thread) processPingCache(request *thread.Request, response *thread.Response) {
 
 	if t.config.Debug {
 		t.logger.Println("received ping over C9")
 	}
-
-	t.C10 <- thread.Response{Nonce: request.Nonce, Success: true}
+	response.Success = true
 }

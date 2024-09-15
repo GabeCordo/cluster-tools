@@ -14,82 +14,38 @@ func (th *Thread) Start() {
 
 	// LISTEN TO INCOMING REQUESTS
 
-	go func() {
-		// request coming from database
-		for request := range th.C3 {
-			if !th.accepting {
-				break
-			}
-			th.wg.Add(1)
+	thread.SetupListener(th.C3, th.C4, &th.accepting, &th.wg, thread.Messenger, th.Handle)
 
-			request.Source = thread.Database
-			th.ProcessIncomingRequest(&request)
-		}
-	}()
+	thread.SetupListener(th.C17, nil, &th.accepting, &th.wg, thread.Messenger, th.Handle)
 
-	go func() {
-		// request coming from supervisor
-		for request := range th.C17 {
-			if !th.accepting {
-				break
-			}
-			th.wg.Add(1)
-
-			request.Source = thread.Supervisor
-			th.ProcessIncomingRequest(&request)
-		}
-	}()
-
-	go func() {
-		// request coming from supervisor
-		for request := range th.C22 {
-			if !th.accepting {
-				break
-			}
-			th.wg.Add(1)
-
-			request.Source = thread.HttpClient
-			th.ProcessIncomingRequest(&request)
-		}
-	}()
+	thread.SetupListener(th.C22, th.C23, &th.accepting, &th.wg, thread.Messenger, th.Handle)
 }
 
-func (th *Thread) Respond(request *thread.Request, response *thread.Response) (success bool) {
-
-	success = true
-
-	switch request.Source {
-	case thread.Database:
-		th.C4 <- *response
-	case thread.HttpClient:
-		th.C23 <- *response
-	default:
-		success = false
-	}
-
-	return success
-}
-
-func (th *Thread) ProcessIncomingRequest(request *thread.Request) {
-
-	response := &thread.Response{Nonce: request.Nonce, Source: thread.Messenger}
+func (th *Thread) Handle(request *thread.Request, response *thread.Response) {
 
 	switch request.Action {
 	case thread.GetAction:
-		switch request.Type {
-		case thread.SmtpRecord:
-			th.logger.Warn("SMTP record get called BUT is not implemented!")
-		default:
-			response.Error = thread.BadRequestType
+		{
+			switch request.Type {
+			case thread.SmtpRecord:
+				{
+					th.logger.Warn("SMTP record get called BUT is not implemented!")
+				}
+			default:
+				{
+					response.Error = thread.BadRequestType
+				}
+			}
 		}
 	case thread.CloseAction:
-		th.ProcessCloseLogRequest(request)
+		{
+			th.ProcessCloseLogRequest(request)
+		}
 	default:
-		th.ProcessConsoleRequest(request)
+		{
+			th.ProcessConsoleRequest(request)
+		}
 	}
-
-	th.Respond(request, response)
-	th.wg.Done()
 }
 
 func (th *Thread) ProcessConsoleRequest(request *thread.Request) {

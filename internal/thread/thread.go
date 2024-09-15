@@ -1,6 +1,9 @@
 package thread
 
-import "errors"
+import (
+	"errors"
+	"sync"
+)
 
 var InternalError = errors.New("there was an internal error in the system")
 
@@ -137,5 +140,32 @@ const (
 type Thread interface {
 	Setup()
 	Start()
+	Handle(request *Request, response *Response)
 	Teardown()
+}
+
+func SetupListener(in <-chan Request, out chan<- Response, accepting *bool, wg *sync.WaitGroup, module Module, f func(request *Request, response *Response)) {
+
+	go func() {
+		for request := range in {
+			if !(*accepting) {
+				break
+			}
+			wg.Add(1)
+
+			response := Response{Source: module, Nonce: request.Nonce, Success: false, Error: nil}
+			f(&request, &response)
+
+			if out != nil {
+				out <- response
+			}
+			wg.Done()
+		}
+	}()
+}
+
+func Send(request *Request, to chan Request, from Module) {
+
+	request.Source = from
+	to <- *request
 }
