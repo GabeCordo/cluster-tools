@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/message"
-	"github.com/GabeCordo/cluster-tools/internal/message/log"
+	"github.com/GabeCordo/cluster-tools/internal/core/message"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
 	"github.com/GabeCordo/commandline"
 	"io/fs"
 	"os"

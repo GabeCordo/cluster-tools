@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal"
+	"github.com/GabeCordo/cluster-tools/internal/core"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
 	"os"
