@@ -1,7 +1,7 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/clarence/cluster"
+	"github.com/GabeCordo/cluster-tools/cluster"
 	"sync"
 )
 

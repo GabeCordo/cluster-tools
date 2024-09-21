@@ -2,9 +2,9 @@ package supervisor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/components/channel"
-	internal_cluster "github.com/GabeCordo/clarence/internal/components/cluster"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/components/channel"
+	internal_cluster "github.com/GabeCordo/cluster-tools/internal/processor/components/cluster"
 	"log"
 	"time"
 )

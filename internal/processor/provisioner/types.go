@@ -1,7 +1,7 @@
 package provisioner
 
 import (
-	"github.com/GabeCordo/clarence/wrapper"
+	"github.com/GabeCordo/cluster-tools/wrapper"
 	"sync"
 )
 

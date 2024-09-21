@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )

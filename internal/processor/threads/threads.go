@@ -1,6 +1,6 @@
 package common
 
-import "github.com/GabeCordo/clarence/cluster"
+import "github.com/GabeCordo/cluster-tools/cluster"
 
 type InterruptEvent uint8
 

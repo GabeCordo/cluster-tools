@@ -1,9 +1,9 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/components/channel"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/channel"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"sync"
 	"time"
 )

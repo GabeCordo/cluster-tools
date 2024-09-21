@@ -2,7 +2,7 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/clarence/wrapper"
+	"github.com/GabeCordo/cluster-tools/wrapper"
 )
 
 func NewProvisioner() *Provisioner {

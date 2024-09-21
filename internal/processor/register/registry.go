@@ -1,16 +1,17 @@
-package supervisor
+package registry
 
 import (
 	"fmt"
-	"github.com/GabeCordo/clarence/cluster"
-	cluster2 "github.com/GabeCordo/clarence/internal/components/cluster"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	cluster2 "github.com/GabeCordo/cluster-tools/internal/processor/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
 	"math"
 )
 
 func NewRegistry(moduleName, clusterName string, clusterImplementation cluster.Cluster) *Registry {
 	registry := new(Registry)
 
-	registry.supervisors = make(map[uint64]*Supervisor)
+	registry.supervisors = make(map[uint64]*supervisor.Supervisor)
 	registry.idReference = 0
 
 	registry.module = moduleName
@@ -53,24 +54,24 @@ func (registry *Registry) IsMounted() bool {
 	return registry.mounted
 }
 
-func (registry *Registry) CreateSupervisor(identifier uint64, metadata map[string]string, core string, standalone bool, config ...*cluster.Config) *Supervisor {
+func (registry *Registry) CreateSupervisor(identifier uint64, metadata map[string]string, core string, standalone bool, config ...*cluster.Config) *supervisor.Supervisor {
 
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
 	helper := cluster2.NewHelper(core, registry.module, registry.cluster, identifier, standalone)
 
-	var supervisor *Supervisor
+	var s *supervisor.Supervisor
 	if len(config) > 0 {
-		supervisor = NewCustomSupervisor(registry.implementation, config[0], metadata, helper)
+		s = supervisor.NewCustomSupervisor(registry.implementation, config[0], metadata, helper)
 	} else {
-		supervisor = NewSupervisor(registry.implementation, metadata, helper)
+		s = supervisor.NewSupervisor(registry.implementation, metadata, helper)
 	}
-	supervisor.Id = identifier
+	s.Id = identifier
 
 	registry.numOfActiveSupervisors++
-	registry.supervisors[identifier] = supervisor
-	return supervisor
+	registry.supervisors[identifier] = s
+	return s
 }
 
 func (registry *Registry) DeleteSupervisor(id uint64) (deleted, found bool) {
@@ -98,7 +99,7 @@ func (registry *Registry) DeleteSupervisor(id uint64) (deleted, found bool) {
 	return deleted, found
 }
 
-func (registry *Registry) GetSupervisor(id uint64) (*Supervisor, bool) {
+func (registry *Registry) GetSupervisor(id uint64) (*supervisor.Supervisor, bool) {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()
 
@@ -109,11 +110,11 @@ func (registry *Registry) GetSupervisor(id uint64) (*Supervisor, bool) {
 	}
 }
 
-func (registry *Registry) GetSupervisors() []*Supervisor {
+func (registry *Registry) GetSupervisors() []*supervisor.Supervisor {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()
 
-	supervisors := make([]*Supervisor, 0)
+	supervisors := make([]*supervisor.Supervisor, 0)
 
 	for _, supervisor := range registry.supervisors {
 		supervisors = append(supervisors, supervisor)
@@ -137,7 +138,7 @@ func (registry *Registry) GetClusterImplementation() cluster.Cluster {
 	return registry.implementation
 }
 
-func (registry *Registry) Event(event Event) *Registry {
+func (registry *Registry) Event(event supervisor.Event) *Registry {
 	switch registry.status {
 	case cluster.UnMounted:
 		{

@@ -1,7 +1,8 @@
-package supervisor
+package registry
 
 import (
-	"github.com/GabeCordo/clarence/cluster"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
 	"sync"
 )
 
@@ -13,7 +14,7 @@ type Registry struct {
 	implementation cluster.Cluster
 	mounted        bool
 
-	supervisors            map[uint64]*Supervisor
+	supervisors            map[uint64]*supervisor.Supervisor
 	numOfActiveSupervisors uint64
 
 	idReference uint64

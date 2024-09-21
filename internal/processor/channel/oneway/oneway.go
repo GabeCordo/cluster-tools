@@ -2,8 +2,8 @@ package cluster
 
 import (
 	"errors"
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/components/channel"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/channel"
 )
 
 type OneWayManagedChannel struct {
