@@ -1,8 +1,8 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"strconv"
 	"testing"
 )
@@ -24,7 +24,7 @@ func TestRegistry_Create(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &config.Config{} // todo: this is a temp hack
+	cfg := &pipeline.Pipeline{} // todo: this is a temp hack
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new supervisor")
@@ -47,7 +47,7 @@ func TestRegistry_Get(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &config.Config{}
+	cfg := &pipeline.Pipeline{}
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new supervisor")
@@ -65,6 +65,6 @@ func TestRegistry_Get(t *testing.T) {
 	}
 
 	if (results[0].(*Supervisor)).Cluster != ClusterName {
-		t.Error("supervisor failed to database the correct config record")
+		t.Error("supervisor failed to database the correct pipeline record")
 	}
 }

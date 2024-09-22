@@ -1,4 +1,4 @@
-package registry
+package register
 
 import (
 	"github.com/GabeCordo/cluster-tools/cluster"

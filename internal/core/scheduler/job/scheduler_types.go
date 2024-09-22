@@ -1,8 +1,8 @@
 package job
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 	"sync"
 )
 

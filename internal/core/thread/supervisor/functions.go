@@ -2,12 +2,12 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/api"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/supervisor"
-	"github.com/GabeCordo/cluster-tools/internal/message"
-	"github.com/GabeCordo/cluster-tools/internal/message/log"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/api"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/message"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 	"strconv"
@@ -32,9 +32,9 @@ func (t *Thread) createSupervisor(processorName, moduleName, clusterName, config
 
 	// TODO : change it so that configs are received via pointer over the channel
 	mandatory := thread.Mandatory{t.C15, t.DatabaseResponseTable, t.config.Timeout}
-	conf, found := thread.GetConfigFromDatabase(mandatory, moduleName, configName)
+	conf, found := thread.GetPipelineFromDatabase(mandatory, moduleName, configName)
 	if !found {
-		return 0, errors.New("no config with that identifier exists")
+		return 0, errors.New("no pipeline with that identifier exists")
 	}
 
 	filter := database.Filter{
@@ -90,8 +90,8 @@ func (t *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
 			Action: thread.CreateAction,
 			Type:   thread.StatisticRecord,
 			Identifiers: thread.RequestIdentifiers{
-				Module:  stored.GetModule(),
-				Cluster: stored.GetCluster(),
+				Module:   stored.GetModule(),
+				Function: stored.GetPipeline(),
 			},
 			Data:  stored.GetStatistic(),
 			Nonce: rand.Uint32(),
@@ -113,7 +113,7 @@ func (t *Thread) updateSupervisor(instance *supervisor.Supervisor) error {
 			Action: thread.CloseAction,
 			Identifiers: thread.RequestIdentifiers{
 				Module:     stored.GetModule(),
-				Cluster:    stored.GetCluster(),
+				Function:   stored.GetPipeline(),
 				Supervisor: instance.Id,
 			},
 			Nonce: rand.Uint32(),
@@ -153,7 +153,7 @@ func (t *Thread) logSupervisor(l *log.Log) error {
 		Type:   logType,
 		Identifiers: thread.RequestIdentifiers{
 			Module:     instance.GetModule(),
-			Cluster:    instance.GetCluster(),
+			Function:   instance.GetPipeline(),
 			Supervisor: instance.GetId(),
 		},
 		Data:  l.Message,

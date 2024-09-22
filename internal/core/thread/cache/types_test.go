@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/cache/local"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/cache/local"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"testing"
 )
@@ -28,7 +28,7 @@ func TestNewNilArguments(t *testing.T) {
 
 	_, err := New(nil, nil, nil)
 	if err == nil {
-		t.Error("excepted thread to reject nil arguments for config or logger")
+		t.Error("excepted thread to reject nil arguments for pipeline or logger")
 	}
 }
 

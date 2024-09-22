@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
@@ -65,7 +65,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	var ok bool
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *config type")
+		return nil, errors.New("expected no nil *pipeline type")
 	}
 	t.config = cfg
 
@@ -126,7 +126,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	t.counter = 0
 
 	if logger == nil {
-		return nil, errors.New("expected non nil *utils.Logger type")
+		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	t.logger = logger
 	t.logger.SetColour(logging.Green)

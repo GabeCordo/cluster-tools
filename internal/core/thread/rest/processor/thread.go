@@ -2,7 +2,7 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"net/http"
 	"time"
 )

@@ -2,7 +2,7 @@ package job
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
 	"time"
 )
 
@@ -14,12 +14,12 @@ type Dump struct {
 
 // Job
 // Contains information about how often a module/cluster pair should
-// and what config should be used during that scheduled interval.
+// and what pipeline should be used during that scheduled interval.
 type Job struct {
 	Identifier       string            `yaml:"identifier" json:"identifier" bson:"identifier"`
 	Module           string            `yaml:"module" json:"module" bson:"module"`
 	Cluster          string            `yaml:"cluster" json:"cluster" bson:"cluster"`
-	Config           string            `yaml:"config" json:"config" bson:"config"`
+	Config           string            `yaml:"pipeline" json:"pipeline" bson:"pipeline"`
 	Interval         database.Interval `yaml:"interval" json:"interval" bson:"interval"`
 	Metadata         map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty" bson:"metadata,omitempty"`
 	lastAttemptedRun time.Time
@@ -68,6 +68,6 @@ func (job Job) Equals(other *Job) bool {
 
 func (job Job) ToString() string {
 
-	return fmt.Sprintf("%s %s.%s (cluster: %s, config: %s)",
+	return fmt.Sprintf("%s %s.%s (cluster: %s, pipeline: %s)",
 		job.Interval.ToString(), job.Module, job.Identifier, job.Cluster, job.Config)
 }

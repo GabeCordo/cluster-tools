@@ -1,20 +1,21 @@
 package wrapper
 
 import (
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/components/supervisor"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/register"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
 	"sync"
 )
 
 type Cluster struct {
-	registry *supervisor.Registry
+	registry *register.Registry
 
 	Identifier        string          `json:"identifier"`
 	Module            string          `json:"module"`
 	Mode              cluster.EtlMode `json:"mode"`
 	Mounted           bool            `json:"mounted"`
 	MarkedForDeletion bool            `json:"marked-for-deletion"`
-	DefaultConfig     cluster.Config  `json:"default-config"`
+	DefaultConfig     cluster.Config  `json:"default-pipeline"`
 
 	mutex sync.RWMutex
 }
@@ -23,7 +24,7 @@ func NewCluster(moduleName, identifier string, mode cluster.EtlMode, implementat
 
 	clusterWrapper := new(Cluster)
 
-	clusterWrapper.registry = supervisor.NewRegistry(moduleName, identifier, implementation)
+	clusterWrapper.registry = register.NewRegistry(moduleName, identifier, implementation)
 	clusterWrapper.Identifier = identifier
 	clusterWrapper.Module = moduleName
 	clusterWrapper.Mode = mode

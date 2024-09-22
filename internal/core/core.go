@@ -1,22 +1,22 @@
 package core
 
 import (
-	cache_cmp "github.com/GabeCordo/cluster-tools/internal/cache/local"
-	config_db "github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
-	statistic_db "github.com/GabeCordo/cluster-tools/internal/database/statistic"
-	supervisor_db "github.com/GabeCordo/cluster-tools/internal/database/supervisor"
-	"github.com/GabeCordo/cluster-tools/internal/message/log"
-	processor_cmp "github.com/GabeCordo/cluster-tools/internal/processor"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
-	"github.com/GabeCordo/cluster-tools/internal/thread/cache"
-	"github.com/GabeCordo/cluster-tools/internal/thread/database"
-	"github.com/GabeCordo/cluster-tools/internal/thread/messenger"
-	"github.com/GabeCordo/cluster-tools/internal/thread/processor"
-	http_client "github.com/GabeCordo/cluster-tools/internal/thread/rest/client"
-	http_processor "github.com/GabeCordo/cluster-tools/internal/thread/rest/processor"
-	"github.com/GabeCordo/cluster-tools/internal/thread/scheduler"
-	"github.com/GabeCordo/cluster-tools/internal/thread/supervisor"
+	cache_cmp "github.com/GabeCordo/cluster-tools/internal/core/cache/local"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	config_db "github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	statistic_db "github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	supervisor_db "github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
+	processor_cmp "github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/cache"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/messenger"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/processor"
+	http_client "github.com/GabeCordo/cluster-tools/internal/core/thread/rest/client"
+	http_processor "github.com/GabeCordo/cluster-tools/internal/core/thread/rest/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/scheduler"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/supervisor"
 	"github.com/GabeCordo/toolchain/logging"
 	"os"
 	"os/signal"
@@ -185,7 +185,7 @@ func New(configPath string) (*Core, error) {
 	databaseConfig := &database.Config{}
 	core.config.FillDatabaseConfig(databaseConfig)
 
-	configDatabase := config_db.NewLocalConfigDatabase()
+	configDatabase := config_db.NewLocalPipelineDatabase()
 	statDatabase := statistic_db.NewLocalStatisticDatabase()
 	jobDatabase := job.NewLocalJobDatabase()
 

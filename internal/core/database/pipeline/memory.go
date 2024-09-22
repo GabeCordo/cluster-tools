@@ -1,10 +1,10 @@
-package config
+package pipeline
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,21 +14,21 @@ import (
 	"sync"
 )
 
-type LocalConfigDatabase struct {
-	records map[string]map[string]Config
+type LocalPipelineDatabase struct {
+	records map[string]map[string]Pipeline
 
 	mutex sync.RWMutex
 }
 
-func NewLocalConfigDatabase() *LocalConfigDatabase {
+func NewLocalPipelineDatabase() *LocalPipelineDatabase {
 
-	db := new(LocalConfigDatabase)
-	db.records = make(map[string]map[string]Config)
+	db := new(LocalPipelineDatabase)
+	db.records = make(map[string]map[string]Pipeline)
 
 	return db
 }
 
-func (db *LocalConfigDatabase) Save(path string) error {
+func (db *LocalPipelineDatabase) Save(path string) error {
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("path doesn't exist or isn't a directory")
@@ -74,7 +74,7 @@ func (db *LocalConfigDatabase) Save(path string) error {
 	return nil
 }
 
-func (db *LocalConfigDatabase) Load(path string) error {
+func (db *LocalPipelineDatabase) Load(path string) error {
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("path doesn't exist or isn't a directory")
@@ -118,7 +118,7 @@ func (db *LocalConfigDatabase) Load(path string) error {
 			return err
 		}
 
-		cfg := &Config{}
+		cfg := &Pipeline{}
 		if err = json.Unmarshal(fBytes, cfg); err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ type ConfigFilter struct {
 	Identifier string
 }
 
-func (db *LocalConfigDatabase) Get(filter database.Filter) []any {
+func (db *LocalPipelineDatabase) Get(filter database.Filter) []any {
 
 	db.mutex.RLock()
 	defer db.mutex.RUnlock()
@@ -167,11 +167,11 @@ func (db *LocalConfigDatabase) Get(filter database.Filter) []any {
 	return results
 }
 
-func (db *LocalConfigDatabase) Create(filter database.Filter, record any) (any, error) {
+func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any, error) {
 
-	cfg, ok := record.(*Config)
+	cfg, ok := record.(*Pipeline)
 	if !ok {
-		return nil, errors.New("LocalConfigDatabase expected *Config type")
+		return nil, errors.New("LocalPipelineDatabase expected *pipeline type")
 	}
 
 	db.mutex.Lock()
@@ -182,28 +182,28 @@ func (db *LocalConfigDatabase) Create(filter database.Filter, record any) (any, 
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]Config)
+		idToCfgMap := make(map[string]Pipeline)
 		db.records[filter.Module] = idToCfgMap
 		module = idToCfgMap
 	}
 
 	_, found = module[cfg.Identifier]
 
-	// if the config identifier already exists, we shouldn't be overwriting it
+	// if the pipeline identifier already exists, we shouldn't be overwriting it
 	// otherwise that can create unintended data side effects
 	if found {
-		return nil, errors.New("config with this identifier already exists in this module")
+		return nil, errors.New("pipeline with this identifier already exists in this module")
 	}
 
 	db.records[filter.Module][cfg.Identifier] = *cfg // copy
 	return cfg.Identifier, nil
 }
 
-func (db *LocalConfigDatabase) Replace(filter database.Filter, record any) error {
+func (db *LocalPipelineDatabase) Replace(filter database.Filter, record any) error {
 
-	cfg, ok := record.(*Config)
+	cfg, ok := record.(*Pipeline)
 	if !ok {
-		return errors.New("LocalConfigDatabase expected *Config type")
+		return errors.New("LocalPipelineDatabase expected *pipeline type")
 	}
 
 	db.mutex.Lock()
@@ -214,7 +214,7 @@ func (db *LocalConfigDatabase) Replace(filter database.Filter, record any) error
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]Config)
+		idToCfgMap := make(map[string]Pipeline)
 		db.records[filter.Module] = idToCfgMap
 	}
 
@@ -222,7 +222,7 @@ func (db *LocalConfigDatabase) Replace(filter database.Filter, record any) error
 	return nil
 }
 
-func (db *LocalConfigDatabase) Delete(filter database.Filter) error {
+func (db *LocalPipelineDatabase) Delete(filter database.Filter) error {
 
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
@@ -234,14 +234,14 @@ func (db *LocalConfigDatabase) Delete(filter database.Filter) error {
 
 	_, found = configMap[filter.Identifier]
 	if !found {
-		return errors.New("config does not exist")
+		return errors.New("pipeline does not exist")
 	}
 
 	delete(configMap, filter.Identifier)
 	return nil
 }
 
-func (db *LocalConfigDatabase) Print() {
+func (db *LocalPipelineDatabase) Print() {
 
 	for moduleName, module := range db.records {
 

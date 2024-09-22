@@ -43,9 +43,9 @@ type RequestType uint16
 const (
 	ProcessorRecord RequestType = iota
 	ModuleRecord
-	ClusterRecord
+	FunctionRecord
 	SupervisorRecord
-	ConfigRecord
+	PipelineRecord
 	CacheRecord
 	SmtpRecord
 	JobRecord
@@ -63,7 +63,7 @@ const (
 type RequestIdentifiers struct {
 	Processor  string
 	Module     string
-	Cluster    string
+	Function   string
 	Config     string
 	Supervisor uint64
 }

@@ -1,55 +1,62 @@
 package cluster
 
-import (
-	"fmt"
+type EtlMode string
+
+const (
+	Batch  EtlMode = "mode/batch"  // The cluster is provisioned when invoked by an operator or application.
+	Stream         = "mode/stream" // The cluster is provisioned automatically when the system is started.
 )
 
-var DefaultConfig Config = Config{
-	Identifier:                  "",
-	OnCrash:                     DoNothing,
-	OnLoad:                      CompleteAndPush,
-	StartWithNTransformClusters: 1,
-	StartWithNLoadClusters:      1,
-	ETChannelThreshold:          2,
-	ETChannelGrowthFactor:       2,
-	TLChannelThreshold:          2,
-	TLChannelGrowthFactor:       2,
+type OnCrash string
+
+const (
+	Restart   OnCrash = "Restart"
+	DoNothing         = "DoNothing"
+)
+
+type OnLoad string
+
+const (
+	CompleteAndPush OnLoad = "CompleteAndPush"
+	WaitAndPush            = "WaitAndPush"
+)
+
+type Status uint8
+
+const (
+	Registered = iota
+	UnMounted
+	Mounted
+	InUse
+	MarkedForDeletion
+)
+
+// M contains metadata about the running supervisor including any state
+// information that a developer might need to interact with the Supervisor.
+type M interface {
+	GetKey(key string) string
 }
 
-func GenericConfig(identifier string) *Config {
-
-	cfg := new(Config)
-	*cfg = DefaultConfig // make a copy of the default config
-	cfg.Identifier = identifier
-	return cfg
+type H interface {
+	IsDebugEnabled() bool
+	SaveToCache(data string) (string, error)
+	LoadFromCache(identifier string) (string, error)
+	Log(message string) error
+	Logf(format string, data ...any) error
+	Warning(message string) error
+	Warningf(format string, data ...any) error
+	Fatal(message string) error
+	Fatalf(format string, data ...any) error
 }
 
-func NewConfig(identifier string, etChannelThreshold int, etChannelGrowthFactor float64, tlChannelThreshold int, tlChannelGrowthFactor float64, mode OnCrash) *Config {
-	config := new(Config)
-
-	config.Identifier = identifier
-	config.ETChannelThreshold = etChannelThreshold
-	config.ETChannelGrowthFactor = etChannelGrowthFactor
-	config.TLChannelThreshold = tlChannelThreshold
-	config.TLChannelGrowthFactor = tlChannelGrowthFactor
-	config.OnCrash = mode
-	config.OnLoad = CompleteAndPush
-
-	return config
+type Out interface {
+	Push(any) bool
 }
 
-func (config Config) Valid() bool {
-	return !((config.StartWithNLoadClusters <= 0) || (config.StartWithNTransformClusters <= 0) ||
-		(config.TLChannelThreshold < 1) || (config.ETChannelThreshold < 1) ||
-		(config.TLChannelGrowthFactor <= 1) || (config.ETChannelGrowthFactor <= 1))
-}
-
-func (config Config) Print() {
-	fmt.Printf("Identifier:\t%s\n", config.Identifier)
-	fmt.Printf("StartWithNTransform:\t%d\n", config.StartWithNTransformClusters)
-	fmt.Printf("StartWithNLoad:\t%d\n", config.StartWithNLoadClusters)
-	fmt.Printf("ETChannelThreshold:\t%d\n", config.ETChannelThreshold)
-	fmt.Printf("ETChannelGrowthFactor:\t%d\n", config.ETChannelGrowthFactor)
-	fmt.Printf("TLChannelThreshold:\t%d\n", config.TLChannelThreshold)
-	fmt.Printf("TLChannelGrowthFactor:\t%d\n", config.TLChannelGrowthFactor)
+// Cluster is a set of functions that define an ETL process
+// cluster functions are provisioned on goroutines to run in parallel and
+// process data.
+type Cluster interface {
+	ExtractFunc(helper H, metadata M, out Out)
+	TransformFunc(helper H, metadata M, in any) (out any, success bool)
 }

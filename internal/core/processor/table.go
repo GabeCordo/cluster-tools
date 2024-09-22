@@ -3,7 +3,27 @@ package processor
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
+
+type Table struct {
+	processors      []*Processor
+	NumOfProcessors uint8
+
+	modules map[string]*Module
+	mutex   sync.RWMutex
+}
+
+func NewTable() *Table {
+
+	table := new(Table)
+
+	table.processors = make([]*Processor, 0)
+	table.NumOfProcessors = 0
+	table.modules = make(map[string]*Module)
+
+	return table
+}
 
 func (table *Table) GetProcessors() []*Processor {
 
@@ -63,7 +83,7 @@ func (table *Table) RemoveProcessor(cfg *Config) error {
 	//
 	for moduleIdentifier, modules := range table.modules {
 
-		for clusterIdentifier, cluster := range modules.clusters {
+		for clusterIdentifier, cluster := range modules.functions {
 
 			// TODO : this is a hack fix
 
@@ -79,11 +99,11 @@ func (table *Table) RemoveProcessor(cfg *Config) error {
 			cluster.processors = append(cluster.processors[:jdx], cluster.processors[jdx+1:]...)
 
 			if len(cluster.processors) == 0 {
-				delete(modules.clusters, clusterIdentifier)
+				delete(modules.functions, clusterIdentifier)
 			}
 		}
 
-		if len(modules.clusters) == 0 {
+		if len(modules.functions) == 0 {
 			delete(table.modules, moduleIdentifier)
 		}
 	}
@@ -104,7 +124,7 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 
 // AddModule
 // inform the cluster-tools that the processor now supports provisioning calls
-// for a module and all its listed clusters
+// for a module and all its listed functions
 func (table *Table) AddModule(processorName string, config *ModuleConfig) error {
 
 	table.mutex.Lock()
@@ -131,7 +151,7 @@ func (table *Table) AddModule(processorName string, config *ModuleConfig) error 
 		}
 	}
 
-	/* addCluster the module name to the provisioner for reference */
+	/* addFunction the module name to the provisioner for reference */
 	processorInstance.Modules = append(processorInstance.Modules, config.Name)
 
 	var moduleInstance *Module
@@ -159,26 +179,27 @@ func (table *Table) AddModule(processorName string, config *ModuleConfig) error 
 
 		/* does the cluster association already exist in the module? */
 		/* Note: this can be the case if the module already existed */
-		if clusterInstance, found := moduleInstance.GetCluster(export.Cluster); found {
+		if clusterInstance, found := moduleInstance.GetFunction(export.Name); found {
 			clusterInstance.Add(processorInstance)
 			continue
 		}
 
 		/* if the cluster doesn't exist this is the first time we will have the record */
-		moduleInstance.addCluster(export.Cluster)
-		clusterInstance, _ := moduleInstance.GetCluster(export.Cluster)
+		moduleInstance.addFunction(&export)
+		clusterInstance, _ := moduleInstance.GetFunction(export.Name)
 
 		/* associate the processor as one of the executors for this cluster */
 		clusterInstance.Add(processorInstance)
 
 		/* if this is the first time creating this cluster, we should follow the default
-		   mount request outlined by the module config
+		   mount request outlined by the module pipeline
 		*/
 		if export.StaticMount {
 			clusterInstance.Mount()
 		}
 
-		clusterInstance.SetMode(export.Config.Mode)
+		// TODO : remove
+		//clusterInstance.SetMode(export.Config.Mode)
 	}
 
 	// TODO : allow the user to specify whether they want modules to be mounted by default
@@ -215,7 +236,7 @@ func (table *Table) RemoveModule(processor, name string) error {
 		return errors.New("module does not exist")
 	}
 
-	for clusterIdentifier, cluster := range module.clusters {
+	for clusterIdentifier, cluster := range module.functions {
 
 		for idx, processor := range cluster.processors {
 
@@ -226,11 +247,11 @@ func (table *Table) RemoveModule(processor, name string) error {
 		}
 
 		if len(cluster.processors) == 0 {
-			delete(module.clusters, clusterIdentifier)
+			delete(module.functions, clusterIdentifier)
 		}
 	}
 
-	if len(module.clusters) == 0 {
+	if len(module.functions) == 0 {
 		delete(table.modules, name)
 	}
 
@@ -269,7 +290,7 @@ func (table *Table) Print() {
 	for identifier, module := range table.modules {
 		fmt.Printf("├─ %s (mounted: %t) \n", identifier, module.IsMounted())
 
-		for identifier, cluster := range module.clusters {
+		for identifier, cluster := range module.functions {
 
 			fmt.Printf("|  ├─%s (mounted: %t)\n", identifier, cluster.IsMounted())
 

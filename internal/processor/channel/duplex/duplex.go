@@ -1,8 +1,8 @@
-package channel
+package duplex
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
 	"sync"
 	"time"
 )
@@ -53,7 +53,7 @@ type ManagedChannel struct {
 	Size   int
 	Config ManagedChannelConfig
 
-	Statistics     *interfaces.TimingStatistics
+	Statistics     *statistic.TimingStatistics
 	TotalProcessed int
 
 	channel chan Wrapper
@@ -71,7 +71,7 @@ type ManagedChannel struct {
 	wg sync.WaitGroup
 }
 
-func New(name string, threshold int, growth float64, stats *interfaces.TimingStatistics) *ManagedChannel {
+func New(name string, threshold int, growth float64, stats *statistic.TimingStatistics) *ManagedChannel {
 	mc := new(ManagedChannel)
 
 	mc.Name = name

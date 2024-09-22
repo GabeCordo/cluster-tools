@@ -2,10 +2,10 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/supervisor"
-	"github.com/GabeCordo/cluster-tools/internal/message/log"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"strconv"
 )
 
@@ -57,7 +57,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				{
 					f := &database.Filter{
 						Module:     request.Identifiers.Module,
-						Cluster:    request.Identifiers.Cluster,
+						Cluster:    request.Identifiers.Function,
 						Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10),
 					}
 					response.Data, response.Error = t.getSupervisor(f)

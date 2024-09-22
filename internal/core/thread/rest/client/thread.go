@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -21,8 +21,8 @@ func (t *Thread) Setup() {
 		t.moduleCallback(w, r)
 	})
 
-	mux.HandleFunc("/cluster", func(w http.ResponseWriter, r *http.Request) {
-		t.clusterCallback(w, r)
+	mux.HandleFunc("/function", func(w http.ResponseWriter, r *http.Request) {
+		t.functionCallback(w, r)
 	})
 
 	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +33,8 @@ func (t *Thread) Setup() {
 		t.statisticCallback(w, r)
 	})
 
-	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		t.configCallback(w, r)
+	mux.HandleFunc("/pipeline", func(w http.ResponseWriter, r *http.Request) {
+		t.pipelineCallback(w, r)
 	})
 
 	mux.HandleFunc("/job", func(w http.ResponseWriter, r *http.Request) {

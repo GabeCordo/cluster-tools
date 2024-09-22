@@ -3,7 +3,7 @@ package log
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/message"
+	"github.com/GabeCordo/cluster-tools/internal/core/message"
 	"github.com/GabeCordo/toolchain/files"
 	"os"
 	"regexp"

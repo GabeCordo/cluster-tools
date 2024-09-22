@@ -2,10 +2,10 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/clarence/internal/api"
-	"github.com/GabeCordo/clarence/internal/components/supervisor"
-	"github.com/GabeCordo/clarence/internal/interfaces"
-	"github.com/GabeCordo/clarence/internal/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/processor/api"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"log"
 	"time"
@@ -16,7 +16,7 @@ func (thread *Thread) getSupervisor() []*interfaces.Supervisor {
 	return nil
 }
 
-func (thread *Thread) provisionSupervisor(request *common.ProvisionerRequest) error {
+func (thread *Thread) provisionSupervisor(request *threads.ProvisionerRequest) error {
 
 	// Note: all mount checks have been moved to the core
 
@@ -33,14 +33,14 @@ func (thread *Thread) provisionSupervisor(request *common.ProvisionerRequest) er
 	clusterWrapper, found := moduleWrapper.GetCluster(request.Cluster)
 
 	if !found {
-		thread.logger.Warnf("%s[%s]%s Cluster does not exist\n", logging.Green, request.Cluster, logging.Reset)
+		thread.logger.Warnf("%s[%s]%s Function does not exist\n", logging.Green, request.Cluster, logging.Reset)
 		thread.requestWg.Done()
 		return errors.New("cluster not found")
 	}
 
 	// an operator shall only provision batch etl processes
 	// - stream processes are meant to be run by the system when mounted or unmounted
-	if (request.Source == common.User) && clusterWrapper.IsStream() {
+	if (request.Source == threads.User) && clusterWrapper.IsStream() {
 		thread.logger.Warnf("%s[%s]%s Could not provision cluster; it's a stream process\n", logging.Green, request.Module, logging.Reset)
 		thread.requestWg.Done()
 		return errors.New("a stream cluster cannot be provisioned by a user")
@@ -66,7 +66,7 @@ func (thread *Thread) provisionSupervisor(request *common.ProvisionerRequest) er
 	thread.logger.Printf("%s[%s]%s Provisioning cluster in module %s\n", logging.Green, request.Cluster, logging.Reset, request.Module)
 
 	// Note: configs are now sent from the core, we don't need to worry about looking for, verifying, or
-	//		 reverting to a default cluster.Config if one is not provided
+	//		 reverting to a default cluster.pipeline if one is not provided
 	if request.Config == nil {
 		request.Config = &clusterWrapper.DefaultConfig
 	}
@@ -74,7 +74,7 @@ func (thread *Thread) provisionSupervisor(request *common.ProvisionerRequest) er
 
 	thread.logger.Printf("%s[%s]%s Supervisor(%d) registered to cluster(%s)\n", logging.Green, request.Cluster, logging.Reset, supervisorInstance.Id, request.Module)
 
-	thread.logger.Printf("%s[%s]%s Cluster Running\n", logging.Green, request.Cluster, logging.Reset)
+	thread.logger.Printf("%s[%s]%s Function Running\n", logging.Green, request.Cluster, logging.Reset)
 
 	go func(supervisorInstance *supervisor.Supervisor) {
 
@@ -105,7 +105,7 @@ func (thread *Thread) provisionSupervisor(request *common.ProvisionerRequest) er
 		// we already provide output when a cluster is provisioned, so it completes the state
 		if thread.Config.Debug {
 			duration := time.Now().Sub(supervisorInstance.StartTime)
-			thread.logger.Printf("%s[%s]%s Cluster transformations complete, took %dhr %dm %ds %dms %dus\n",
+			thread.logger.Printf("%s[%s]%s Function transformations complete, took %dhr %dm %ds %dms %dus\n",
 				logging.Green,
 				supervisorInstance.Config.Identifier,
 				logging.Reset,
@@ -140,7 +140,7 @@ func (thread *Thread) provisionSupervisor(request *common.ProvisionerRequest) er
 		// if we are in standalone mode and there are no active supervisors, no additional compute
 		// will be performed on the processor, and we can shut down the threads
 		if thread.Config.Standalone && (thread.numOfActiveSupervisors == 0) {
-			thread.Interrupt <- common.Shutdown
+			thread.Interrupt <- threads.Shutdown
 		}
 	}(supervisorInstance)
 

@@ -1,8 +1,8 @@
 package job
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 	"testing"
 )
 
@@ -107,7 +107,7 @@ func TestScheduler_GetBy(t *testing.T) {
 		return
 	}
 
-	// Attempt to Get 2 Jobs By Their Similar Cluster //
+	// Attempt to Get 2 Jobs By Their Similar Function //
 	f2 := database.Filter{Module: "common", Cluster: "vec"}
 	if foundJobs := scheduler.Jobs.Get(f2); len(foundJobs) != 2 {
 		t.Error("expected 2 Jobs to be found with the same module/cluster pair")
@@ -169,7 +169,7 @@ func TestScheduler_Delete(t *testing.T) {
 		return
 	}
 
-	// Attempt to Get 2 Jobs By Their Similar Cluster //
+	// Attempt to Get 2 Jobs By Their Similar Function //
 	f2 := database.Filter{Module: "common", Cluster: "vec"}
 	if foundJobs := scheduler.Jobs.Get(f2); len(foundJobs) != 2 {
 		t.Error("expected 2 Jobs to be found with the same module/cluster pair")

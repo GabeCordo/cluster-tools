@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
-	"github.com/GabeCordo/cluster-tools/internal/thread/rest"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/rest"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -126,21 +126,21 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func (t *Thread) clusterCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) functionCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		/* the operator shall see clusters registered to the cluster-tools */
-		t.getClusterCallback(w, r)
+		t.getFunctionCallback(w, r)
 	} else if r.Method == "PUT" {
 		/* the operator shall mount clusters in the cluster-tools */
 		/* the operator shall unmount clusters in the cluster-tools */
-		t.putClusterCallback(w, r)
+		t.putFunctionCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (t *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 	moduleName, foundModuleName := urlMapping["module"]
@@ -150,7 +150,7 @@ func (t *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clusterList, success := thread.GetClusters(
+	clusterList, success := thread.GetFunctions(
 		thread.Mandatory{
 			t.C5,
 			t.ProcessorResponseTable,
@@ -172,15 +172,15 @@ func (t *Thread) getClusterCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-type ClusterConfigJSONBody struct {
+type FunctionConfigJSONBody struct {
 	Module  string `json:"module"`
 	Cluster string `json:"cluster"`
 	Mounted bool   `json:"mounted"`
 }
 
-func (t *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 
-	request := &ClusterConfigJSONBody{}
+	request := &FunctionConfigJSONBody{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -208,7 +208,7 @@ func (t *Thread) putClusterCallback(w http.ResponseWriter, r *http.Request) {
 type SupervisorConfigJSONBody struct {
 	Module     string            `json:"module"`
 	Cluster    string            `json:"cluster"`
-	Config     string            `json:"config"`
+	Config     string            `json:"pipeline"`
 	Supervisor uint64            `json:"id,omitempty"`
 	Metadata   map[string]string `json:"metadata,omitempty"`
 }
@@ -309,11 +309,11 @@ func (t *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (t *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	request := &config.Config{}
+	request := &pipeline.Pipeline{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if (r.Method != "GET") && (r.Method != "DELETE") && (err != nil) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -331,10 +331,10 @@ func (t *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
-		clusterName, foundClusterName := urlMapping["config"]
+		clusterName, foundClusterName := urlMapping["pipeline"]
 
 		if foundClusterName {
-			if cfg, found := thread.GetConfigFromDatabase(mandatory, moduleName[0], clusterName[0]); found {
+			if cfg, found := thread.GetPipelineFromDatabase(mandatory, moduleName[0], clusterName[0]); found {
 				bytes, _ := json.Marshal(cfg)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -343,7 +343,7 @@ func (t *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			if configs, found := thread.GetConfigsFromDatabase(mandatory, moduleName[0]); found {
+			if configs, found := thread.GetPipelinesFromDatabase(mandatory, moduleName[0]); found {
 				bytes, _ := json.Marshal(configs)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -355,22 +355,22 @@ func (t *Thread) configCallback(w http.ResponseWriter, r *http.Request) {
 
 	} else if r.Method == "POST" {
 
-		err := thread.StoreConfigInDatabase(mandatory, moduleName[0], *request)
+		err := thread.StorePipelineInDatabase(mandatory, moduleName[0], *request)
 		if err != nil {
 			w.WriteHeader(http.StatusConflict)
 		}
 
 	} else if r.Method == "PUT" {
-		isOk := thread.ReplaceConfigInDatabase(mandatory, moduleName[0], *request)
+		isOk := thread.ReplacePipelineInDatabase(mandatory, moduleName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else if r.Method == "DELETE" {
 
-		configName, foundConfigName := urlMapping["config"]
+		configName, foundConfigName := urlMapping["pipeline"]
 
 		if foundConfigName {
-			if isOk := thread.DeleteConfigInDatabase(mandatory, moduleName[0], configName[0]); !isOk {
+			if isOk := thread.DeletePipelineInDatabase(mandatory, moduleName[0], configName[0]); !isOk {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {

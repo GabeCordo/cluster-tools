@@ -31,22 +31,22 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	//   want to use this as an example of how to use it as an operator rather than a developer
 	//Vec := clusters.VectorCluster{}
 	//
-	//config := cluster.DefaultConfig
-	//config.Identifier = "Vec"
-	//c.Cluster("Vec", cluster.Batch, &Vec, config)
+	//pipeline := cluster.DefaultConfig
+	//pipeline.Identifier = "Vec"
+	//c.Function("Vec", cluster.Batch, &Vec, pipeline)
 	//
 	//VecWait := clusters.VectorWaitCluster{}
 	//
 	//configWait := cluster.DefaultConfig
 	//configWait.Identifier = "VecWait"
 	//configWait.OnLoad = cluster.WaitAndPush
-	//c.Cluster("VecWait", cluster.Batch, &VecWait, configWait)
+	//c.Function("VecWait", cluster.Batch, &VecWait, configWait)
 	//
 	//KeyTest := clusters.MetaDataCluster{}
 	//
 	//configMDC := cluster.DefaultConfig
 	//configMDC.Identifier = "KeyTest"
-	//c.Cluster("KeyTest", cluster.Batch, &KeyTest, configMDC)
+	//c.Function("KeyTest", cluster.Batch, &KeyTest, configMDC)
 
 	// TODO : move to processor
 	//go func() {

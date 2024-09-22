@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 var client http.Client = http.Client{Timeout: 2 * time.Second}
 
-func ConnectToCore(host string, config *interfaces.ProcessorConfig) error {
+func ConnectToCore(host string, config *processor.Config) error {
 
 	fmt.Printf("Connecting to Core at %s\n", host)
 
@@ -49,7 +50,7 @@ func ConnectToCore(host string, config *interfaces.ProcessorConfig) error {
 	return err
 }
 
-func DisconnectFromCore(host string, config *interfaces.ProcessorConfig) error {
+func DisconnectFromCore(host string, config *processor.Config) error {
 
 	url := fmt.Sprintf("%s/processor", host)
 

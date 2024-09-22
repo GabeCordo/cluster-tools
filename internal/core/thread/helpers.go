@@ -3,13 +3,13 @@ package thread
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
-	"github.com/GabeCordo/cluster-tools/internal/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/database/supervisor"
-	"github.com/GabeCordo/cluster-tools/internal/message/log"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 	"strconv"
@@ -21,14 +21,14 @@ type Mandatory struct {
 	Timeout       float64
 }
 
-func GetConfigFromDatabase(mandatory Mandatory, moduleName, clusterName string) (conf config.Config, found bool) {
+func GetPipelineFromDatabase(mandatory Mandatory, moduleName, clusterName string) (conf pipeline.Pipeline, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
-		Type:   ConfigRecord,
+		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module:  moduleName,
-			Cluster: clusterName,
+			Module:   moduleName,
+			Function: clusterName,
 		},
 		Nonce: rand.Uint32(),
 	}
@@ -37,22 +37,22 @@ func GetConfigFromDatabase(mandatory Mandatory, moduleName, clusterName string) 
 	data, didTimeout := multithreaded.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return config.Config{}, false
+		return pipeline.Pipeline{}, false
 	}
 
 	databaseResponse := (data).(Response)
 
 	if !databaseResponse.Success {
-		return config.Config{}, false
+		return pipeline.Pipeline{}, false
 	}
-	return databaseResponse.Data.([]config.Config)[0], true
+	return databaseResponse.Data.([]pipeline.Pipeline)[0], true
 }
 
-func GetConfigsFromDatabase(mandatory Mandatory, moduleName string) (configs []config.Config, found bool) {
+func GetPipelinesFromDatabase(mandatory Mandatory, moduleName string) (configs []pipeline.Pipeline, found bool) {
 
 	databaseRequest := Request{
 		Action:      GetAction,
-		Type:        ConfigRecord,
+		Type:        PipelineRecord,
 		Identifiers: RequestIdentifiers{Module: moduleName},
 		Nonce:       rand.Uint32(),
 	}
@@ -69,17 +69,17 @@ func GetConfigsFromDatabase(mandatory Mandatory, moduleName string) (configs []c
 	if !databaseResponse.Success {
 		return nil, false
 	}
-	return databaseResponse.Data.([]config.Config), true
+	return databaseResponse.Data.([]pipeline.Pipeline), true
 }
 
-func StoreConfigInDatabase(mandatory Mandatory, moduleName string, cfg config.Config) error {
+func StorePipelineInDatabase(mandatory Mandatory, moduleName string, cfg pipeline.Pipeline) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
-		Type:   ConfigRecord,
+		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module:  moduleName,
-			Cluster: cfg.Identifier,
+			Module:   moduleName,
+			Function: cfg.Identifier,
 		},
 		Data:  cfg,
 		Nonce: rand.Uint32(),
@@ -95,20 +95,20 @@ func StoreConfigInDatabase(mandatory Mandatory, moduleName string, cfg config.Co
 	databaseResponse := (data).(Response)
 	// TODO : make the database generate the errors
 	if !databaseResponse.Success {
-		return errors.New("could not database config in database")
+		return errors.New("could not database pipeline in database")
 	}
 
 	return nil
 }
 
-func ReplaceConfigInDatabase(mandatory Mandatory, moduleName string, cfg config.Config) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, moduleName string, cfg pipeline.Pipeline) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,
-		Type:   ConfigRecord,
+		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module:  moduleName,
-			Cluster: cfg.Identifier,
+			Module:   moduleName,
+			Function: cfg.Identifier,
 		},
 		Data:  cfg,
 		Nonce: rand.Uint32(),
@@ -124,11 +124,11 @@ func ReplaceConfigInDatabase(mandatory Mandatory, moduleName string, cfg config.
 	return databaseResponse.Success
 }
 
-func DeleteConfigInDatabase(mandatory Mandatory, moduleName, configName string) (success bool) {
+func DeletePipelineInDatabase(mandatory Mandatory, moduleName, configName string) (success bool) {
 
 	databaseRequest := Request{
 		Action: DeleteAction,
-		Type:   ConfigRecord,
+		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
 			Module: moduleName,
 			Config: configName,
@@ -214,9 +214,9 @@ func MountCluster(mandatory Mandatory, moduleName, clusterName string) (success 
 
 	request := Request{
 		Action:      MountAction,
-		Type:        ClusterRecord,
+		Type:        FunctionRecord,
 		Source:      HttpClient,
-		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: ""},
+		Identifiers: RequestIdentifiers{Module: moduleName, Function: clusterName, Config: ""},
 		Nonce:       rand.Uint32(),
 	}
 	mandatory.Pipe <- request
@@ -234,9 +234,9 @@ func UnmountCluster(mandatory Mandatory, moduleName, clusterName string) (succes
 
 	request := Request{
 		Action:      UnMountAction,
-		Type:        ClusterRecord,
+		Type:        FunctionRecord,
 		Source:      HttpClient,
-		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: ""},
+		Identifiers: RequestIdentifiers{Module: moduleName, Function: clusterName, Config: ""},
 		Nonce:       rand.Uint32(),
 	}
 	mandatory.Pipe <- request
@@ -250,12 +250,12 @@ func UnmountCluster(mandatory Mandatory, moduleName, clusterName string) (succes
 	return provisionerResponse.Success
 }
 
-func GetClusters(mandatory Mandatory, moduleName string) (clusters []processor.ClusterData, success bool) {
+func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor.FunctionData, success bool) {
 
 	request := Request{
 		Action:      GetAction,
-		Type:        ClusterRecord,
-		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: "", Config: ""},
+		Type:        FunctionRecord,
+		Identifiers: RequestIdentifiers{Module: moduleName, Function: "", Config: ""},
 		Source:      HttpClient,
 		Nonce:       rand.Uint32(),
 	}
@@ -272,7 +272,7 @@ func GetClusters(mandatory Mandatory, moduleName string) (clusters []processor.C
 		return nil, false
 	}
 
-	return (provisionerResponse.Data).([]processor.ClusterData), true
+	return (provisionerResponse.Data).([]processor.FunctionData), true
 }
 
 func CreateSupervisor(mandatory Mandatory,
@@ -281,7 +281,7 @@ func CreateSupervisor(mandatory Mandatory,
 	request := Request{
 		Action:      CreateAction,
 		Type:        SupervisorRecord,
-		Identifiers: RequestIdentifiers{Module: moduleName, Cluster: clusterName, Config: configName},
+		Identifiers: RequestIdentifiers{Module: moduleName, Function: clusterName, Config: configName},
 		Data:        metadata,
 		Nonce:       rand.Uint32(),
 	}
@@ -310,7 +310,7 @@ func GetSupervisor(mandatory Mandatory, filter database.Filter) ([]*supervisor.S
 		Type:   SupervisorRecord,
 		Identifiers: RequestIdentifiers{
 			Module:     filter.Module,
-			Cluster:    filter.Cluster,
+			Function:   filter.Cluster,
 			Supervisor: id,
 		},
 		Nonce: rand.Uint32(),
@@ -356,8 +356,8 @@ func FindStatistics(mandatory Mandatory, moduleName, clusterName string) (entrie
 		Action: GetAction,
 		Type:   StatisticRecord,
 		Identifiers: RequestIdentifiers{
-			Module:  moduleName,
-			Cluster: clusterName,
+			Module:   moduleName,
+			Function: clusterName,
 		},
 		Nonce: rand.Uint32(),
 	}

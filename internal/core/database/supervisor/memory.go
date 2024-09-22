@@ -2,8 +2,8 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"strconv"
 	"sync"
 )
@@ -50,7 +50,7 @@ func (database *SupervisorDatabase) Get(filter database.Filter) []any {
 
 	for _, s := range database.supervisors {
 
-		if useCluster && (s.Cluster == filter.Cluster) && (s.Module == filter.Module) {
+		if useCluster && (s.Pipeline == filter.Cluster) && (s.Module == filter.Module) {
 			supervisors = append(supervisors, s)
 		} else if useModule && (s.Module == filter.Module) {
 			supervisors = append(supervisors, s)
@@ -70,7 +70,7 @@ func (database *SupervisorDatabase) Create(filter database.Filter, record any) (
 	identifier := database.counter
 
 	// todo : hack for now
-	cfg, ok := record.(*config.Config)
+	cfg, ok := record.(*pipeline.Pipeline)
 	if !ok {
 		return nil, errors.New("invalid record")
 	}

@@ -1,6 +1,6 @@
 package provisioner
 
-import "github.com/GabeCordo/clarence/internal/interfaces"
+import "github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 
 func (thread *Thread) getStatistics() []*interfaces.SupervisorSummary {
 

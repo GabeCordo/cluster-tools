@@ -2,8 +2,8 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
 	"sync"
 )
 
@@ -32,24 +32,24 @@ type Supervisor struct {
 	Id     uint64 `json:"id"`
 	Status Status `json:"status,omitempty"`
 
-	Processor string        `json:"processor,omitempty"`
-	Module    string        `json:"module,omitempty"`
-	Cluster   string        `json:"cluster,omitempty"`
-	Config    config.Config `json:"config,omitempty"`
+	Processor string            `json:"processor,omitempty"`
+	Module    string            `json:"module,omitempty"`
+	Pipeline  string            `json:"pipeline,omitempty"`
+	Config    pipeline.Pipeline `json:"pipeline,omitempty"`
 
 	Statistics *statistic.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func New(id uint64, processorName, moduleName, clusterName string, cfg *config.Config) *Supervisor {
+func New(id uint64, processorName, moduleName, pipeName string, cfg *pipeline.Pipeline) *Supervisor {
 	supervisor := new(Supervisor)
 
 	supervisor.Status = Created
 	supervisor.Id = id
 	supervisor.Processor = processorName
 	supervisor.Module = moduleName
-	supervisor.Cluster = clusterName
+	supervisor.Pipeline = pipeName
 	supervisor.Config = *cfg // copy instance
 	supervisor.Statistics = statistic.NewStatistics()
 
@@ -105,8 +105,8 @@ func (supervisor *Supervisor) GetModule() string {
 	return supervisor.Module
 }
 
-func (supervisor *Supervisor) GetCluster() string {
-	return supervisor.Cluster
+func (supervisor *Supervisor) GetPipeline() string {
+	return supervisor.Pipeline
 }
 
 func (supervisor *Supervisor) GetStatistic() *statistic.Statistics {

@@ -1,11 +1,11 @@
 package api
 
 import (
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"testing"
 )
 
-var moduleCfg = &interfaces.ModuleConfig{Name: "test", Version: 1.0}
+var moduleCfg = &processor.ModuleConfig{Name: "test", Version: 1.0}
 
 func TestCreateModule(t *testing.T) {
 

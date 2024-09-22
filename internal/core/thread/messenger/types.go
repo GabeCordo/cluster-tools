@@ -2,9 +2,9 @@ package messenger
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/message"
-	"github.com/GabeCordo/cluster-tools/internal/message/email"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/message"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/email"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"sync"
 )
@@ -25,7 +25,7 @@ type Thread struct {
 	C3 <-chan thread.Request  // Messenger is receiving thread form the Database
 	C4 chan<- thread.Response // Messenger is sending responses to the Database
 
-	C17 <-chan thread.Request // Messenger is receiving requests from the Provisioner
+	C17 <-chan thread.Request // Messenger is receiving requests from the provisionerThread
 
 	C22 <-chan thread.Request  // Messenger is receiving requests from the HTTP Client
 	C23 chan<- thread.Response // Messenger is sending responses to the HTTP Client
@@ -44,7 +44,7 @@ func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, chann
 	var ok bool
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *config type")
+		return nil, errors.New("expected no nil *pipeline type")
 	}
 	th.config = cfg
 
@@ -74,7 +74,7 @@ func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, chann
 	}
 
 	if logger == nil {
-		return nil, errors.New("expected non nil *utils.Logger type")
+		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	th.logger = logger
 	th.logger.SetColour(logging.Blue)

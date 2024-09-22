@@ -3,7 +3,7 @@ package http
 import (
 	"context"
 	"errors"
-	"github.com/GabeCordo/clarence/internal/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
@@ -21,10 +21,10 @@ type Config struct {
 type Thread struct {
 	Config *Config
 
-	Interrupt chan<- common.InterruptEvent // Upon completion or failure an interrupt can be raised
+	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C1 chan<- common.ProvisionerRequest  // Core is sending threads to the Database
-	C2 <-chan common.ProvisionerResponse // Core is receiving responses from the Database
+	C1 chan<- threads.ProvisionerRequest  // Core is sending threads to the Database
+	C2 <-chan threads.ProvisionerResponse // Core is receiving responses from the Database
 
 	ProvisionerResponseTable *multithreaded.ResponseTable
 
@@ -45,15 +45,15 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 
 	var ok bool
 
-	thread.Interrupt, ok = (channels[0]).(chan common.InterruptEvent)
+	thread.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	thread.C1, ok = (channels[1]).(chan common.ProvisionerRequest)
+	thread.C1, ok = (channels[1]).(chan threads.ProvisionerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 1")
 	}
-	thread.C2, ok = (channels[2]).(chan common.ProvisionerResponse)
+	thread.C2, ok = (channels[2]).(chan threads.ProvisionerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 2")
 	}
@@ -64,12 +64,12 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 	thread.counter = 0
 
 	if logger == nil {
-		return nil, errors.New("expected non nil *utils.Logger type")
+		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	thread.logger = logger
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *http.Config type")
+		return nil, errors.New("expected no nil *http.pipeline type")
 	}
 	thread.Config = cfg
 

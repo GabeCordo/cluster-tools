@@ -1,9 +1,9 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/message"
-	"github.com/GabeCordo/cluster-tools/internal/message/log"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/message"
+	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 )
 
 func (th *Thread) Setup() {
@@ -63,7 +63,7 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
 	th.messenger.Message(
 		message.Source{
 			Module:     request.Identifiers.Module,
-			Cluster:    request.Identifiers.Cluster,
+			Cluster:    request.Identifiers.Function,
 			Identifier: request.Identifiers.Supervisor,
 		},
 		log.Log{
@@ -75,11 +75,11 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
 
 func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 
-	th.logger.Printf("closing log for %s/%s\n", request.Identifiers.Module, request.Identifiers.Cluster)
+	th.logger.Printf("closing log for %s/%s\n", request.Identifiers.Module, request.Identifiers.Function)
 	th.messenger.Flush(
 		message.Source{
 			Module:     request.Identifiers.Module,
-			Cluster:    request.Identifiers.Cluster,
+			Cluster:    request.Identifiers.Function,
 			Identifier: request.Identifiers.Supervisor,
 		},
 		nil,

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
 	"os"
 	"sync"
 	"time"

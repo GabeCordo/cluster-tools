@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/interfaces"
-	"github.com/GabeCordo/clarence/internal/threads/common"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
 	"time"
@@ -21,7 +21,7 @@ type JSONResponse struct {
 type SupervisorConfigJSONBody struct {
 	Module     string            `json:"module"`
 	Cluster    string            `json:"cluster"`
-	Config     cluster.Config    `json:"config"`
+	Config     cluster.Config    `json:"pipeline"`
 	Supervisor uint64            `json:"id,omitempty"`
 	Metadata   map[string]string `json:"metadata,omitempty"`
 }
@@ -49,7 +49,7 @@ func (thread *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = common.SupervisorProvision(thread.C1, thread.ProvisionerResponseTable,
+	err = threads.SupervisorProvision(thread.C1, thread.ProvisionerResponseTable,
 		request.Module, request.Cluster, request.Supervisor, request.Metadata, &request.Config, thread.Config.Timeout)
 
 	if errors.Is(err, multithreaded.NoResponseReceived) {
@@ -103,7 +103,7 @@ func (thread *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) 
 	response := interfaces.Response{Success: true}
 
 	if request.Action == "shutdown" {
-		common.ShutdownCore(thread.Interrupt)
+		threads.ShutdownCore(thread.Interrupt)
 	}
 
 	b, _ := json.Marshal(response)
@@ -121,7 +121,7 @@ func (thread *Thread) debugStatsCallback(w http.ResponseWriter, r *http.Request)
 
 func (thread *Thread) getDebugStatsCallback(w http.ResponseWriter, r *http.Request) {
 
-	stats, err := common.GetProvisionerStatistics(thread.C1, thread.ProvisionerResponseTable, thread.Config.Timeout)
+	stats, err := threads.GetProvisionerStatistics(thread.C1, thread.ProvisionerResponseTable, thread.Config.Timeout)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {

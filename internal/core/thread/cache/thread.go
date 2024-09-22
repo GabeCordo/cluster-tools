@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"time"
 )
 

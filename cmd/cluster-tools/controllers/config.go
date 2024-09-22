@@ -15,7 +15,7 @@ import (
 type ConfigCommand struct {
 }
 
-var FailedParsing = errors.New("failed to parse config field")
+var FailedParsing = errors.New("failed to parse pipeline field")
 var BadValue = errors.New("the field/value does not match")
 
 func (command ConfigCommand) configParser(c *core.Config, fields []string) (any, error) {
@@ -152,13 +152,13 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 
 	configFile, err := os.Open(DefaultConfigFile)
 	if err != nil {
-		fmt.Printf("[x] the global config file is missing (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global pipeline file is missing (%s)\n", DefaultConfigFile)
 		return commandline.Terminate
 	}
 
 	bytes, err := io.ReadAll(configFile)
 	if err != nil {
-		fmt.Printf("[x] the global config file is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global pipeline file is corrupt (%s)\n", DefaultConfigFile)
 		return commandline.Terminate
 	}
 
@@ -166,13 +166,13 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 
 	c := &core.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
-		fmt.Printf("[x] the global config is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global pipeline is corrupt (%s)\n", DefaultConfigFile)
 		return commandline.Terminate
 	}
 
 	field := cli.NextArg()
 	if field == commandline.FinalArg {
-		fmt.Printf("[x] missing argument(1); the field in the config to modify\n")
+		fmt.Printf("[x] missing argument(1); the field in the pipeline to modify\n")
 		return commandline.Terminate
 	}
 
@@ -189,7 +189,7 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 
 		value := cli.NextArg()
 		if value == commandline.FinalArg {
-			fmt.Printf("[x] missing argument(2); the value in the config to modify\n")
+			fmt.Printf("[x] missing argument(2); the value in the pipeline to modify\n")
 			return commandline.Terminate
 		}
 
@@ -200,18 +200,18 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 
 		updatedBytes, err := yaml.Marshal(c)
 		if err != nil {
-			fmt.Printf("[Error] failed to marshal updated config => %s\n", err.Error())
+			fmt.Printf("[Error] failed to marshal updated pipeline => %s\n", err.Error())
 			return commandline.Terminate
 		}
 
 		if configFile, err = os.Create(DefaultConfigFile); err != nil {
-			fmt.Printf("[Error] failed to truncate old config file => %s\n", err.Error())
+			fmt.Printf("[Error] failed to truncate old pipeline file => %s\n", err.Error())
 			return commandline.Terminate
 		}
 		defer configFile.Close()
 
 		if _, err = configFile.Write(updatedBytes); err != nil {
-			fmt.Printf("[Error] failed to write bytes to config file => %s\n", err.Error())
+			fmt.Printf("[Error] failed to write bytes to pipeline file => %s\n", err.Error())
 		}
 	}
 

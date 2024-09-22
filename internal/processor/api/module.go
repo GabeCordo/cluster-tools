@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"net/http"
 	"strconv"
 )
 
-func CreateModule(host string, processor *interfaces.ProcessorConfig, config *interfaces.ModuleConfig) error {
+func CreateModule(host string, processor *processor.Config, config *processor.ModuleConfig) error {
 
 	url := fmt.Sprintf("%s/module", host)
 
@@ -55,7 +56,7 @@ func CreateModule(host string, processor *interfaces.ProcessorConfig, config *in
 	return nil
 }
 
-func DeleteModule(host string, processor *interfaces.ProcessorConfig, module *interfaces.ModuleConfig) error {
+func DeleteModule(host string, processor *processor.Config, module *processor.ModuleConfig) error {
 	url := fmt.Sprintf("%s/module", host)
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)

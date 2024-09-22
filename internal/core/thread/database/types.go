@@ -2,8 +2,8 @@ package database
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"sync"
@@ -40,7 +40,7 @@ type Thread struct {
 	messengerResponseTable *multithreaded.ResponseTable
 
 	statisticDatabase database.Database
-	configDatabase    database.Database
+	pipelineDatabase  database.Database
 	jobDatabase       database.Database
 
 	config *Config
@@ -58,12 +58,12 @@ func New(cfg *Config, logger *logging.Logger,
 	var ok bool
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *config type")
+		return nil, errors.New("expected no nil *pipeline type")
 	}
 	t.config = cfg
 
 	t.statisticDatabase = s
-	t.configDatabase = c
+	t.pipelineDatabase = c
 	t.jobDatabase = j
 
 	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
@@ -114,7 +114,7 @@ func New(cfg *Config, logger *logging.Logger,
 	t.messengerResponseTable = multithreaded.NewResponseTable()
 
 	if logger == nil {
-		return nil, errors.New("expected non nil *utils.Logger type")
+		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	t.logger = logger
 	t.logger.SetColour(logging.Purple)

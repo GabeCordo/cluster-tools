@@ -52,7 +52,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 		return commandline.Terminate
 	}
 
-	// the Config and Minute identifiers are only required when creating a new job
+	// the pipeline and Minute identifiers are only required when creating a new job
 	// asking for this information for a DELETE operation would be unnecessary.
 	if cli.Flag(commandline.Create) {
 
@@ -64,7 +64,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 
 		jb.Config = cli.NextArg()
 		if jb.Config == commandline.FinalArg {
-			fmt.Println("missing the config parameter")
+			fmt.Println("missing the pipeline parameter")
 			return commandline.Terminate
 		}
 

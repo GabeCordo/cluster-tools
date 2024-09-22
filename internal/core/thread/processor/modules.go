@@ -2,11 +2,7 @@ package processor
 
 import (
 	"errors"
-	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
-	"math/rand"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 )
 
 func (t *Thread) getModules() []processor.ModuleData {
@@ -17,45 +13,46 @@ func (t *Thread) getModules() []processor.ModuleData {
 func (t *Thread) addModule(processorName string, cfg *processor.ModuleConfig) error {
 
 	if !cfg.Verify() {
-		return errors.New("module config is not valid")
+		return errors.New("module pipeline is not valid")
 	}
 
 	if err := t.processorTable.AddModule(processorName, cfg); err != nil {
 		return err
 	}
 
-	// the module will send a default config for every cluster it registers within it
-	// this config should be used as the de-facto config unless another is specified by the operator
-	// -> send the config for storage in the database t
-	for _, export := range cfg.Exports {
-		if export.Config.Mode == config.Stream {
-			t.C13 <- thread.Request{
-				Action: thread.CreateAction,
-				Type:   thread.SupervisorRecord,
-				Identifiers: thread.RequestIdentifiers{
-					Processor: processorName,
-					Module:    cfg.Name,
-					Cluster:   export.Cluster,
-					Config:    export.Cluster,
-				},
-				Caller: thread.System,
-				Data:   make(map[string]string),
-				Nonce:  rand.Uint32(),
-			}
-		}
+	// the module will send a default pipeline for every cluster it registers within it
+	// this pipeline should be used as the de-facto pipeline unless another is specified by the operator
+	// -> send the pipeline for storage in the database t
+	//for _, export := range cfg.Exports {
+	//	if export.Config.Mode == pipeline.Stream {
+	//		t.C13 <- thread.Request{
+	//			Action: thread.CreateAction,
+	//			Type:   thread.SupervisorRecord,
+	//			Identifiers: thread.RequestIdentifiers{
+	//				Processor: processorName,
+	//				Module:    cfg.Name,
+	//				Function:   export.Function,
+	//				Config:    export.Function,
+	//			},
+	//			Caller: thread.System,
+	//			Data:   make(map[string]string),
+	//			Nonce:  rand.Uint32(),
+	//		}
+	//	}
 
-		mandatory := thread.Mandatory{t.C11, t.DatabaseResponseTable, t.config.Timeout}
-		err := thread.StoreConfigInDatabase(mandatory, cfg.Name, export.ToClusterConfig())
-		if err == nil {
-			t.Logger.Printf("stored new default config for cluster %s in database\n", export.Cluster)
-		} else {
-			// the config could have already been stored in a previous module register
-			// note: configs are not deleted when the processor is disconnected at the moment
-			//		-> the idea is we can re-use them s.t. performance can be improved
-			fmt.Println(err)
-			t.Logger.Printf("failed to database default config for cluster %s in database\n", export.Cluster)
-		}
-	}
+	// TODO : we are removing configs from processor
+	//mandatory := thread.Mandatory{t.C11, t.DatabaseResponseTable, t.pipeline.Timeout}
+	//err := thread.StoreConfigInDatabase(mandatory, cfg.Name, export.ToClusterConfig())
+	//if err == nil {
+	//	t.Logger.Printf("stored new default pipeline for cluster %s in database\n", export.Function)
+	//} else {
+	//	// the pipeline could have already been stored in a previous module register
+	//	// note: configs are not deleted when the processor is disconnected at the moment
+	//	//		-> the idea is we can re-use them s.t. performance can be improved
+	//	fmt.Println(err)
+	//	t.Logger.Printf("failed to database default pipeline for cluster %s in database\n", export.Function)
+	//}
+	//}
 
 	// let the operator have an understanding of the cluster-tools's state
 	// ->	when a processor is added it may change what modules/configs/processors are available to use

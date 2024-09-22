@@ -1,4 +1,4 @@
-package config
+package pipeline
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func NewMongoConfigDatabase(uri string) (*MongoConfigDatabase, error) {
 	return database, nil
 }
 
-func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Config, err error) {
+func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline, err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(filter.Module)
@@ -45,7 +45,7 @@ func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Config, 
 	} else {
 		mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
 
-		config := &Config{}
+		config := &Pipeline{}
 		err = c.FindOne(context.TODO(), mongoFilter).Decode(&config)
 		if err != nil {
 			return nil, err
@@ -57,14 +57,14 @@ func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Config, 
 	return records, nil
 }
 
-func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg Config) (err error) {
+func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg Pipeline) (err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(moduleIdentifier)
 
 	records, err := database.Get(ConfigFilter{Module: moduleIdentifier, Identifier: configIdentifier})
 	if len(records) >= 1 {
-		return errors.New("config with the same identifier already exists in the module")
+		return errors.New("pipeline with the same identifier already exists in the module")
 	}
 
 	_, err = c.InsertOne(context.TODO(), cfg)
@@ -75,7 +75,7 @@ func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier st
 	return nil
 }
 
-func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg Config) (err error) {
+func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg Pipeline) (err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(moduleIdentifier)
@@ -87,7 +87,7 @@ func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier s
 	}
 
 	if result.MatchedCount == 0 {
-		return errors.New("no config with the specified identifier exist for the module; nothing to replace")
+		return errors.New("no pipeline with the specified identifier exist for the module; nothing to replace")
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func (database MongoConfigDatabase) Delete(moduleIdentifier, configIdentifier st
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.New("no config with the specified identifier exist for the module; nothing to delete")
+		return errors.New("no pipeline with the specified identifier exist for the module; nothing to delete")
 	}
 
 	return nil

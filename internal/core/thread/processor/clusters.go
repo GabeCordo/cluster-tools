@@ -2,10 +2,10 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 )
 
-func (t *Thread) getClusters(name string) ([]processor.ClusterData, error) {
+func (t *Thread) getClusters(name string) ([]processor.FunctionData, error) {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
@@ -23,7 +23,7 @@ func (t *Thread) mountCluster(moduleName, clusterName string) error {
 		return processor.ModuleDoesNotExist
 	}
 
-	clusterInstance, found := moduleInstance.GetCluster(clusterName)
+	clusterInstance, found := moduleInstance.GetFunction(clusterName)
 	if !found {
 		return processor.ClusterDoesNotExist
 	}
@@ -42,7 +42,7 @@ func (t *Thread) unmountCluster(moduleName, clusterName string) error {
 		return processor.ModuleDoesNotExist
 	}
 
-	clusterInstance, found := moduleInstance.GetCluster(clusterName)
+	clusterInstance, found := moduleInstance.GetFunction(clusterName)
 	if !found {
 		return processor.ClusterDoesNotExist
 	}

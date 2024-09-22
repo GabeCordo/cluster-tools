@@ -1,8 +1,8 @@
 package job
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 	"log"
 	"time"
 )
@@ -66,7 +66,7 @@ func Loop(scheduler *Scheduler, f func(jb job.Job) error) (err error) {
 		}
 		scheduler.mutex.RUnlock()
 
-		// the time till the next queue check is defined in the Scheduler config
+		// the time till the next queue check is defined in the Scheduler pipeline
 		time.Sleep(time.Duration(scheduler.config.RefreshInterval) * time.Millisecond)
 	}
 }

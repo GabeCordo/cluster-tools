@@ -6,7 +6,7 @@ import (
 )
 
 // TestTable_AddProcessor
-// The processor shall addCluster the new config and increment its counter.
+// The processor shall addFunction the new pipeline and increment its counter.
 func TestTable_AddProcessor(t *testing.T) {
 
 	table := NewTable()
@@ -66,8 +66,8 @@ func TestTable_AddModule2(t *testing.T) {
 	processorConfig := &Config{Host: "127.0.0.1", Port: 1204}
 	table.AddProcessor(processorConfig)
 
-	moduleConfig := &ModuleConfig{Name: "foo", Exports: make([]ModuleCluster, 1)}
-	moduleConfig.Exports[0] = ModuleCluster{"bar", false, ModuleClusterConfig{}}
+	moduleConfig := &ModuleConfig{Name: "foo", Exports: make([]ModuleFunction, 1)}
+	moduleConfig.Exports[0] = ModuleFunction{Name: "bar"}
 
 	if err := table.AddModule("127.0.0.1:1204", moduleConfig); err != nil {
 		t.Error(err)
@@ -80,7 +80,7 @@ func TestTable_AddModule2(t *testing.T) {
 		return
 	}
 
-	clusterInstance, found := moduleInstance.GetCluster("bar")
+	clusterInstance, found := moduleInstance.GetFunction("bar")
 	if !found {
 		t.Error("expected to find cluster instance under module")
 		return
@@ -92,7 +92,7 @@ func TestTable_AddModule2(t *testing.T) {
 	}
 
 	if clusterInstance.SelectProcessor().ToString() != "127.0.0.1:1204" {
-		t.Error("no processor record found under module.config")
+		t.Error("no processor record found under module.pipeline")
 		return
 	}
 

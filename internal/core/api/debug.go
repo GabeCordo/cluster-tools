@@ -3,7 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"net/http"
 )
 

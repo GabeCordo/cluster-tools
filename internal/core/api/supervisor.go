@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"net/http"
 )
 
 var client = http.Client{}
 
-func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, cfg *config.Config, metadata map[string]string) error {
+func ProvisionSupervisor(processor string, moduleName, clusterName string, supervisor uint64, cfg *pipeline.Pipeline, metadata map[string]string) error {
 
 	body := &struct {
 		Module     string            `json:"module"`
 		Cluster    string            `json:"cluster"`
-		Config     config.Config     `json:"config"`
+		Config     pipeline.Pipeline `json:"pipeline"`
 		Supervisor uint64            `json:"id"`
 		Metadata   map[string]string `json:"metadata"`
 	}{

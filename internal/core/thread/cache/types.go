@@ -2,8 +2,8 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/cache"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/cache"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"sync"
 )
@@ -35,7 +35,7 @@ func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any
 	var ok bool
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *config type")
+		return nil, errors.New("expected no nil *pipeline type")
 	}
 	t.config = cfg
 
@@ -61,7 +61,7 @@ func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any
 	}
 
 	if logger == nil {
-		return nil, errors.New("expected non nil *utils.Logger type")
+		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	t.logger = logger
 	t.logger.SetColour(logging.Yellow)

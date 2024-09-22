@@ -2,8 +2,8 @@ package supervisor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"sync"
@@ -40,7 +40,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 	t := new(Thread)
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *config type")
+		return nil, errors.New("expected no nil *pipeline type")
 	}
 	t.config = cfg
 

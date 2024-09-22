@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"html/template"
 	"net/http"
 )
@@ -36,7 +36,7 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.Supervi
 		<table>
 			<tr>
 				<th>Module</th>
-				<th>Cluster</th>
+				<th>Function</th>
 				<th>Supervisor</th>
 				<th>E</th>
 				<th>State</th>
@@ -53,7 +53,7 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.Supervi
 			{{range .Items}}
 			<tr>
 				<td>{{ .Module }}</td>
-				<td>{{ .Cluster }}</td>
+				<td>{{ .Function }}</td>
 				<td>{{ .Supervisor }}</td>
 				<td>{{ .Statistics.Threads.NumProvisionedExtractRoutines }}</td>
 				<td>{{ .ETState }}</td>

@@ -1,28 +1,28 @@
-package cluster
+package oneway
 
 import (
 	"errors"
 	"github.com/GabeCordo/cluster-tools/cluster"
-	"github.com/GabeCordo/cluster-tools/internal/processor/channel"
+	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
 )
 
-type OneWayManagedChannel struct {
-	channel *channel.ManagedChannel
+type ManagedChannel struct {
+	channel *duplex.ManagedChannel
 }
 
-func NewOneWayManagedChannel(c *channel.ManagedChannel) (cluster.Out, error) {
+func NewOneWayManagedChannel(c *duplex.ManagedChannel) (cluster.Out, error) {
 
 	if c == nil {
 		return nil, errors.New("ManagedChannel passed to NewONeWayManagedChannel was nil")
 	}
 
-	oneWayManagedChannel := new(OneWayManagedChannel)
+	oneWayManagedChannel := new(ManagedChannel)
 	oneWayManagedChannel.channel = c
 
 	return oneWayManagedChannel, nil
 }
 
-func (c OneWayManagedChannel) Push(data any) bool {
+func (c ManagedChannel) Push(data any) bool {
 
 	didPush := c.channel.Push(data)
 	return didPush

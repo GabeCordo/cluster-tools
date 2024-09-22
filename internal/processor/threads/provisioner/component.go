@@ -1,6 +1,6 @@
 package provisioner
 
-import "github.com/GabeCordo/clarence/internal/components/provisioner"
+import "github.com/GabeCordo/cluster-tools/internal/processor/provisioner"
 
 var instance *provisioner.Provisioner
 

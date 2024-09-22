@@ -2,11 +2,11 @@ package scheduler
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
-	scheduler "github.com/GabeCordo/cluster-tools/internal/scheduler/job"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	scheduler "github.com/GabeCordo/cluster-tools/internal/core/scheduler/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
@@ -52,7 +52,7 @@ func (t *Thread) Start() {
 
 	go scheduler.Loop(t.Scheduler, func(jb job.Job) error {
 
-		// will return have a maximum of Timeout, so worst-case takes thread.config.Timeout
+		// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
 		mandatory := thread.Mandatory{t.C18, t.processorResponseTable, t.config.Timeout}
 		_, err := thread.CreateSupervisor(mandatory, jb.Module, jb.Cluster, jb.Config, jb.Metadata)
 
@@ -73,7 +73,7 @@ func (t *Thread) Start() {
 		}
 
 		// I only care about errors that might indicate a compromised state of the thread, the others
-		// like Module/Cluster's not existing really makes no sense to crash the Scheduler as someone
+		// like Module/Function's not existing really makes no sense to crash the Scheduler as someone
 		// likely put in the job for a future module/cluster pair they want to attach to mango
 		if (err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived) ||
 			(err == processor.ModuleDoesNotExist) || (err == processor.ClusterDoesNotExist) {

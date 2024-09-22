@@ -1,9 +1,8 @@
-package registry
+package register
 
 import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/cluster"
-	cluster2 "github.com/GabeCordo/cluster-tools/internal/processor/cluster"
 	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
 	"math"
 )
@@ -59,7 +58,7 @@ func (registry *Registry) CreateSupervisor(identifier uint64, metadata map[strin
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	helper := cluster2.NewHelper(core, registry.module, registry.cluster, identifier, standalone)
+	helper := supervisor.NewHelper(core, registry.module, registry.cluster, identifier, standalone)
 
 	var s *supervisor.Supervisor
 	if len(config) > 0 {
@@ -127,50 +126,13 @@ func (registry *Registry) SuspendSupervisors() {
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	for _, supervisor := range registry.supervisors {
+	for _, s := range registry.supervisors {
 		fmt.Println("teardown supervisor")
-		supervisor.Teardown()
+		s.Teardown()
 	}
 }
 
 func (registry *Registry) GetClusterImplementation() cluster.Cluster {
 
 	return registry.implementation
-}
-
-func (registry *Registry) Event(event supervisor.Event) *Registry {
-	switch registry.status {
-	case cluster.UnMounted:
-		{
-			switch event {
-			case cluster2.Mount:
-				{
-					registry.mounted = true
-					registry.status = cluster.Mounted
-				}
-			case cluster2.Delete:
-				{
-					registry.mounted = false
-					registry.status = cluster.MarkedForDeletion
-				}
-			}
-		}
-	case cluster.Mounted:
-		{
-			switch event {
-			case cluster.UnMounted:
-				{
-					registry.mounted = false
-					registry.status = cluster.UnMounted
-				}
-			case cluster2.Delete:
-				{
-					registry.mounted = false
-					registry.status = cluster.MarkedForDeletion
-				}
-			}
-		}
-	}
-
-	return registry
 }

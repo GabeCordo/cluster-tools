@@ -3,7 +3,7 @@ package core
 import (
 	"bufio"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"os"
 	"strings"
 )

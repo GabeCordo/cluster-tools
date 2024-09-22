@@ -2,10 +2,10 @@ package database
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
-	"github.com/GabeCordo/cluster-tools/internal/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"testing"
 )
@@ -17,7 +17,7 @@ func generateDatabaseThread(in chan thread.Request, out chan thread.Response) *T
 	mout := make(chan thread.Response, 1)
 
 	sD := statistic.NewLocalStatisticDatabase()
-	cD := config.NewLocalConfigDatabase()
+	cD := pipeline.NewLocalPipelineDatabase()
 	jD := job.NewLocalJobDatabase()
 
 	cfg := &Config{Debug: true, Timeout: 2.0}
@@ -38,11 +38,11 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterConfig := config.Config{}
+	clusterConfig := pipeline.Pipeline{}
 
 	request := thread.Request{
 		Action: thread.CreateAction,
-		Type:   thread.ConfigRecord,
+		Type:   thread.PipelineRecord,
 		Data:   clusterConfig,
 		Nonce:  1,
 	}
@@ -66,7 +66,7 @@ func TestThread_DatabaseStore_ClusterConfig2(t *testing.T) {
 
 	request := thread.Request{
 		Action: thread.CreateAction,
-		Type:   thread.ConfigRecord,
+		Type:   thread.PipelineRecord,
 		Nonce:  1,
 	}
 	in <- request
@@ -121,7 +121,7 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
 	request := thread.Request{
 		Action: thread.CreateAction,
-		Type:   thread.ConfigRecord,
+		Type:   thread.PipelineRecord,
 		Data:   clusterStatistic,
 		Nonce:  1,
 	}
@@ -147,15 +147,15 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterConfig := config.Config{Identifier: "test_cluster"}
+	clusterConfig := pipeline.Pipeline{Identifier: "test_cluster"}
 
 	m := "test_module"
 	c := "test_cluster"
 
 	in <- thread.Request{
 		Action:      thread.CreateAction,
-		Type:        thread.ConfigRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Type:        thread.PipelineRecord,
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Data:        clusterConfig,
 		Nonce:       1,
 	}
@@ -163,8 +163,8 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 
 	request := thread.Request{
 		Action:      thread.GetAction,
-		Type:        thread.ConfigRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Type:        thread.PipelineRecord,
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 	in <- request
@@ -175,9 +175,9 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 		return
 	}
 
-	fetchedClusterConfigs, ok := (response.Data).([]config.Config)
+	fetchedClusterConfigs, ok := (response.Data).([]pipeline.Pipeline)
 	if !ok {
-		t.Error("expected fetched record to be of type []cluster.Config")
+		t.Error("expected fetched record to be of type []cluster.pipeline")
 		return
 	}
 
@@ -187,7 +187,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	}
 
 	if fetchedClusterConfigs[0].Identifier != clusterConfig.Identifier {
-		t.Error("fetched wrong cluster.Config record")
+		t.Error("fetched wrong cluster.pipeline record")
 	}
 }
 
@@ -209,7 +209,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	in <- thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Data:        clusterStat,
 		Nonce:       1,
 	}
@@ -218,7 +218,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	request := thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 	in <- request
@@ -259,12 +259,12 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterConfig := config.Config{Identifier: c}
+	clusterConfig := pipeline.Pipeline{Identifier: c}
 
 	in <- thread.Request{
 		Action:      thread.CreateAction,
-		Type:        thread.ConfigRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Type:        thread.PipelineRecord,
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Data:        clusterConfig,
 		Nonce:       1,
 	}
@@ -272,15 +272,15 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 
 	in <- thread.Request{
 		Action:      thread.DeleteAction,
-		Type:        thread.ClusterRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Type:        thread.FunctionRecord,
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 
 	request := thread.Request{
 		Action:      thread.GetAction,
-		Type:        thread.ConfigRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Type:        thread.PipelineRecord,
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 	in <- request
@@ -312,7 +312,7 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	in <- thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Data:        clusterStat,
 		Nonce:       1,
 	}
@@ -321,14 +321,14 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	in <- thread.Request{
 		Action:      thread.DeleteAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 
 	request := thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Cluster: c},
+		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 	in <- request

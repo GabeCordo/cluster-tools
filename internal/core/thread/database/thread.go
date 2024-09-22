@@ -1,10 +1,10 @@
 package database
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database"
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"github.com/GabeCordo/cluster-tools/internal/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"log"
 	"time"
 )
@@ -12,7 +12,7 @@ import (
 func (t *Thread) Setup() {
 	t.accepting = true
 
-	if err := t.configDatabase.Load(t.config.ConfigsFolder); err != nil {
+	if err := t.pipelineDatabase.Load(t.config.ConfigsFolder); err != nil {
 		log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
 			err.Error())
 	}
@@ -20,13 +20,13 @@ func (t *Thread) Setup() {
 	// some configs may have carried over from previous runs
 	// let the operator know these configs are being loaded into the
 	// cluster-tools without having to query the database over HTTP
-	t.configDatabase.Print()
+	t.pipelineDatabase.Print()
 }
 
 func (t *Thread) Teardown() {
 	t.accepting = false
 
-	if err := t.configDatabase.Save(t.config.ConfigsFolder); err != nil {
+	if err := t.pipelineDatabase.Save(t.config.ConfigsFolder); err != nil {
 		log.Printf("failed to save configs created during runtime %s\n", err.Error())
 	}
 
@@ -80,19 +80,19 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.CreateAction:
 		{
 			switch request.Type {
-			case thread.ConfigRecord:
+			case thread.PipelineRecord:
 				{
-					if configData, ok := (request.Data).(config.Config); ok {
-						_, err := t.configDatabase.Create(
+					if configData, ok := (request.Data).(pipeline.Pipeline); ok {
+						_, err := t.pipelineDatabase.Create(
 							database.Filter{
 								Module:  request.Identifiers.Module,
-								Cluster: request.Identifiers.Cluster,
+								Cluster: request.Identifiers.Function,
 							},
 							&configData,
 						)
 
 						if err == nil {
-							t.configDatabase.Print()
+							t.pipelineDatabase.Print()
 						}
 
 						response.Success = err == nil
@@ -107,7 +107,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 						_, err := t.statisticDatabase.Create(
 							database.Filter{
 								Module:  request.Identifiers.Module,
-								Cluster: request.Identifiers.Cluster,
+								Cluster: request.Identifiers.Function,
 							},
 							statistic.Wrapper{ // TODO : depreciate or fix elapsed time
 								Timestamp: time.Now(),
@@ -133,16 +133,16 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.GetAction:
 		{
 			switch request.Type {
-			case thread.ConfigRecord:
+			case thread.PipelineRecord:
 				{
-					results := t.configDatabase.Get(database.Filter{
+					results := t.pipelineDatabase.Get(database.Filter{
 						Module:     request.Identifiers.Module,
-						Identifier: request.Identifiers.Cluster,
+						Identifier: request.Identifiers.Function,
 					})
 
-					configs := make([]config.Config, len(results))
+					configs := make([]pipeline.Pipeline, len(results))
 					for i, result := range results {
-						configs[i] = result.(config.Config)
+						configs[i] = result.(pipeline.Pipeline)
 					}
 
 					response.Success = len(results) > 0
@@ -152,7 +152,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				{
 					results := t.statisticDatabase.Get(database.Filter{
 						Module:  request.Identifiers.Module,
-						Cluster: request.Identifiers.Cluster,
+						Cluster: request.Identifiers.Function,
 					})
 
 					statistics := make([]statistic.Statistics, len(results))
@@ -172,11 +172,11 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.DeleteAction:
 		{
 			switch request.Type {
-			case thread.ConfigRecord:
+			case thread.PipelineRecord:
 				{
-					err := t.configDatabase.Delete(database.Filter{Module: request.Identifiers.Module, Identifier: request.Identifiers.Config})
+					err := t.pipelineDatabase.Delete(database.Filter{Module: request.Identifiers.Module, Identifier: request.Identifiers.Config})
 
-					if db, ok := (t.configDatabase).(database.Database); (err == nil) && ok {
+					if db, ok := (t.pipelineDatabase).(database.Database); (err == nil) && ok {
 						db.Print()
 					}
 
@@ -201,12 +201,12 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.UpdateAction:
 		{
 			switch request.Type {
-			case thread.ConfigRecord:
+			case thread.PipelineRecord:
 				{
-					cfg := (request.Data).(config.Config)
-					err := t.configDatabase.Replace(database.Filter{Module: request.Identifiers.Module, Cluster: request.Identifiers.Cluster}, &cfg)
+					cfg := (request.Data).(pipeline.Pipeline)
+					err := t.pipelineDatabase.Replace(database.Filter{Module: request.Identifiers.Module, Cluster: request.Identifiers.Function}, &cfg)
 
-					if db, ok := (t.configDatabase).(database.Database); (err == nil) && ok {
+					if db, ok := (t.pipelineDatabase).(database.Database); (err == nil) && ok {
 						db.Print()
 					}
 

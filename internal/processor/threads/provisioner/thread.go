@@ -3,8 +3,8 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/clarence/internal/api"
-	"github.com/GabeCordo/clarence/internal/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/processor/api"
+	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"time"
 )
 
@@ -57,9 +57,9 @@ func (thread *Thread) provisionStreamFunction() {
 				continue
 			}
 
-			request := &common.ProvisionerRequest{
-				Action:   common.ProvisionerSupervisorCreate,
-				Source:   common.Core,
+			request := &threads.ProvisionerRequest{
+				Action:   threads.ProvisionerSupervisorCreate,
+				Source:   threads.Core,
 				Module:   moduleInst.Identifier,
 				Cluster:  clusterInst.Identifier,
 				Config:   &clusterInst.DefaultConfig,
@@ -96,21 +96,21 @@ func (thread *Thread) backlog() {
 	}
 }
 
-func (thread *Thread) respond(response *common.ProvisionerResponse) {
+func (thread *Thread) respond(response *threads.ProvisionerResponse) {
 
 	thread.C2 <- *response
 }
 
-func (thread *Thread) processRequest(request *common.ProvisionerRequest) {
+func (thread *Thread) processRequest(request *threads.ProvisionerRequest) {
 
-	response := &common.ProvisionerResponse{Error: nil, Nonce: request.Nonce}
+	response := &threads.ProvisionerResponse{Error: nil, Nonce: request.Nonce}
 
 	switch request.Action {
-	case common.ProvisionerModuleGet:
+	case threads.ProvisionerModuleGet:
 		response.Data = thread.getModules()
-	case common.ProvisionerSupervisorCreate:
+	case threads.ProvisionerSupervisorCreate:
 		response.Error = thread.provisionSupervisor(request)
-	case common.ProvisionerStatisticsGet:
+	case threads.ProvisionerStatisticsGet:
 		response.Data = thread.getStatistics()
 	default:
 		response.Error = errors.New("bad request")

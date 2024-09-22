@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"net/http"
 )
 
-func UpdateSupervisor(host string, id uint64, status interfaces.SupervisorStatus, stats *interfaces.Statistics) error {
+func UpdateSupervisor(host string, id uint64, status interfaces.SupervisorStatus, stats *statistic.Statistics) error {
 
 	url := fmt.Sprintf("%s/supervisor", host)
 

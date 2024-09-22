@@ -2,7 +2,8 @@ package supervisor
 
 import (
 	"github.com/GabeCordo/cluster-tools/cluster"
-	"github.com/GabeCordo/cluster-tools/internal/processor/channel"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
 	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"sync"
 	"time"
@@ -11,6 +12,61 @@ import (
 const (
 	MaxConcurrentSupervisors = 24
 )
+
+type Segment int8
+
+const (
+	Extract   Segment = 0
+	Transform         = 1
+	Load              = 2
+)
+
+type LoadAll interface {
+	LoadFunc(helper cluster.H, metadata cluster.M, in []any)
+}
+
+type LoadOne interface {
+	LoadFunc(helper cluster.H, metadata cluster.M, in any)
+}
+
+type SystemFunctions interface {
+	Setup(curr time.Time, h cluster.H)
+	Teardown(curr time.Time, h cluster.H)
+}
+
+type VerifiableET interface {
+	VerifyETFunction(in any) (valid bool)
+}
+
+type VerifiableTL interface {
+	VerifyTLFunction(in any) (valid bool)
+}
+
+// Test
+// TODO : needs to be implemented
+type Test interface {
+	MockExtractFunc(metadata cluster.M, out cluster.Out)
+	VerifyTransformOutput(metadata cluster.M, in any) (success bool)
+	MockLoadFunc(metadata cluster.M, in any)
+}
+
+type Response struct {
+	Config     cluster.Config         `json:"core"`
+	Stats      *interfaces.Statistics `json:"stats"`
+	LapsedTime time.Duration          `json:"lapsed-time"`
+	DidItCrash bool                   `json:"crashed"`
+}
+
+func NewResponse(config cluster.Config, statistics *interfaces.Statistics, lapsedTime time.Duration, crashed bool) *Response {
+	response := new(Response)
+
+	response.Config = config
+	response.Stats = statistics
+	response.LapsedTime = lapsedTime
+	response.DidItCrash = crashed
+
+	return response
+}
 
 type Status string
 
@@ -52,9 +108,9 @@ type Supervisor struct {
 
 	group     cluster.Cluster
 	helper    cluster.H
-	ETChannel *channel.ManagedChannel
+	ETChannel *duplex.ManagedChannel
 	mutexET   sync.Mutex
-	TLChannel *channel.ManagedChannel
+	TLChannel *duplex.ManagedChannel
 	mutexTL   sync.Mutex
 
 	ActiveTRoutines int
@@ -80,8 +136,8 @@ func NewSupervisor(clusterImplementation cluster.Cluster, metadata map[string]st
 	tl := interfaces.NewTimingStatistics()
 	supervisor.Stats = interfaces.NewStatistics(et, tl)
 
-	supervisor.ETChannel = channel.New("ETChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor, et)
-	supervisor.TLChannel = channel.New("TLChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor, tl)
+	supervisor.ETChannel = duplex.New("ETChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor, et)
+	supervisor.TLChannel = duplex.New("TLChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor, tl)
 
 	supervisor.ActiveTRoutines = 0
 	supervisor.quitT = make([]chan bool, 0)
@@ -114,14 +170,14 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config *cluster.
 
 	supervisor.State = UnTouched
 	supervisor.group = clusterImplementation
-	supervisor.Config = *config // copy config
+	supervisor.Config = *config // copy pipeline
 
 	et := interfaces.NewTimingStatistics()
 	tl := interfaces.NewTimingStatistics()
 	supervisor.Stats = interfaces.NewStatistics(et, tl)
 
-	supervisor.ETChannel = channel.New("ETChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor, et)
-	supervisor.TLChannel = channel.New("TLChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor, tl)
+	supervisor.ETChannel = duplex.New("ETChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor, et)
+	supervisor.TLChannel = duplex.New("TLChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor, tl)
 
 	supervisor.ActiveTRoutines = 0
 	supervisor.quitT = make([]chan bool, 0)
@@ -141,4 +197,15 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config *cluster.
 	}
 
 	return supervisor
+}
+
+type Summary struct {
+	Module     string
+	Cluster    string
+	Supervisor uint64
+	Statistics *statistic.Statistics
+	ETState    string
+	ETSize     int
+	TLState    string
+	TLSize     int
 }

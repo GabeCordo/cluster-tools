@@ -2,9 +2,9 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/database/supervisor"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )
@@ -55,7 +55,7 @@ func (t *Thread) createSupervisor(r *thread.Request) (uint64, error) {
 		return 0, processor.ModuleNotMounted
 	}
 
-	clusterInstance, found := moduleInstance.GetCluster(r.Identifiers.Cluster)
+	clusterInstance, found := moduleInstance.GetFunction(r.Identifiers.Function)
 	if !found {
 		return 0, processor.ClusterDoesNotExist
 	}
@@ -64,9 +64,10 @@ func (t *Thread) createSupervisor(r *thread.Request) (uint64, error) {
 		return 0, processor.ClusterNotMounted
 	}
 
-	if (r.Source == thread.HttpClient) && clusterInstance.IsStream() {
-		return 0, processor.CanNotProvisionStreamCluster
-	}
+	// TODO: remove?
+	//if (r.Source == thread.HttpClient) && clusterInstance.IsStream() {
+	//	return 0, processor.CanNotProvisionStreamCluster
+	//}
 
 	request := thread.Request{
 		Action:      thread.CreateAction,

@@ -3,8 +3,8 @@ package wrapper
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/clarence/cluster"
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"log"
 	"sync"
 )
@@ -103,14 +103,14 @@ func (moduleWrapper *Module) AddCluster(clusterName string, mode string, impleme
 	// improve the simplicity of writing quick/simple functions:
 	// 1. lower the bar of entry for new developers
 	// 2. hide the advanced options when it's not required
-	//		- the concept of a 'config' that can be fine-tuned becomes
+	//		- the concept of a 'pipeline' that can be fine-tuned becomes
 	//		  important in the optimization phase after many iterations
 	if len(cfg) == 0 {
 		clusterWrapper.DefaultConfig = cluster.DefaultConfig
 		clusterWrapper.DefaultConfig.Identifier = clusterName
 	}
 
-	// skip: if the config is never provided since len() == 0
+	// skip: if the pipeline is never provided since len() == 0
 	for _, c := range cfg {
 		clusterWrapper.DefaultConfig = *c
 		clusterWrapper.DefaultConfig.Identifier = clusterName

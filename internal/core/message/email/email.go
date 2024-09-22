@@ -2,7 +2,7 @@ package email
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/message"
+	"github.com/GabeCordo/cluster-tools/internal/core/message"
 	"sync"
 )
 

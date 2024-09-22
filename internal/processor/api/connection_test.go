@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/GabeCordo/clarence/internal/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"testing"
 )
 
 var host = "http://localhost:8137"
-var processorCfg = &interfaces.ProcessorConfig{Host: "localhost", Port: 5023}
+var processorCfg = &processor.Config{Host: "localhost", Port: 5023}
 
 func TestConnectToCore(t *testing.T) {
 

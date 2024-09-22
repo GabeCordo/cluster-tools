@@ -1,9 +1,8 @@
 package processor
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/processor"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
-	"time"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
@@ -37,14 +36,15 @@ func (t *Thread) Start() {
 
 	// PROCESSOR PROBE LOOP
 
-	go func() {
-		sleepDuration := time.Duration(t.config.ProbeEvery) * time.Second
-
-		for {
-			t.processorPing()
-			time.Sleep(sleepDuration)
-		}
-	}()
+	// TODO : stopping probe feature for testing
+	//go func() {
+	//	sleepDuration := time.Duration(t.pipeline.ProbeEvery) * time.Second
+	//
+	//	for {
+	//		t.processorPing()
+	//		time.Sleep(sleepDuration)
+	//	}
+	//}()
 }
 
 func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
@@ -57,7 +57,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				response.Data = t.processorGet()
 			case thread.ModuleRecord:
 				response.Data = t.getModules()
-			case thread.ClusterRecord:
+			case thread.FunctionRecord:
 				response.Data, response.Error = t.getClusters(request.Identifiers.Module)
 			case thread.SupervisorRecord:
 				response.Data, response.Error = t.getSupervisor(request)
@@ -106,8 +106,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.ModuleRecord:
 				response.Error = t.mountModule(request.Identifiers.Module)
-			case thread.ClusterRecord:
-				response.Error = t.mountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
+			case thread.FunctionRecord:
+				response.Error = t.mountCluster(request.Identifiers.Module, request.Identifiers.Function)
 			default:
 				response.Error = thread.UnknownRequest
 			}
@@ -117,8 +117,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.ModuleRecord:
 				response.Error = t.unmountModule(request.Identifiers.Module)
-			case thread.ClusterRecord:
-				response.Error = t.unmountCluster(request.Identifiers.Module, request.Identifiers.Cluster)
+			case thread.FunctionRecord:
+				response.Error = t.unmountCluster(request.Identifiers.Module, request.Identifiers.Function)
 			default:
 				response.Error = thread.UnknownRequest
 			}

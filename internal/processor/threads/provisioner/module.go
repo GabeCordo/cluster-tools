@@ -1,6 +1,6 @@
 package provisioner
 
-import "github.com/GabeCordo/clarence/wrapper"
+import "github.com/GabeCordo/cluster-tools/wrapper"
 
 func (thread *Thread) getModules() []*wrapper.Module {
 

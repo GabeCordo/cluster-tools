@@ -2,6 +2,8 @@ package interfaces
 
 import (
 	"encoding/json"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"net/http"
 )
 
@@ -12,10 +14,10 @@ type HTTPRequest struct {
 }
 
 type HTTPModuleRequest struct {
-	Name    string             `json:"name"`
-	Config  ModuleConfig       `json:"config,omitempty"`
-	Mount   bool               `json:"mount,omitempty"`
-	Cluster HTTPClusterRequest `json:"cluster,omitempty"`
+	Name    string                 `json:"name"`
+	Config  processor.ModuleConfig `json:"pipeline,omitempty"`
+	Mount   bool                   `json:"mount,omitempty"`
+	Cluster HTTPClusterRequest     `json:"cluster,omitempty"`
 }
 
 type HTTPClusterRequest struct {
@@ -35,7 +37,7 @@ const (
 type HTTPSupervisorRequest struct {
 	Identifier uint64               `json:"identifier"`
 	Action     HTTPSupervisorAction `json:"action,omitempty"`
-	Statistics Statistics           `json:"statistics,omitempty"`
+	Statistics statistic.Statistics `json:"statistics,omitempty"`
 	Log        HTTPLogRequest       `json:"log,omitempty"`
 	Cache      HTTPCacheRequest     `json:"cache,omitempty"`
 }

@@ -2,8 +2,8 @@ package processor
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/api"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/api"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 )
 
 func (t *Thread) processorGet() []*processor.Processor {

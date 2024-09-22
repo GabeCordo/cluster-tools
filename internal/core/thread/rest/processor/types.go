@@ -2,7 +2,7 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/thread"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
@@ -45,7 +45,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	t := new(Thread)
 
 	if cfg == nil {
-		return nil, errors.New("expected no nil *config type")
+		return nil, errors.New("expected no nil *pipeline type")
 	}
 	t.config = cfg
 

@@ -1,34 +1,44 @@
 package processor
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database/config"
-	"gopkg.in/yaml.v3"
-	"os"
+	"sync"
 )
 
-type DynamicFeatures struct {
-	Threshold    int     `yaml:"threshold" json:"threshold"`
-	GrowthFactor float64 `yaml:"growth-factor" json:"growth-factor"`
+type ModuleData struct {
+	Name    string
+	Version float64
+	Contact ModuleContact
+	Mounted bool
 }
 
-type ModuleClusterConfig struct {
-	Mode    config.EtlMode `yaml:"mode" json:"mode"`
-	OnCrash config.OnCrash `yaml:"on-crash" json:"on-crash"`
-	OnLoad  config.OnLoad  `yaml:"on-load" json:"on-load"`
-	Static  struct {
-		TFunctions int `yaml:"t-functions" json:"t-functions"`
-		LFunctions int `yaml:"l-functions" json:"l-functions"`
-	} `yaml:"static"`
-	Dynamic struct {
-		TFunction DynamicFeatures `yaml:"t-function" json:"t-function"`
-		LFunction DynamicFeatures `yaml:"l-function" json:"l-function"`
-	} `yaml:"dynamic"`
+type Module struct {
+	data ModuleData
+
+	functions map[string]*Function
+	mutex     sync.RWMutex
 }
 
-type ModuleCluster struct {
-	Cluster     string              `yaml:"cluster" json:"cluster"`
-	StaticMount bool                `yaml:"mount" json:"mount"`
-	Config      ModuleClusterConfig `yaml:"config" json:"config"`
+func newModule(name string, version float64, contact ...ModuleContact) *Module {
+	module := new(Module)
+
+	module.data.Name = name
+	module.data.Version = version
+
+	for _, c := range contact {
+		module.data.Contact = c
+	}
+
+	module.data.Mounted = false
+	module.functions = make(map[string]*Function)
+
+	return module
+}
+
+type ModuleFunction struct {
+	Name        string   `yaml:"name" json:"name"`
+	StaticMount bool     `yaml:"static_mount,omitempty" json:"static_mount,omitempty"`
+	Parameters  []string `yaml:"parameters" json:"params"`
+	Returns     []string `yaml:"returns" json:"returns"`
 }
 
 type ModuleContact struct {
@@ -37,39 +47,11 @@ type ModuleContact struct {
 }
 
 type ModuleConfig struct {
-	Name    string          `yaml:"name" json:"name"`
-	Version float64         `yaml:"version" json:"version"`
-	Contact ModuleContact   `yaml:"contact,omitempty" json:"contact,omitempty"`
-	Exports []ModuleCluster `yaml:"exports" json:"clusters"`
-}
-
-func (c ModuleCluster) ToClusterConfig() config.Config {
-
-	return config.Config{
-		Identifier:                  c.Cluster,
-		OnLoad:                      c.Config.OnLoad,
-		OnCrash:                     c.Config.OnCrash,
-		StartWithNTransformClusters: c.Config.Static.TFunctions,
-		StartWithNLoadClusters:      c.Config.Static.LFunctions,
-		ETChannelThreshold:          c.Config.Dynamic.TFunction.Threshold,
-		ETChannelGrowthFactor:       c.Config.Dynamic.TFunction.GrowthFactor,
-		TLChannelThreshold:          c.Config.Dynamic.LFunction.Threshold,
-		TLChannelGrowthFactor:       c.Config.Dynamic.LFunction.GrowthFactor,
-	}
-}
-
-func ConfigFromYAML(path string) (*ModuleConfig, error) {
-
-	config := new(ModuleConfig)
-
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	yaml.Unmarshal(bytes, config)
-
-	return config, nil
+	Name        string           `yaml:"name" json:"name"`
+	Version     float64          `yaml:"version" json:"version"`
+	StaticMount bool             `yaml:"static_mount,omitempty" json:"static_mount,omitempty"`
+	Contact     ModuleContact    `yaml:"contact,omitempty" json:"contact,omitempty"`
+	Exports     []ModuleFunction `yaml:"exports" json:"functions"`
 }
 
 func (config ModuleConfig) Verify() bool {
@@ -77,26 +59,26 @@ func (config ModuleConfig) Verify() bool {
 	// ensure that every export identifier is unique
 	exports := make(map[string]bool)
 	for _, export := range config.Exports {
-		if _, found := exports[export.Cluster]; found {
+		if _, found := exports[export.Name]; found {
 			return false
 		} else {
-			exports[export.Cluster] = true
+			exports[export.Name] = true
 		}
 	}
 
 	return true
 }
 
-func (module *Module) addCluster(name string) (success bool) {
+func (module *Module) addFunction(builder *ModuleFunction) (success bool) {
 
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
 
-	if _, found := module.clusters[name]; found {
+	if _, found := module.functions[builder.Name]; found {
 		return false
 	}
 
-	module.clusters[name] = newCluster(name)
+	module.functions[builder.Name] = newFunction(builder)
 	return true
 }
 
@@ -125,25 +107,25 @@ func (module *Module) GetData() ModuleData {
 	return module.data
 }
 
-func (module *Module) GetCluster(name string) (instance *Cluster, found bool) {
+func (module *Module) GetFunction(name string) (instance *Function, found bool) {
 
 	module.mutex.RLock()
 	defer module.mutex.RUnlock()
 
-	instance, found = module.clusters[name]
+	instance, found = module.functions[name]
 	return instance, found
 }
 
-func (module *Module) Registered() []ClusterData {
+func (module *Module) Registered() []FunctionData {
 
 	module.mutex.RLock()
 	defer module.mutex.RUnlock()
 
-	clusters := make([]ClusterData, len(module.clusters))
+	clusters := make([]FunctionData, len(module.functions))
 
 	idx := 0
-	for _, clusterInstance := range module.clusters {
-		clusters[idx] = clusterInstance.GetData()
+	for _, functionInstance := range module.functions {
+		clusters[idx] = functionInstance.GetData()
 		idx++
 	}
 

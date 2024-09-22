@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/database/job"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 )
 
 type Schedule struct {
@@ -13,7 +13,7 @@ type Schedule struct {
 
 type Job struct {
 	Cluster  string   `json:"cluster", yaml:"cluster"`
-	Config   string   `json:"config", yaml:"config"`
+	Config   string   `json:"pipeline", yaml:"pipeline"`
 	Schedule Schedule `json:"scheduler", yaml:"scheduler"`
 }
 

@@ -1,6 +1,10 @@
 package interfaces
 
-import "sync"
+import (
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"sync"
+)
 
 type SupervisorStatus string
 
@@ -30,8 +34,8 @@ type Supervisor struct {
 	Module    string `json:"module,omitempty"`
 	Cluster   string `json:"cluster,omitempty"`
 
-	Config     Config      `json:"config,omitempty"`
-	Statistics *Statistics `json:"statistics"`
+	Config     pipeline.Pipeline     `json:"pipeline,omitempty"`
+	Statistics *statistic.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }

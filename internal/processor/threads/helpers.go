@@ -1,4 +1,4 @@
-package common
+package threads
 
 import (
 	"github.com/GabeCordo/cluster-tools/cluster"

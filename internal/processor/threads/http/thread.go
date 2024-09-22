@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"github.com/GabeCordo/clarence/internal/threads/common"
+	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -53,7 +53,7 @@ func (thread *Thread) Start() {
 		err := thread.server.ListenAndServe()
 		if err != nil {
 			thread.logger.Println("http thread failed to listen and serve")
-			thread.Interrupt <- common.Panic
+			thread.Interrupt <- threads.Panic
 		}
 	}(thread)
 
@@ -80,6 +80,6 @@ func (thread *Thread) Teardown() {
 	err := thread.server.Shutdown(ctx)
 	if err != nil {
 		thread.logger.Println("teardown called; sending panic")
-		thread.Interrupt <- common.Panic
+		thread.Interrupt <- threads.Panic
 	}
 }

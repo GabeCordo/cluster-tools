@@ -3,8 +3,8 @@ package supervisor
 import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/cluster"
-	"github.com/GabeCordo/cluster-tools/internal/processor/components/channel"
-	internal_cluster "github.com/GabeCordo/cluster-tools/internal/processor/components/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
+	"github.com/GabeCordo/cluster-tools/internal/processor/channel/oneway"
 	"log"
 	"time"
 )
@@ -71,7 +71,7 @@ func (supervisor *Supervisor) IsAlive() bool {
 	return (supervisor.State != Failed) && (supervisor.State != Terminated)
 }
 
-func (supervisor *Supervisor) Start() (response *internal_cluster.Response) {
+func (supervisor *Supervisor) Start() (response *Response) {
 	supervisor.Event(Startup)
 
 	defer supervisor.Event(TearedDown)
@@ -80,7 +80,7 @@ func (supervisor *Supervisor) Start() (response *internal_cluster.Response) {
 		// has the user defined function crashed during runtime?
 		if r := recover(); r != nil {
 			// yes => return a response that identifies that the cluster crashed
-			response = internal_cluster.NewResponse(
+			response = NewResponse(
 				supervisor.Config,
 				supervisor.Stats,
 				time.Now().Sub(supervisor.StartTime),
@@ -91,13 +91,13 @@ func (supervisor *Supervisor) Start() (response *internal_cluster.Response) {
 
 	supervisor.StartTime = time.Now()
 
-	if sysFunc, ok := (supervisor.group).(internal_cluster.SystemFunctions); ok {
+	if sysFunc, ok := (supervisor.group).(SystemFunctions); ok {
 		sysFunc.Setup(supervisor.StartTime, supervisor.helper)
 	}
 
 	// the common specifies the number of load functions to quitE running in parallel
 	for i := 0; i < supervisor.Config.StartWithNLoadClusters; i++ {
-		supervisor.Provision(internal_cluster.Load)
+		supervisor.Provision(Load)
 		supervisor.Stats.Threads.NumActiveLoadRoutines++
 		supervisor.Stats.Threads.NumProvisionedLoadRoutines++
 		supervisor.ActiveLRoutines++
@@ -105,14 +105,14 @@ func (supervisor *Supervisor) Start() (response *internal_cluster.Response) {
 
 	// the common specifies the number of transform functions to quitE running in parallel
 	for i := 0; i < supervisor.Config.StartWithNTransformClusters; i++ {
-		supervisor.Provision(internal_cluster.Transform)
+		supervisor.Provision(Transform)
 		supervisor.Stats.Threads.NumActiveTransformRoutines++
 		supervisor.Stats.Threads.NumProvisionedTransformRoutes++
 		supervisor.ActiveTRoutines++
 	}
 
 	//// quitE creating the default frontend goroutines
-	supervisor.Provision(internal_cluster.Extract)
+	supervisor.Provision(Extract)
 	supervisor.Stats.Threads.NumProvisionedExtractRoutines++
 	supervisor.Stats.Threads.NumActiveExtractRoutines++
 
@@ -127,7 +127,7 @@ func (supervisor *Supervisor) Start() (response *internal_cluster.Response) {
 	// calculate the timings produced by data being fed across each of the channels
 	supervisor.CalculateTiming()
 
-	response = internal_cluster.NewResponse(
+	response = NewResponse(
 		supervisor.Config,
 		supervisor.Stats,
 		time.Now().Sub(supervisor.StartTime),
@@ -139,7 +139,7 @@ func (supervisor *Supervisor) Start() (response *internal_cluster.Response) {
 
 func (supervisor *Supervisor) Teardown() {
 
-	if sysFunc, ok := (supervisor.group).(internal_cluster.SystemFunctions); ok {
+	if sysFunc, ok := (supervisor.group).(SystemFunctions); ok {
 		sysFunc.Teardown(time.Now(), supervisor.helper)
 	}
 
@@ -158,7 +158,7 @@ func (supervisor *Supervisor) Runtime() {
 			supervisor.ETChannel.StopPushes()
 		}
 
-		if etChannelState == channel.Congested {
+		if etChannelState == duplex.Congested {
 			// when the ET channel is congested provision new Transform
 			// functions in-accordance to the ET growth-factor
 			supervisor.Stats.Channels.NumEtThresholdBreaches++
@@ -166,11 +166,11 @@ func (supervisor *Supervisor) Runtime() {
 			for n > 0 {
 				supervisor.Stats.Threads.NumProvisionedTransformRoutes++
 				supervisor.Stats.Threads.NumActiveTransformRoutines++
-				supervisor.Provision(internal_cluster.Transform)
+				supervisor.Provision(Transform)
 				supervisor.ActiveTRoutines++
 				n--
 			}
-		} else if (etChannelState == channel.Underutilized) || (etChannelState == channel.Idle) {
+		} else if (etChannelState == duplex.Underutilized) || (etChannelState == duplex.Idle) {
 			n := supervisor.ETChannel.Config.GrowthFactor
 			for n > 0 {
 				// never remove all transform nodes otherwise we risk the
@@ -180,14 +180,14 @@ func (supervisor *Supervisor) Runtime() {
 				}
 				supervisor.ActiveTRoutines--
 				supervisor.Stats.Threads.NumActiveTransformRoutines--
-				supervisor.Remove(internal_cluster.Transform)
+				supervisor.Remove(Transform)
 				n--
 			}
 		}
 
 		tlChannelState := supervisor.TLChannel.GetState()
 
-		if tlChannelState == channel.Congested {
+		if tlChannelState == duplex.Congested {
 			// when the TL channel is congested provision new Load
 			// functions in-accordance to the TL growth-factor
 			supervisor.Stats.Channels.NumTlThresholdBreaches++
@@ -195,11 +195,11 @@ func (supervisor *Supervisor) Runtime() {
 			for n > 0 {
 				supervisor.Stats.Threads.NumProvisionedLoadRoutines++
 				supervisor.Stats.Threads.NumActiveLoadRoutines++
-				supervisor.Provision(internal_cluster.Load)
+				supervisor.Provision(Load)
 				supervisor.ActiveLRoutines++
 				n--
 			}
-		} else if (tlChannelState == channel.Underutilized) || (tlChannelState == channel.Idle) {
+		} else if (tlChannelState == duplex.Underutilized) || (tlChannelState == duplex.Idle) {
 			n := supervisor.TLChannel.Config.GrowthFactor
 			for n > 0 {
 				// never remove all transform nodes otherwise we risk the
@@ -209,7 +209,7 @@ func (supervisor *Supervisor) Runtime() {
 				}
 				supervisor.ActiveLRoutines--
 				supervisor.Stats.Threads.NumActiveLoadRoutines--
-				supervisor.Remove(internal_cluster.Load)
+				supervisor.Remove(Load)
 				n--
 			}
 		}
@@ -254,7 +254,7 @@ func (supervisor *Supervisor) ExtractShutdownWrapper() <-chan struct{} {
 	return done
 }
 
-func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
+func (supervisor *Supervisor) Provision(segment Segment) {
 	supervisor.Event(StartProvision)
 	defer supervisor.Event(EndProvision)
 
@@ -265,9 +265,9 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 
 	var quit chan bool = make(chan bool)
 	switch segment {
-	case internal_cluster.Transform:
+	case Transform:
 		supervisor.quitT = append(supervisor.quitT, quit)
-	case internal_cluster.Load:
+	case Load:
 		supervisor.quitL = append(supervisor.quitL, quit)
 	default:
 		quit = nil
@@ -275,7 +275,7 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 
 	go func(supervisor *Supervisor, quit chan bool) {
 		switch segment {
-		case internal_cluster.Extract:
+		case Extract:
 			{
 				defer func() {
 					if r := recover(); r != nil {
@@ -286,7 +286,7 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 					}
 				}()
 
-				oneWayChannel, _ := internal_cluster.NewOneWayManagedChannel(supervisor.ETChannel)
+				oneWayChannel, _ := oneway.NewOneWayManagedChannel(supervisor.ETChannel)
 				supervisor.ETChannel.AddProducer()
 
 				select {
@@ -302,7 +302,7 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 				// completed processing all of their data
 				supervisor.ETChannel.ProducerDone()
 			}
-		case internal_cluster.Transform:
+		case Transform:
 			{
 				defer func() {
 					if r := recover(); r != nil {
@@ -334,7 +334,7 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 							supervisor.Stats.Data.TotalOverETChannel++
 							supervisor.mutexET.Unlock()
 
-							if i, ok := (supervisor.group).(internal_cluster.VerifiableET); ok && !i.VerifyETFunction(request) {
+							if i, ok := (supervisor.group).(VerifiableET); ok && !i.VerifyETFunction(request) {
 								continue
 							}
 
@@ -365,7 +365,7 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 				// completed processing all of their data
 				supervisor.TLChannel.ProducerDone()
 			}
-		case internal_cluster.Load:
+		case Load:
 			{
 				defer func() {
 					if r := recover(); r != nil {
@@ -395,13 +395,13 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 							// the data counter for the current pipe
 							supervisor.TLChannel.DataPopped(request.In)
 
-							if i, ok := (supervisor.group).(internal_cluster.VerifiableTL); ok && !i.VerifyTLFunction(request) {
+							if i, ok := (supervisor.group).(VerifiableTL); ok && !i.VerifyTLFunction(request) {
 								continue
 							}
 
-							if a, clusterUsesLoadOneByOne := (supervisor.group).(internal_cluster.LoadOne); clusterUsesLoadOneByOne {
+							if a, clusterUsesLoadOneByOne := (supervisor.group).(LoadOne); clusterUsesLoadOneByOne {
 								a.LoadFunc(supervisor.helper, supervisor.Metadata, request.Data)
-							} else if _, success := (supervisor.group).(internal_cluster.LoadAll); success {
+							} else if _, success := (supervisor.group).(LoadAll); success {
 								aggregatedData = append(aggregatedData, request.Data)
 							}
 						}
@@ -416,7 +416,7 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 					}
 				}
 
-				if a, clusterUsesLoadAllAtEnd := (supervisor.group).(internal_cluster.LoadAll); clusterUsesLoadAllAtEnd {
+				if a, clusterUsesLoadAllAtEnd := (supervisor.group).(LoadAll); clusterUsesLoadAllAtEnd {
 					a.LoadFunc(supervisor.helper, supervisor.Metadata, aggregatedData)
 				}
 			}
@@ -435,10 +435,10 @@ func (supervisor *Supervisor) Provision(segment internal_cluster.Segment) {
 	supervisor.waitGroup.Add(1)
 }
 
-func (supervisor *Supervisor) Remove(segment internal_cluster.Segment) {
+func (supervisor *Supervisor) Remove(segment Segment) {
 
 	switch segment {
-	case internal_cluster.Transform:
+	case Transform:
 		{
 			if supervisor.ActiveTRoutines <= 0 {
 				panic("attempting to quitE when no transform functions are running")
@@ -447,7 +447,7 @@ func (supervisor *Supervisor) Remove(segment internal_cluster.Segment) {
 			supervisor.quitT = supervisor.quitT[1:]
 			quit <- true
 		}
-	case internal_cluster.Load:
+	case Load:
 		{
 			if supervisor.ActiveLRoutines <= 0 {
 				panic("attempting to quite when no load functions are running")
@@ -475,7 +475,7 @@ func (supervisor *Supervisor) CalculateTiming() {
 
 func (supervisor *Supervisor) Print() {
 	fmt.Printf("Id: %d\n", supervisor.Id)
-	fmt.Printf("Cluster: %s\n", supervisor.Config.Identifier)
+	fmt.Printf("Function: %s\n", supervisor.Config.Identifier)
 }
 
 func (status Status) ToString() string {

@@ -2,8 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/GabeCordo/cluster-tools/internal/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"net/http"
 )
 
