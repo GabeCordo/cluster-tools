@@ -1,4 +1,4 @@
-package supervisor
+package runner
 
 import (
 	"errors"
@@ -17,13 +17,13 @@ type Config struct {
 type Thread struct {
 	Interrupt chan thread.InterruptEvent
 
-	C13 chan thread.Request  // supervisor receives requests from the processor
-	C14 chan thread.Response // supervisor sends responses to the processor
+	C13 chan thread.Request  // runner receives requests from the processor
+	C14 chan thread.Response // runner sends responses to the processor
 
-	C15 chan thread.Request  //supervisor sends requests to the database
-	C16 chan thread.Response // supervisor receives responses from the database
+	C15 chan thread.Request  //runner sends requests to the database
+	C16 chan thread.Response // runner receives responses from the database
 
-	C17 chan thread.Request // supervisor sends requests to the messenger
+	C17 chan thread.Request // runner sends requests to the messenger
 
 	config *Config
 	Logger *logging.Logger

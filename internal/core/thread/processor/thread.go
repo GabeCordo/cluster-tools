@@ -21,9 +21,9 @@ func (t *Thread) Start() {
 	// RESPONSE THREADS
 
 	go func() {
-		// response coming from the supervisor t
+		// response coming from the runner t
 		for response := range t.C14 {
-			t.SupervisorResponseTable.Write(response.Nonce, response)
+			t.RunnerResponseTable.Write(response.Nonce, response)
 		}
 	}()
 
@@ -58,9 +58,9 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.ModuleRecord:
 				response.Data = t.getModules()
 			case thread.FunctionRecord:
-				response.Data, response.Error = t.getClusters(request.Identifiers.Module)
-			case thread.SupervisorRecord:
-				response.Data, response.Error = t.getSupervisor(request)
+				response.Data, response.Error = t.getFunctions(request.Identifiers.Module)
+			case thread.RunRecord:
+				response.Data, response.Error = t.getRun(request)
 			default:
 				response.Error = thread.UnknownRequest
 			}
@@ -74,8 +74,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.ModuleRecord:
 				cfg := (request.Data).(processor.ModuleConfig)
 				response.Error = t.addModule(request.Identifiers.Processor, &cfg)
-			case thread.SupervisorRecord:
-				response.Data, response.Error = t.createSupervisor(request)
+			case thread.RunRecord:
+				response.Data, response.Error = t.createRun(request)
 			default:
 				response.Error = thread.UnknownRequest
 			}
@@ -95,8 +95,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.UpdateAction:
 		{
 			switch request.Type {
-			case thread.SupervisorRecord:
-				response.Error = t.updateSupervisor(request)
+			case thread.RunRecord:
+				response.Error = t.updateRun(request)
 			default:
 				response.Error = thread.UnknownRequest
 			}
@@ -107,7 +107,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.ModuleRecord:
 				response.Error = t.mountModule(request.Identifiers.Module)
 			case thread.FunctionRecord:
-				response.Error = t.mountCluster(request.Identifiers.Module, request.Identifiers.Function)
+				response.Error = t.mountFunction(request.Identifiers.Module, request.Identifiers.Function)
 			default:
 				response.Error = thread.UnknownRequest
 			}
@@ -118,7 +118,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.ModuleRecord:
 				response.Error = t.unmountModule(request.Identifiers.Module)
 			case thread.FunctionRecord:
-				response.Error = t.unmountCluster(request.Identifiers.Module, request.Identifiers.Function)
+				response.Error = t.unmountFunction(request.Identifiers.Module, request.Identifiers.Function)
 			default:
 				response.Error = thread.UnknownRequest
 			}
@@ -126,8 +126,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.LogAction:
 		{
 			switch request.Type {
-			case thread.SupervisorRecord:
-				response.Error = t.logSupervisor(request)
+			case thread.RunRecord:
+				response.Error = t.logRun(request)
 			default:
 				response.Error = thread.UnknownRequest
 			}

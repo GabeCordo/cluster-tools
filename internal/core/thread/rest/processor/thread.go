@@ -28,8 +28,8 @@ func (t *Thread) Setup() {
 		r.Body.Close()
 	})
 
-	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
-		t.supervisorCallback(w, r)
+	mux.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
+		t.runCallback(w, r)
 		r.Body.Close()
 	})
 

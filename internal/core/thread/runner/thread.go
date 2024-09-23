@@ -1,9 +1,9 @@
-package supervisor
+package runner
 
 import (
 	"errors"
 	"github.com/GabeCordo/cluster-tools/internal/core/database"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/run"
 	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
 	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"strconv"
@@ -28,7 +28,7 @@ func (t *Thread) Start() {
 	//		t.wg.Add(1)
 	//
 	//		request.Source = thread.Processor
-	//		response := thread.Response{Source: thread.Supervisor, Nonce: request.Nonce}
+	//		response := thread.Response{Source: thread.Run, Nonce: request.Nonce}
 	//		t.Handle(&request, &response)
 	//
 	//		t.C14 <- response
@@ -53,11 +53,11 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.GetAction:
 		{
 			switch request.Type {
-			case thread.SupervisorRecord:
+			case thread.RunRecord:
 				{
 					f := &database.Filter{
-						Module:     request.Identifiers.Module,
-						Cluster:    request.Identifiers.Function,
+						Namespace:  request.Identifiers.Namespace,
+						Pipeline:   request.Identifiers.Pipeline,
 						Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10),
 					}
 					response.Data, response.Error = t.getSupervisor(f)
@@ -72,16 +72,15 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.CreateAction:
 		{
 			switch request.Type {
-			case thread.SupervisorRecord:
+			case thread.RunRecord:
 				{
 					metadata, success := (request.Data).(map[string]string)
 					if !success {
-						response.Error = errors.New("SupervisorCreate expected a map[string]string data type")
+						response.Error = errors.New("RunnerCreate expected a map[string]string data type")
 					} else {
-						response.Data, response.Error = t.createSupervisor(
-							request.Identifiers.Processor, request.Identifiers.Module,
-							request.Identifiers.Config, request.Identifiers.Config,
-							metadata)
+						response.Data, response.Error = t.createRun(
+							request.Identifiers.Processor, request.Identifiers.Namespace,
+							request.Identifiers.Pipeline, metadata)
 					}
 				}
 			default:
@@ -94,10 +93,10 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.UpdateAction:
 		{
 			switch request.Type {
-			case thread.SupervisorRecord:
+			case thread.RunRecord:
 				{
-					s := (request.Data).(*supervisor.Supervisor)
-					response.Error = t.updateSupervisor(s)
+					s := (request.Data).(*run.Run)
+					response.Error = t.updateRun(s)
 				}
 			default:
 				{
@@ -109,10 +108,10 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	case thread.LogAction:
 		{
 			switch request.Type {
-			case thread.SupervisorRecord:
+			case thread.RunRecord:
 				{
 					l := (request.Data).(*log.Log)
-					response.Error = t.logSupervisor(l)
+					response.Error = t.logRun(l)
 				}
 			default:
 				{

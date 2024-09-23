@@ -6,7 +6,7 @@ import (
 
 type ModuleData struct {
 	Name    string
-	Version float64
+	Version string
 	Contact ModuleContact
 	Mounted bool
 }
@@ -18,7 +18,7 @@ type Module struct {
 	mutex     sync.RWMutex
 }
 
-func newModule(name string, version float64, contact ...ModuleContact) *Module {
+func newModule(name string, version string, contact ...ModuleContact) *Module {
 	module := new(Module)
 
 	module.data.Name = name
@@ -48,7 +48,7 @@ type ModuleContact struct {
 
 type ModuleConfig struct {
 	Name        string           `yaml:"name" json:"name"`
-	Version     float64          `yaml:"version" json:"version"`
+	Version     string           `yaml:"version" json:"version"`
 	StaticMount bool             `yaml:"static_mount,omitempty" json:"static_mount,omitempty"`
 	Contact     ModuleContact    `yaml:"contact,omitempty" json:"contact,omitempty"`
 	Exports     []ModuleFunction `yaml:"exports" json:"functions"`

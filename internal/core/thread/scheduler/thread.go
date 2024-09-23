@@ -54,7 +54,7 @@ func (t *Thread) Start() {
 
 		// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
 		mandatory := thread.Mandatory{t.C18, t.processorResponseTable, t.config.Timeout}
-		_, err := thread.CreateSupervisor(mandatory, jb.Module, jb.Cluster, jb.Config, jb.Metadata)
+		_, err := thread.CreateRun(mandatory, jb.Namespace, jb.Pipeline, jb.Metadata)
 
 		e := ""
 		if err != nil {
@@ -62,7 +62,7 @@ func (t *Thread) Start() {
 		}
 
 		if (err != nil) && t.config.Debug {
-			t.logger.Printf("scheduled cluster is ready: %s (%s,%s,%s) %s\n", jb.Identifier, jb.Module, jb.Cluster, jb.Config, e)
+			t.logger.Printf("scheduled cluster is ready: %s (%s,%s) %s\n", jb.Identifier, jb.Namespace, jb.Pipeline, e)
 			t.logger.Printf("%d clusters are waiting to be provisioned\n", t.Scheduler.ItemsInQueue())
 		}
 
@@ -73,10 +73,10 @@ func (t *Thread) Start() {
 		}
 
 		// I only care about errors that might indicate a compromised state of the thread, the others
-		// like Module/Function's not existing really makes no sense to crash the Scheduler as someone
+		// like Namespace/Function's not existing really makes no sense to crash the Scheduler as someone
 		// likely put in the job for a future module/cluster pair they want to attach to mango
 		if (err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived) ||
-			(err == processor.ModuleDoesNotExist) || (err == processor.ClusterDoesNotExist) {
+			(err == processor.ModuleDoesNotExist) || (err == processor.FunctionDoesNotExist) {
 			return err
 		} else {
 			return nil

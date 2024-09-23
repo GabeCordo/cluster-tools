@@ -12,7 +12,7 @@ var testInterval = &database.Interval{
 
 var testJob = &job.Job{
 	Identifier: "test",
-	Module:     "common",
+	Namespace:  "common",
 	Cluster:    "vec",
 	Config:     "vec",
 	Interval:   *testInterval,
@@ -21,7 +21,7 @@ var testJob = &job.Job{
 
 var testDupJob = &job.Job{
 	Identifier: "test2",
-	Module:     "common",
+	Namespace:  "common",
 	Cluster:    "vec",
 	Config:     "vec",
 	Interval:   *testInterval,
@@ -34,7 +34,7 @@ var testInterval2 = &database.Interval{
 
 var testJob2 = &job.Job{
 	Identifier: "test2",
-	Module:     "common",
+	Namespace:  "common",
 	Cluster:    "vec",
 	Config:     "vec",
 	Interval:   *testInterval2,
@@ -43,7 +43,7 @@ var testJob2 = &job.Job{
 
 var testJob3 = &job.Job{
 	Identifier: "test3",
-	Module:     "common",
+	Namespace:  "common",
 	Cluster:    "hello",
 	Config:     "hello",
 	Interval:   *testInterval,
@@ -100,22 +100,22 @@ func TestScheduler_GetBy(t *testing.T) {
 		return
 	}
 
-	// Attempt to Get All 3 By Module //
-	f1 := database.Filter{Module: "common"}
+	// Attempt to Get All 3 By Namespace //
+	f1 := database.Filter{Namespace: "common"}
 	if foundJobs := scheduler.Jobs.Get(f1); len(foundJobs) != 3 {
 		t.Error("expected 3 Jobs to be found for this module")
 		return
 	}
 
 	// Attempt to Get 2 Jobs By Their Similar Function //
-	f2 := database.Filter{Module: "common", Cluster: "vec"}
+	f2 := database.Filter{Namespace: "common", Pipeline: "vec"}
 	if foundJobs := scheduler.Jobs.Get(f2); len(foundJobs) != 2 {
 		t.Error("expected 2 Jobs to be found with the same module/cluster pair")
 		return
 	}
 
 	// Attempt to Get 1 Job By Their //
-	f3 := database.Filter{Module: "common", Cluster: "vec", Interval: *testInterval}
+	f3 := database.Filter{Namespace: "common", Pipeline: "vec", Interval: *testInterval}
 	if foundJobs := scheduler.Jobs.Get(f3); len(foundJobs) != 1 {
 		t.Error("expected 1 job to be found with the module/cluster/interval combo")
 	}
@@ -162,22 +162,22 @@ func TestScheduler_Delete(t *testing.T) {
 		return
 	}
 
-	// Attempt to Get All 3 By Module //
-	f1 := database.Filter{Module: "common"}
+	// Attempt to Get All 3 By Namespace //
+	f1 := database.Filter{Namespace: "common"}
 	if foundJobs := scheduler.Jobs.Get(f1); len(foundJobs) != 3 {
 		t.Error("expected 3 Jobs to be found for this module")
 		return
 	}
 
 	// Attempt to Get 2 Jobs By Their Similar Function //
-	f2 := database.Filter{Module: "common", Cluster: "vec"}
+	f2 := database.Filter{Namespace: "common", Pipeline: "vec"}
 	if foundJobs := scheduler.Jobs.Get(f2); len(foundJobs) != 2 {
 		t.Error("expected 2 Jobs to be found with the same module/cluster pair")
 		return
 	}
 
 	// Attempt to Get 1 Job By Their //
-	f3 := database.Filter{Module: "common", Cluster: "vec", Interval: *testInterval}
+	f3 := database.Filter{Namespace: "common", Pipeline: "vec", Interval: *testInterval}
 	if foundJobs := scheduler.Jobs.Get(f3); len(foundJobs) != 1 {
 		t.Error("expected 1 job to be found with the module/cluster/interval combo")
 	}
@@ -194,7 +194,7 @@ func TestScheduler_Delete(t *testing.T) {
 	}
 
 	// validate the only common/hello record is deleted //
-	f5 := database.Filter{Module: "common", Cluster: "hello"}
+	f5 := database.Filter{Namespace: "common", Pipeline: "hello"}
 	if foundJobs := scheduler.Jobs.Get(f5); len(foundJobs) != 0 {
 		t.Error("expected 0 Jobs to exist with the common/hello pair")
 		return

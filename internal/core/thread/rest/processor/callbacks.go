@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/run"
 	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/cluster-tools/internal/core/thread"
@@ -367,19 +367,19 @@ func (t *Thread) postLogCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func (t *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) runCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "PUT" {
-		/* the processor requests to update a provisioned supervisor */
-		t.putSupervisorCallback(w, r)
+		/* the processor requests to update a provisioned runner */
+		t.putRunCallback(w, r)
 	} else {
 		/* the processor cannot call any other methods on this resource */
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (t *Thread) putSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) putRunCallback(w http.ResponseWriter, r *http.Request) {
 
-	instance := &supervisor.Supervisor{}
+	instance := &run.Run{}
 	err := json.NewDecoder(r.Body).Decode(instance)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -387,7 +387,7 @@ func (t *Thread) putSupervisorCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := &rest.Response{}
-	err = thread.UpdateSupervisor(
+	err = thread.UpdateRun(
 		thread.Mandatory{
 			t.C7,
 			t.ProcessorResponseTable,

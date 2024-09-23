@@ -32,14 +32,14 @@ type Thread struct {
 	C11 chan<- thread.Request  // Processor sending req to the database thread
 	C12 <-chan thread.Response // Processor rec rsp from the database thread
 
-	C13 chan<- thread.Request  // Processor thread sending req to the supervisor thread
-	C14 <-chan thread.Response // Processor thread rec rsp from the supervisor thread
+	C13 chan<- thread.Request  // Processor thread sending req to the runner thread
+	C14 <-chan thread.Response // Processor thread rec rsp from the runner thread
 
 	C18 <-chan thread.Request  // Processor rec req from the scheduler thread
 	C19 chan<- thread.Response // Processor sending rsp to the scheduler thread
 
-	SupervisorResponseTable *multithreaded.ResponseTable
-	DatabaseResponseTable   *multithreaded.ResponseTable
+	RunnerResponseTable   *multithreaded.ResponseTable
+	DatabaseResponseTable *multithreaded.ResponseTable
 
 	processorTable *processor.Table
 
@@ -123,7 +123,7 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}
 
-	t.SupervisorResponseTable = multithreaded.NewResponseTable()
+	t.RunnerResponseTable = multithreaded.NewResponseTable()
 	t.DatabaseResponseTable = multithreaded.NewResponseTable()
 
 	return t, nil

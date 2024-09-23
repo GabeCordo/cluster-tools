@@ -12,70 +12,42 @@ type DataTiming struct {
 }
 
 type TimingStatistics struct {
-	MinTimeBeforePop time.Duration `json:"min-time-before-pop-ns"`
-	MaxTimeBeforePop time.Duration `json:"max-time-before-pop-ns"`
-	AverageTime      time.Duration `json:"average-time-ns"`
-	MedianTime       time.Duration `json:"median-time-ns"`
-}
-
-//type Statistics struct {
-//	Threads struct {
-//		NumProvisionedExtractRoutines int `json:"num-provisioned-extract-routines"`
-//		NumProvisionedTransformRoutes int `json:"num-provisioned-transform-routes"`
-//		NumProvisionedLoadRoutines    int `json:"num-provisioned-load-routines"`
-//	} `json:"thread"`
-//	Channels struct {
-//		NumEtThresholdBreaches int `json:"num-et-threshold-breaches"`
-//		NumTlThresholdBreaches int `json:"num-tl-threshold-breaches"`
-//	} `json:"channels"`
-//	Data struct {
-//		TotalProcessed     int `json:"total-processed"`
-//		TotalOverETChannel int `json:"total-over-et"`
-//		TotalOverTLChannel int `json:"total-over-tl"`
-//		TotalDropped       int `json:"total-dropped"`
-//	} `json:"data"`
-//	Timing struct {
-//		ET               TimingStatistics `json:"et-channel"`
-//		etSet            bool
-//		TL               TimingStatistics `json:"tl-channel"`
-//		tlSet            bool
-//		MaxTotalTime     time.Duration `json:"max-total-time-ns"`
-//		MinTotalTime     time.Duration `json:"min-total-time-ns"`
-//		AverageTotalTime time.Duration `json:"avg-total-time-ns"`
-//		MedianTotalTime  time.Duration `json:"med-total-time-ns"`
-//		totalSet         bool
-//	} `json:"timing"`
-//}
-
-func NewStatistics() *Statistics {
-	stats := new(Statistics)
-
-	// TODO: fix?
-	//stats.Threads.NumProvisionedTransformRoutes = 0
-	//stats.Threads.NumProvisionedLoadRoutines = 0
-	//stats.Channels.NumTlThresholdBreaches = 0
-	//stats.Channels.NumEtThresholdBreaches = 0
-	//stats.Data.TotalProcessed = 0
-
-	return stats
+	MinTimeBeforePop time.Duration `json:"min_time_before_pop_ns"`
+	MaxTimeBeforePop time.Duration `json:"max_time_before_pop_ns"`
+	AverageTime      time.Duration `json:"average_time_ns"`
+	MedianTime       time.Duration `json:"median_time_ns"`
 }
 
 type FunctionStatistic struct {
+	Active     int `json:"active"`
 	Provisions int `json:"provisions"`
 }
 
 type PipeStatistic struct {
-	Processed int              `json:"processed"`
-	Dropped   int              `json:"dropped"`
-	Breaches  int              `json:"breaches"`
-	Timing    TimingStatistics `json:"timing"`
+	Pushed   int
+	Pulled   int              `json:"processed"`
+	Dropped  int              `json:"dropped"`
+	Breaches int              `json:"breaches"`
+	Timing   TimingStatistics `json:"timing"`
 }
 
 type Statistics struct {
-	NumOfSteps    int                 `json:"num_of_steps"`
-	Functions     []FunctionStatistic `json:"steps"`
-	NumOfChannels int                 `json:"num_of_channels"`
-	Pipes         []PipeStatistic     `json:"channels"`
+	NumOfFunctions int                 `json:"num_of_functions"`
+	Functions      []FunctionStatistic `json:"steps"`
+	NumOfChannels  int                 `json:"num_of_channels"`
+	Pipes          []PipeStatistic     `json:"channels"`
+}
+
+func NewStatistics(numOfFunctions, numOfPipes int) *Statistics {
+	stats := new(Statistics)
+
+	stats.NumOfFunctions = 0
+	stats.Functions = make([]FunctionStatistic, numOfFunctions)
+
+	stats.NumOfChannels = 0
+	stats.Pipes = make([]PipeStatistic, numOfPipes)
+
+	return stats
 }
 
 type Wrapper struct {

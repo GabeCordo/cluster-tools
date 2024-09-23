@@ -1,14 +1,14 @@
 package threads
 
 import (
-	"github.com/GabeCordo/cluster-tools/cluster"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )
 
-func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	moduleName, clusterName string, supervisor uint64, meta map[string]string, cfg *cluster.Config, timeout float64) error {
+func RunProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+	namespace string, supervisor uint64, cfg *pipeline.Pipeline, meta map[string]string, timeout float64) error {
 
 	// there is a possibility the user never passed an args value to the HTTP endpoint,
 	// so we need to replace it with and empty array
@@ -16,12 +16,11 @@ func SupervisorProvision(pipe chan<- ProvisionerRequest, responseTable *multithr
 		meta = make(map[string]string)
 	}
 	provisionerThreadRequest := ProvisionerRequest{
-		Action:     ProvisionerSupervisorCreate,
-		Module:     moduleName,
-		Cluster:    clusterName,
+		Action:     ProvisionerRunCreate,
+		Namespace:  namespace,
 		Supervisor: supervisor,
+		Pipeline:   cfg,
 		Metadata:   meta,
-		Config:     cfg,
 		Nonce:      rand.Uint32(),
 	}
 	pipe <- provisionerThreadRequest
@@ -40,7 +39,7 @@ func ShutdownCore(pipe chan<- InterruptEvent) {
 }
 
 func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	timeout float64) ([]*interfaces.SupervisorSummary, error) {
+	timeout float64) ([]*supervisor.Summary, error) {
 
 	request := ProvisionerRequest{
 		Action: ProvisionerStatisticsGet,
@@ -55,6 +54,6 @@ func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *mul
 
 	rsp := (data).(ProvisionerResponse)
 
-	collectedStatistics := (rsp.Data).([]*interfaces.SupervisorSummary)
+	collectedStatistics := (rsp.Data).([]*supervisor.Summary)
 	return collectedStatistics, nil
 }

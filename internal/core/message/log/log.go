@@ -160,7 +160,7 @@ func (logger *Logger) Flush(source message.Source, destination any) error {
 	logs, logsFound := clusterInstance.supervisors[source.Identifier]
 
 	if !logsFound {
-		return errors.New("supervisor not found")
+		return errors.New("runner not found")
 	}
 
 	endpoint := fmt.Sprintf("%s_%s_%d", source.Module, source.Cluster, source.Identifier)

@@ -1,10 +1,10 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
 	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -21,18 +21,18 @@ const (
 	Load              = 2
 )
 
-type LoadAll interface {
-	LoadFunc(helper cluster.H, metadata cluster.M, in []any)
-}
-
-type LoadOne interface {
-	LoadFunc(helper cluster.H, metadata cluster.M, in any)
-}
-
-type SystemFunctions interface {
-	Setup(curr time.Time, h cluster.H)
-	Teardown(curr time.Time, h cluster.H)
-}
+//type LoadAll interface {
+//	LoadFunc(helper cluster.H, metadata cluster.M, in []any)
+//}
+//
+//type LoadOne interface {
+//	LoadFunc(helper cluster.H, metadata cluster.M, in any)
+//}
+//
+//type SystemFunctions interface {
+//	Setup(curr time.Time, h cluster.H)
+//	Teardown(curr time.Time, h cluster.H)
+//}
 
 type VerifiableET interface {
 	VerifyETFunction(in any) (valid bool)
@@ -44,23 +44,21 @@ type VerifiableTL interface {
 
 // Test
 // TODO : needs to be implemented
-type Test interface {
-	MockExtractFunc(metadata cluster.M, out cluster.Out)
-	VerifyTransformOutput(metadata cluster.M, in any) (success bool)
-	MockLoadFunc(metadata cluster.M, in any)
-}
+//type Test interface {
+//	MockExtractFunc(metadata cluster.M, out cluster.Out)
+//	VerifyTransformOutput(metadata cluster.M, in any) (success bool)
+//	MockLoadFunc(metadata cluster.M, in any)
+//}
 
 type Response struct {
-	Config     cluster.Config         `json:"core"`
-	Stats      *interfaces.Statistics `json:"stats"`
-	LapsedTime time.Duration          `json:"lapsed-time"`
-	DidItCrash bool                   `json:"crashed"`
+	Stats      *statistic.Statistics `json:"stats"`
+	LapsedTime time.Duration         `json:"lapsed-time"`
+	DidItCrash bool                  `json:"crashed"`
 }
 
-func NewResponse(config cluster.Config, statistics *interfaces.Statistics, lapsedTime time.Duration, crashed bool) *Response {
+func NewResponse(statistics *statistic.Statistics, lapsedTime time.Duration, crashed bool) *Response {
 	response := new(Response)
 
-	response.Config = config
 	response.Stats = statistics
 	response.LapsedTime = lapsedTime
 	response.DidItCrash = crashed
@@ -98,26 +96,21 @@ const MaximumRoutinesPerSupervisor = 2000
 type Supervisor struct {
 	Id uint64 `json:"id"`
 
-	Config    cluster.Config         `json:"common"`
-	Stats     *interfaces.Statistics `json:"stats"`
-	State     Status                 `json:"status"`
-	Mode      cluster.OnCrash        `json:"on-crash"`
-	StartTime time.Time              `json:"quitE-time"`
+	Pipeline *pipeline.Pipeline    `json:"common"`
+	Stats    *statistic.Statistics `json:"stats"`
+	State    Status                `json:"status"`
+	//Mode      cluster.OnCrash       `json:"on-crash"`
+	StartTime time.Time `json:"quitE-time"`
 
-	Metadata cluster.M `json:"meta-data"`
+	//Metadata cluster.M `json:"meta-data"`
+	//helper   cluster.H
 
-	group     cluster.Cluster
-	helper    cluster.H
-	ETChannel *duplex.ManagedChannel
-	mutexET   sync.Mutex
-	TLChannel *duplex.ManagedChannel
-	mutexTL   sync.Mutex
+	functions []any // initialized in new
+	active    []int // ?
 
-	ActiveTRoutines int
-	quitT           []chan bool
-
-	ActiveLRoutines int
-	quitL           []chan bool
+	mutexes  []sync.Mutex             // ?
+	quit     []chan bool              // ?
+	channels []*duplex.ManagedChannel // initialized in new
 
 	loadWaitGroup sync.WaitGroup
 	waitGroup     sync.WaitGroup
@@ -125,40 +118,7 @@ type Supervisor struct {
 	mutex         sync.RWMutex
 }
 
-func NewSupervisor(clusterImplementation cluster.Cluster, metadata map[string]string, helper cluster.H) *Supervisor {
-	supervisor := new(Supervisor)
-
-	supervisor.group = clusterImplementation
-	supervisor.State = UnTouched
-	supervisor.Config = cluster.DefaultConfig
-
-	et := interfaces.NewTimingStatistics()
-	tl := interfaces.NewTimingStatistics()
-	supervisor.Stats = interfaces.NewStatistics(et, tl)
-
-	supervisor.ETChannel = duplex.New("ETChannel", supervisor.Config.ETChannelThreshold, supervisor.Config.ETChannelGrowthFactor, et)
-	supervisor.TLChannel = duplex.New("TLChannel", supervisor.Config.TLChannelThreshold, supervisor.Config.TLChannelGrowthFactor, tl)
-
-	supervisor.ActiveTRoutines = 0
-	supervisor.quitT = make([]chan bool, 0)
-	supervisor.quitL = make([]chan bool, 0)
-
-	if helper != nil {
-		supervisor.helper = helper
-	} else {
-		// TODO : I could not be arsed, clean it up later, this stinks
-		panic("helper can not be nil")
-	}
-
-	if metadata != nil {
-		supervisor.Metadata = NewMetadata(metadata)
-	} else {
-		supervisor.Metadata = NewMetadata(nil)
-	}
-	return supervisor
-}
-
-func NewCustomSupervisor(clusterImplementation cluster.Cluster, config *cluster.Config, metadata map[string]string, helper cluster.H) *Supervisor {
+func New(pipeline *pipeline.Pipeline, functions []any, metadata map[string]string) *Supervisor {
 	supervisor := new(Supervisor)
 
 	/**
@@ -169,43 +129,72 @@ func NewCustomSupervisor(clusterImplementation cluster.Cluster, config *cluster.
 	 */
 
 	supervisor.State = UnTouched
-	supervisor.group = clusterImplementation
-	supervisor.Config = *config // copy pipeline
 
-	et := interfaces.NewTimingStatistics()
-	tl := interfaces.NewTimingStatistics()
-	supervisor.Stats = interfaces.NewStatistics(et, tl)
+	supervisor.functions = functions
+	supervisor.Pipeline = pipeline
 
-	supervisor.ETChannel = duplex.New("ETChannel", config.ETChannelThreshold, config.ETChannelGrowthFactor, et)
-	supervisor.TLChannel = duplex.New("TLChannel", config.TLChannelThreshold, config.TLChannelGrowthFactor, tl)
+	// todo : this mem allocation should not be here
+	supervisor.Stats = statistic.NewStatistics(len(pipeline.Functions), len(pipeline.Pipes))
 
-	supervisor.ActiveTRoutines = 0
-	supervisor.quitT = make([]chan bool, 0)
-	supervisor.quitL = make([]chan bool, 0)
+	supervisor.quit = make([]chan bool, len(pipeline.Pipes))
+	supervisor.mutexes = make([]sync.Mutex, len(pipeline.Pipes))
 
-	if helper != nil {
-		supervisor.helper = helper
-	} else {
-		// TODO : fix
-		panic("helper cannot be nil")
+	for i, channel := range pipeline.Pipes {
+		c := duplex.New(channel.Identifier, channel.Threshold, channel.GrowthFactor, &supervisor.Stats.Pipes[i].Timing)
+		supervisor.channels = append(supervisor.channels, c)
 	}
 
-	if metadata != nil {
-		supervisor.Metadata = NewMetadata(metadata)
-	} else {
-		supervisor.Metadata = NewMetadata(nil)
+	for i, fConfig := range pipeline.Functions {
+
+		// get the function implementation that the pipeline is referring to
+		function := supervisor.functions[i]
+
+		// if the 'to' field is not empty, we expect to send data from the function
+		if fConfig.To != "" {
+
+			var pipe *duplex.ManagedChannel = nil
+			for _, pConfig := range supervisor.channels {
+				if pConfig.Name == fConfig.To {
+					pipe = pConfig
+					break
+				}
+			}
+
+			if pipe == nil {
+				panic("function sending data to unknown pipe")
+			}
+
+			// get the type the function is outputting
+			fReflection := reflect.TypeOf(function)
+			numIn := fReflection.NumOut()
+			if numIn > 2 {
+				panic("the framework only supports two output values")
+			} else if (numIn > 1) && fReflection.Out(1).Kind() == reflect.Bool {
+				panic("second output must be a bool to indicate whether the record should be dropped or not")
+			}
+		}
 	}
+
+	// TODO : future?
+	//if helper != nil {
+	//	supervisor.helper = helper
+	//} else {
+	//	// TODO : fix
+	//	panic("helper cannot be nil")
+	//}
+	//
+	//if metadata != nil {
+	//	supervisor.Metadata = NewMetadata(metadata)
+	//} else {
+	//	supervisor.Metadata = NewMetadata(nil)
+	//}
 
 	return supervisor
 }
 
 type Summary struct {
-	Module     string
-	Cluster    string
+	Namespace  string
+	Pipeline   string
 	Supervisor uint64
 	Statistics *statistic.Statistics
-	ETState    string
-	ETSize     int
-	TLState    string
-	TLSize     int
 }

@@ -25,6 +25,7 @@ type Processor struct {
 	LastUpdate time.Time
 	Modules    []string
 	Retries    uint32
+	NumOfRuns  int
 }
 
 func (processor *Processor) ToString() string {

@@ -19,7 +19,7 @@ func TestTable_AddProcessor(t *testing.T) {
 	}
 
 	if table.NumOfProcessors != 1 {
-		t.Error("num of processors not incremented correctly")
+		t.Error("num of Processors not incremented correctly")
 	}
 }
 
@@ -110,6 +110,6 @@ func TestTable_AddModule2(t *testing.T) {
 	}
 
 	if clusterInstance.numOfProcessors != 2 {
-		t.Error("expected the cluster to now have two supporting processors")
+		t.Error("expected the cluster to now have two supporting Processors")
 	}
 }

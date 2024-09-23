@@ -11,9 +11,6 @@ import (
 func (thread *Thread) Setup() {
 
 	thread.accepting = true
-
-	// initialize a modules instance with a common module
-	GetProvisionerInstance()
 }
 
 func (thread *Thread) Start() {
@@ -32,13 +29,7 @@ func (thread *Thread) Start() {
 		thread.listenersWg.Wait()
 	}()
 
-	// STANDALONE MODE
-
-	if thread.Config.Standalone {
-		thread.provisionStreamFunction()
-	} else {
-		thread.registerModulesToCore()
-	}
+	thread.registerModulesToCore()
 
 	// CLEARING THE PROVISIONER BACKLOG
 
@@ -48,36 +39,15 @@ func (thread *Thread) Start() {
 	thread.requestWg.Wait()
 }
 
-func (thread *Thread) provisionStreamFunction() {
-	for _, moduleInst := range GetProvisionerInstance().GetModules() {
-
-		for _, clusterInst := range moduleInst.GetClusters() {
-
-			if !clusterInst.IsStream() {
-				continue
-			}
-
-			request := &threads.ProvisionerRequest{
-				Action:   threads.ProvisionerSupervisorCreate,
-				Source:   threads.Core,
-				Module:   moduleInst.Identifier,
-				Cluster:  clusterInst.Identifier,
-				Config:   &clusterInst.DefaultConfig,
-				Metadata: make(map[string]string),
-			}
-			thread.requestWg.Add(1)
-			thread.provisionSupervisor(request)
-		}
-	}
-}
-
 func (thread *Thread) registerModulesToCore() {
 	// logging enhancements
-	for _, moduleInst := range GetProvisionerInstance().GetModules() {
-		if err := api.CreateModule(thread.Config.Core, &thread.Config.Processor, moduleInst.ToConfig()); err == nil {
-			thread.logger.Printf("registered module %s to core\n", moduleInst.Identifier)
+	for _, moduleInst := range thread.provisioner.GetModules() {
+		cfg := moduleInst.ToConfig()
+
+		if err := api.CreateModule(thread.Config.Core, &thread.Config.Processor, &cfg); err == nil {
+			thread.logger.Printf("registered module %s to core\n", cfg.Name)
 		} else {
-			thread.logger.Printf("failed to register module %s to core: %v\n", moduleInst.Identifier, err)
+			thread.logger.Printf("failed to register module %s to core: %v\n", cfg.Name, err)
 		}
 	}
 }
@@ -107,9 +77,9 @@ func (thread *Thread) processRequest(request *threads.ProvisionerRequest) {
 
 	switch request.Action {
 	case threads.ProvisionerModuleGet:
-		response.Data = thread.getModules()
-	case threads.ProvisionerSupervisorCreate:
-		response.Error = thread.provisionSupervisor(request)
+		response.Error = errors.New("implement me")
+	case threads.ProvisionerRunCreate:
+		response.Error = thread.provisionRun(request)
 	case threads.ProvisionerStatisticsGet:
 		response.Data = thread.getStatistics()
 	default:
@@ -145,32 +115,15 @@ func (thread *Thread) DecrementActiveSupervisors() {
 func (thread *Thread) Teardown() {
 	thread.accepting = false
 
-	modules := GetProvisionerInstance().GetModules()
+	for _, s := range thread.provisioner.GetSupervisors() {
 
-	for _, module := range modules {
-
-		clusters := module.GetClusters()
-
-		for _, cluster := range clusters {
-
-			if !cluster.IsStream() {
-				continue
-			}
-
-			supervisors := cluster.FindSupervisors()
-
-			for _, supervisor := range supervisors {
-
-				if !supervisor.IsAlive() {
-
-					fmt.Printf("supervisor is not alive %d %s\n", supervisor.Id, supervisor.State.ToString())
-					continue
-				}
-
-				fmt.Printf("marking supervisor as teardown %d\n", supervisor.Id)
-				supervisor.Teardown()
-			}
+		if !s.IsAlive() {
+			fmt.Printf("runner is not alive %d %s\n", s.Id, s.State.ToString())
+			continue
 		}
+
+		fmt.Printf("marking runner as teardown %d\n", s.Id)
+		s.Teardown()
 	}
 
 	thread.requestWg.Wait()

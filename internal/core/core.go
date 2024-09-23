@@ -4,8 +4,8 @@ import (
 	cache_cmp "github.com/GabeCordo/cluster-tools/internal/core/cache/local"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 	config_db "github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	supervisor_db "github.com/GabeCordo/cluster-tools/internal/core/database/run"
 	statistic_db "github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	supervisor_db "github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
 	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
 	processor_cmp "github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/cluster-tools/internal/core/thread"
@@ -15,8 +15,8 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/core/thread/processor"
 	http_client "github.com/GabeCordo/cluster-tools/internal/core/thread/rest/client"
 	http_processor "github.com/GabeCordo/cluster-tools/internal/core/thread/rest/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/runner"
 	"github.com/GabeCordo/cluster-tools/internal/core/thread/scheduler"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread/supervisor"
 	"github.com/GabeCordo/toolchain/logging"
 	"os"
 	"os/signal"
@@ -27,7 +27,7 @@ type Core struct {
 	HttpClientThread    *http_client.Thread
 	HttpProcessorThread *http_processor.Thread
 	ProcessorThread     *processor.Thread
-	SupervisorThread    *supervisor.Thread
+	SupervisorThread    *runner.Thread
 	MessengerThread     *messenger.Thread
 	DatabaseThread      *database.Thread
 	CacheThread         *cache.Thread
@@ -150,12 +150,12 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	supervisorConfig := &supervisor.Config{}
+	supervisorConfig := &runner.Config{}
 	core.config.FillSupervisorConfig(supervisorConfig)
 
-	registry := supervisor_db.NewSupervisorDatabase()
+	registry := supervisor_db.NewLocalDatabase()
 
-	core.SupervisorThread, err = supervisor.NewThread(supervisorConfig, supervisorLogger, registry,
+	core.SupervisorThread, err = runner.NewThread(supervisorConfig, supervisorLogger, registry,
 		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (core *Core) Run() {
 		core.logger.Println("Messenger Thread Started")
 	}
 
-	// needed in-case the supervisor or client thread need to populate data on startup
+	// needed in-case the runner or client thread need to populate data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if core.config.Debug {
@@ -280,7 +280,7 @@ func (core *Core) Run() {
 	core.SupervisorThread.Setup()
 	go core.SupervisorThread.Start()
 	if core.config.Debug {
-		core.logger.Println("Supervisor Thread Started")
+		core.logger.Println("Run Thread Started")
 	}
 
 	core.ProcessorThread.Setup()
@@ -322,7 +322,7 @@ func (core *Core) Run() {
 	}
 
 	// monitor system calls being sent to the processor, if the etl is being
-	// run on a log machine, the developer might attempt to kill the processor with SIGINT
+	// statistic on a log machine, the developer might attempt to kill the processor with SIGINT
 	// requiring us to cleanly close the application without risking the loss of data
 	// ---
 	// an interrupt can be sent by any thread that has access to the channel if an
@@ -379,7 +379,7 @@ func (core *Core) Run() {
 	core.SupervisorThread.Teardown()
 
 	if core.config.Debug {
-		core.logger.Println("supervisor shutdown")
+		core.logger.Println("runner shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the data is useless, shutdown
@@ -389,7 +389,7 @@ func (core *Core) Run() {
 		core.logger.Println("cache shutdown")
 	}
 
-	// the supervisor might need to database data while finishing, close after
+	// the runner might need to database data while finishing, close after
 	core.DatabaseThread.Teardown()
 
 	if core.config.Debug {

@@ -6,8 +6,8 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/core/database"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/run"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/supervisor"
 	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -21,14 +21,14 @@ type Mandatory struct {
 	Timeout       float64
 }
 
-func GetPipelineFromDatabase(mandatory Mandatory, moduleName, clusterName string) (conf pipeline.Pipeline, found bool) {
+func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf pipeline.Pipeline, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module:   moduleName,
-			Function: clusterName,
+			Namespace: namespaceName,
+			Pipeline:  pipelineName,
 		},
 		Nonce: rand.Uint32(),
 	}
@@ -48,13 +48,15 @@ func GetPipelineFromDatabase(mandatory Mandatory, moduleName, clusterName string
 	return databaseResponse.Data.([]pipeline.Pipeline)[0], true
 }
 
-func GetPipelinesFromDatabase(mandatory Mandatory, moduleName string) (configs []pipeline.Pipeline, found bool) {
+func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []pipeline.Pipeline, found bool) {
 
 	databaseRequest := Request{
-		Action:      GetAction,
-		Type:        PipelineRecord,
-		Identifiers: RequestIdentifiers{Module: moduleName},
-		Nonce:       rand.Uint32(),
+		Action: GetAction,
+		Type:   PipelineRecord,
+		Identifiers: RequestIdentifiers{
+			Namespace: namespaceName,
+		},
+		Nonce: rand.Uint32(),
 	}
 	mandatory.Pipe <- databaseRequest
 
@@ -72,16 +74,16 @@ func GetPipelinesFromDatabase(mandatory Mandatory, moduleName string) (configs [
 	return databaseResponse.Data.([]pipeline.Pipeline), true
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, moduleName string, cfg pipeline.Pipeline) error {
+func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeline.Pipeline) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module:   moduleName,
-			Function: cfg.Identifier,
+			Namespace: namespaceName,
+			Pipeline:  p.Identifier,
 		},
-		Data:  cfg,
+		Data:  p,
 		Nonce: rand.Uint32(),
 	}
 	mandatory.Pipe <- databaseRequest
@@ -101,16 +103,16 @@ func StorePipelineInDatabase(mandatory Mandatory, moduleName string, cfg pipelin
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, moduleName string, cfg pipeline.Pipeline) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeline.Pipeline) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module:   moduleName,
-			Function: cfg.Identifier,
+			Namespace: namespaceName,
+			Pipeline:  p.Identifier,
 		},
-		Data:  cfg,
+		Data:  p,
 		Nonce: rand.Uint32(),
 	}
 	mandatory.Pipe <- databaseRequest
@@ -124,14 +126,14 @@ func ReplacePipelineInDatabase(mandatory Mandatory, moduleName string, cfg pipel
 	return databaseResponse.Success
 }
 
-func DeletePipelineInDatabase(mandatory Mandatory, moduleName, configName string) (success bool) {
+func DeletePipelineInDatabase(mandatory Mandatory, namespaceName, pipelineName string) (success bool) {
 
 	databaseRequest := Request{
 		Action: DeleteAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Module: moduleName,
-			Config: configName,
+			Namespace: namespaceName,
+			Pipeline:  pipelineName,
 		},
 		Nonce: rand.Uint32(),
 	}
@@ -210,13 +212,13 @@ func DeleteProcessor(mandatory Mandatory, cfg *processor.Config) error {
 	return response.Error
 }
 
-func MountCluster(mandatory Mandatory, moduleName, clusterName string) (success bool) {
+func MountFunction(mandatory Mandatory, moduleName, functionName string) (success bool) {
 
 	request := Request{
 		Action:      MountAction,
 		Type:        FunctionRecord,
 		Source:      HttpClient,
-		Identifiers: RequestIdentifiers{Module: moduleName, Function: clusterName, Config: ""},
+		Identifiers: RequestIdentifiers{Module: moduleName, Function: functionName, Config: ""},
 		Nonce:       rand.Uint32(),
 	}
 	mandatory.Pipe <- request
@@ -230,13 +232,13 @@ func MountCluster(mandatory Mandatory, moduleName, clusterName string) (success 
 	return provisionerResponse.Success
 }
 
-func UnmountCluster(mandatory Mandatory, moduleName, clusterName string) (success bool) {
+func UnmountFunction(mandatory Mandatory, moduleName, functionName string) (success bool) {
 
 	request := Request{
 		Action:      UnMountAction,
 		Type:        FunctionRecord,
 		Source:      HttpClient,
-		Identifiers: RequestIdentifiers{Module: moduleName, Function: clusterName, Config: ""},
+		Identifiers: RequestIdentifiers{Module: moduleName, Function: functionName, Config: ""},
 		Nonce:       rand.Uint32(),
 	}
 	mandatory.Pipe <- request
@@ -275,13 +277,13 @@ func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor.
 	return (provisionerResponse.Data).([]processor.FunctionData), true
 }
 
-func CreateSupervisor(mandatory Mandatory,
-	moduleName, clusterName, configName string, metadata map[string]string) (uint64, error) {
+func CreateRun(mandatory Mandatory,
+	namespaceName, pipelineName string, metadata map[string]string) (uint64, error) {
 
 	request := Request{
 		Action:      CreateAction,
-		Type:        SupervisorRecord,
-		Identifiers: RequestIdentifiers{Module: moduleName, Function: clusterName, Config: configName},
+		Type:        RunRecord,
+		Identifiers: RequestIdentifiers{Namespace: namespaceName, Pipeline: pipelineName},
 		Data:        metadata,
 		Nonce:       rand.Uint32(),
 	}
@@ -298,7 +300,7 @@ func CreateSupervisor(mandatory Mandatory,
 	return (response.Data).(uint64), response.Error
 }
 
-func GetSupervisor(mandatory Mandatory, filter database.Filter) ([]*supervisor.Supervisor, error) {
+func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 
 	id, err := strconv.ParseUint(filter.Identifier, 10, 64)
 	if err != nil {
@@ -307,10 +309,10 @@ func GetSupervisor(mandatory Mandatory, filter database.Filter) ([]*supervisor.S
 
 	request := Request{
 		Action: GetAction,
-		Type:   SupervisorRecord,
+		Type:   RunRecord,
 		Identifiers: RequestIdentifiers{
-			Module:     filter.Module,
-			Function:   filter.Cluster,
+			Module:     filter.Namespace,
+			Function:   filter.Pipeline,
 			Supervisor: id,
 		},
 		Nonce: rand.Uint32(),
@@ -328,14 +330,14 @@ func GetSupervisor(mandatory Mandatory, filter database.Filter) ([]*supervisor.S
 		return nil, response.Error
 	}
 
-	return (response.Data).([]*supervisor.Supervisor), nil
+	return (response.Data).([]*run.Run), nil
 }
 
-func UpdateSupervisor(mandatory Mandatory, data *supervisor.Supervisor) error {
+func UpdateRun(mandatory Mandatory, data *run.Run) error {
 
 	request := Request{
 		Action: UpdateAction,
-		Type:   SupervisorRecord,
+		Type:   RunRecord,
 		Data:   data,
 		Nonce:  rand.Uint32(),
 	}
@@ -350,14 +352,14 @@ func UpdateSupervisor(mandatory Mandatory, data *supervisor.Supervisor) error {
 	return response.Error
 }
 
-func FindStatistics(mandatory Mandatory, moduleName, clusterName string) (entries []statistic.Statistics, found bool) {
+func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []statistic.Statistics, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
 		Type:   StatisticRecord,
 		Identifiers: RequestIdentifiers{
-			Module:   moduleName,
-			Function: clusterName,
+			Namespace: namespaceName,
+			Pipeline:  pipelineName,
 		},
 		Nonce: rand.Uint32(),
 	}
@@ -568,12 +570,12 @@ func SwapInCache(mandatory Mandatory, key string, data any) (success bool) {
 func Log(mandatory Mandatory, log *log.Log) error {
 
 	if log == nil {
-		return errors.New("need a valid *supervisor.Log")
+		return errors.New("need a valid *runner.Log")
 	}
 
 	request := Request{
 		Action: LogAction,
-		Type:   SupervisorRecord,
+		Type:   RunRecord,
 		Data:   log,
 		Nonce:  rand.Uint32(),
 	}

@@ -30,14 +30,15 @@ const (
 )
 
 type Function struct {
+	Module     string `json:"module"`
 	Identifier string `json:"id"`
 	From       string `json:"from,omitempty"`
 	To         string `json:"to,omitempty"`
+	StartWith  int    `json:"start_with"`
 }
 
 type Pipe struct {
 	Identifier   string  `json:"id"`
-	StartWith    int     `json:"start_with"`
 	Threshold    int     `json:"threshold"`
 	GrowthFactor float64 `json:"growth_factor"`
 }
@@ -46,5 +47,5 @@ type Pipeline struct {
 	Identifier string     `json:"id"`
 	OnCrash    OnCrash    `json:"on-crash"`
 	Functions  []Function `json:"functions"`
-	Pipe       []Pipe     `json:"pipes"`
+	Pipes      []Pipe     `json:"pipes"`
 }

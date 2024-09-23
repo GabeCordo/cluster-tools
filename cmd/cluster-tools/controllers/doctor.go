@@ -15,7 +15,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] cluster.tools has never been initialized, run 'cluster-tools init'")
+		fmt.Println("[x] cluster.tools has never been initialized, statistic 'cluster-tools init'")
 		return commandline.Terminate
 	}
 

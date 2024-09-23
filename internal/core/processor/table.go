@@ -72,7 +72,7 @@ func (table *Table) RemoveProcessor(cfg *Config) error {
 
 	table.processors = append(table.processors[:idx], table.processors[idx+1:]...)
 
-	// Removing a processor modifies the Module / ModuleCluster records as follows:
+	// Removing a processor modifies the Namespace / ModuleCluster records as follows:
 	//
 	// 1. The processor was the last to support the cluster in the module
 	//		=> the cluster record is removed from the module
@@ -89,16 +89,16 @@ func (table *Table) RemoveProcessor(cfg *Config) error {
 
 			jdx := 0
 			var processor *Processor = nil
-			for jdx, processor = range cluster.processors {
+			for jdx, processor = range cluster.Processors {
 				// compare the pointers
 				if processor == instance {
 					break
 				}
 			}
 
-			cluster.processors = append(cluster.processors[:jdx], cluster.processors[jdx+1:]...)
+			cluster.Processors = append(cluster.Processors[:jdx], cluster.Processors[jdx+1:]...)
 
-			if len(cluster.processors) == 0 {
+			if len(cluster.Processors) == 0 {
 				delete(modules.functions, clusterIdentifier)
 			}
 		}
@@ -199,7 +199,7 @@ func (table *Table) AddModule(processorName string, config *ModuleConfig) error 
 		}
 
 		// TODO : remove
-		//clusterInstance.SetMode(export.Config.Mode)
+		//clusterInstance.SetMode(export.Pipeline.Mode)
 	}
 
 	// TODO : allow the user to specify whether they want modules to be mounted by default
@@ -238,15 +238,15 @@ func (table *Table) RemoveModule(processor, name string) error {
 
 	for clusterIdentifier, cluster := range module.functions {
 
-		for idx, processor := range cluster.processors {
+		for idx, processor := range cluster.Processors {
 
 			if processor == instance {
-				cluster.processors = append(cluster.processors[:idx], cluster.processors[idx+1:]...)
+				cluster.Processors = append(cluster.Processors[:idx], cluster.Processors[idx+1:]...)
 				break
 			}
 		}
 
-		if len(cluster.processors) == 0 {
+		if len(cluster.Processors) == 0 {
 			delete(module.functions, clusterIdentifier)
 		}
 	}
@@ -294,7 +294,7 @@ func (table *Table) Print() {
 
 			fmt.Printf("|  ├─%s (mounted: %t)\n", identifier, cluster.IsMounted())
 
-			for _, processor := range cluster.processors {
+			for _, processor := range cluster.Processors {
 				fmt.Printf("|  |  ├─%s\n", processor.ToString())
 			}
 		}

@@ -1,35 +1,26 @@
 package provisioner
 
-import "github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+import (
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+)
 
-func (thread *Thread) getStatistics() []*interfaces.SupervisorSummary {
+func (thread *Thread) getStatistics() []*supervisor.Summary {
 
 	defer thread.requestWg.Done()
 
-	modules := GetProvisionerInstance().GetModules()
+	statistics := make([]*supervisor.Summary, 0)
 
-	statistics := make([]*interfaces.SupervisorSummary, 0)
+	for _, s := range thread.provisioner.GetSupervisors() {
 
-	for _, module := range modules {
+		summary := new(supervisor.Summary)
 
-		for _, cluster := range module.GetClusters() {
+		// TODO : fix
+		//summary.Namespace = s.
+		//summary.Cluster = cluster.Identifier
+		summary.Supervisor = s.Id
+		summary.Statistics = s.Stats
 
-			for _, supervisor := range cluster.FindSupervisors() {
-
-				summary := new(interfaces.SupervisorSummary)
-
-				summary.Module = module.Identifier
-				summary.Cluster = cluster.Identifier
-				summary.Supervisor = supervisor.Id
-				summary.Statistics = supervisor.Stats
-				summary.ETState = supervisor.ETChannel.State.ToString()
-				summary.ETSize = supervisor.ETChannel.Size
-				summary.TLState = supervisor.TLChannel.State.ToString()
-				summary.TLSize = supervisor.TLChannel.Size
-
-				statistics = append(statistics, summary)
-			}
-		}
+		statistics = append(statistics, summary)
 	}
 
 	return statistics

@@ -3,7 +3,7 @@ package processor
 import "testing"
 
 // TestCluster_Add
-// Test that the number of processors is incremented after Add
+// Test that the number of Processors is incremented after Add
 func TestCluster_Add(t *testing.T) {
 
 	function := newFunction("test")
@@ -12,12 +12,12 @@ func TestCluster_Add(t *testing.T) {
 	function.Add(processor)
 
 	if function.numOfProcessors != 1 {
-		t.Error("expected the number of processors to be 1")
+		t.Error("expected the number of Processors to be 1")
 	}
 }
 
 // TestCluster_SelectProcessor
-// Test that processors supporting a cluster get selected in a circular
+// Test that Processors supporting a cluster get selected in a circular
 // fashion so that balances are distributed equally across them.
 func TestCluster_SelectProcessor(t *testing.T) {
 

@@ -38,7 +38,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 	cache.m.Lock()
 	defer cache.m.Unlock()
 
-	// if the system is being run on a low-memory machine, it
+	// if the system is being statistic on a low-memory machine, it
 	// is important that the cache does not grow too large and
 	// take away resources from the os or other etl processes.
 	if cache.numOfRecords == cache.maxAllowedRecords {

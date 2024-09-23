@@ -19,7 +19,9 @@ func CreateModule(host string, processor *processor.Config, config *processor.Mo
 		Host: processor.Host,
 		Port: processor.Port,
 		Module: interfaces.HTTPModuleRequest{
+			Name:   config.Name,
 			Config: *config,
+			Mount:  config.StaticMount,
 		},
 	}
 

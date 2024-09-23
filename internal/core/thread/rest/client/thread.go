@@ -25,8 +25,8 @@ func (t *Thread) Setup() {
 		t.functionCallback(w, r)
 	})
 
-	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
-		t.supervisorCallback(w, r)
+	mux.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
+		t.runCallback(w, r)
 	})
 
 	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {

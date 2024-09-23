@@ -12,9 +12,9 @@ func (thread *Thread) Setup() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/supervisor", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		thread.supervisorCallback(w, r)
+		thread.runCallback(w, r)
 	})
 
 	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {

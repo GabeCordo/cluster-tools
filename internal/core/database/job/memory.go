@@ -90,10 +90,10 @@ func (database *LocalJobDatabase) Save(path string) error {
 
 	// order all the jobs by the module they belong to
 	for _, job := range database.jobs {
-		if _, found := moduleSeperatedJobs[job.Module]; !found {
-			moduleSeperatedJobs[job.Module] = make([]Job, 0)
+		if _, found := moduleSeperatedJobs[job.Namespace]; !found {
+			moduleSeperatedJobs[job.Namespace] = make([]Job, 0)
 		}
-		moduleSeperatedJobs[job.Module] = append(moduleSeperatedJobs[job.Module], job)
+		moduleSeperatedJobs[job.Namespace] = append(moduleSeperatedJobs[job.Namespace], job)
 	}
 
 	// save each module's job into its own file
@@ -130,14 +130,14 @@ func (database *LocalJobDatabase) Get(filter database.Filter) []any {
 	}
 
 	useId := filter.UseIdentifier()
-	useModule := filter.UseModule()
-	useCluster := filter.UseCluster()
+	useModule := filter.UseNamespace()
+	useCluster := filter.UsePipeline()
 	useInterval := filter.UseInterval()
 
 	for _, job := range database.jobs {
 
-		moduleMatch := job.Module == filter.Module
-		clusterMatch := job.Cluster == filter.Cluster
+		moduleMatch := job.Namespace == filter.Namespace
+		clusterMatch := job.Pipeline == filter.Pipeline
 		intervalMatch := job.Interval.Equals(&filter.Interval)
 
 		if useId && (job.Identifier == filter.Identifier) {
@@ -196,14 +196,14 @@ func (database *LocalJobDatabase) Delete(filter database.Filter) error {
 	defer database.mutex.Unlock()
 
 	useId := filter.UseIdentifier()
-	useModule := filter.UseModule()
-	useCluster := filter.UseCluster()
+	useModule := filter.UseNamespace()
+	useCluster := filter.UsePipeline()
 	useInterval := filter.UseInterval()
 
 	for idx, jobInstance := range database.jobs {
 
-		moduleSame := jobInstance.Module == filter.Module
-		clusterSame := jobInstance.Cluster == filter.Cluster
+		moduleSame := jobInstance.Namespace == filter.Namespace
+		clusterSame := jobInstance.Pipeline == filter.Pipeline
 		intervalSame := jobInstance.Interval.Equals(&filter.Interval)
 
 		if useId && (jobInstance.Identifier == filter.Identifier) {

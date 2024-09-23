@@ -53,14 +53,14 @@ func (database JobMongoDatabase) GetBy(filter *database.Filter) (records []Job, 
 	c := d.Collection("jobs")
 
 	var mongoFilter bson.D
-	if filter.UseModule() {
-		mongoFilter = bson.D{{"module", bson.D{{"$eq", filter.Module}}}}
-	} else if filter.UseCluster() {
+	if filter.UseNamespace() {
+		mongoFilter = bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}}
+	} else if filter.UsePipeline() {
 		mongoFilter = bson.D{
 			{"$and",
 				bson.A{
-					bson.D{{"module", bson.D{{"$eq", filter.Module}}}},
-					bson.D{{"cluster", bson.D{{"$eq", filter.Cluster}}}},
+					bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}},
+					bson.D{{"cluster", bson.D{{"$eq", filter.Pipeline}}}},
 				},
 			},
 		}
@@ -107,14 +107,14 @@ func (database JobMongoDatabase) Delete(filter *database.Filter) (err error) {
 	c := d.Collection("jobs")
 
 	var mongoFilter bson.D
-	if filter.UseModule() {
-		mongoFilter = bson.D{{"module", bson.D{{"$eq", filter.Module}}}}
-	} else if filter.UseCluster() {
+	if filter.UseNamespace() {
+		mongoFilter = bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}}
+	} else if filter.UsePipeline() {
 		mongoFilter = bson.D{
 			{"$and",
 				bson.A{
-					bson.D{{"module", bson.D{{"$eq", filter.Module}}}},
-					bson.D{{"cluster", bson.D{{"$eq", filter.Cluster}}}},
+					bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}},
+					bson.D{{"cluster", bson.D{{"$eq", filter.Pipeline}}}},
 				},
 			},
 		}

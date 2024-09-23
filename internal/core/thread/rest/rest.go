@@ -23,7 +23,7 @@ type ModuleRequest struct {
 type ClusterRequest struct {
 	Name       string            `json:"name"`
 	Mount      bool              `json:"mount,omitempty"`
-	Supervisor SupervisorRequest `json:"supervisor,omitempty"`
+	Supervisor SupervisorRequest `json:"runner,omitempty"`
 }
 
 type SupervisorAction string

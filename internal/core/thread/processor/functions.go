@@ -5,7 +5,7 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 )
 
-func (t *Thread) getClusters(name string) ([]processor.FunctionData, error) {
+func (t *Thread) getFunctions(name string) ([]processor.FunctionData, error) {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
@@ -16,7 +16,7 @@ func (t *Thread) getClusters(name string) ([]processor.FunctionData, error) {
 	return instance.Registered(), nil
 }
 
-func (t *Thread) mountCluster(moduleName, clusterName string) error {
+func (t *Thread) mountFunction(moduleName, clusterName string) error {
 
 	moduleInstance, found := t.processorTable.GetModule(moduleName)
 	if !found {
@@ -25,7 +25,7 @@ func (t *Thread) mountCluster(moduleName, clusterName string) error {
 
 	clusterInstance, found := moduleInstance.GetFunction(clusterName)
 	if !found {
-		return processor.ClusterDoesNotExist
+		return processor.FunctionDoesNotExist
 	}
 
 	clusterInstance.Mount()
@@ -35,7 +35,7 @@ func (t *Thread) mountCluster(moduleName, clusterName string) error {
 	return nil
 }
 
-func (t *Thread) unmountCluster(moduleName, clusterName string) error {
+func (t *Thread) unmountFunction(moduleName, clusterName string) error {
 
 	moduleInstance, found := t.processorTable.GetModule(moduleName)
 	if !found {
@@ -44,7 +44,7 @@ func (t *Thread) unmountCluster(moduleName, clusterName string) error {
 
 	clusterInstance, found := moduleInstance.GetFunction(clusterName)
 	if !found {
-		return processor.ClusterDoesNotExist
+		return processor.FunctionDoesNotExist
 	}
 
 	clusterInstance.Unmount()

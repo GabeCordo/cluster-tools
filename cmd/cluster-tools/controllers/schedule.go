@@ -46,8 +46,8 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 	}
 
 	// the module identifier is required by both the CREATE and DELETE flags
-	jb.Module = cli.NextArg()
-	if jb.Module == commandline.FinalArg {
+	jb.Namespace = cli.NextArg()
+	if jb.Namespace == commandline.FinalArg {
 		fmt.Println("missing the module parameter")
 		return commandline.Terminate
 	}
@@ -56,15 +56,9 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 	// asking for this information for a DELETE operation would be unnecessary.
 	if cli.Flag(commandline.Create) {
 
-		jb.Cluster = cli.NextArg()
-		if jb.Cluster == commandline.FinalArg {
+		jb.Pipeline = cli.NextArg()
+		if jb.Pipeline == commandline.FinalArg {
 			fmt.Println("missing the cluster parameter")
-			return commandline.Terminate
-		}
-
-		jb.Config = cli.NextArg()
-		if jb.Config == commandline.FinalArg {
-			fmt.Println("missing the pipeline parameter")
 			return commandline.Terminate
 		}
 
@@ -79,10 +73,10 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 
 	dump := &job.Dump{}
 
-	filePath := fmt.Sprintf("%s/%s.yml", DefaultSchedulesFolder, jb.Module)
+	filePath := fmt.Sprintf("%s/%s.yml", DefaultSchedulesFolder, jb.Namespace)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) && cli.Flag(commandline.Delete) {
 		fmt.Printf("cannot delete scheduler file that does not exist(%s/%s.yml)\n",
-			DefaultSchedulesFolder, jb.Module)
+			DefaultSchedulesFolder, jb.Namespace)
 		return commandline.Terminate
 	} else if err == nil {
 		fmt.Println("[-] scheduler file exists ... pulling data")

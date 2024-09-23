@@ -3,6 +3,7 @@ package duplex
 import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -39,7 +40,7 @@ type ManagedChannelConfig struct {
 
 type Wrapper struct {
 	In   time.Time
-	Data any
+	Data []reflect.Value
 }
 
 func (w Wrapper) IsInvalid() bool {
@@ -110,7 +111,7 @@ func (mc *ManagedChannel) GetChannel() chan Wrapper {
 	return mc.channel
 }
 
-func (mc *ManagedChannel) Push(data any) bool {
+func (mc *ManagedChannel) Push(data []reflect.Value) bool {
 
 	mc.sizeMux.Lock()
 

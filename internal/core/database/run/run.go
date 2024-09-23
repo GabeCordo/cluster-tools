@@ -1,4 +1,4 @@
-package supervisor
+package run
 
 import (
 	"errors"
@@ -28,35 +28,34 @@ const (
 	Complete       = "complete"
 )
 
-type Supervisor struct {
+type Run struct {
 	Id     uint64 `json:"id"`
 	Status Status `json:"status,omitempty"`
 
-	Processor string            `json:"processor,omitempty"`
-	Module    string            `json:"module,omitempty"`
-	Pipeline  string            `json:"pipeline,omitempty"`
-	Config    pipeline.Pipeline `json:"pipeline,omitempty"`
+	Processor string `json:"processor,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+
+	Pipeline pipeline.Pipeline `json:"pipeline,omitempty"`
 
 	Statistics *statistic.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func New(id uint64, processorName, moduleName, pipeName string, cfg *pipeline.Pipeline) *Supervisor {
-	supervisor := new(Supervisor)
+func New(id uint64, processorName, namespaceName string, cfg *pipeline.Pipeline) *Run {
+	supervisor := new(Run)
 
 	supervisor.Status = Created
 	supervisor.Id = id
 	supervisor.Processor = processorName
-	supervisor.Module = moduleName
-	supervisor.Pipeline = pipeName
-	supervisor.Config = *cfg // copy instance
-	supervisor.Statistics = statistic.NewStatistics()
+	supervisor.Namespace = namespaceName
+	supervisor.Pipeline = *cfg // copy instance
+	supervisor.Statistics = statistic.NewStatistics(0, 0)
 
 	return supervisor
 }
 
-func (supervisor *Supervisor) Event(event Event) Status {
+func (supervisor *Run) Event(event Event) Status {
 
 	supervisor.mutex.Lock()
 	defer supervisor.mutex.Unlock()
@@ -81,7 +80,7 @@ func (supervisor *Supervisor) Event(event Event) Status {
 	return supervisor.Status
 }
 
-func (supervisor *Supervisor) GetStatus() Status {
+func (supervisor *Run) GetStatus() Status {
 
 	supervisor.mutex.RLock()
 	defer supervisor.mutex.RUnlock()
@@ -89,7 +88,7 @@ func (supervisor *Supervisor) GetStatus() Status {
 	return supervisor.Status
 }
 
-func (supervisor *Supervisor) SetStatus(status Status) {
+func (supervisor *Run) SetStatus(status Status) {
 
 	supervisor.mutex.Lock()
 	defer supervisor.mutex.Unlock()
@@ -97,23 +96,19 @@ func (supervisor *Supervisor) SetStatus(status Status) {
 	supervisor.Status = status
 }
 
-func (supervisor *Supervisor) GetId() uint64 {
+func (supervisor *Run) GetId() uint64 {
 	return supervisor.Id
 }
 
-func (supervisor *Supervisor) GetModule() string {
-	return supervisor.Module
+func (supervisor *Run) GetPipeline() *pipeline.Pipeline {
+	return &supervisor.Pipeline
 }
 
-func (supervisor *Supervisor) GetPipeline() string {
-	return supervisor.Pipeline
-}
-
-func (supervisor *Supervisor) GetStatistic() *statistic.Statistics {
+func (supervisor *Run) GetStatistic() *statistic.Statistics {
 	return supervisor.Statistics
 }
 
-func (supervisor *Supervisor) SetStatistic(statistic *statistic.Statistics) error {
+func (supervisor *Run) SetStatistic(statistic *statistic.Statistics) error {
 	if statistic == nil {
 		return errors.New("statistic is nil")
 	}
@@ -121,7 +116,7 @@ func (supervisor *Supervisor) SetStatistic(statistic *statistic.Statistics) erro
 	return nil
 }
 
-func (supervisor *Supervisor) IsRunning() bool {
+func (supervisor *Run) IsRunning() bool {
 
 	supervisor.mutex.RLock()
 	defer supervisor.mutex.RUnlock()

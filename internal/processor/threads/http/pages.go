@@ -2,12 +2,12 @@ package http
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
 	"html/template"
 	"net/http"
 )
 
-func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.SupervisorSummary) {
+func buildStatisticsPage(w http.ResponseWriter, statistics []*supervisor.Summary) {
 
 	tmpl := `<html>
 		<head>
@@ -35,9 +35,9 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.Supervi
 		<br>
 		<table>
 			<tr>
-				<th>Module</th>
+				<th>Namespace</th>
 				<th>Function</th>
-				<th>Supervisor</th>
+				<th>Run</th>
 				<th>E</th>
 				<th>State</th>
 				<th>ET</th>
@@ -52,9 +52,9 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.Supervi
 			</tr>
 			{{range .Items}}
 			<tr>
-				<td>{{ .Module }}</td>
+				<td>{{ .Namespace }}</td>
 				<td>{{ .Function }}</td>
-				<td>{{ .Supervisor }}</td>
+				<td>{{ .Run }}</td>
 				<td>{{ .Statistics.Threads.NumProvisionedExtractRoutines }}</td>
 				<td>{{ .ETState }}</td>
 				<td>{{ .ETSize }}</td>
@@ -73,13 +73,13 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.Supervi
 		<br>
 		<p>Profile Description:</p>
 		<ul>
-		  <li><b>Supervisor</b>&emsp;The instance of the running cluster.</li>
+		  <li><b>Run</b>&emsp;The instance of the running cluster.</li>
 		  <li><b>E</b>&emsp;The number of extract functions loaded.</li>
           <li><b>T</b>&emsp;The number of transform functions loaded.</li>
           <li><b>L</b>&emsp;The number of extract functions loaded.</li>
 		  <li><b>ET</b>&emsp;The number of records being sent from E to T functions.</li>
           <li><b>TL</b>&emsp;The number of records being sent from T to L functions.</li>
-		  <li><b>State</b>&emsp;How the supervisor will behave to the incoming data; when congested the number of functions will shrink, shrink when idle.</li>
+		  <li><b>State</b>&emsp;How the runner will behave to the incoming data; when congested the number of functions will shrink, shrink when idle.</li>
 		  <li><b>Processed</b>&emsp;The number of records sent over a channel.</li>
 		  <li><b>Invalid</b>&emsp;The number of records dropped on a channel; This should never be > 1.</li>
 		</ul>
@@ -95,7 +95,7 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*interfaces.Supervi
 
 	data := struct {
 		Title string
-		Items []*interfaces.SupervisorSummary
+		Items []*supervisor.Summary
 	}{
 		Title: "Statistics",
 		Items: statistics,

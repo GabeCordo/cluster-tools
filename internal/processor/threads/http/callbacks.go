@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/cluster"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -18,39 +18,39 @@ type JSONResponse struct {
 	Data        any    `json:"data,omitempty"`
 }
 
-type SupervisorConfigJSONBody struct {
-	Module     string            `json:"module"`
-	Cluster    string            `json:"cluster"`
-	Config     cluster.Config    `json:"pipeline"`
-	Supervisor uint64            `json:"id,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
+type RunConfigJSONBody struct {
+	Namespace string            `json:"module"`
+	Pipeline  pipeline.Pipeline `json:"pipeline"`
+	Run       uint64            `json:"id,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
-type SupervisorProvisionJSONResponse struct {
-	Cluster    string `json:"cluster,omitempty"`
-	Supervisor uint64 `json:"id,omitempty"`
+type RunProvisionJSONResponse struct {
+	Namespace string `json:"cluster,omitempty"`
+	Pipeline  string `json:"pipeline,omitempty"`
+	Run       uint64 `json:"id,omitempty"`
 }
 
-func (thread *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) runCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
-		thread.postSupervisorCallback(w, r)
+		thread.postRunCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (thread *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (thread *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 
-	var request SupervisorConfigJSONBody
+	var request RunConfigJSONBody
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = threads.SupervisorProvision(thread.C1, thread.ProvisionerResponseTable,
-		request.Module, request.Cluster, request.Supervisor, request.Metadata, &request.Config, thread.Config.Timeout)
+	err = threads.RunProvision(thread.C1, thread.ProvisionerResponseTable, request.Namespace,
+		request.Run, &request.Pipeline, request.Metadata, thread.Config.Timeout)
 
 	if errors.Is(err, multithreaded.NoResponseReceived) {
 		w.WriteHeader(http.StatusInternalServerError)

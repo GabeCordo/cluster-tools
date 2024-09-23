@@ -21,7 +21,7 @@ are provisioned, how they should be taken offline, how they should be made redun
    
    # add $(go env GOPATH)/bin to your environment PATH
    
-   # generate global files used by the thread when run
+   # generate global files used by the thread when statistic
    cluster-tools init
    
    # validate cluster-tools installed correctly

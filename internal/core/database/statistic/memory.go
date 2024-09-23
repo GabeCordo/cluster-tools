@@ -68,21 +68,21 @@ func (db *LocalStatisticDatabase) Get(filter database.Filter) []any {
 	db.mutex.RLock()
 	defer db.mutex.RUnlock()
 
-	if filter.Module == "" {
+	if filter.Namespace == "" {
 		return results
 	}
 
-	module, found := db.records[filter.Module]
+	module, found := db.records[filter.Namespace]
 
 	if !found {
 		return results
 	}
 
-	if filter.Cluster == "" {
+	if filter.Pipeline == "" {
 		return results
 	}
 
-	records, found := module[filter.Cluster]
+	records, found := module[filter.Pipeline]
 	if !found {
 		return results
 	}
@@ -106,19 +106,19 @@ func (db *LocalStatisticDatabase) Create(filter database.Filter, record any) (an
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
-	if _, found := db.records[filter.Module]; !found {
-		db.records[filter.Module] = make(map[string][]Wrapper)
+	if _, found := db.records[filter.Namespace]; !found {
+		db.records[filter.Namespace] = make(map[string][]Wrapper)
 	}
 
-	if _, found := db.records[filter.Module][filter.Cluster]; !found {
+	if _, found := db.records[filter.Namespace][filter.Pipeline]; !found {
 		statistics := make([]Wrapper, 1)
 		statistics[0] = statistic
-		db.records[filter.Module][filter.Cluster] = statistics
+		db.records[filter.Namespace][filter.Pipeline] = statistics
 	} else {
-		db.records[filter.Module][filter.Cluster] = append(db.records[filter.Module][filter.Cluster], statistic)
+		db.records[filter.Namespace][filter.Pipeline] = append(db.records[filter.Namespace][filter.Pipeline], statistic)
 	}
 
-	return filter.Cluster, nil
+	return filter.Pipeline, nil
 }
 
 func (db *LocalStatisticDatabase) Delete(filter database.Filter) error {
@@ -126,11 +126,11 @@ func (db *LocalStatisticDatabase) Delete(filter database.Filter) error {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
-	if _, found := db.records[filter.Module]; !found {
+	if _, found := db.records[filter.Namespace]; !found {
 		return errors.New("module does not exist")
 	}
 
-	delete(db.records, filter.Module)
+	delete(db.records, filter.Namespace)
 	return nil
 }
 

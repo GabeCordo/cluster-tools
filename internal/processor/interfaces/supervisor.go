@@ -6,15 +6,15 @@ import (
 	"sync"
 )
 
-type SupervisorStatus string
+type RunStatus string
 
 const (
-	Created    SupervisorStatus = "created"
-	Active                      = "active"
-	Crashed                     = "crashed"
-	Completed                   = "completed"
-	Terminated                  = "terminated" // this is legacy
-	Cancelled                   = "cancelled"
+	Created    RunStatus = "created"
+	Active               = "active"
+	Crashed              = "crashed"
+	Completed            = "completed"
+	Terminated           = "terminated" // this is legacy
+	Cancelled            = "cancelled"
 )
 
 type SupervisorEvent string
@@ -26,9 +26,9 @@ const (
 	Error                  = "error"
 )
 
-type Supervisor struct {
-	Id     uint64           `json:"id"`
-	Status SupervisorStatus `json:"status,omitempty"`
+type Run struct {
+	Id     uint64    `json:"id"`
+	Status RunStatus `json:"status,omitempty"`
 
 	Processor string `json:"processor,omitempty"`
 	Module    string `json:"module,omitempty"`

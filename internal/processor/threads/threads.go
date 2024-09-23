@@ -1,6 +1,8 @@
 package threads
 
-import "github.com/GabeCordo/cluster-tools/cluster"
+import (
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+)
 
 type InterruptEvent uint8
 
@@ -17,8 +19,8 @@ type ProvisionerAction uint8
 
 const (
 	ProvisionerModuleGet ProvisionerAction = iota
-	ProvisionerSupervisorGet
-	ProvisionerSupervisorCreate
+	ProvisionerRunGet
+	ProvisionerRunCreate
 	ProvisionerStatisticsGet
 )
 
@@ -32,10 +34,9 @@ const (
 type ProvisionerRequest struct {
 	Action     ProvisionerAction
 	Source     ProvisionerSource
-	Module     string
-	Cluster    string
+	Namespace  string
 	Supervisor uint64
-	Config     *cluster.Config
+	Pipeline   *pipeline.Pipeline
 	Metadata   map[string]string
 	Path       string
 	Nonce      uint32

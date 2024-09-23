@@ -2,7 +2,8 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provisioner"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"sync"
@@ -15,7 +16,7 @@ type Config struct {
 	Timeout    float64
 	Standalone bool
 	Core       string
-	Processor  interfaces.ProcessorConfig
+	Processor  processor.Config
 }
 
 type Thread struct {
@@ -23,10 +24,12 @@ type Thread struct {
 
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C1 chan threads.ProvisionerRequest    // Supervisor is receiving threads from the http_thread
-	C2 chan<- threads.ProvisionerResponse // Supervisor is sending responses to the http_thread
+	C1 chan threads.ProvisionerRequest    // Run is receiving threads from the http_thread
+	C2 chan<- threads.ProvisionerResponse // Run is sending responses to the http_thread
 
 	logger *logging.Logger
+
+	provisioner *provisioner.Provisioner
 
 	requestBacklog         []threads.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
 	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
@@ -37,19 +40,19 @@ type Thread struct {
 	requestWg   sync.WaitGroup
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*Thread, error) {
-	provisioner := new(Thread)
+func NewThread(cfg *Config, logger *logging.Logger, provisioner *provisioner.Provisioner, channels ...interface{}) (*Thread, error) {
+	instance := new(Thread)
 	var ok bool
 
-	provisioner.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	instance.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	provisioner.C1, ok = (channels[1]).(chan threads.ProvisionerRequest)
+	instance.C1, ok = (channels[1]).(chan threads.ProvisionerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 1")
 	}
-	provisioner.C2, ok = (channels[2]).(chan threads.ProvisionerResponse)
+	instance.C2, ok = (channels[2]).(chan threads.ProvisionerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 2")
 	}
@@ -57,17 +60,19 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")
 	}
-	provisioner.logger = logger
+	instance.logger = logger
 
 	if cfg == nil {
 		return nil, errors.New("expected no nil *modules.pipeline type")
 	}
-	provisioner.Config = cfg
+	instance.Config = cfg
 
-	provisioner.requestBacklog = make([]threads.ProvisionerRequest, 0)
-	provisioner.numOfActiveSupervisors = 0
+	instance.provisioner = provisioner
 
-	provisioner.logger.SetColour(logging.Orange)
+	instance.requestBacklog = make([]threads.ProvisionerRequest, 0)
+	instance.numOfActiveSupervisors = 0
 
-	return provisioner, nil
+	instance.logger.SetColour(logging.Orange)
+
+	return instance, nil
 }

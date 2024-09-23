@@ -44,7 +44,7 @@ const (
 	ProcessorRecord RequestType = iota
 	ModuleRecord
 	FunctionRecord
-	SupervisorRecord
+	RunRecord
 	PipelineRecord
 	CacheRecord
 	SmtpRecord
@@ -62,6 +62,8 @@ const (
 
 type RequestIdentifiers struct {
 	Processor  string
+	Namespace  string
+	Pipeline   string
 	Module     string
 	Function   string
 	Config     string

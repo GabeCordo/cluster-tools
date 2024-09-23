@@ -24,15 +24,15 @@ func (t *Thread) addModule(processorName string, cfg *processor.ModuleConfig) er
 	// this pipeline should be used as the de-facto pipeline unless another is specified by the operator
 	// -> send the pipeline for storage in the database t
 	//for _, export := range cfg.Exports {
-	//	if export.Config.Mode == pipeline.Stream {
+	//	if export.Pipeline.Mode == pipeline.Stream {
 	//		t.C13 <- thread.Request{
 	//			Action: thread.CreateAction,
 	//			Type:   thread.SupervisorRecord,
 	//			Identifiers: thread.RequestIdentifiers{
 	//				Processor: processorName,
-	//				Module:    cfg.Name,
+	//				Namespace:    cfg.Name,
 	//				Function:   export.Function,
-	//				Config:    export.Function,
+	//				Pipeline:    export.Function,
 	//			},
 	//			Caller: thread.System,
 	//			Data:   make(map[string]string),

@@ -13,7 +13,7 @@ func (t *Thread) Setup() {
 	t.accepting = true
 
 	if err := t.pipelineDatabase.Load(t.config.ConfigsFolder); err != nil {
-		log.Panicf("could not load saved configs, run 'etl doctor' to verify the configuration is valid %s\n",
+		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
 			err.Error())
 	}
 
@@ -85,8 +85,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 					if configData, ok := (request.Data).(pipeline.Pipeline); ok {
 						_, err := t.pipelineDatabase.Create(
 							database.Filter{
-								Module:  request.Identifiers.Module,
-								Cluster: request.Identifiers.Function,
+								Namespace: request.Identifiers.Namespace,
+								Pipeline:  request.Identifiers.Pipeline,
 							},
 							&configData,
 						)
@@ -106,8 +106,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 					if statisticsData, ok := (request.Data).(*statistic.Statistics); ok {
 						_, err := t.statisticDatabase.Create(
 							database.Filter{
-								Module:  request.Identifiers.Module,
-								Cluster: request.Identifiers.Function,
+								Namespace: request.Identifiers.Namespace,
+								Pipeline:  request.Identifiers.Pipeline,
 							},
 							statistic.Wrapper{ // TODO : depreciate or fix elapsed time
 								Timestamp: time.Now(),
@@ -136,8 +136,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.PipelineRecord:
 				{
 					results := t.pipelineDatabase.Get(database.Filter{
-						Module:     request.Identifiers.Module,
-						Identifier: request.Identifiers.Function,
+						Namespace:  request.Identifiers.Namespace,
+						Identifier: request.Identifiers.Pipeline,
 					})
 
 					configs := make([]pipeline.Pipeline, len(results))
@@ -151,8 +151,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.StatisticRecord:
 				{
 					results := t.statisticDatabase.Get(database.Filter{
-						Module:  request.Identifiers.Module,
-						Cluster: request.Identifiers.Function,
+						Namespace: request.Identifiers.Namespace,
+						Pipeline:  request.Identifiers.Pipeline,
 					})
 
 					statistics := make([]statistic.Statistics, len(results))
@@ -174,7 +174,10 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					err := t.pipelineDatabase.Delete(database.Filter{Module: request.Identifiers.Module, Identifier: request.Identifiers.Config})
+					err := t.pipelineDatabase.Delete(database.Filter{
+						Namespace:  request.Identifiers.Namespace,
+						Identifier: request.Identifiers.Pipeline,
+					})
 
 					if db, ok := (t.pipelineDatabase).(database.Database); (err == nil) && ok {
 						db.Print()
@@ -184,7 +187,9 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				}
 			case thread.StatisticRecord:
 				{
-					err := t.statisticDatabase.Delete(database.Filter{Module: request.Identifiers.Module})
+					err := t.statisticDatabase.Delete(database.Filter{
+						Namespace: request.Identifiers.Namespace,
+					})
 
 					if db, ok := (t.statisticDatabase).(database.Database); (err == nil) && ok {
 						db.Print()
@@ -204,7 +209,10 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.PipelineRecord:
 				{
 					cfg := (request.Data).(pipeline.Pipeline)
-					err := t.pipelineDatabase.Replace(database.Filter{Module: request.Identifiers.Module, Cluster: request.Identifiers.Function}, &cfg)
+					err := t.pipelineDatabase.Replace(database.Filter{
+						Namespace: request.Identifiers.Namespace,
+						Pipeline:  request.Identifiers.Pipeline,
+					}, &cfg)
 
 					if db, ok := (t.pipelineDatabase).(database.Database); (err == nil) && ok {
 						db.Print()

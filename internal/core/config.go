@@ -10,8 +10,8 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/core/thread/processor"
 	http_client "github.com/GabeCordo/cluster-tools/internal/core/thread/rest/client"
 	http_processor "github.com/GabeCordo/cluster-tools/internal/core/thread/rest/processor"
+	"github.com/GabeCordo/cluster-tools/internal/core/thread/runner"
 	"github.com/GabeCordo/cluster-tools/internal/core/thread/scheduler"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread/supervisor"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -202,7 +202,7 @@ func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {
 	processorConfig.Net.Port = config.Net.Processor.Port
 }
 
-func (config *Config) FillSupervisorConfig(supervisorConfig *supervisor.Config) {
+func (config *Config) FillSupervisorConfig(supervisorConfig *runner.Config) {
 	// TODO - add panic check
 	supervisorConfig.Debug = config.Debug
 	supervisorConfig.Timeout = config.MaxWaitForResponse

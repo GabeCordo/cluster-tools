@@ -123,7 +123,7 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 			return err
 		}
 
-		db.Create(database.Filter{Module: moduleIdentifier, Cluster: cfg.Identifier}, cfg)
+		db.Create(database.Filter{Namespace: moduleIdentifier, Pipeline: cfg.Identifier}, cfg)
 
 		return nil
 	})
@@ -143,11 +143,11 @@ func (db *LocalPipelineDatabase) Get(filter database.Filter) []any {
 
 	results := make([]any, 0)
 
-	if filter.Module == "" {
+	if filter.Namespace == "" {
 		return results
 	}
 
-	module, found := db.records[filter.Module]
+	module, found := db.records[filter.Namespace]
 	if !found {
 		return results
 	}
@@ -177,13 +177,13 @@ func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
-	module, found := db.records[filter.Module]
+	module, found := db.records[filter.Namespace]
 
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
 		idToCfgMap := make(map[string]Pipeline)
-		db.records[filter.Module] = idToCfgMap
+		db.records[filter.Namespace] = idToCfgMap
 		module = idToCfgMap
 	}
 
@@ -195,7 +195,7 @@ func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any
 		return nil, errors.New("pipeline with this identifier already exists in this module")
 	}
 
-	db.records[filter.Module][cfg.Identifier] = *cfg // copy
+	db.records[filter.Namespace][cfg.Identifier] = *cfg // copy
 	return cfg.Identifier, nil
 }
 
@@ -209,16 +209,16 @@ func (db *LocalPipelineDatabase) Replace(filter database.Filter, record any) err
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
-	_, found := db.records[filter.Module]
+	_, found := db.records[filter.Namespace]
 
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
 		idToCfgMap := make(map[string]Pipeline)
-		db.records[filter.Module] = idToCfgMap
+		db.records[filter.Namespace] = idToCfgMap
 	}
 
-	db.records[filter.Module][cfg.Identifier] = *cfg
+	db.records[filter.Namespace][cfg.Identifier] = *cfg
 	return nil
 }
 
@@ -227,7 +227,7 @@ func (db *LocalPipelineDatabase) Delete(filter database.Filter) error {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
-	configMap, found := db.records[filter.Module]
+	configMap, found := db.records[filter.Namespace]
 	if !found {
 		return errors.New("module does not exist")
 	}

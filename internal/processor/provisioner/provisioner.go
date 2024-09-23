@@ -2,19 +2,39 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/wrapper"
+	"fmt"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	"math"
+	"sync"
 )
 
-func NewProvisioner() *Provisioner {
+const (
+	DefaultFrameworkModule = "common"
+)
+
+type Provisioner struct {
+	Modules map[string]*Module
+
+	Supervisors            map[uint64]*supervisor.Supervisor
+	numOfActiveSupervisors uint64
+
+	idReference uint64
+
+	mutex sync.RWMutex
+}
+
+func New() *Provisioner {
 	provisioner := new(Provisioner)
 
-	provisioner.modules = make(map[string]*wrapper.Module)
+	provisioner.Modules = make(map[string]*Module)
 
-	defaultFrameworkModule := wrapper.NewModule()
-	defaultFrameworkModule.Identifier = DefaultFrameworkModule
-	defaultFrameworkModule.Version = 1.0
-	defaultFrameworkModule.Mount()
-	provisioner.modules[DefaultFrameworkModule] = defaultFrameworkModule
+	// TODO : I don't like this
+	//defaultFrameworkModule := new(Module)
+	//defaultFrameworkModule.Name = DefaultFrameworkModule
+	//defaultFrameworkModule.Version = "1.0"
+	//
+	//provisioner.Modules[DefaultFrameworkModule] = defaultFrameworkModule
 
 	return provisioner
 }
@@ -23,78 +43,169 @@ func (provisioner *Provisioner) ModuleExists(moduleName string) bool {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	_, found := provisioner.modules[moduleName]
+	_, found := provisioner.Modules[moduleName]
 	return found
 }
 
-func (provisioner *Provisioner) GetModules() []*wrapper.Module {
+func (provisioner *Provisioner) GetModules() []*Module {
 
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	modules := make([]*wrapper.Module, 0)
-	for _, moduleWrapper := range provisioner.modules {
+	modules := make([]*Module, 0)
+	for _, moduleWrapper := range provisioner.Modules {
 		modules = append(modules, moduleWrapper)
 	}
 
 	return modules
 }
 
-func (provisioner *Provisioner) GetModule(moduleName string) (instance *wrapper.Module, found bool) {
+func (provisioner *Provisioner) GetModule(moduleName string) (instance *Module, found bool) {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	instance, found = provisioner.modules[moduleName]
+	instance, found = provisioner.Modules[moduleName]
 	if !found {
-		return nil, false
-	}
-
-	if instance.MarkForDeletion {
 		return nil, false
 	}
 
 	return instance, found
 }
 
-func (provisioner *Provisioner) AddModule(identifier string) error {
+func (provisioner *Provisioner) AddModule(identifier string) (*Module, error) {
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	if _, found := provisioner.modules[identifier]; found {
-		return errors.New("module already exists")
+	if _, found := provisioner.Modules[identifier]; found {
+		return nil, errors.New("module already exists")
 	}
 
-	mod := wrapper.NewModule()
-	mod.Mounted = true
-	mod.Identifier = identifier
-	mod.Version = 1.0
-	provisioner.modules[identifier] = mod
+	mod := new(Module)
+	mod.Name = identifier
+	mod.Version = "1.0"
+	mod.functions = make(map[string]Function)
+	provisioner.Modules[identifier] = mod
 
-	return nil
+	return mod, nil
 }
 
-func (provisioner *Provisioner) DeleteModule(identifier string) (deleted, markedForDeletion, found bool) {
+func (provisioner *Provisioner) getNextUsableId() uint64 {
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	deleted = false
-
-	if moduleWrapper, foundModule := provisioner.modules[identifier]; foundModule {
-		found = true
-
-		provisioner.modules[identifier].MarkForDeletion = true
-		markedForDeletion = true
-
-		if moduleWrapper.CanDelete() {
-			delete(provisioner.modules, identifier)
-			deleted = true
-		} else {
-		}
+	if (provisioner.idReference + 1) >= math.MaxUint32 {
+		provisioner.idReference = 0
 	} else {
-		found = false
+		provisioner.idReference++
 	}
 
-	return deleted, markedForDeletion, found
+	return provisioner.idReference
+}
+
+func (provisioner *Provisioner) NumberOfActiveSupervisors() uint64 {
+
+	return provisioner.numOfActiveSupervisors
+}
+
+func (provisioner *Provisioner) SupervisorExists(id uint64) bool {
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
+
+	_, found := provisioner.Supervisors[id]
+	return found
+}
+
+func (provisioner *Provisioner) CreateSupervisor(namespace string, identifier uint64, metadata map[string]string, core string, pipeline *pipeline.Pipeline) (*supervisor.Supervisor, error) {
+
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
+
+	// TODO : remove standalone param
+	//helper := supervisor.NewHelper(core, namespace, pipeline.Identifier, identifier, false)
+
+	functions := make([]any, len(pipeline.Functions))
+
+	for i, f := range pipeline.Functions {
+
+		moduleWrapper, found := provisioner.Modules[f.Module]
+		if !found {
+			return nil, errors.New("module not found")
+		}
+
+		functionWrapper, err := moduleWrapper.GetFunction(f.Identifier)
+		if err != nil {
+			return nil, errors.New("function not found")
+		}
+
+		functions[i] = functionWrapper.Value
+	}
+
+	var s *supervisor.Supervisor
+	s = supervisor.New(pipeline, functions, metadata)
+	s.Id = identifier
+
+	provisioner.numOfActiveSupervisors++
+	provisioner.Supervisors[identifier] = s
+	return s, nil
+}
+
+func (provisioner *Provisioner) DeleteSupervisor(id uint64) (deleted, found bool) {
+
+	provisioner.mutex.RLock()
+
+	supervisorInstance, found := provisioner.Supervisors[id]
+	if !found {
+		return false, false
+	}
+
+	provisioner.mutex.RUnlock()
+
+	found = true
+	if supervisorInstance.Deletable() {
+		provisioner.mutex.Lock()
+		defer provisioner.mutex.Unlock()
+		delete(provisioner.Supervisors, id)
+		provisioner.numOfActiveSupervisors--
+		deleted = true
+	} else {
+		deleted = false
+	}
+
+	return deleted, found
+}
+
+func (provisioner *Provisioner) GetSupervisor(id uint64) (*supervisor.Supervisor, bool) {
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
+
+	if s, found := provisioner.Supervisors[id]; found {
+		return s, true
+	} else {
+		return nil, false
+	}
+}
+
+func (provisioner *Provisioner) GetSupervisors() []*supervisor.Supervisor {
+	provisioner.mutex.RLock()
+	defer provisioner.mutex.RUnlock()
+
+	supervisors := make([]*supervisor.Supervisor, 0)
+
+	for _, s := range provisioner.Supervisors {
+		supervisors = append(supervisors, s)
+	}
+
+	return supervisors
+}
+
+func (provisioner *Provisioner) SuspendSupervisors() {
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
+
+	for _, s := range provisioner.Supervisors {
+		fmt.Println("teardown runner")
+		s.Teardown()
+	}
 }

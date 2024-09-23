@@ -11,26 +11,26 @@ var CachingInStandaloneErr = errors.New("caching is not supported for standalone
 
 type StandardHelper struct {
 	host       string
-	module     string
-	cluster    string
+	namespace  string
+	pipeline   string
 	supervisor uint64
 	standalone bool // if we are in standalone mode, don't use the core api
 	logger     *logging.Logger
 }
 
-func NewHelper(host, module, cluster string, supervisor uint64, standalone bool) *StandardHelper {
+func NewHelper(host, namespace, pipeline string, supervisor uint64, standalone bool) *StandardHelper {
 	helper := new(StandardHelper)
 
 	// TODO : setup core host link
 
 	helper.host = host
-	helper.module = module
-	helper.cluster = cluster
+	helper.namespace = namespace
+	helper.pipeline = pipeline
 	helper.supervisor = supervisor
 
 	if standalone {
 		helper.standalone = standalone
-		if logger, err := logging.NewLogger(fmt.Sprintf("%s.%s", module, cluster), &helper.standalone); err == nil {
+		if logger, err := logging.NewLogger(fmt.Sprintf("%s.%s", namespace, pipeline), &helper.standalone); err == nil {
 			helper.logger = logger
 		}
 	}

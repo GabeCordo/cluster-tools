@@ -17,9 +17,8 @@ type Dump struct {
 // and what pipeline should be used during that scheduled interval.
 type Job struct {
 	Identifier       string            `yaml:"identifier" json:"identifier" bson:"identifier"`
-	Module           string            `yaml:"module" json:"module" bson:"module"`
-	Cluster          string            `yaml:"cluster" json:"cluster" bson:"cluster"`
-	Config           string            `yaml:"pipeline" json:"pipeline" bson:"pipeline"`
+	Namespace        string            `yaml:"namespace" json:"namespace" bson:"namespace"`
+	Pipeline         string            `yaml:"pipeline" json:"pipeline" bson:"pipeline"`
 	Interval         database.Interval `yaml:"interval" json:"interval" bson:"interval"`
 	Metadata         map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty" bson:"metadata,omitempty"`
 	lastAttemptedRun time.Time
@@ -33,12 +32,12 @@ func IsJobRunning(job *Job) bool {
 }
 
 // IsTimeToRun
-// Returns true if a job is ready to run based on the current time the function is called.
-// If the minute interval for the job is 2, we will run the job every minute that is divisible
+// Returns true if a job is ready to statistic based on the current time the function is called.
+// If the minute interval for the job is 2, we will statistic the job every minute that is divisible
 // by two. This is similar to the '*/2' notation used by cronjob.
 func IsTimeToRun(job *Job) bool {
 
-	// we shouldn't scheduler a job twice in the same period
+	// we shouldn't schedule a job twice in the same period
 	if job.running {
 		return false
 	}
@@ -59,7 +58,7 @@ func (job Job) Equals(other *Job) bool {
 		return true
 	}
 
-	if (job.Module != other.Module) || (job.Cluster != other.Cluster) {
+	if (job.Namespace != other.Namespace) || (job.Pipeline != other.Pipeline) {
 		return false
 	}
 
@@ -68,6 +67,6 @@ func (job Job) Equals(other *Job) bool {
 
 func (job Job) ToString() string {
 
-	return fmt.Sprintf("%s %s.%s (cluster: %s, pipeline: %s)",
-		job.Interval.ToString(), job.Module, job.Identifier, job.Cluster, job.Config)
+	return fmt.Sprintf("%s %s.%s (pipeline: %s)\n",
+		job.Interval.ToString(), job.Namespace, job.Identifier, job.Pipeline)
 }

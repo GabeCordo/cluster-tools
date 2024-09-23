@@ -1,4 +1,4 @@
-package supervisor
+package run
 
 import (
 	"github.com/GabeCordo/cluster-tools/internal/core/database"
@@ -15,19 +15,19 @@ var (
 
 func TestRegistry_Create(t *testing.T) {
 
-	registry := NewSupervisorDatabase()
+	registry := NewLocalDatabase()
 
 	filter := database.Filter{
 		Processor: ProcessorName,
-		Module:    ModuleName,
-		Cluster:   ClusterName,
+		Namespace: ModuleName,
+		Pipeline:  ClusterName,
 		Config:    "tmp",
 	}
 
 	cfg := &pipeline.Pipeline{} // todo: this is a temp hack
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
-		t.Error("failed to create a new supervisor")
+		t.Error("failed to create a new runner")
 		return
 	}
 
@@ -38,19 +38,19 @@ func TestRegistry_Create(t *testing.T) {
 
 func TestRegistry_Get(t *testing.T) {
 
-	registry := NewSupervisorDatabase()
+	registry := NewLocalDatabase()
 
 	filter := database.Filter{
 		Processor: ProcessorName,
-		Module:    ModuleName,
-		Cluster:   ClusterName,
+		Namespace: ModuleName,
+		Pipeline:  ClusterName,
 		Config:    "tmp",
 	}
 
 	cfg := &pipeline.Pipeline{}
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
-		t.Error("failed to create a new supervisor")
+		t.Error("failed to create a new runner")
 	}
 
 	if id.(uint64) != 1 {
@@ -61,10 +61,10 @@ func TestRegistry_Get(t *testing.T) {
 	results := registry.Get(f)
 
 	if len(results) != 1 {
-		t.Error("failed to find a supervisor record that exists")
+		t.Error("failed to find a runner record that exists")
 	}
 
-	if (results[0].(*Supervisor)).Cluster != ClusterName {
-		t.Error("supervisor failed to database the correct pipeline record")
+	if (results[0].(*Run)).Cluster != ClusterName {
+		t.Error("runner failed to database the correct pipeline record")
 	}
 }

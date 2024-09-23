@@ -14,7 +14,7 @@ type FunctionData struct {
 type Function struct {
 	data FunctionData
 
-	processors      []*Processor
+	Processors      []*Processor
 	numOfProcessors int
 	processorIndex  int
 
@@ -30,7 +30,7 @@ func newFunction(builder *ModuleFunction) *Function {
 	function.data.Returns = make([]string, len(builder.Returns))
 	copy(function.data.Returns, builder.Returns)
 	function.data.Mounted = false
-	function.processors = make([]*Processor, 0)
+	function.Processors = make([]*Processor, 0)
 	function.processorIndex = 0
 
 	return function
@@ -41,7 +41,7 @@ func (c *Function) Add(processor *Processor) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	c.processors = append(c.processors, processor)
+	c.Processors = append(c.Processors, processor)
 	c.numOfProcessors++
 }
 
@@ -72,12 +72,12 @@ func (c *Function) GetData() FunctionData {
 func (c *Function) SelectProcessor() *Processor {
 
 	// TODO : this is a simple circular shift balancer
-	// maybe consider something with the delays the current processors have
+	// maybe consider something with the delays the current Processors have
 	// or number of processes running
 
-	instance := c.processors[c.processorIndex]
+	instance := c.Processors[c.processorIndex]
 	if d := c.numOfProcessors - 1; d != 0 {
-		c.processorIndex = (c.processorIndex + 1) % (len(c.processors))
+		c.processorIndex = (c.processorIndex + 1) % (len(c.Processors))
 	} else {
 		c.processorIndex = 0
 	}

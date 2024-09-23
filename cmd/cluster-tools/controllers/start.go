@@ -16,7 +16,7 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	// check to see that the etl thread has been initialized with the required files
 	// if it has not, fail and tell the operator to call the 'etl init' command
 	if _, err := os.Stat(DefaultConfigsFolder); err != nil {
-		fmt.Println("the mango thread has never been initialized, run 'etl init'")
+		fmt.Println("the mango thread has never been initialized, statistic 'etl init'")
 		return commandline.Terminate
 	}
 
@@ -64,7 +64,7 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	//		// the root folder will be included in the walk of the directory, we know this is not a module,
 	//		// so we should skip the path if it is pointing to the root
 	//		if info.IsDir() && (path != thread.DefaultModulesFolder) {
-	//			c.Module(path)
+	//			c.Namespace(path)
 	//		}
 	//		return nil
 	//	})

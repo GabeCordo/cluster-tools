@@ -10,15 +10,15 @@ import (
 // Contains dynamic runtime information use by the Scheduler on
 // startup of the program.
 type Config struct {
-	RefreshInterval int `yaml:"refresh_interval"` // how often the scheduler will check to see if new Jobs should be added to the run queue.
+	RefreshInterval int `yaml:"refresh_interval"` // how often the scheduler will check to see if new Jobs should be added to the statistic queue.
 }
 
 // Scheduler
-// Contains a collection of Jobs that are run on fixed intervals.
+// Contains a collection of Jobs that are statistic on fixed intervals.
 type Scheduler struct {
 	Jobs   database.Database // A static list of Jobs registered to the scheduler.
-	queue  []job.Job         // A dynamic list of Jobs waiting to be run.
-	config Config            // Dynamic information that tells the Scheduler how to run.
+	queue  []job.Job         // A dynamic list of Jobs waiting to be statistic.
+	config Config            // Dynamic information that tells the Scheduler how to statistic.
 	mutex  sync.RWMutex
 }
 

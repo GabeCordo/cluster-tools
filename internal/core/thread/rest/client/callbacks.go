@@ -173,9 +173,9 @@ func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 type FunctionConfigJSONBody struct {
-	Module  string `json:"module"`
-	Cluster string `json:"cluster"`
-	Mounted bool   `json:"mounted"`
+	Module   string `json:"module"`
+	Function string `json:"function"`
+	Mounted  bool   `json:"mounted"`
 }
 
 func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
@@ -192,9 +192,9 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
 
 	if request.Mounted {
-		response.Success = thread.MountCluster(mandatory, request.Module, request.Cluster)
+		response.Success = thread.MountFunction(mandatory, request.Module, request.Function)
 	} else {
-		response.Success = thread.UnmountCluster(mandatory, request.Module, request.Cluster)
+		response.Success = thread.UnmountFunction(mandatory, request.Module, request.Function)
 	}
 
 	if !response.Success {
@@ -205,42 +205,42 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-type SupervisorConfigJSONBody struct {
-	Module     string            `json:"module"`
-	Cluster    string            `json:"cluster"`
-	Config     string            `json:"pipeline"`
-	Supervisor uint64            `json:"id,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
+type JobConfigJSONBody struct {
+	Namespace string            `json:"namespace"`
+	Pipeline  string            `json:"pipeline"`
+	Run       uint64            `json:"id,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
-type SupervisorProvisionJSONResponse struct {
-	Cluster    string `json:"cluster,omitempty"`
-	Supervisor uint64 `json:"id,omitempty"`
+type RunProvisionJSONResponse struct {
+	Namespace string `json:"cluster,omitempty"`
+	Pipeline  string `json:"pipeline,omitempty"`
+	Run       uint64 `json:"id,omitempty"`
 }
 
-func (t *Thread) supervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) runCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		t.getSupervisorCallback(w, r)
+		t.getRunCallback(w, r)
 	} else if r.Method == "POST" {
-		t.postSupervisorCallback(w, r)
+		t.postRunCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (t *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	module := ""
-	if moduleStr, found := urlMapping["module"]; found {
-		module = moduleStr[0]
+	namespace := ""
+	if namespaceStr, found := urlMapping["namespace"]; found {
+		namespace = namespaceStr[0]
 	}
 
-	cluster := ""
-	if clusterStr, found := urlMapping["cluster"]; found {
-		cluster = clusterStr[0]
+	pipeline := ""
+	if pipelineStr, found := urlMapping["cluster"]; found {
+		pipeline = pipelineStr[0]
 	}
 
 	var id string
@@ -254,7 +254,7 @@ func (t *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Request) {
 		id = "0"
 	}
 
-	if (module == "") && (cluster == "") && (id == "0") {
+	if (namespace == "") && (pipeline == "") && (id == "0") {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -262,9 +262,9 @@ func (t *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Request) {
 	response := &rest.Response{Success: true}
 
 	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
-	filter := database.Filter{Module: module, Cluster: cluster, Identifier: id}
+	filter := database.Filter{Namespace: namespace, Pipeline: pipeline, Identifier: id}
 
-	instance, err := thread.GetSupervisor(mandatory, filter)
+	instance, err := thread.GetRun(mandatory, filter)
 	if err != nil {
 		response.Success = false
 		response.Description = err.Error()
@@ -276,9 +276,9 @@ func (t *Thread) getSupervisorCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func (t *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 
-	var request SupervisorConfigJSONBody
+	var request JobConfigJSONBody
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -286,19 +286,22 @@ func (t *Thread) postSupervisorCallback(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if supervisorId, err := thread.CreateSupervisor(
+	if runId, err := thread.CreateRun(
 		thread.Mandatory{
 			t.C5,
 			t.ProcessorResponseTable,
 			t.config.Timeout,
 		},
-		request.Module,
-		request.Cluster,
-		request.Config,
+		request.Namespace,
+		request.Pipeline,
 		request.Metadata,
 	); err == nil {
 
-		response := &SupervisorProvisionJSONResponse{Cluster: request.Cluster, Supervisor: supervisorId}
+		response := &RunProvisionJSONResponse{
+			Namespace: request.Namespace,
+			Pipeline:  request.Pipeline,
+			Run:       runId,
+		}
 		bytes, _ := json.Marshal(response)
 		if _, err := w.Write(bytes); err != nil {
 			// TODO : support module is not mounted
@@ -321,8 +324,8 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* the module always needs to be included */
-	moduleName, foundModuleName := urlMapping["module"]
-	if !foundModuleName {
+	namespaceName, foundNamespaceName := urlMapping["namespace"]
+	if !foundNamespaceName {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -334,7 +337,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 		clusterName, foundClusterName := urlMapping["pipeline"]
 
 		if foundClusterName {
-			if cfg, found := thread.GetPipelineFromDatabase(mandatory, moduleName[0], clusterName[0]); found {
+			if cfg, found := thread.GetPipelineFromDatabase(mandatory, namespaceName[0], clusterName[0]); found {
 				bytes, _ := json.Marshal(cfg)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -343,7 +346,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
-			if configs, found := thread.GetPipelinesFromDatabase(mandatory, moduleName[0]); found {
+			if configs, found := thread.GetPipelinesFromDatabase(mandatory, namespaceName[0]); found {
 				bytes, _ := json.Marshal(configs)
 				if _, err := w.Write(bytes); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -355,13 +358,13 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 	} else if r.Method == "POST" {
 
-		err := thread.StorePipelineInDatabase(mandatory, moduleName[0], *request)
+		err := thread.StorePipelineInDatabase(mandatory, namespaceName[0], *request)
 		if err != nil {
 			w.WriteHeader(http.StatusConflict)
 		}
 
 	} else if r.Method == "PUT" {
-		isOk := thread.ReplacePipelineInDatabase(mandatory, moduleName[0], *request)
+		isOk := thread.ReplacePipelineInDatabase(mandatory, namespaceName[0], *request)
 		if !isOk {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -370,7 +373,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 		configName, foundConfigName := urlMapping["pipeline"]
 
 		if foundConfigName {
-			if isOk := thread.DeletePipelineInDatabase(mandatory, moduleName[0], configName[0]); !isOk {
+			if isOk := thread.DeletePipelineInDatabase(mandatory, namespaceName[0], configName[0]); !isOk {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else {
@@ -505,8 +508,8 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	filter := &database.Filter{
 		Identifier: identifier,
-		Module:     module,
-		Cluster:    cluster,
+		Namespace:  module,
+		Pipeline:   cluster,
 		Interval: database.Interval{
 			Minute: minutes,
 		}}
@@ -578,8 +581,8 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	filter := &database.Filter{
 		Identifier: identifier,
-		Module:     module,
-		Cluster:    cluster,
+		Namespace:  module,
+		Pipeline:   cluster,
 		Interval: database.Interval{
 			Minute: minutes,
 		}}

@@ -11,7 +11,7 @@ import (
 // Checks to see if a job should be added to the schedulers execution queue.
 func Watch(scheduler *Scheduler) {
 
-	// every minute we will see if the Jobs need to be run
+	// every minute we will see if the Jobs need to be statistic
 	for {
 
 		// TODO: at the moment this only works with minute scheduling

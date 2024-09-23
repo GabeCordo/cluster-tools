@@ -6,12 +6,12 @@ import (
 )
 
 // Interval
-// Contains information about how often a job should be run.
+// Contains information about how often a job should be statistic.
 type Interval struct {
-	Minute int `yaml:"minute" json:"minute" bson:"minute"` // Every Nth minute the job should run	(ex. 2 -> */2 in crontab)
-	Hour   int `yaml:"hour" json:"hour" bson:"hour"`       // Every Nth hour the job should run
-	Day    int `yaml:"day" json:"day" bson:"day"`          // Every Nth day the job should run
-	Month  int `yaml:"month" json:"month" bson:"month"`    // Every Nth month the job should run
+	Minute int `yaml:"minute" json:"minute" bson:"minute"` // Every Nth minute the job should statistic	(ex. 2 -> */2 in crontab)
+	Hour   int `yaml:"hour" json:"hour" bson:"hour"`       // Every Nth hour the job should statistic
+	Day    int `yaml:"day" json:"day" bson:"day"`          // Every Nth day the job should statistic
+	Month  int `yaml:"month" json:"month" bson:"month"`    // Every Nth month the job should statistic
 }
 
 func (interval Interval) Empty() bool {
@@ -54,8 +54,8 @@ func (interval Interval) ToString() string {
 }
 
 type Filter struct {
-	Module     string
-	Cluster    string
+	Namespace  string
+	Pipeline   string
 	Interval   Interval
 	Processor  string
 	Identifier string
@@ -64,23 +64,23 @@ type Filter struct {
 }
 
 func (filter Filter) IsEmpty() bool {
-	return filter.Module == "" && filter.Cluster == "" && filter.Identifier == "" && filter.Verbose == false
+	return filter.Namespace == "" && filter.Pipeline == "" && filter.Identifier == "" && filter.Verbose == false
 }
 
 func (filter Filter) UseIdentifier() bool {
 	return filter.Identifier != ""
 }
 
-func (filter Filter) UseModule() bool {
-	return (filter.Module != "") && (filter.Cluster == "")
+func (filter Filter) UseNamespace() bool {
+	return (filter.Namespace != "") && (filter.Pipeline == "")
 }
 
-func (filter Filter) UseCluster() bool {
-	return (filter.Module != "") && (filter.Cluster != "") && filter.Interval.Empty()
+func (filter Filter) UsePipeline() bool {
+	return (filter.Namespace != "") && (filter.Pipeline != "") && filter.Interval.Empty()
 }
 
 func (filter Filter) UseInterval() bool {
-	return !filter.Interval.Empty() && (filter.Module != "") && (filter.Cluster != "")
+	return !filter.Interval.Empty() && (filter.Namespace != "") && (filter.Pipeline != "")
 }
 
 type Database interface {

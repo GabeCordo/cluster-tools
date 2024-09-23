@@ -10,11 +10,11 @@ import (
 	"net/http"
 )
 
-func UpdateSupervisor(host string, id uint64, status interfaces.SupervisorStatus, stats *statistic.Statistics) error {
+func UpdateRun(host string, id uint64, status interfaces.RunStatus, stats *statistic.Statistics) error {
 
-	url := fmt.Sprintf("%s/supervisor", host)
+	url := fmt.Sprintf("%s/run", host)
 
-	sup := interfaces.Supervisor{
+	sup := interfaces.Run{
 		Id:         id,
 		Status:     status,
 		Statistics: stats,
@@ -35,7 +35,7 @@ func UpdateSupervisor(host string, id uint64, status interfaces.SupervisorStatus
 	defer rsp.Body.Close()
 
 	if rsp.Status != "200 OK" {
-		return errors.New("failed to update supervisor")
+		return errors.New("failed to update runner")
 	}
 
 	return nil

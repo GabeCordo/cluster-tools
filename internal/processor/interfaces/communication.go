@@ -15,7 +15,7 @@ type HTTPRequest struct {
 
 type HTTPModuleRequest struct {
 	Name    string                 `json:"name"`
-	Config  processor.ModuleConfig `json:"pipeline,omitempty"`
+	Config  processor.ModuleConfig `json:"config,omitempty"`
 	Mount   bool                   `json:"mount,omitempty"`
 	Cluster HTTPClusterRequest     `json:"cluster,omitempty"`
 }
@@ -23,7 +23,7 @@ type HTTPModuleRequest struct {
 type HTTPClusterRequest struct {
 	Name       string                `json:"name"`
 	Mount      bool                  `json:"mount,omitempty"`
-	Supervisor HTTPSupervisorRequest `json:"supervisor,omitempty"`
+	Supervisor HTTPSupervisorRequest `json:"runner,omitempty"`
 }
 
 type HTTPSupervisorAction string
