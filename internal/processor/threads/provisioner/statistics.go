@@ -1,26 +1,18 @@
 package provisioner
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
 )
 
-func (thread *Thread) getStatistics() []*supervisor.Summary {
+func (thread *Thread) getStatistics() []*pipeline.Pipeline {
 
 	defer thread.requestWg.Done()
 
-	statistics := make([]*supervisor.Summary, 0)
+	statistics := make([]*pipeline.Pipeline, 0)
 
 	for _, s := range thread.provisioner.GetSupervisors() {
 
-		summary := new(supervisor.Summary)
-
-		// TODO : fix
-		//summary.Namespace = s.
-		//summary.Cluster = cluster.Identifier
-		summary.Supervisor = s.Id
-		summary.Statistics = s.Stats
-
-		statistics = append(statistics, summary)
+		statistics = append(statistics, s.Pipeline)
 	}
 
 	return statistics

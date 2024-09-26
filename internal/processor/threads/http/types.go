@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
@@ -13,9 +14,12 @@ import (
 // Frontend Thread
 
 type Config struct {
-	Debug   bool
-	Timeout float64
-	Net     string
+	Debug       *bool
+	Timeout     *float64
+	Standalone  *bool
+	ExternalNet processor.Config
+	Core        *string
+	Net         string
 }
 
 type Thread struct {
@@ -36,7 +40,7 @@ type Thread struct {
 
 	accepting bool
 	counter   uint32
-	mutex     sync.Mutex
+	mutex     sync.RWMutex
 	wg        sync.WaitGroup
 }
 

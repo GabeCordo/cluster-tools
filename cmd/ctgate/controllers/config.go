@@ -146,7 +146,7 @@ func (command ConfigCommand) updateField(c *core.Config, fields []string, value 
 func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultConfigFile); err != nil {
-		fmt.Println("[x] cluster.tools has never been initialized, statistic 'cluster-tools init'")
+		fmt.Println("[x] cluster.tools has never been initialized, statistic 'ctgate init'")
 		return commandline.Terminate
 	}
 

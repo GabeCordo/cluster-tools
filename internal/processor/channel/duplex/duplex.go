@@ -206,7 +206,7 @@ func (mc *ManagedChannel) ProducerDone() {
 
 	mc.NumOfProducers--
 
-	if mc.NumOfProducers == 0 {
+	if mc.NumOfProducers <= 0 {
 		mc.ChannelFinished = true
 		close(mc.channel)
 	}

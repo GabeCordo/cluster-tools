@@ -18,7 +18,7 @@ import (
 func (t *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
-		/* the operator wants to register a new processor to the cluster-tools */
+		/* the operator wants to register a new processor to the ctgate */
 		t.postProcessorCallback(w, r)
 	} else if r.Method == "DELETE" {
 		/* the operator wants to delete a processor from the server */

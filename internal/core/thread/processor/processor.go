@@ -16,10 +16,10 @@ func (t *Thread) processorAdd(config *processor.Config) error {
 	err := t.processorTable.AddProcessor(config)
 
 	if err == nil {
-		t.Logger.Printf("[%s:%d -> cluster-tools] connected a new processor\n",
+		t.Logger.Printf("[%s:%d -> ctgate] connected a new processor\n",
 			config.Host, config.Port)
 	} else {
-		t.Logger.Printf("[%s:%d -> cluster-tools] received a processor connection but there was a failure\n%s\n",
+		t.Logger.Printf("[%s:%d -> ctgate] received a processor connection but there was a failure\n%s\n",
 			config.Host, config.Port, err.Error())
 	}
 	return err
@@ -30,11 +30,11 @@ func (t *Thread) processorRemove(config *processor.Config) error {
 	err := t.processorTable.RemoveProcessor(config)
 
 	if err == nil {
-		t.Logger.Printf("[%s:%d -> cluster-tools] disconnected a processor\n",
+		t.Logger.Printf("[%s:%d -> ctgate] disconnected a processor\n",
 			config.Host, config.Port)
 		t.processorTable.Print()
 	} else {
-		t.Logger.Printf("[%s:%d -> cluster-tools] received a processor disconnected but there was a failure\n%s\n",
+		t.Logger.Printf("[%s:%d -> ctgate] received a processor disconnected but there was a failure\n%s\n",
 			config.Host, config.Port, err.Error())
 	}
 	return err
@@ -57,7 +57,7 @@ func (t *Thread) processorPing() {
 				suffix = fmt.Sprintf(" (retry %d)", p.Retries)
 			}
 
-			t.Logger.Printf("[cluster-tools -> %s:%d] unable to probe processor %s\n", p.Host, p.Port, suffix)
+			t.Logger.Printf("[ctgate -> %s:%d] unable to probe processor %s\n", p.Host, p.Port, suffix)
 
 			if (p.Retries + 1) >= t.config.MaxRetry {
 

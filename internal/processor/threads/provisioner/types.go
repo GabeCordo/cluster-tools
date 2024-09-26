@@ -9,13 +9,13 @@ import (
 	"sync"
 )
 
-const MaxNumOfSupervisors = 5
+const MaxNumOfSupervisors = 1
 
 type Config struct {
-	Debug      bool
-	Timeout    float64
-	Standalone bool
-	Core       string
+	Debug      *bool
+	Timeout    *float64
+	Standalone *bool
+	Core       *string
 	Processor  processor.Config
 }
 

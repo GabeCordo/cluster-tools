@@ -21,7 +21,7 @@ import (
 func (t *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* show the operator all the processors attached to the cluster-tools */
+		/* show the operator all the processors attached to the ctgate */
 		t.getProcessorCallback(w, r)
 	} else {
 		/* the client does not support any other methods on the processor */
@@ -54,7 +54,7 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* show the operator all the modules registered to the cluster-tools */
+		/* show the operator all the modules registered to the ctgate */
 		t.getModuleCallback(w, r)
 	} else if r.Method == "PUT" {
 		/* the operator shall be allowed to mount and unmount modules */
@@ -129,11 +129,11 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) functionCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* the operator shall see clusters registered to the cluster-tools */
+		/* the operator shall see clusters registered to the ctgate */
 		t.getFunctionCallback(w, r)
 	} else if r.Method == "PUT" {
-		/* the operator shall mount clusters in the cluster-tools */
-		/* the operator shall unmount clusters in the cluster-tools */
+		/* the operator shall mount clusters in the ctgate */
+		/* the operator shall unmount clusters in the ctgate */
 		t.putFunctionCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -123,7 +123,7 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 }
 
 // AddModule
-// inform the cluster-tools that the processor now supports provisioning calls
+// inform the ctgate that the processor now supports provisioning calls
 // for a module and all its listed functions
 func (table *Table) AddModule(processorName string, config *ModuleConfig) error {
 
@@ -266,7 +266,7 @@ func (table *Table) RemoveModule(processor, name string) error {
 }
 
 // RegisteredModules
-// Fetch a copy of all modules stored on the cluster-tools.
+// Fetch a copy of all modules stored on the ctgate.
 func (table *Table) RegisteredModules() []ModuleData {
 
 	table.mutex.RLock()

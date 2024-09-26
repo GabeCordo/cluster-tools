@@ -26,9 +26,9 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	}
 
 	// TODO : move to the processor
-	// load in the example cluster into the "clusters" module
+	// load in the ctools cluster into the "clusters" module
 	// ~ this may be helpful for people trying to spin up the thread for the first time and
-	//   want to use this as an example of how to use it as an operator rather than a developer
+	//   want to use this as an ctools of how to use it as an operator rather than a developer
 	//Vec := clusters.VectorCluster{}
 	//
 	//pipeline := cluster.DefaultConfig

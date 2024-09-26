@@ -22,16 +22,16 @@ are provisioned, how they should be taken offline, how they should be made redun
    # add $(go env GOPATH)/bin to your environment PATH
    
    # generate global files used by the thread when statistic
-   cluster-tools init
+   ctgate init
    
-   # validate cluster-tools installed correctly
-   cluster-tools doctor
+   # validate ctgate installed correctly
+   ctgate doctor
 ```
 
 ### Running the Cluster.tools Process
 
 ```shell
-cluster-tools start
+ctgate start
 ```
 
 ### Testing
@@ -43,7 +43,7 @@ of code coverage is a crucial step in convincing individuals to try cluster.tool
 
 ### Documentation
 
-Documentation is continuously being added to the Github Wiki found [here](https://cluster.tools)
+Documentation is continuously being added to the Github Wiki found [here](docs)
 
 ### Commercial Use
 

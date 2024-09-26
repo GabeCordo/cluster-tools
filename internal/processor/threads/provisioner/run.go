@@ -37,10 +37,10 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 	}
 
 	// TODO : cleanup
-	thread.logger.Printf("%s[%s]%s Provisioning pipeline in module %s\n", logging.Green, request.Pipeline, logging.Reset, "foo")
+	thread.logger.Printf("%s[%s]%s Provisioning pipeline in module %s\n", logging.Green, request.Pipeline.Identifier, logging.Reset, "foo")
 
 	supervisorInstance, err := thread.provisioner.CreateSupervisor(
-		request.Namespace, request.Supervisor, request.Metadata, thread.Config.Core, request.Pipeline)
+		request.Namespace, request.Supervisor, request.Metadata, *thread.Config.Core, request.Pipeline)
 
 	if err != nil {
 		thread.logger.Printf("%s[%s]%s Failed to create runner %s\n", logging.Red, request.Pipeline.Identifier, logging.Reset, err)
@@ -48,36 +48,20 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		return err
 	}
 
-	thread.logger.Printf("%s[%s]%s Pipeline Running %d\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
+	thread.logger.Printf("%s[%s]%s Pipeline Running (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
 	go func(supervisorInstance *supervisor.Supervisor) {
-
-		// todo: fix
-		//if !thread.Config.Standalone && clusterWrapper.IsStream() {
-		//	go func() {
-		//		for {
-		//			if !supervisorInstance.IsAlive() {
-		//				break
-		//			} else {
-		//				api.UpdateRun(thread.Config.Core, supervisorInstance.Id, interfaces.RunStatus(supervisorInstance.State), supervisorInstance.Stats)
-		//			}
-		//
-		//			time.Sleep(1 * time.Second)
-		//		}
-		//	}()
-		//}
 
 		// block until the runner completes
 		response := supervisorInstance.Start()
 		// TODO : should we send the response instead?
 
-		// TODO : define host
-		if !thread.Config.Standalone {
-			api.UpdateRun(thread.Config.Core, supervisorInstance.Id, interfaces.RunStatus(supervisorInstance.State), response.Stats)
+		if !*thread.Config.Standalone {
+			api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, interfaces.RunStatus(supervisorInstance.State), response.Stats)
 		}
 
 		// provide the console with output indicating that the cluster has completed
 		// we already provide output when a cluster is provisioned, so it completes the state
-		if thread.Config.Debug {
+		if *thread.Config.Debug {
 			duration := time.Now().Sub(supervisorInstance.StartTime)
 			thread.logger.Printf("%s[%s]%s Pipeline complete, took %dhr %dm %ds %dms %dus\n",
 				logging.Green,
@@ -113,7 +97,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		//
 		// if we are in standalone mode and there are no active supervisors, no additional compute
 		// will be performed on the processor, and we can shut down the threads
-		if thread.Config.Standalone && (thread.numOfActiveSupervisors == 0) {
+		if *thread.Config.Standalone && (thread.numOfActiveSupervisors == 0) {
 			thread.Interrupt <- threads.Shutdown
 		}
 	}(supervisorInstance)

@@ -19,7 +19,7 @@ func (t *Thread) Setup() {
 
 	// some configs may have carried over from previous runs
 	// let the operator know these configs are being loaded into the
-	// cluster-tools without having to query the database over HTTP
+	// ctgate without having to query the database over HTTP
 	t.pipelineDatabase.Print()
 }
 

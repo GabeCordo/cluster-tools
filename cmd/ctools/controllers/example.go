@@ -1,32 +1,42 @@
-package main
+package controllers
 
 import (
 	"fmt"
 	cluster_tools "github.com/GabeCordo/cluster-tools"
+	"github.com/GabeCordo/commandline"
+	"time"
 )
 
 func generator(out chan int) {
 
-	for i := 0; i < 10; i++ {
-		out <- i
+	for i := 0; i < 1000000; i++ {
+		out <- 1
 	}
+
+	close(out)
 }
 
 func add2(a int) (b int) {
 	b = a + 2
+	time.Sleep(4 * time.Millisecond)
 	return b
 }
 
 func mul2(a int) (b int) {
 	b = a * 2
+	time.Sleep(10 * time.Millisecond)
 	return b
 }
 
 func prt(a int) {
+	time.Sleep(1 * time.Millisecond)
 	fmt.Println(a)
 }
 
-func main() {
+type ExampleController struct {
+}
+
+func (controller ExampleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	cfg := cluster_tools.NewConfig("tmp")
 	p, _ := cluster_tools.New(cfg)
@@ -37,8 +47,7 @@ func main() {
 	m.LinkFunction("mul2", mul2)
 	m.LinkFunction("prt", prt)
 
-	p.Connect("http://localhost:8137")
-	defer p.Disconnect()
-
 	p.Run()
+
+	return commandline.Terminate
 }

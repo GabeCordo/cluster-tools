@@ -119,7 +119,7 @@ func (config *Config) Print() {
 
 func (config *Config) ToYAML(path string) {
 
-	// if a cluster-tools already exists, delete it
+	// if a ctgate already exists, delete it
 	if _, err := os.Stat(path); err == nil {
 		os.Remove(path)
 	}
@@ -132,7 +132,7 @@ func (config *Config) ToYAML(path string) {
 }
 
 func (config *Config) Store() bool {
-	// verify that the cluster-tools file we initially loaded from has not been deleted
+	// verify that the ctgate file we initially loaded from has not been deleted
 	if _, err := os.Stat(config.Paths.Root); errors.Is(err, os.ErrNotExist) {
 		return false
 	}
@@ -230,7 +230,7 @@ func YAMLToETLConfig(config *Config, path string) error {
 
 	err = yaml.Unmarshal([]byte(file), config)
 	if err != nil {
-		// the file is not a JSON or is a malformed (fields missing) cluster-tools
+		// the file is not a JSON or is a malformed (fields missing) ctgate
 		log.Println(err)
 		return err
 	}

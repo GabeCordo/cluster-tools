@@ -17,6 +17,11 @@ func (thread *Thread) Setup() {
 		thread.runCallback(w, r)
 	})
 
+	mux.HandleFunc("/core", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		thread.gateCallback(w, r)
+	})
+
 	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		thread.debugCallback(w, r)
@@ -28,7 +33,7 @@ func (thread *Thread) Setup() {
 	})
 
 	// TODO - explore this more, fucking cool
-	if thread.Config.Debug {
+	if *thread.Config.Debug {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)

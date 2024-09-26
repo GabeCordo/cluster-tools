@@ -7,8 +7,8 @@ COPY . .
 WORKDIR /home/app/cmd/cluster-tools
 
 RUN go install
-RUN cluster-tools init
-RUN cluster-tools doctor
+RUN ctgate init
+RUN ctgate doctor
 
 EXPOSE 8136
 EXPOSE 8137

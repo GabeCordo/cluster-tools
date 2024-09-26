@@ -28,6 +28,7 @@ func New() *Provisioner {
 	provisioner := new(Provisioner)
 
 	provisioner.Modules = make(map[string]*Module)
+	provisioner.Supervisors = make(map[uint64]*supervisor.Supervisor)
 
 	// TODO : I don't like this
 	//defaultFrameworkModule := new(Module)

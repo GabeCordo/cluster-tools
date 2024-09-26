@@ -358,10 +358,10 @@ func (core *Core) Run() {
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	//cluster-tools.ProvisionerThread.Teardown()
+	//ctgate.ProvisionerThread.Teardown()
 	//
 	//if common.GetConfigInstance().Debug {
-	//	cluster-tools.logger.Println("provisioner shutdown")
+	//	ctgate.logger.Println("provisioner shutdown")
 	//}
 
 	core.SchedulerThread.Teardown()

@@ -2,7 +2,7 @@ package threads
 
 import (
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	pipeline_component "github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )
@@ -39,7 +39,7 @@ func ShutdownCore(pipe chan<- InterruptEvent) {
 }
 
 func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	timeout float64) ([]*supervisor.Summary, error) {
+	timeout float64) ([]*pipeline_component.Pipeline, error) {
 
 	request := ProvisionerRequest{
 		Action: ProvisionerStatisticsGet,
@@ -54,6 +54,6 @@ func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *mul
 
 	rsp := (data).(ProvisionerResponse)
 
-	collectedStatistics := (rsp.Data).([]*supervisor.Summary)
+	collectedStatistics := (rsp.Data).([]*pipeline_component.Pipeline)
 	return collectedStatistics, nil
 }

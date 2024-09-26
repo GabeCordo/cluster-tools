@@ -35,6 +35,7 @@ type Function struct {
 	From       string `json:"from,omitempty"`
 	To         string `json:"to,omitempty"`
 	StartWith  int    `json:"start_with"`
+	WaitBefore bool   `json:"wait_before,omitempty"`
 }
 
 type Pipe struct {
@@ -45,7 +46,9 @@ type Pipe struct {
 
 type Pipeline struct {
 	Identifier string     `json:"id"`
-	OnCrash    OnCrash    `json:"on-crash"`
+	OnCrash    OnCrash    `json:"on_crash"`
 	Functions  []Function `json:"functions"`
 	Pipes      []Pipe     `json:"pipes"`
+	OnStartup  string     `json:"on_startup"`
+	OnTeardown string     `json:"on_teardown"`
 }

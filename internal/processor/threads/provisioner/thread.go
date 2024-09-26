@@ -29,8 +29,6 @@ func (thread *Thread) Start() {
 		thread.listenersWg.Wait()
 	}()
 
-	thread.registerModulesToCore()
-
 	// CLEARING THE PROVISIONER BACKLOG
 
 	go thread.backlog()
@@ -39,17 +37,21 @@ func (thread *Thread) Start() {
 	thread.requestWg.Wait()
 }
 
-func (thread *Thread) registerModulesToCore() {
+func (thread *Thread) registerModulesToCore() error {
+
 	// logging enhancements
 	for _, moduleInst := range thread.provisioner.GetModules() {
 		cfg := moduleInst.ToConfig()
 
-		if err := api.CreateModule(thread.Config.Core, &thread.Config.Processor, &cfg); err == nil {
+		if err := api.CreateModule(*thread.Config.Core, &thread.Config.Processor, &cfg); err == nil {
 			thread.logger.Printf("registered module %s to core\n", cfg.Name)
 		} else {
 			thread.logger.Printf("failed to register module %s to core: %v\n", cfg.Name, err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (thread *Thread) backlog() {
@@ -82,6 +84,8 @@ func (thread *Thread) processRequest(request *threads.ProvisionerRequest) {
 		response.Error = thread.provisionRun(request)
 	case threads.ProvisionerStatisticsGet:
 		response.Data = thread.getStatistics()
+	case threads.ProvisionerRegisterModules:
+		response.Error = thread.registerModulesToCore()
 	default:
 		response.Error = errors.New("bad request")
 		thread.requestWg.Done()

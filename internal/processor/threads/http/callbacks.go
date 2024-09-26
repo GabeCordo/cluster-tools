@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/processor/api"
 	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -50,7 +52,7 @@ func (thread *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = threads.RunProvision(thread.C1, thread.ProvisionerResponseTable, request.Namespace,
-		request.Run, &request.Pipeline, request.Metadata, thread.Config.Timeout)
+		request.Run, &request.Pipeline, request.Metadata, *thread.Config.Timeout)
 
 	if errors.Is(err, multithreaded.NoResponseReceived) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -110,6 +112,86 @@ func (thread *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) 
 	w.Write(b)
 }
 
+func (thread *Thread) gateCallback(w http.ResponseWriter, r *http.Request) {
+
+	// TODO: use DELETE and PUT HTTP directives
+	if r.Method == http.MethodGet {
+		thread.getGateCallback(w, r)
+	} else if r.Method == http.MethodPost {
+		thread.postGateCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (thread *Thread) getGateCallback(w http.ResponseWriter, r *http.Request) {
+
+	thread.mutex.RLock()
+	defer thread.mutex.RUnlock()
+
+	if *thread.Config.Standalone {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	response := interfaces.Response{Success: true, Data: *thread.Config.Core}
+	json.NewEncoder(w).Encode(response)
+}
+
+func (thread *Thread) postGateCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	coreHost, coreHostFound := urlMapping["core"]
+	if !coreHostFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	action, actionFound := urlMapping["action"]
+	if !actionFound || !((action[0] == "connect") || (action[0] == "disconnect")) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	thread.mutex.Lock()
+	defer thread.mutex.Unlock()
+
+	if action[0] == "connect" {
+
+		// the processor shall disconnect from an ongoing gateway connection
+		// before attempting to connect to another
+		//
+		// relation: [core] 1-* [processor]
+		//
+		if !*thread.Config.Standalone {
+			err := api.DisconnectFromCore(*thread.Config.Core, &thread.Config.ExternalNet)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+		}
+
+		*thread.Config.Core = coreHost[0]
+		*thread.Config.Standalone = false
+
+		err := api.ConnectToCore(*thread.Config.Core, &thread.Config.ExternalNet)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	} else {
+
+		if *thread.Config.Standalone {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		err := api.DisconnectFromCore(*thread.Config.Core, &thread.Config.ExternalNet)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	}
+}
+
 func (thread *Thread) debugStatsCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
@@ -121,10 +203,12 @@ func (thread *Thread) debugStatsCallback(w http.ResponseWriter, r *http.Request)
 
 func (thread *Thread) getDebugStatsCallback(w http.ResponseWriter, r *http.Request) {
 
-	stats, err := threads.GetProvisionerStatistics(thread.C1, thread.ProvisionerResponseTable, thread.Config.Timeout)
+	stats, err := threads.GetProvisionerStatistics(thread.C1, thread.ProvisionerResponseTable, *thread.Config.Timeout)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
-		buildStatisticsPage(w, stats)
+		if b, err := json.Marshal(stats); err == nil {
+			w.Write(b)
+		}
 	}
 }

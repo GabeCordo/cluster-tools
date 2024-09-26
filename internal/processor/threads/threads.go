@@ -22,6 +22,7 @@ const (
 	ProvisionerRunGet
 	ProvisionerRunCreate
 	ProvisionerStatisticsGet
+	ProvisionerRegisterModules
 )
 
 type ProvisionerSource string

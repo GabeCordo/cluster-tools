@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/GabeCordo/cluster-tools/cmd/cluster-tools/controllers"
+	"github.com/GabeCordo/cluster-tools/cmd/ctgate/controllers"
 	"github.com/GabeCordo/commandline"
 )
 
@@ -13,7 +13,7 @@ func main() {
 	cli := commandline.NewCommandLine()
 
 	ic := cli.AddCommand("init", controllers.InitCommand{})
-	ic.SetCategory("utils").SetDescription("initialize the global files required to start the cluster-tools")
+	ic.SetCategory("utils").SetDescription("initialize the global files required to start the ctgate")
 
 	dc := cli.AddCommand("doctor", controllers.DoctorCommand{})
 	dc.SetCategory("utils").SetDescription("verify the integrity of the global files on the log system")
@@ -29,7 +29,7 @@ func main() {
 	stc.SetCategory("data").SetDescription("used to view the statistic files stored on the system")
 
 	sc := cli.AddCommand("start", controllers.StartCommand{})
-	sc.SetCategory("utils").SetDescription("start the cluster-tools on the log system")
+	sc.SetCategory("utils").SetDescription("start the ctgate on the log system")
 
 	rc := cli.AddCommand("repl", controllers.ReplController{})
 	rc.SetCategory("utils").SetDescription("enable or disable the repl when running mango start")
@@ -38,7 +38,7 @@ func main() {
 	shc.SetCategory("utils").SetDescription("create or delete schedules for when clusters should be provisioned")
 
 	cc := cli.AddCommand("pipeline", controllers.ConfigCommand{})
-	cc.SetCategory("utils").SetDescription("update the global cluster-tools configuration")
+	cc.SetCategory("utils").SetDescription("update the global ctgate configuration")
 
 	cli.Run()
 }

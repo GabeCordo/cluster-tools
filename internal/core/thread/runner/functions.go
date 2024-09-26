@@ -60,10 +60,10 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 
 	if err != nil {
 		t.Logger.Print(err.Error())
-		t.Logger.Printf("[cluster-tools -> %s][id: %d] %s\n", processorName, sup.GetId(), "could not connect to the processor and runner is canceled")
+		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
 	} else {
-		t.Logger.Printf("[cluster-tools -> %s][id: %d] %s\n", processorName, sup.GetId(), "connected to processor and runner is active")
+		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "connected to processor and runner is active")
 		sup.Status = run.Active
 	}
 

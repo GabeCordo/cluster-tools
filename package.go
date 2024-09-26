@@ -77,8 +77,25 @@ func NewConfig(name string) *Config {
 	config.StatsMode = true
 	config.ReplMode = false
 	config.Timeout = 2.0
-	config.Debug = false
+	config.Debug = true
 	return config
+}
+
+func (config Config) FillHttpConfig(to *http.Config) {
+	to.Debug = &config.Debug
+	to.Timeout = &config.Timeout
+	to.Standalone = &config.StandaloneMode
+	to.Core = &config.Core
+	to.ExternalNet = processor.Config{Host: config.Net.External.Host, Port: config.Net.External.Port}
+	to.Net = fmt.Sprintf("%s:%d", config.Net.Internal.Host, config.Net.Internal.Port)
+}
+
+func (config Config) FillProvisionerConfig(to *provisioner.Config) {
+	to.Debug = &config.Debug
+	to.Timeout = &config.Timeout
+	to.Standalone = &config.StandaloneMode
+	to.Core = &config.Core
+	to.Processor = processor.Config{Host: config.Net.External.Host, Port: config.Net.External.Port}
 }
 
 type Function struct {
@@ -147,11 +164,8 @@ func New(cfg ...*Config) (*Processor, error) {
 	instance.channels.c1 = make(chan threads.ProvisionerRequest, 10)
 	instance.channels.c2 = make(chan threads.ProvisionerResponse, 10)
 
-	httpConfig := &http.Config{
-		Debug:   instance.config.Debug,
-		Timeout: instance.config.Timeout,
-		Net:     fmt.Sprintf("%s:%d", instance.config.Net.Internal.Host, instance.config.Net.Internal.Port),
-	}
+	httpConfig := &http.Config{}
+	instance.config.FillHttpConfig(httpConfig)
 	httpLogger, err := logging.NewLogger(HttpProcessor.ToString(), &instance.config.Debug)
 	if err != nil {
 		return nil, err
@@ -159,13 +173,8 @@ func New(cfg ...*Config) (*Processor, error) {
 	instance.threads.http, err = http.NewThread(httpConfig, httpLogger,
 		instance.channels.interrupt, instance.channels.c1, instance.channels.c2)
 
-	provisionerConfig := &provisioner.Config{
-		Debug:      true,
-		Timeout:    instance.config.Timeout,
-		Standalone: instance.config.StandaloneMode,
-		Core:       instance.config.Core,
-		Processor:  processor.Config{Host: instance.config.Net.External.Host, Port: instance.config.Net.External.Port},
-	}
+	provisionerConfig := &provisioner.Config{}
+	instance.config.FillProvisionerConfig(provisionerConfig)
 	provisionerLogger, err := logging.NewLogger(Provisioner.ToString(), &instance.config.Debug)
 	if err != nil {
 		return nil, err
@@ -303,7 +312,7 @@ func (p *Processor) Connect(host string) error {
 		time.Sleep(1 * time.Second)
 	}
 
-	p.threads.provisioner.Config.Standalone = false // legacy; todo rework
+	*p.threads.provisioner.Config.Standalone = false // legacy; todo rework
 	p.state = Connected
 	return nil
 }
@@ -335,6 +344,4 @@ func (p *Processor) Disconnect() error {
 func (p *Processor) Debug(debug bool) {
 
 	p.config.Debug = debug
-	p.threads.provisioner.Config.Debug = debug
-	p.threads.http.Config.Debug = debug
 }

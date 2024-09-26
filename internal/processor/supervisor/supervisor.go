@@ -3,7 +3,9 @@ package supervisor
 import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
+	"github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
 	"log"
+	"os"
 	"reflect"
 	"time"
 )
@@ -80,7 +82,7 @@ func (supervisor *Supervisor) Start() (response *Response) {
 		if r := recover(); r != nil {
 			// yes => return a response that identifies that the cluster crashed
 			response = NewResponse(
-				supervisor.Stats,
+				supervisor.Pipeline.Stats,
 				time.Now().Sub(supervisor.StartTime),
 				true,
 			)
@@ -89,38 +91,24 @@ func (supervisor *Supervisor) Start() (response *Response) {
 
 	supervisor.StartTime = time.Now()
 
-	//if sysFunc, ok := (supervisor.group).(SystemFunctions); ok {
-	//	sysFunc.Setup(supervisor.StartTime, supervisor.helper)
-	//}
+	//// add all the metadata passed to the pipeline to the local environment
 
-	for i, function := range supervisor.Pipeline.Functions {
-		for j := 0; j < function.StartWith; j++ {
-			supervisor.Provision(i)
-			supervisor.Stats.Functions[i].Active++
-			supervisor.Stats.Functions[i].Provisions++
-		}
+	// TODO : possibly enhance security?
+	for key, value := range supervisor.metadata {
+		os.Setenv(key, value)
 	}
 
-	// the common specifies the number of load functions to quitE running in parallel
-	//for i := 0; i < supervisor.Config.StartWithNLoadClusters; i++ {
-	//	supervisor.Provision(Load)
-	//	supervisor.Stats.Threads.NumActiveLoadRoutines++
-	//	supervisor.Stats.Threads.NumProvisionedLoadRoutines++
-	//	supervisor.ActiveLRoutines++
-	//}
+	//// start creating the default frontend goroutines
 
-	// the common specifies the number of transform functions to quitE running in parallel
-	//for i := 0; i < supervisor.Config.StartWithNTransformClusters; i++ {
-	//	supervisor.Provision(Transform)
-	//	supervisor.Stats.Threads.NumActiveTransformRoutines++
-	//	supervisor.Stats.Threads.NumProvisionedTransformRoutes++
-	//	supervisor.ActiveTRoutines++
-	//}
-
-	//// quitE creating the default frontend goroutines
-	//supervisor.Provision(Extract)
-	//supervisor.Stats.Threads.NumProvisionedExtractRoutines++
-	//supervisor.Stats.Threads.NumActiveExtractRoutines++
+	for _, function := range supervisor.Pipeline.Functions {
+		for j := 0; j < function.Config.StartWith; j++ {
+			supervisor.Provision(function)
+			function.Stats.Active++
+			function.Stats.Provisions++
+			//supervisor.Stats.Functions[i].Active++
+			//supervisor.Stats.Functions[i].Provisions++
+		}
+	}
 
 	//// end creating the default frontend goroutines
 
@@ -135,10 +123,16 @@ func (supervisor *Supervisor) Start() (response *Response) {
 	//supervisor.CalculateTiming()
 
 	response = NewResponse(
-		supervisor.Stats,
+		supervisor.Pipeline.Stats,
 		time.Now().Sub(supervisor.StartTime),
 		false,
 	)
+
+	//// cleanup environment variables that were dynamically set
+
+	for key, _ := range supervisor.metadata {
+		os.Unsetenv(key)
+	}
 
 	return response
 }
@@ -158,35 +152,42 @@ func (supervisor *Supervisor) Runtime() {
 			break
 		}
 
-		for i, channel := range supervisor.channels {
+		for _, channel := range supervisor.Pipeline.Channels {
 
-			channelState := channel.GetState()
+			channelState := channel.Value.GetState()
 
-			if (supervisor.State == Stopping) && channel.Accepting() {
-				channel.StopPushes()
+			if (supervisor.State == Stopping) && channel.Value.Accepting() {
+				channel.Value.StopPushes()
 			}
 
 			if channelState == duplex.Congested {
 
-				supervisor.Stats.Pipes[i].Breaches++
-				n := channel.GetGrowthFactor()
-				for n > 0 {
-					supervisor.Stats.Functions[i+1].Provisions++
-					supervisor.Stats.Functions[i+1].Active++
-					supervisor.Provision(i + 1)
-					n--
+				channel.Stats.Breaches++
+
+				for _, f := range channel.Receiver {
+					n := channel.Config.GrowthFactor
+					for n > 0 {
+						f.Stats.Provisions++
+						f.Stats.Active++
+						supervisor.Provision(f)
+						n--
+					}
 				}
 			} else if (channelState == duplex.Underutilized) || (channelState == duplex.Idle) {
-				n := channel.GetGrowthFactor()
-				for n > 0 {
-					// never remove all transform nodes otherwise we risk the
-					// ET channel having no consumers
-					if supervisor.Stats.Functions[i+1].Active <= 1 {
-						break
+
+				for _, f := range channel.Receiver {
+
+					n := channel.Config.GrowthFactor
+					for n > 0 {
+						// never remove all transform nodes otherwise we risk the
+						// ET channel having no consumers
+						if f.Stats.Active <= 1 {
+							break
+						}
+						f.Stats.Active--
+						supervisor.Remove(f)
+						n--
 					}
-					supervisor.Stats.Functions[i+1].Active--
-					supervisor.RemoveProducerFrom(i + 1)
-					n--
 				}
 			}
 		}
@@ -196,7 +197,6 @@ func (supervisor *Supervisor) Runtime() {
 	}
 }
 
-// func (supervisor *Supervisor) ExtractWrapper(h cluster.H, m cluster.M, out cluster.Out) <-chan struct{} {
 func (supervisor *Supervisor) ExtractWrapper(function any, channel *duplex.ManagedChannel) <-chan struct{} {
 	done := make(chan struct{})
 
@@ -216,7 +216,7 @@ func (supervisor *Supervisor) ExtractWrapper(function any, channel *duplex.Manag
 			channelType := reflect.TypeOf(function).In(0)
 
 			if channelType.Kind() == reflect.Chan {
-				channel := reflect.MakeChan(channelType.Elem(), 0)
+				channel := reflect.MakeChan(channelType, 0)
 				arguments = append(arguments, channel)
 			}
 		}
@@ -227,8 +227,10 @@ func (supervisor *Supervisor) ExtractWrapper(function any, channel *duplex.Manag
 
 			for {
 				value, ok := arguments[0].Recv()
-				if !ok {
+				if ok {
 					channel.Push([]reflect.Value{value})
+				} else {
+					break
 				}
 			}
 		}
@@ -256,7 +258,7 @@ func (supervisor *Supervisor) ExtractShutdownWrapper() <-chan struct{} {
 	return done
 }
 
-func (supervisor *Supervisor) Provision(functionInstance int) {
+func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 	supervisor.Event(StartProvision)
 	defer supervisor.Event(EndProvision)
 
@@ -265,62 +267,53 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 	supervisor.threadMutex.Lock()
 	defer supervisor.threadMutex.Unlock()
 
-	var from *duplex.ManagedChannel = nil
-	var fromIdx int = -1
-	var quit chan bool = nil
-	if supervisor.Pipeline.Functions[functionInstance].From != "" {
-		for i, c := range supervisor.channels {
-			if c.Name == supervisor.Pipeline.Functions[functionInstance].From {
-				from = c
-				fromIdx = i
+	go func(supervisor *Supervisor, function *pipeline.Function) {
 
-				// create a new channel to tell this function to stop listening for data
-				quit = make(chan bool)
-				supervisor.quit[i] = quit
-				return
-			}
-		}
-	}
+		if (function.From == nil) && (function.To != nil) {
+			// the function is a STARTING NODE of the Pipeline if no data is being received
 
-	var to *duplex.ManagedChannel = nil
-	var toIdx int = -1
-	if supervisor.Pipeline.Functions[functionInstance].To != "" {
-		for i, c := range supervisor.channels {
-			if c.Name == supervisor.Pipeline.Functions[functionInstance].To {
-				to = c
-				toIdx = i
-				return
-			}
-		}
-	}
-
-	go func(supervisor *Supervisor, from *duplex.ManagedChannel, fromIdx int, to *duplex.ManagedChannel, toIdx int, quit chan bool) {
-
-		if (from == nil) && (to != nil) {
-			// the function is a STARTING NODE of the pipeline if no data is being received
 			defer func() {
 				if r := recover(); r != nil {
 					log.Println(r)
 					log.Println("cluster.Extract function raised error")
-					to.ProducerDone()
+					function.To.Value.ProducerDone()
 					supervisor.waitGroup.Done()
 				}
 			}()
 
-			select {
-			case <-supervisor.ExtractWrapper(supervisor.functions[functionInstance], to):
-				break
-			case <-supervisor.ExtractShutdownWrapper():
-				fmt.Println("shutdown caused extract to finish early")
-				break
+			function.To.Value.AddProducer()
+
+			// TODO : reword
+			// if the producer function has output, then don't worry about spawning a wrapper,
+			// allow the function to return normally and send the data along the pipe
+
+			if reflect.TypeOf(function.Value).NumOut() > 0 {
+
+				output := reflect.ValueOf(function.Value).Call([]reflect.Value{})
+				function.To.Value.Push(output)
+
+			} else {
+
+				select {
+				case <-supervisor.ExtractWrapper(function.Value, function.To.Value):
+					break
+				case <-supervisor.ExtractShutdownWrapper():
+					fmt.Println("shutdown caused extract to finish early")
+					break
+				}
 			}
 
 			// if the number of producers is 0, the ET channel will close that
 			// allows the Transform goroutines to terminate once they have
 			// completed processing all of their data
-			to.ProducerDone()
-		} else if (from != nil) && (to == nil) {
-			// the function is an ENDPOINT NODE of the pipeline if no data is being sent
+			function.To.Value.ProducerDone()
+		} else if (function.From != nil) && (function.To == nil) {
+			// the function is an ENDPOINT NODE of the Pipeline if no data is being sent
+
+			quit := make(chan bool)
+			function.Mutex.Lock()
+			function.Quit = append(function.Quit, quit)
+			function.Mutex.Unlock()
 
 			defer func() {
 				if r := recover(); r != nil {
@@ -330,27 +323,35 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 				}
 			}()
 
-			//aggregatedData := make([]any, 0)
+			queuedRequests := make([]reflect.Value, 0)
 			closeChan := false
 
 			for {
 				select {
-				case request := <-from.GetChannel():
+				case request := <-function.From.Value.GetChannel():
 					{
 						if request.IsInvalid() {
 							closeChan = true
 							break
 						}
 
-						supervisor.mutexes[fromIdx].Lock()
-						supervisor.Stats.Pipes[fromIdx].Pulled++
-						supervisor.mutexes[fromIdx].Unlock()
+						function.From.Mutex.Lock()
+						function.From.Stats.Pulled++
+						function.From.Mutex.Unlock()
 
 						// associates a TimeOut to the data being removed from the channel and decrements
 						// the data counter for the current pipe
-						from.DataPopped(request.In)
+						function.From.Value.DataPopped(request.In)
 
-						reflect.ValueOf(supervisor.functions[functionInstance]).Call(request.Data)
+						// what: the developer has an option to wait for all the data to be received by a
+						// channel before processing that data.
+						//
+						// why: we may need a bulk set of data before being able to do anything
+						if function.Config.WaitBefore {
+							queuedRequests = append(queuedRequests, request.Data[0])
+						} else {
+							reflect.ValueOf(function.Value).Call(request.Data)
+						}
 					}
 				case <-quit:
 					{
@@ -359,25 +360,39 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 				}
 
 				if closeChan {
+
+					// if we were waiting for the channel to close before transforming the data,
+					// call the function now that the channel is closed
+					if function.Config.WaitBefore {
+						reflect.ValueOf(function.Value).Call(queuedRequests)
+					}
+
 					break
 				}
 			}
-		} else if (from != nil) && (to != nil) {
+		} else if (function.From != nil) && (function.To != nil) {
 			defer func() {
 				if r := recover(); r != nil {
 					log.Println("cluster.Transform function raised error")
 					log.Println(r)
-					to.ProducerDone()
+					function.To.Value.ProducerDone()
 					supervisor.waitGroup.Done()
 				}
 			}()
 
-			to.AddProducer()
+			quit := make(chan bool)
+			function.Mutex.Lock()
+			function.Quit = append(function.Quit, quit)
+			function.Mutex.Unlock()
+
+			function.To.Value.AddProducer()
+
+			queuedRequests := make([]reflect.Value, 0)
 			closeChan := false
 
 			for {
 				select {
-				case request := <-from.GetChannel():
+				case request := <-function.From.Value.GetChannel():
 					{
 						// sometimes we are receiving bad data?
 						if request.IsInvalid() {
@@ -387,20 +402,28 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 
 						// associates a TimeOut to the data being removed from the channel and decrements
 						// the data counter for the current pipe
-						from.DataPopped(request.In)
+						function.From.Value.DataPopped(request.In)
 
-						supervisor.mutexes[fromIdx].Lock()
-						supervisor.Stats.Pipes[fromIdx].Pulled++
-						supervisor.mutexes[fromIdx].Unlock()
+						function.From.Mutex.Lock()
+						function.From.Stats.Pulled++
+						function.From.Mutex.Unlock()
 
-						results := reflect.ValueOf(supervisor.functions[functionInstance]).Call(request.Data)
-						// TODO : fix add dropping values that are bad
+						// what: the developer has an option to wait for all the data to be received by a
+						// channel before processing that data.
+						//
+						// why: we may need a bulk set of data before being able to do anything
+						if function.Config.WaitBefore {
+							queuedRequests = append(queuedRequests, request.Data[0])
+						} else {
+							results := reflect.ValueOf(function.Value).Call(request.Data)
+							// TODO : fix add dropping values that are bad
 
-						supervisor.mutexes[toIdx].Lock()
-						supervisor.Stats.Pipes[toIdx].Pushed++
-						supervisor.mutexes[toIdx].Unlock()
+							function.To.Mutex.Lock()
+							function.To.Stats.Pushed++
+							function.To.Mutex.Unlock()
 
-						to.Push(results)
+							function.To.Value.Push(results)
+						}
 					}
 				case <-quit:
 					{
@@ -409,6 +432,19 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 				}
 
 				if closeChan {
+
+					// if we were waiting for the channel to close before transforming the data,
+					// call the function now that the channel is closed
+					if function.Config.WaitBefore {
+						results := reflect.ValueOf(function.Value).Call(queuedRequests)
+						// TODO : fix add dropping values that are bad
+
+						function.To.Mutex.Lock()
+						function.To.Stats.Pushed++
+						function.To.Mutex.Unlock()
+
+						function.To.Value.Push(results)
+					}
 					break
 				}
 			}
@@ -416,7 +452,7 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 			// if the number of producers is 0, the TL channel will close that
 			// allows the Load goroutines to terminate once they have
 			// completed processing all of their data
-			to.ProducerDone()
+			function.To.Value.ProducerDone()
 		} else {
 			// todo: clean up
 			fmt.Println("not good")
@@ -424,40 +460,22 @@ func (supervisor *Supervisor) Provision(functionInstance int) {
 
 		// notify the wait group a process has completed ~ if all are finished we close the monitor
 		supervisor.waitGroup.Done()
-	}(supervisor, from, fromIdx, to, toIdx, quit)
+	}(supervisor, function)
 
 	// a new function is provisioned
 	// we should inform the wait group that the runner isn't finished until the wg is done
 	supervisor.waitGroup.Add(1)
 }
 
-func (supervisor *Supervisor) RemoveProducerFrom(chanInstance int) {
+func (supervisor *Supervisor) Remove(function *pipeline.Function) {
 
-	// TODO : support
-	//switch segment {
-	//case Transform:
-	//	{
-	//		if supervisor.ActiveTRoutines <= 0 {
-	//			panic("attempting to quitE when no transform functions are running")
-	//		}
-	//		quit := supervisor.quitT[0]
-	//		supervisor.quitT = supervisor.quitT[1:]
-	//		quit <- true
-	//	}
-	//case Load:
-	//	{
-	//		if supervisor.ActiveLRoutines <= 0 {
-	//			panic("attempting to quite when no load functions are running")
-	//		}
-	//		quit := supervisor.quitL[0]
-	//		supervisor.quitL = supervisor.quitL[1:]
-	//		quit <- true
-	//	}
-	//default:
-	//	{
-	//		panic("removing invalid cluster function type")
-	//	}
-	//}
+	if function.Stats.Active <= 0 {
+		panic("attempting to quit when no functions are running")
+	}
+
+	quit := function.Quit[0]
+	function.Quit = function.Quit[1:]
+	quit <- true
 }
 
 func (supervisor *Supervisor) Deletable() bool {
@@ -472,7 +490,8 @@ func (supervisor *Supervisor) Deletable() bool {
 
 func (supervisor *Supervisor) Print() {
 	fmt.Printf("Id: %d\n", supervisor.Id)
-	fmt.Printf("Function: %s\n", supervisor.Pipeline.Identifier)
+	// TODO : fix
+	//fmt.Printf("Function: %s\n", supervisor.Pipeline)
 }
 
 func (status Status) ToString() string {

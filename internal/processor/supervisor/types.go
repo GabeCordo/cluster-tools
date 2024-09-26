@@ -1,10 +1,9 @@
 package supervisor
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	pipeline_cfg "github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
-	"reflect"
+	"github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
 	"sync"
 	"time"
 )
@@ -96,21 +95,27 @@ const MaximumRoutinesPerSupervisor = 2000
 type Supervisor struct {
 	Id uint64 `json:"id"`
 
-	Pipeline *pipeline.Pipeline    `json:"common"`
-	Stats    *statistic.Statistics `json:"stats"`
-	State    Status                `json:"status"`
+	//Pipeline *Pipeline.Pipeline    `json:"common"`
+
+	//Stats    *statistic.Statistics `json:"stats"`
+
+	State Status `json:"status"`
 	//Mode      cluster.OnCrash       `json:"on-crash"`
 	StartTime time.Time `json:"quitE-time"`
 
-	//Metadata cluster.M `json:"meta-data"`
+	Pipeline *pipeline.Pipeline
+
+	metadata map[string]string
+
+	//metadata cluster.M `json:"meta-data"`
 	//helper   cluster.H
 
 	functions []any // initialized in new
-	active    []int // ?
+	//active    []int // ?
 
-	mutexes  []sync.Mutex             // ?
-	quit     []chan bool              // ?
-	channels []*duplex.ManagedChannel // initialized in new
+	//mutexes  []sync.Mutex             // ?
+	//quit     []chan bool              // ?
+	//channels []*duplex.ManagedChannel // initialized in new
 
 	loadWaitGroup sync.WaitGroup
 	waitGroup     sync.WaitGroup
@@ -118,7 +123,7 @@ type Supervisor struct {
 	mutex         sync.RWMutex
 }
 
-func New(pipeline *pipeline.Pipeline, functions []any, metadata map[string]string) *Supervisor {
+func New(config *pipeline_cfg.Pipeline, functions []any, metadata map[string]string) *Supervisor {
 	supervisor := new(Supervisor)
 
 	/**
@@ -131,49 +136,10 @@ func New(pipeline *pipeline.Pipeline, functions []any, metadata map[string]strin
 	supervisor.State = UnTouched
 
 	supervisor.functions = functions
-	supervisor.Pipeline = pipeline
+	supervisor.Pipeline = pipeline.New(config, functions)
+	supervisor.metadata = metadata
 
-	// todo : this mem allocation should not be here
-	supervisor.Stats = statistic.NewStatistics(len(pipeline.Functions), len(pipeline.Pipes))
-
-	supervisor.quit = make([]chan bool, len(pipeline.Pipes))
-	supervisor.mutexes = make([]sync.Mutex, len(pipeline.Pipes))
-
-	for i, channel := range pipeline.Pipes {
-		c := duplex.New(channel.Identifier, channel.Threshold, channel.GrowthFactor, &supervisor.Stats.Pipes[i].Timing)
-		supervisor.channels = append(supervisor.channels, c)
-	}
-
-	for i, fConfig := range pipeline.Functions {
-
-		// get the function implementation that the pipeline is referring to
-		function := supervisor.functions[i]
-
-		// if the 'to' field is not empty, we expect to send data from the function
-		if fConfig.To != "" {
-
-			var pipe *duplex.ManagedChannel = nil
-			for _, pConfig := range supervisor.channels {
-				if pConfig.Name == fConfig.To {
-					pipe = pConfig
-					break
-				}
-			}
-
-			if pipe == nil {
-				panic("function sending data to unknown pipe")
-			}
-
-			// get the type the function is outputting
-			fReflection := reflect.TypeOf(function)
-			numIn := fReflection.NumOut()
-			if numIn > 2 {
-				panic("the framework only supports two output values")
-			} else if (numIn > 1) && fReflection.Out(1).Kind() == reflect.Bool {
-				panic("second output must be a bool to indicate whether the record should be dropped or not")
-			}
-		}
-	}
+	// TODO : Pipeline creation
 
 	// TODO : future?
 	//if helper != nil {
@@ -184,9 +150,9 @@ func New(pipeline *pipeline.Pipeline, functions []any, metadata map[string]strin
 	//}
 	//
 	//if metadata != nil {
-	//	supervisor.Metadata = NewMetadata(metadata)
+	//	supervisor.metadata = NewMetadata(metadata)
 	//} else {
-	//	supervisor.Metadata = NewMetadata(nil)
+	//	supervisor.metadata = NewMetadata(nil)
 	//}
 
 	return supervisor
