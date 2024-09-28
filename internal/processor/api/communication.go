@@ -1,10 +1,8 @@
-package interfaces
+package api
 
 import (
-	"encoding/json"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"net/http"
 )
 
 type HTTPRequest struct {
@@ -57,17 +55,4 @@ type HTTPLogRequest struct {
 
 type HTTPCacheRequest struct {
 	Data any `json:"data"`
-}
-
-type Response struct {
-	Success     bool   `json:"success"`
-	Description string `json:"description"`
-	Data        any    `json:"data"`
-}
-
-func GetRequest(r *http.Request) (request *HTTPRequest, err error) {
-	request = &HTTPRequest{}
-	err = json.NewDecoder(r.Body).Decode(request)
-
-	return request, err
 }

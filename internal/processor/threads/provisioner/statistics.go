@@ -1,7 +1,7 @@
 package provisioner
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 )
 
 func (thread *Thread) getStatistics() []*pipeline.Pipeline {

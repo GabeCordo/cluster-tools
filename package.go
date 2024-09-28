@@ -3,19 +3,27 @@ package cluster_tools
 import (
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/cluster-tools/internal/processor/api"
-	provisioner_cmp "github.com/GabeCordo/cluster-tools/internal/processor/provisioner"
+	"github.com/GabeCordo/cluster-tools/internal/processor/config"
+	provisioner_cmp "github.com/GabeCordo/cluster-tools/internal/processor/provision"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads/http"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads/provisioner"
 	"github.com/GabeCordo/toolchain/logging"
+	"gopkg.in/yaml.v3"
+	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
 )
+
+const ClusterToolsConfigEnvVar = "CTOOLS_CONFIG"
+const ClusterToolsDeploymentsEnvVar = "CTOOLS_DEPLOYMENTS"
 
 type State uint8
 
@@ -42,60 +50,6 @@ func (module Thread) ToString() string {
 	default:
 		return "-"
 	}
-}
-
-type NetworkConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
-}
-
-type Config struct {
-	Name              string  `yaml:"name"`
-	Debug             bool    `yaml:"debug"`
-	StandaloneMode    bool    `yaml:"standalone"`
-	ReplMode          bool    `yaml:"repl"`
-	StatsMode         bool    `yaml:"stats"`
-	Timeout           float64 `yaml:"timeout"`
-	Core              string  `yaml:"core"`
-	MaxAttemptsToCore int     `yaml:"max_attempts_to_core"`
-	Net               struct {
-		External NetworkConfig `yaml:"external"`
-		Internal NetworkConfig `yaml:"internal"`
-	} `yaml:"net"`
-}
-
-func NewConfig(name string) *Config {
-	config := new(Config)
-	config.Name = name
-	config.Net.External.Host = "localhost"
-	config.Net.External.Port = 5023
-	config.Net.Internal.Host = "localhost"
-	config.Net.Internal.Port = 5023
-	config.MaxAttemptsToCore = 10
-	config.Core = "http://localhost:8137"
-	config.StandaloneMode = true
-	config.StatsMode = true
-	config.ReplMode = false
-	config.Timeout = 2.0
-	config.Debug = true
-	return config
-}
-
-func (config Config) FillHttpConfig(to *http.Config) {
-	to.Debug = &config.Debug
-	to.Timeout = &config.Timeout
-	to.Standalone = &config.StandaloneMode
-	to.Core = &config.Core
-	to.ExternalNet = processor.Config{Host: config.Net.External.Host, Port: config.Net.External.Port}
-	to.Net = fmt.Sprintf("%s:%d", config.Net.Internal.Host, config.Net.Internal.Port)
-}
-
-func (config Config) FillProvisionerConfig(to *provisioner.Config) {
-	to.Debug = &config.Debug
-	to.Timeout = &config.Timeout
-	to.Standalone = &config.StandaloneMode
-	to.Core = &config.Core
-	to.Processor = processor.Config{Host: config.Net.External.Host, Port: config.Net.External.Port}
 }
 
 type Function struct {
@@ -142,22 +96,45 @@ type Processor struct {
 
 	provisioner *provisioner_cmp.Provisioner
 
-	config *Config
+	config *config.Config
 	logger *logging.Logger
 
 	modules map[string]*Module
 	mutex   sync.RWMutex
 }
 
-func New(cfg ...*Config) (*Processor, error) {
+func New() (*Processor, error) {
 	instance := new(Processor)
 
-	if len(cfg) == 0 {
-		instance.config = NewConfig("temp")
-	} else if cfg[0] != nil {
-		instance.config = cfg[0]
+	var err error
+	if configPath := os.Getenv(ClusterToolsConfigEnvVar); configPath != "" {
+		instance.config, err = config.Load(configPath)
+		if err != nil {
+			panic(err)
+		}
 	} else {
-		panic(errors.New("the pipeline passed to processor.New cannot be nil"))
+		ex, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		workingDir := filepath.Dir(ex)
+
+		// the executable is in the same folder as the config file
+		instance.config, err = config.Load(workingDir + "/processor.toml")
+
+		// the executable is in the /bin or /cmd folder
+		if err != nil {
+			instance.config, err = config.Load(workingDir + "/../processor.toml")
+		}
+
+		// the executable is in the /cmd/binary-name folder
+		if err != nil {
+			instance.config, err = config.Load(workingDir + "/../../processor.toml")
+		}
+
+		if err != nil {
+			panic("cannot find a processor.toml file in any of the expected directories")
+		}
 	}
 
 	instance.channels.interrupt = make(chan threads.InterruptEvent, 1)
@@ -166,7 +143,7 @@ func New(cfg ...*Config) (*Processor, error) {
 
 	httpConfig := &http.Config{}
 	instance.config.FillHttpConfig(httpConfig)
-	httpLogger, err := logging.NewLogger(HttpProcessor.ToString(), &instance.config.Debug)
+	httpLogger, err := logging.NewLogger(HttpProcessor.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +152,7 @@ func New(cfg ...*Config) (*Processor, error) {
 
 	provisionerConfig := &provisioner.Config{}
 	instance.config.FillProvisionerConfig(provisionerConfig)
-	provisionerLogger, err := logging.NewLogger(Provisioner.ToString(), &instance.config.Debug)
+	provisionerLogger, err := logging.NewLogger(Provisioner.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +165,7 @@ func New(cfg ...*Config) (*Processor, error) {
 		return nil, err
 	}
 
-	processorLogger, err := logging.NewLogger(Undefined.ToString(), &instance.config.Debug)
+	processorLogger, err := logging.NewLogger(Undefined.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -244,16 +221,83 @@ func (p *Processor) Run() {
 	}
 
 	p.threads.provisioner.Setup()
-	if p.config.Debug {
+	if p.config.Processor.Debug {
 		p.logger.Println("started modules thread")
 	}
 	go p.threads.provisioner.Start()
 
 	p.threads.http.Setup()
-	if p.config.Debug {
+	if p.config.Processor.Debug {
 		p.logger.Println("started http processor thread")
 	}
 	go p.threads.http.Start()
+
+	// check if the config has a default pipeline to run on start
+
+	if p.config.Processor.Pipeline.Default != "" {
+
+		deploymentsDir := os.Getenv(ClusterToolsDeploymentsEnvVar)
+
+		var err error
+		if deploymentsDir != "" {
+
+			if f, err := os.Stat(ClusterToolsDeploymentsEnvVar); err != nil || !f.IsDir() {
+				panic("cannot find deployments directory")
+			}
+
+			pipelineFile := ClusterToolsDeploymentsEnvVar + "/" + p.config.Processor.Pipeline.Default + ".yml"
+			if _, err := os.Stat(pipelineFile); err != nil {
+				panic("no pipeline exists with that default identifier")
+			}
+
+			p.config, err = config.Load(pipelineFile)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+
+			ex, err := os.Executable()
+			if err != nil {
+				panic(err)
+			}
+			workingDir := filepath.Dir(ex)
+
+			fileName := fmt.Sprintf("/deployments/%s.yml", p.config.Processor.Pipeline.Default)
+
+			// the executable is in the same folder as the config file
+			f, err := os.Open(workingDir + fileName)
+
+			// the executable is in the /bin or /cmd folder
+			if err != nil {
+				f, err = os.Open(workingDir + "/.." + fileName)
+			}
+
+			// the executable is in the /cmd/binary-name folder
+			if err != nil {
+				f, err = os.Open(workingDir + "/../.." + fileName)
+			}
+
+			if err != nil {
+				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", f))
+			}
+
+			wrapper := &struct {
+				Pipeline *pipeline.Pipeline `yaml:"pipeline"`
+			}{}
+
+			if err = yaml.NewDecoder(f).Decode(wrapper); err != nil {
+				log.Println("the default pipeline file is corrupted")
+			}
+
+			p.channels.c1 <- threads.ProvisionerRequest{
+				Action:     threads.ProvisionerRunCreate,
+				Namespace:  "common",
+				Supervisor: 0,
+				Pipeline:   wrapper.Pipeline,
+				Metadata:   make(map[string]string),
+			}
+		}
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
@@ -274,12 +318,12 @@ func (p *Processor) Run() {
 	p.logger.SetColour(logging.Red)
 
 	p.threads.http.Teardown()
-	if p.config.Debug {
+	if p.config.Processor.Debug {
 		p.logger.Println("http processor thread shutdown")
 	}
 
 	p.threads.provisioner.Teardown()
-	if p.config.Debug {
+	if p.config.Processor.Debug {
 		p.logger.Println("modules thread shutdown")
 	}
 }
@@ -290,20 +334,20 @@ func (p *Processor) Connect(host string) error {
 		return nil
 	}
 
-	p.config.Core = host
+	p.config.Core.Host = host
 
 	cfg := &processor.Config{Host: p.config.Net.External.Host, Port: p.config.Net.External.Port}
 
 	// attempt to connect to the core 10 times before crashing the processor
-	for i := 0; i < p.config.MaxAttemptsToCore; i++ {
+	for i := 0; i < p.config.Core.Attempts; i++ {
 
-		err := api.ConnectToCore(p.config.Core, cfg)
+		err := api.ConnectToCore(p.config.Core.Host, cfg)
 		if err == nil {
 			p.logger.Printf("connected to a new core at %s\n", p.config.Core)
 			break
 		} else {
 			p.logger.Alertf("failed to connect to the core at %s\n", p.config.Core)
-			if i == (p.config.MaxAttemptsToCore - 1) {
+			if i == (p.config.Core.Attempts - 1) {
 				return errors.New("max attempts to connect to core exceeded")
 			} else {
 				p.logger.Alertf("attempt to connect attempt %d...\n", i+1)
@@ -326,7 +370,7 @@ func (p *Processor) Disconnect() error {
 	cfg := &processor.Config{Host: p.config.Net.External.Host, Port: p.config.Net.External.Port}
 
 	defer func() {
-		err := api.DisconnectFromCore(p.config.Core, cfg)
+		err := api.DisconnectFromCore(p.config.Core.Host, cfg)
 		if err == nil {
 			p.logger.Printf("disconnected from the core at %s\n", p.config.Core)
 		} else {
@@ -343,5 +387,5 @@ func (p *Processor) Disconnect() error {
 
 func (p *Processor) Debug(debug bool) {
 
-	p.config.Debug = debug
+	p.config.Processor.Debug = debug
 }

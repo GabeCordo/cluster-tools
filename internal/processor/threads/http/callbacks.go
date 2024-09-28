@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/processor/api"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
@@ -60,7 +59,7 @@ func (thread *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	response := interfaces.Response{Success: err == nil}
+	response := api.Response{Success: err == nil}
 	if err != nil {
 		response.Description = err.Error()
 	}
@@ -102,7 +101,7 @@ func (thread *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	response := interfaces.Response{Success: true}
+	response := api.Response{Success: true}
 
 	if request.Action == "shutdown" {
 		threads.ShutdownCore(thread.Interrupt)
@@ -134,7 +133,7 @@ func (thread *Thread) getGateCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := interfaces.Response{Success: true, Data: *thread.Config.Core}
+	response := api.Response{Success: true, Data: *thread.Config.Core}
 	json.NewEncoder(w).Encode(response)
 }
 

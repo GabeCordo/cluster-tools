@@ -47,6 +47,9 @@ type Pipeline struct {
 	Channels  []*Channel  `json:"-"`
 	Functions []*Function `json:"-"`
 
+	OnStartup  *Function
+	OnTeardown *Function
+
 	Stats *statistic.Statistics
 
 	Mutex sync.RWMutex `json:"-"`
@@ -108,6 +111,14 @@ func New(config *pipeline.Pipeline, functions []any) *Pipeline {
 
 		if function.From == nil {
 			instance.Roots = append(instance.Tails, function)
+		}
+
+		if function.Identifier == config.OnStartup {
+			instance.OnStartup = function
+		}
+
+		if function.Identifier == config.OnTeardown {
+			instance.OnTeardown = function
 		}
 
 		instance.Functions[i] = function

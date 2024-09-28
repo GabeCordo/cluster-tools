@@ -2,7 +2,7 @@ package threads
 
 import (
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	pipeline_component "github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
+	pipeline_component "github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
 )

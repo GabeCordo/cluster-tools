@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	http2 "github.com/GabeCordo/cluster-tools/internal/processor/api"
 	"net/http"
 )
 
@@ -16,10 +16,10 @@ func Gateway() (string, error) {
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("http status %d", rsp.StatusCode)
+		return "", nil
 	}
 
-	r := interfaces.Response{}
+	r := http2.Response{}
 	err = json.NewDecoder(rsp.Body).Decode(&r)
 	if err != nil {
 		return "", err

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"net/http"
 	"strconv"
 	"time"
@@ -40,7 +39,7 @@ func ConnectToCore(host string, config *processor.Config) error {
 		return errors.New(output)
 	}
 
-	response := &interfaces.Response{}
+	response := &Response{}
 	json.NewDecoder(rsp.Body).Decode(response)
 
 	if response.Success == false {
@@ -77,7 +76,7 @@ func DisconnectFromCore(host string, config *processor.Config) error {
 		return errors.New("unexpected response code")
 	}
 
-	response := &interfaces.Response{}
+	response := &Response{}
 	json.NewDecoder(rsp.Body).Decode(response)
 
 	if response.Success == false {

@@ -3,7 +3,7 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/processor/provisioner"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provision"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"sync"
@@ -29,7 +29,7 @@ type Thread struct {
 
 	logger *logging.Logger
 
-	provisioner *provisioner.Provisioner
+	provisioner *provision.Provisioner
 
 	requestBacklog         []threads.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
 	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
@@ -40,7 +40,7 @@ type Thread struct {
 	requestWg   sync.WaitGroup
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, provisioner *provisioner.Provisioner, channels ...interface{}) (*Thread, error) {
+func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provisioner, channels ...interface{}) (*Thread, error) {
 	instance := new(Thread)
 	var ok bool
 

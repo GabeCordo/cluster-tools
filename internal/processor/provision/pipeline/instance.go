@@ -1,12 +1,14 @@
-package supervisor
+package pipeline
 
 import (
 	"fmt"
+	pipeline_cfg "github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
+	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
 	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
-	"github.com/GabeCordo/cluster-tools/internal/processor/pipeline"
 	"log"
 	"os"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -17,7 +19,108 @@ const (
 	DefaultChannelGrowthFactor    = 2
 )
 
-func (supervisor *Supervisor) Event(event Event) bool {
+type Response struct {
+	Stats      *statistic.Statistics `json:"stats"`
+	LapsedTime time.Duration         `json:"lapsed-time"`
+	DidItCrash bool                  `json:"crashed"`
+}
+
+func NewResponse(statistics *statistic.Statistics, lapsedTime time.Duration, crashed bool) *Response {
+	response := new(Response)
+
+	response.Stats = statistics
+	response.LapsedTime = lapsedTime
+	response.DidItCrash = crashed
+
+	return response
+}
+
+type Status string
+
+const (
+	UnTouched    Status = "untouched"
+	Running             = "running"
+	Provisioning        = "provisioning"
+	Failed              = "failed"
+	Stopping            = "stopping"
+	Terminated          = "terminated"
+	Unknown             = "-"
+)
+
+type Event uint8
+
+const (
+	Startup Event = iota
+	StartProvision
+	EndProvision
+	Error
+	Suspend
+	TearedDown
+	StartReport
+	EndReport
+)
+
+const MaximumRoutinesPerSupervisor = 2000
+
+type Instance struct {
+	Id uint64 `json:"id"`
+
+	State     Status    `json:"status"`
+	StartTime time.Time `json:"quitE-time"`
+
+	Pipeline  *Pipeline
+	metadata  map[string]string
+	functions []any // initialized in new
+
+	loadWaitGroup sync.WaitGroup
+	waitGroup     sync.WaitGroup
+	threadMutex   sync.Mutex
+	mutex         sync.RWMutex
+}
+
+func NewInstance(config *pipeline_cfg.Pipeline, functions []any, metadata map[string]string) *Instance {
+	supervisor := new(Instance)
+
+	/**
+	 * Note: we may wish to dynamically modify the threshold and growth-factor rates
+	 *       used by the managed channels to vary how provisioning of new transform and
+	 *       load goroutines are created. This allows us to create an autonomous system
+	 *       that "self improves" if the output of the monitor is looped back
+	 */
+
+	supervisor.State = UnTouched
+
+	supervisor.functions = functions
+	supervisor.Pipeline = New(config, functions)
+	supervisor.metadata = metadata
+
+	// TODO : Pipeline creation
+
+	// TODO : future?
+	//if helper != nil {
+	//	supervisor.helper = helper
+	//} else {
+	//	// TODO : fix
+	//	panic("helper cannot be nil")
+	//}
+	//
+	//if metadata != nil {
+	//	supervisor.metadata = NewMetadata(metadata)
+	//} else {
+	//	supervisor.metadata = NewMetadata(nil)
+	//}
+
+	return supervisor
+}
+
+type Summary struct {
+	Namespace  string
+	Pipeline   string
+	Supervisor uint64
+	Statistics *statistic.Statistics
+}
+
+func (supervisor *Instance) Event(event Event) bool {
 	supervisor.mutex.Lock()
 	defer supervisor.mutex.Unlock()
 
@@ -64,7 +167,7 @@ func (supervisor *Supervisor) Event(event Event) bool {
 	return true // represents a boolean ~ hasStateChanged?
 }
 
-func (supervisor *Supervisor) IsAlive() bool {
+func (supervisor *Instance) IsAlive() bool {
 
 	supervisor.mutex.RLock()
 	defer supervisor.mutex.RUnlock()
@@ -72,7 +175,7 @@ func (supervisor *Supervisor) IsAlive() bool {
 	return (supervisor.State != Failed) && (supervisor.State != Terminated)
 }
 
-func (supervisor *Supervisor) Start() (response *Response) {
+func (supervisor *Instance) Start() (response *Response) {
 	supervisor.Event(Startup)
 
 	defer supervisor.Event(TearedDown)
@@ -90,6 +193,12 @@ func (supervisor *Supervisor) Start() (response *Response) {
 	}()
 
 	supervisor.StartTime = time.Now()
+
+	if supervisor.Pipeline.OnStartup != nil {
+		// TODO : add safety check here
+		f := reflect.ValueOf(supervisor.Pipeline.OnStartup.Value)
+		f.Call([]reflect.Value{})
+	}
 
 	//// add all the metadata passed to the pipeline to the local environment
 
@@ -137,16 +246,18 @@ func (supervisor *Supervisor) Start() (response *Response) {
 	return response
 }
 
-func (supervisor *Supervisor) Teardown() {
+func (supervisor *Instance) Teardown() {
 
-	//if sysFunc, ok := (supervisor.group).(SystemFunctions); ok {
-	//	sysFunc.Teardown(time.Now(), supervisor.helper)
-	//}
+	// TODO : add a guard in case this value is not a function
+	if supervisor.Pipeline.OnStartup != nil {
+		f := reflect.ValueOf(supervisor.Pipeline.OnTeardown.Value)
+		f.Call([]reflect.Value{})
+	}
 
 	supervisor.Event(Suspend)
 }
 
-func (supervisor *Supervisor) Runtime() {
+func (supervisor *Instance) Runtime() {
 	for {
 		if supervisor.State == Terminated {
 			break
@@ -197,7 +308,7 @@ func (supervisor *Supervisor) Runtime() {
 	}
 }
 
-func (supervisor *Supervisor) ExtractWrapper(function any, channel *duplex.ManagedChannel) <-chan struct{} {
+func (supervisor *Instance) ExtractWrapper(function any, channel *duplex.ManagedChannel) <-chan struct{} {
 	done := make(chan struct{})
 
 	// the function always finishes till completion unless a direct shutdown is called on the server
@@ -238,7 +349,7 @@ func (supervisor *Supervisor) ExtractWrapper(function any, channel *duplex.Manag
 	return done
 }
 
-func (supervisor *Supervisor) ExtractShutdownWrapper() <-chan struct{} {
+func (supervisor *Instance) ExtractShutdownWrapper() <-chan struct{} {
 	done := make(chan struct{})
 
 	// we need to create a separate goroutine otherwise it will block the current
@@ -258,7 +369,7 @@ func (supervisor *Supervisor) ExtractShutdownWrapper() <-chan struct{} {
 	return done
 }
 
-func (supervisor *Supervisor) Provision(function *pipeline.Function) {
+func (supervisor *Instance) Provision(function *Function) {
 	supervisor.Event(StartProvision)
 	defer supervisor.Event(EndProvision)
 
@@ -267,7 +378,7 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 	supervisor.threadMutex.Lock()
 	defer supervisor.threadMutex.Unlock()
 
-	go func(supervisor *Supervisor, function *pipeline.Function) {
+	go func(supervisor *Instance, function *Function) {
 
 		if (function.From == nil) && (function.To != nil) {
 			// the function is a STARTING NODE of the Pipeline if no data is being received
@@ -323,7 +434,15 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 				}
 			}()
 
-			queuedRequests := make([]reflect.Value, 0)
+			if function.Config.WaitBefore {
+
+			}
+
+			var queuedRequests reflect.Value
+			if function.Config.WaitBefore {
+				in := reflect.TypeOf(function.Value).In(0)
+				queuedRequests = reflect.MakeSlice(in, 0, 0)
+			}
 			closeChan := false
 
 			for {
@@ -348,7 +467,7 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 						//
 						// why: we may need a bulk set of data before being able to do anything
 						if function.Config.WaitBefore {
-							queuedRequests = append(queuedRequests, request.Data[0])
+							queuedRequests = reflect.Append(queuedRequests, request.Data[0])
 						} else {
 							reflect.ValueOf(function.Value).Call(request.Data)
 						}
@@ -364,7 +483,7 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 					// if we were waiting for the channel to close before transforming the data,
 					// call the function now that the channel is closed
 					if function.Config.WaitBefore {
-						reflect.ValueOf(function.Value).Call(queuedRequests)
+						reflect.ValueOf(function.Value).Call([]reflect.Value{queuedRequests})
 					}
 
 					break
@@ -387,7 +506,11 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 
 			function.To.Value.AddProducer()
 
-			queuedRequests := make([]reflect.Value, 0)
+			var queuedRequests reflect.Value
+			if function.Config.WaitBefore {
+				in := reflect.TypeOf(function.Value).In(0)
+				queuedRequests = reflect.MakeSlice(in, 0, 0)
+			}
 			closeChan := false
 
 			for {
@@ -413,7 +536,7 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 						//
 						// why: we may need a bulk set of data before being able to do anything
 						if function.Config.WaitBefore {
-							queuedRequests = append(queuedRequests, request.Data[0])
+							queuedRequests = reflect.Append(queuedRequests, request.Data[0])
 						} else {
 							results := reflect.ValueOf(function.Value).Call(request.Data)
 							// TODO : fix add dropping values that are bad
@@ -436,7 +559,7 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 					// if we were waiting for the channel to close before transforming the data,
 					// call the function now that the channel is closed
 					if function.Config.WaitBefore {
-						results := reflect.ValueOf(function.Value).Call(queuedRequests)
+						results := reflect.ValueOf(function.Value).Call([]reflect.Value{queuedRequests})
 						// TODO : fix add dropping values that are bad
 
 						function.To.Mutex.Lock()
@@ -467,7 +590,7 @@ func (supervisor *Supervisor) Provision(function *pipeline.Function) {
 	supervisor.waitGroup.Add(1)
 }
 
-func (supervisor *Supervisor) Remove(function *pipeline.Function) {
+func (supervisor *Instance) Remove(function *Function) {
 
 	if function.Stats.Active <= 0 {
 		panic("attempting to quit when no functions are running")
@@ -478,17 +601,17 @@ func (supervisor *Supervisor) Remove(function *pipeline.Function) {
 	quit <- true
 }
 
-func (supervisor *Supervisor) Deletable() bool {
+func (supervisor *Instance) Deletable() bool {
 	return (supervisor.State == Terminated) || (supervisor.State == Failed)
 }
 
-//func (supervisor *Supervisor) CalculateTiming() {
+//func (supervisor *Instance) CalculateTiming() {
 //
 //	supervisor.Stats.Data.TotalDropped = supervisor.Stats.Data.TotalOverETChannel - supervisor.Stats.Data.TotalOverTLChannel
 //	supervisor.Stats.CalculateTiming(supervisor.ETChannel.Statistics, supervisor.TLChannel.Statistics)
 //}
 
-func (supervisor *Supervisor) Print() {
+func (supervisor *Instance) Print() {
 	fmt.Printf("Id: %d\n", supervisor.Id)
 	// TODO : fix
 	//fmt.Printf("Function: %s\n", supervisor.Pipeline)

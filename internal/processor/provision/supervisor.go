@@ -1,4 +1,4 @@
-package interfaces
+package provision
 
 import (
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
@@ -40,8 +40,16 @@ type Run struct {
 	mutex sync.RWMutex
 }
 
+type LogLevel string
+
+const (
+	Normal LogLevel = "normal"
+	Warn            = "warn"
+	Fatal           = "fatal"
+)
+
 type Log struct {
 	Id      uint64
-	Level   HTTPLogLevel
+	Level   LogLevel
 	Message string
 }

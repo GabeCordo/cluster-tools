@@ -6,15 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provision"
 	"net/http"
 )
 
-func UpdateRun(host string, id uint64, status interfaces.RunStatus, stats *statistic.Statistics) error {
+func UpdateRun(host string, id uint64, status provision.RunStatus, stats *statistic.Statistics) error {
 
 	url := fmt.Sprintf("%s/run", host)
 
-	sup := interfaces.Run{
+	sup := provision.Run{
 		Id:         id,
 		Status:     status,
 		Statistics: stats,
@@ -72,7 +72,7 @@ func Cache(host string, key string, data string) (string, error) {
 		return "", errors.New("could not store in cache")
 	}
 
-	response := &interfaces.Response{}
+	response := &Response{}
 	err = json.NewDecoder(rsp.Body).Decode(response)
 	if err != nil {
 		return "", err
@@ -81,6 +81,8 @@ func Cache(host string, key string, data string) (string, error) {
 	return (response.Data).(string), err
 }
 
+// GetFromCache
+// deprecated
 func GetFromCache(host string, key string) (string, error) {
 
 	url := fmt.Sprintf("%s/cache", host)
@@ -106,55 +108,57 @@ func GetFromCache(host string, key string) (string, error) {
 		return "", errors.New("cache not found")
 	}
 
-	response := &interfaces.Response{}
+	response := &Response{}
 	json.NewDecoder(rsp.Body).Decode(response)
 
 	return (response.Data).(string), nil
 }
 
-func log(host string, id uint64, level interfaces.HTTPLogLevel, message string) error {
-
-	url := fmt.Sprintf("%s/log", host)
-
-	data := &interfaces.Log{Id: id, Level: level, Message: message}
-
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(data)
-
-	req, err := http.NewRequest(http.MethodPost, url, &buf)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	rsp, err := client.Do(req)
-
-	if err != nil {
-		return err
-	}
-	defer rsp.Body.Close()
-
-	if rsp.Status != "200 OK" {
-		return errors.New("was not able to send a log")
-	}
-
-	return nil
-}
-
-func Log(host string, id uint64, message string) error {
-
-	//return log(host, id, messenger.Normal, message)
-	return nil
-}
-
-func LogWarn(host string, id uint64, message string) error {
-
-	//return log(host, id, messenger.Warning, message)
-	return nil
-}
-
-func LogError(host string, id uint64, message string) error {
-
-	//return log(host, id, messenger.Fatal, message)
-	return nil
-}
+// TODO: future
+//
+//func log(host string, id uint64, level http2.HTTPLogLevel, message string) error {
+//
+//	url := fmt.Sprintf("%s/log", host)
+//
+//	data := &provision.Log{Id: id, Level: level, Message: message}
+//
+//	var buf bytes.Buffer
+//	json.NewEncoder(&buf).Encode(data)
+//
+//	req, err := http.NewRequest(http.MethodPost, url, &buf)
+//	if err != nil {
+//		return err
+//	}
+//	req.Header.Add("Content-Type", "application/json")
+//
+//	rsp, err := client.Do(req)
+//
+//	if err != nil {
+//		return err
+//	}
+//	defer rsp.Body.Close()
+//
+//	if rsp.Status != "200 OK" {
+//		return errors.New("was not able to send a log")
+//	}
+//
+//	return nil
+//}
+//
+//func Log(host string, id uint64, message string) error {
+//
+//	//return log(host, id, messenger.Normal, message)
+//	return nil
+//}
+//
+//func LogWarn(host string, id uint64, message string) error {
+//
+//	//return log(host, id, messenger.Warning, message)
+//	return nil
+//}
+//
+//func LogError(host string, id uint64, message string) error {
+//
+//	//return log(host, id, messenger.Fatal, message)
+//	return nil
+//}

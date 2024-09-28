@@ -1,10 +1,10 @@
-package provisioner
+package provision
 
 import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	pipeline2 "github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 	"math"
 	"sync"
 )
@@ -16,7 +16,7 @@ const (
 type Provisioner struct {
 	Modules map[string]*Module
 
-	Supervisors            map[uint64]*supervisor.Supervisor
+	Supervisors            map[uint64]*pipeline2.Instance
 	numOfActiveSupervisors uint64
 
 	idReference uint64
@@ -28,7 +28,7 @@ func New() *Provisioner {
 	provisioner := new(Provisioner)
 
 	provisioner.Modules = make(map[string]*Module)
-	provisioner.Supervisors = make(map[uint64]*supervisor.Supervisor)
+	provisioner.Supervisors = make(map[uint64]*pipeline2.Instance)
 
 	// TODO : I don't like this
 	//defaultFrameworkModule := new(Module)
@@ -118,7 +118,7 @@ func (provisioner *Provisioner) SupervisorExists(id uint64) bool {
 	return found
 }
 
-func (provisioner *Provisioner) CreateSupervisor(namespace string, identifier uint64, metadata map[string]string, core string, pipeline *pipeline.Pipeline) (*supervisor.Supervisor, error) {
+func (provisioner *Provisioner) CreateSupervisor(namespace string, identifier uint64, metadata map[string]string, core string, pipeline *pipeline.Pipeline) (*pipeline2.Instance, error) {
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
@@ -143,8 +143,8 @@ func (provisioner *Provisioner) CreateSupervisor(namespace string, identifier ui
 		functions[i] = functionWrapper.Value
 	}
 
-	var s *supervisor.Supervisor
-	s = supervisor.New(pipeline, functions, metadata)
+	var s *pipeline2.Instance
+	s = pipeline2.NewInstance(pipeline, functions, metadata)
 	s.Id = identifier
 
 	provisioner.numOfActiveSupervisors++
@@ -177,7 +177,7 @@ func (provisioner *Provisioner) DeleteSupervisor(id uint64) (deleted, found bool
 	return deleted, found
 }
 
-func (provisioner *Provisioner) GetSupervisor(id uint64) (*supervisor.Supervisor, bool) {
+func (provisioner *Provisioner) GetSupervisor(id uint64) (*pipeline2.Instance, bool) {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
@@ -188,11 +188,11 @@ func (provisioner *Provisioner) GetSupervisor(id uint64) (*supervisor.Supervisor
 	}
 }
 
-func (provisioner *Provisioner) GetSupervisors() []*supervisor.Supervisor {
+func (provisioner *Provisioner) GetSupervisors() []*pipeline2.Instance {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	supervisors := make([]*supervisor.Supervisor, 0)
+	supervisors := make([]*pipeline2.Instance, 0)
 
 	for _, s := range provisioner.Supervisors {
 		supervisors = append(supervisors, s)

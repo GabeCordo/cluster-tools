@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
 	"net/http"
 	"strconv"
 )
@@ -15,10 +14,10 @@ func CreateModule(host string, processor *processor.Config, config *processor.Mo
 
 	url := fmt.Sprintf("%s/module", host)
 
-	request := &interfaces.HTTPRequest{
+	request := &HTTPRequest{
 		Host: processor.Host,
 		Port: processor.Port,
-		Module: interfaces.HTTPModuleRequest{
+		Module: HTTPModuleRequest{
 			Name:   config.Name,
 			Config: *config,
 			Mount:  config.StaticMount,
@@ -48,7 +47,7 @@ func CreateModule(host string, processor *processor.Config, config *processor.Mo
 		return errors.New("unexpected response code")
 	}
 
-	response := &interfaces.Response{}
+	response := &Response{}
 	json.NewDecoder(rsp.Body).Decode(response)
 
 	if !response.Success {
@@ -85,7 +84,7 @@ func DeleteModule(host string, processor *processor.Config, module *processor.Mo
 		return errors.New("unexpected response code")
 	}
 
-	response := &interfaces.Response{}
+	response := &Response{}
 	json.NewDecoder(rsp.Body).Decode(response)
 
 	if response.Success == false {

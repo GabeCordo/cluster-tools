@@ -3,14 +3,14 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/cluster-tools/internal/processor/api"
-	"github.com/GabeCordo/cluster-tools/internal/processor/interfaces"
-	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provision"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"time"
 )
 
-func (thread *Thread) getSupervisor() []*interfaces.Run {
+func (thread *Thread) getSupervisor() []*provision.Run {
 
 	return nil
 }
@@ -49,14 +49,14 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 	}
 
 	thread.logger.Printf("%s[%s]%s Pipeline Running (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
-	go func(supervisorInstance *supervisor.Supervisor) {
+	go func(supervisorInstance *pipeline.Instance) {
 
 		// block until the runner completes
 		response := supervisorInstance.Start()
 		// TODO : should we send the response instead?
 
 		if !*thread.Config.Standalone {
-			api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, interfaces.RunStatus(supervisorInstance.State), response.Stats)
+			api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), response.Stats)
 		}
 
 		// provide the console with output indicating that the cluster has completed
@@ -89,17 +89,6 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		//if !clusterWrapper.IsStream() {
 		thread.DecrementActiveSupervisors()
 		thread.requestWg.Done()
-
-		// if the processor is running in standalone mode there are two forms of compute that can exist:
-		//	1. stream clusters that will statistic till the processes is asked to terminate with SIGINT
-		//		~ the # of stream clusters present is represented by numOfActiveSupervisors
-		//	2. clusters invoked through the commandline which would have completed at this point
-		//
-		// if we are in standalone mode and there are no active supervisors, no additional compute
-		// will be performed on the processor, and we can shut down the threads
-		if *thread.Config.Standalone && (thread.numOfActiveSupervisors == 0) {
-			thread.Interrupt <- threads.Shutdown
-		}
 	}(supervisorInstance)
 
 	return nil

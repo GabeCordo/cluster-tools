@@ -1,3 +1,5 @@
+github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
+github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/GabeCordo/commandline v0.1.8 h1:55ayGZSC4UEknnvPVZDKvgx1NvltAe0+1fU8lPvrCrU=
 github.com/GabeCordo/commandline v0.1.8/go.mod h1:PpEJZ9in2hhhZKvLNViNCl26O9Aij/A0fiJmYazRmdI=
 github.com/GabeCordo/toolchain v0.1.6 h1:DntZ5RQfQ9zh1VffdDajHjWV7eWe+9oZ+RIHk8d6NT0=

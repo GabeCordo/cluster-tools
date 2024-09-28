@@ -38,8 +38,7 @@ type ExampleController struct {
 
 func (controller ExampleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	cfg := cluster_tools.NewConfig("tmp")
-	p, _ := cluster_tools.New(cfg)
+	p, _ := cluster_tools.New()
 
 	m := p.Module("common")
 	m.LinkFunction("generator", generator)

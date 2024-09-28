@@ -2,12 +2,12 @@ package http
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor/supervisor"
+	"github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 	"html/template"
 	"net/http"
 )
 
-func buildStatisticsPage(w http.ResponseWriter, statistics []*supervisor.Summary) {
+func buildStatisticsPage(w http.ResponseWriter, statistics []*pipeline.Summary) {
 
 	tmpl := `<html>
 		<head>
@@ -95,7 +95,7 @@ func buildStatisticsPage(w http.ResponseWriter, statistics []*supervisor.Summary
 
 	data := struct {
 		Title string
-		Items []*supervisor.Summary
+		Items []*pipeline.Summary
 	}{
 		Title: "Statistics",
 		Items: statistics,

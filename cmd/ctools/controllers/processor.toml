@@ -1,0 +1,18 @@
+[Processor]
+Name = "example"
+Debug = true
+
+[Processor.Threads]
+Timeout = 2
+
+[Core]
+Host = "http://localhost:8137"
+Attempts = 10
+
+[Net.External]
+Host = "localhost"
+Port = 5023
+
+[Net.Internal]
+Host = "localhost"
+Port = 5023
