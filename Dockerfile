@@ -4,7 +4,7 @@ WORKDIR /home/app
 
 COPY . .
 
-WORKDIR /home/app/cmd/cluster-tools
+WORKDIR /home/app/cmd/ctgate
 
 RUN go install
 RUN ctgate init
@@ -13,4 +13,4 @@ RUN ctgate doctor
 EXPOSE 8136
 EXPOSE 8137
 
-ENTRYPOINT ["cluster-tools", "start"]
+ENTRYPOINT ["ctgate", "start"]

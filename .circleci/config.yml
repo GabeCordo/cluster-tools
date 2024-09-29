@@ -61,7 +61,7 @@ jobs:
           command: mkdir -p ~/artifacts
       - run:
           name: Build executables
-          command: go build -o ~/artifacts ./...
+          command: go build -o ~/artifacts ./cmd/ctgate
       - store_artifacts:
           path: ~/artifacts
           destination: executables
