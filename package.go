@@ -278,7 +278,7 @@ func (p *Processor) Run() {
 			}
 
 			if err != nil {
-				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", f))
+				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", fileName))
 			}
 
 			wrapper := &struct {

@@ -147,16 +147,16 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterConfig := pipeline.Pipeline{Identifier: "test_cluster"}
+	pipelineRecord := pipeline.Pipeline{Identifier: "test_pipeline"}
 
-	m := "test_module"
-	c := "test_cluster"
+	n := "test_namespace"
+	p := "test_pipeline"
 
 	in <- thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.PipelineRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
-		Data:        clusterConfig,
+		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
+		Data:        pipelineRecord,
 		Nonce:       1,
 	}
 	<-out
@@ -164,7 +164,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	request := thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.PipelineRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
+		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
 		Nonce:       2,
 	}
 	in <- request
@@ -175,18 +175,18 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 		return
 	}
 
-	fetchedClusterConfigs, ok := (response.Data).([]pipeline.Pipeline)
+	fetchedPipelines, ok := (response.Data).([]pipeline.Pipeline)
 	if !ok {
 		t.Error("expected fetched record to be of type []cluster.pipeline")
 		return
 	}
 
-	if len(fetchedClusterConfigs) != 1 {
+	if len(fetchedPipelines) != 1 {
 		t.Error("expected 1 record to be returned")
 		return
 	}
 
-	if fetchedClusterConfigs[0].Identifier != clusterConfig.Identifier {
+	if fetchedPipelines[0].Identifier != pipelineRecord.Identifier {
 		t.Error("fetched wrong cluster.pipeline record")
 	}
 }
@@ -200,17 +200,19 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterStat := &statistic.Statistics{}
-	clusterStat.Threads.NumProvisionedExtractRoutines = 5
+	stat := &statistic.Statistics{}
+	stat.Functions = make([]statistic.FunctionStatistic, 3)
+	stat.Pipes = make([]statistic.PipeStatistic, 2)
+	stat.Functions[0].Provisions = 5
 
-	m := "test_module"
-	c := "test_cluster"
+	n := "test_namespace"
+	p := "test_pipeline"
 
 	in <- thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
-		Data:        clusterStat,
+		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
+		Data:        stat,
 		Nonce:       1,
 	}
 	<-out
@@ -218,7 +220,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	request := thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
+		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
 		Nonce:       2,
 	}
 	in <- request
@@ -240,7 +242,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 		return
 	}
 
-	if fetchedClusterStats[0].Threads.NumProvisionedTransformRoutes != clusterStat.Threads.NumProvisionedTransformRoutes {
+	if fetchedClusterStats[0].Functions[1].Provisions != stat.Functions[1].Provisions {
 		t.Error("fetched wrong *cluster.Statistic record")
 	}
 }
@@ -307,7 +309,9 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	m := "test_module"
 	c := "test_cluster"
 	clusterStat := &statistic.Statistics{}
-	clusterStat.Threads.NumProvisionedLoadRoutines = 5
+	clusterStat.Functions = make([]statistic.FunctionStatistic, 3)
+	clusterStat.Pipes = make([]statistic.PipeStatistic, 2)
+	clusterStat.Functions[2].Provisions = 5
 
 	in <- thread.Request{
 		Action:      thread.CreateAction,

@@ -13,8 +13,7 @@ var testInterval = &database.Interval{
 var testJob = &job.Job{
 	Identifier: "test",
 	Namespace:  "common",
-	Cluster:    "vec",
-	Config:     "vec",
+	Pipeline:   "vec",
 	Interval:   *testInterval,
 	Metadata:   make(map[string]string),
 }
@@ -22,8 +21,7 @@ var testJob = &job.Job{
 var testDupJob = &job.Job{
 	Identifier: "test2",
 	Namespace:  "common",
-	Cluster:    "vec",
-	Config:     "vec",
+	Pipeline:   "vec",
 	Interval:   *testInterval,
 	Metadata:   make(map[string]string),
 }
@@ -35,8 +33,7 @@ var testInterval2 = &database.Interval{
 var testJob2 = &job.Job{
 	Identifier: "test2",
 	Namespace:  "common",
-	Cluster:    "vec",
-	Config:     "vec",
+	Pipeline:   "vec",
 	Interval:   *testInterval2,
 	Metadata:   make(map[string]string),
 }
@@ -44,8 +41,7 @@ var testJob2 = &job.Job{
 var testJob3 = &job.Job{
 	Identifier: "test3",
 	Namespace:  "common",
-	Cluster:    "hello",
-	Config:     "hello",
+	Pipeline:   "hello",
 	Interval:   *testInterval,
 	Metadata:   make(map[string]string),
 }
