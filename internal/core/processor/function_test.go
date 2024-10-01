@@ -6,7 +6,7 @@ import "testing"
 // Test that the number of Processors is incremented after Add
 func TestCluster_Add(t *testing.T) {
 
-	function := newFunction("test")
+	function := newFunction(&ModuleFunction{Name: "test"})
 
 	processor := newProcessor("localhost", 8000)
 	function.Add(processor)
@@ -21,7 +21,7 @@ func TestCluster_Add(t *testing.T) {
 // fashion so that balances are distributed equally across them.
 func TestCluster_SelectProcessor(t *testing.T) {
 
-	function := newFunction("test")
+	function := newFunction(&ModuleFunction{Name: "test"})
 
 	processor1 := newProcessor("localhost", 8000)
 	function.Add(processor1)

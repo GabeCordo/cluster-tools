@@ -47,7 +47,7 @@ func TestRegistry_Get(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &pipeline.Pipeline{}
+	cfg := &pipeline.Pipeline{Identifier: ClusterName}
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new runner")
@@ -64,7 +64,7 @@ func TestRegistry_Get(t *testing.T) {
 		t.Error("failed to find a runner record that exists")
 	}
 
-	if (results[0].(*Run)).Cluster != ClusterName {
+	if (results[0].(*Run)).Pipeline.Identifier != ClusterName {
 		t.Error("runner failed to database the correct pipeline record")
 	}
 }

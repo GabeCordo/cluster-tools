@@ -289,8 +289,8 @@ func (p *Processor) Run() {
 				_, err = os.Stat(fp)
 			}
 
-			if os.IsNotExist(err) {
-				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", f))
+			if err != nil {
+				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", fileName))
 			}
 		}
 
