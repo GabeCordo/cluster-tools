@@ -369,6 +369,28 @@ func (supervisor *Instance) ExtractShutdownWrapper() <-chan struct{} {
 	return done
 }
 
+var errorInterface = reflect.TypeOf((*error)(nil)).Elem()
+
+func (supervisor *Instance) Call(function *Function, in []reflect.Value) ([]reflect.Value, bool) {
+
+	drop := false
+	results := reflect.ValueOf(function.Value).Call(in)
+
+	// TODO : the number of results returned by a function can be pre-computed
+	numResults := len(results)
+	if numResults > 0 {
+
+		lastResult := results[numResults-1]
+
+		if reflect.TypeOf(lastResult).Implements(errorInterface) && !lastResult.IsNil() {
+			results = results[:numResults-1]
+			drop = true
+		}
+	}
+
+	return results, drop
+}
+
 func (supervisor *Instance) Provision(function *Function) {
 	supervisor.Event(StartProvision)
 	defer supervisor.Event(EndProvision)
@@ -538,14 +560,17 @@ func (supervisor *Instance) Provision(function *Function) {
 						if function.Config.WaitBefore {
 							queuedRequests = reflect.Append(queuedRequests, request.Data[0])
 						} else {
-							results := reflect.ValueOf(function.Value).Call(request.Data)
-							// TODO : fix add dropping values that are bad
+							results, drop := supervisor.Call(function, request.Data)
 
 							function.To.Mutex.Lock()
-							function.To.Stats.Pushed++
+							if !drop {
+								function.To.Stats.Pushed++
+								function.To.Value.Push(results)
+							} else {
+								function.From.Stats.Dropped++
+							}
 							function.To.Mutex.Unlock()
 
-							function.To.Value.Push(results)
 						}
 					}
 				case <-quit:
@@ -559,14 +584,16 @@ func (supervisor *Instance) Provision(function *Function) {
 					// if we were waiting for the channel to close before transforming the data,
 					// call the function now that the channel is closed
 					if function.Config.WaitBefore {
-						results := reflect.ValueOf(function.Value).Call([]reflect.Value{queuedRequests})
-						// TODO : fix add dropping values that are bad
+						results, drop := supervisor.Call(function, []reflect.Value{queuedRequests})
 
 						function.To.Mutex.Lock()
-						function.To.Stats.Pushed++
+						if !drop {
+							function.To.Stats.Pushed++
+							function.To.Value.Push(results)
+						} else {
+							function.From.Stats.Dropped++
+						}
 						function.To.Mutex.Unlock()
-
-						function.To.Value.Push(results)
 					}
 					break
 				}

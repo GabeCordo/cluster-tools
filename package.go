@@ -13,7 +13,6 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads/provisioner"
 	"github.com/GabeCordo/toolchain/logging"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -120,16 +119,19 @@ func New() (*Processor, error) {
 		workingDir := filepath.Dir(ex)
 
 		// the executable is in the same folder as the config file
-		instance.config, err = config.Load(workingDir + "/processor.toml")
+		fp := filepath.Join(workingDir, "processor.toml")
+		instance.config, err = config.Load(fp)
 
 		// the executable is in the /bin or /cmd folder
+		fp = filepath.Join(workingDir, "..", "processor.toml")
 		if err != nil {
-			instance.config, err = config.Load(workingDir + "/../processor.toml")
+			instance.config, err = config.Load(fp)
 		}
 
 		// the executable is in the /cmd/binary-name folder
+		fp = filepath.Join(workingDir, "..", "..", "processor.toml")
 		if err != nil {
-			instance.config, err = config.Load(workingDir + "/../../processor.toml")
+			instance.config, err = config.Load(fp)
 		}
 
 		if err != nil {
@@ -238,23 +240,30 @@ func (p *Processor) Run() {
 
 		deploymentsDir := os.Getenv(ClusterToolsDeploymentsEnvVar)
 
+		wrapper := &struct {
+			Pipeline *pipeline.Pipeline `yaml:"pipeline"`
+		}{}
+
+		var pipelineFile string
+		var f *os.File
 		var err error
 		if deploymentsDir != "" {
 
-			if f, err := os.Stat(ClusterToolsDeploymentsEnvVar); err != nil || !f.IsDir() {
-				panic("cannot find deployments directory")
+			// an environment variables has been specified for the deployments directory
+
+			var finfo os.FileInfo
+			if finfo, err = os.Stat(deploymentsDir); os.IsNotExist(err) || !finfo.IsDir() {
+				panic(fmt.Sprintf("cannot find deployments directory %s\n", deploymentsDir))
 			}
 
-			pipelineFile := ClusterToolsDeploymentsEnvVar + "/" + p.config.Processor.Pipeline.Default + ".yml"
-			if _, err := os.Stat(pipelineFile); err != nil {
+			pipelineFile = filepath.Join(deploymentsDir, p.config.Processor.Pipeline.Default+".yml")
+			if _, err = os.Stat(pipelineFile); err != nil {
 				panic("no pipeline exists with that default identifier")
 			}
 
-			p.config, err = config.Load(pipelineFile)
-			if err != nil {
-				panic(err)
-			}
 		} else {
+
+			// look for the deployment file in common locations that is (should) be
 
 			ex, err := os.Executable()
 			if err != nil {
@@ -262,40 +271,44 @@ func (p *Processor) Run() {
 			}
 			workingDir := filepath.Dir(ex)
 
-			fileName := fmt.Sprintf("/deployments/%s.yml", p.config.Processor.Pipeline.Default)
+			fileName := filepath.Join("deployments", p.config.Processor.Pipeline.Default+".yml")
 
 			// the executable is in the same folder as the config file
-			f, err := os.Open(workingDir + fileName)
+			fp := filepath.Join(workingDir, fileName)
+			_, err = os.Stat(fp)
 
 			// the executable is in the /bin or /cmd folder
-			if err != nil {
-				f, err = os.Open(workingDir + "/.." + fileName)
+			fp = filepath.Join(workingDir, "..", fileName)
+			if os.IsNotExist(err) {
+				_, err = os.Stat(fp)
 			}
 
 			// the executable is in the /cmd/binary-name folder
-			if err != nil {
-				f, err = os.Open(workingDir + "/../.." + fileName)
+			fp = filepath.Join(workingDir, "..", "..", fileName)
+			if os.IsNotExist(err) {
+				_, err = os.Stat(fp)
 			}
 
-			if err != nil {
+			if os.IsNotExist(err) {
 				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", f))
 			}
+		}
 
-			wrapper := &struct {
-				Pipeline *pipeline.Pipeline `yaml:"pipeline"`
-			}{}
+		f, err = os.Open(pipelineFile)
+		if err != nil {
+			panic(err)
+		}
 
-			if err = yaml.NewDecoder(f).Decode(wrapper); err != nil {
-				log.Println("the default pipeline file is corrupted")
-			}
+		if err = yaml.NewDecoder(f).Decode(wrapper); err != nil {
+			panic("the default pipeline file is corrupted")
+		}
 
-			p.channels.c1 <- threads.ProvisionerRequest{
-				Action:     threads.ProvisionerRunCreate,
-				Namespace:  "common",
-				Supervisor: 0,
-				Pipeline:   wrapper.Pipeline,
-				Metadata:   make(map[string]string),
-			}
+		p.channels.c1 <- threads.ProvisionerRequest{
+			Action:     threads.ProvisionerRunCreate,
+			Namespace:  "common",
+			Supervisor: 0,
+			Pipeline:   wrapper.Pipeline,
+			Metadata:   make(map[string]string),
 		}
 	}
 
