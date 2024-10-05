@@ -85,7 +85,11 @@ func New(config *pipeline.Pipeline, functions []any) *Pipeline {
 
 		function := new(Function)
 		function.Identifier = f.Identifier
-		function.Config.StartWith = f.StartWith
+		if f.StartWith != 0 {
+			function.Config.StartWith = f.StartWith
+		} else {
+			function.Config.StartWith = 1
+		}
 		function.Config.WaitBefore = f.WaitBefore
 		function.Stats = &instance.Stats.Functions[i]
 		function.Quit = make([]chan bool, 0)

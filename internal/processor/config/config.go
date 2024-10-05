@@ -14,6 +14,11 @@ type NetworkConfig struct {
 	Port int    `yaml:"port"`
 }
 
+type RunConfig struct {
+	Name      string   `yaml:"Name"`
+	Pipelines []string `yaml:"Pipelines"`
+}
+
 type Config struct {
 	Processor struct {
 		Name           string `yaml:"name" toml:"Name"`
@@ -22,6 +27,7 @@ type Config struct {
 		Pipeline       struct {
 			Default string `yaml:"default,omitempty" toml:"Default,omitempty"`
 		} `yaml:"pipeline" toml:"Pipeline"`
+		Run     []RunConfig `yaml:"run" toml:"Run"`
 		Threads struct {
 			Timeout float64 `yaml:"timeout" toml:"Timeout"`
 		} `yaml:"threads" toml:"Threads"`
@@ -67,7 +73,7 @@ func NewConfig(name string) *Config {
 	return config
 }
 
-func (config Config) FillHttpConfig(to *http.Config) {
+func (config *Config) FillHttpConfig(to *http.Config) {
 	to.Debug = &config.Processor.Debug
 	to.Timeout = &config.Processor.Threads.Timeout
 	to.Standalone = &config.Processor.StandaloneMode
@@ -76,7 +82,7 @@ func (config Config) FillHttpConfig(to *http.Config) {
 	to.Net = fmt.Sprintf("%s:%d", config.Net.Internal.Host, config.Net.Internal.Port)
 }
 
-func (config Config) FillProvisionerConfig(to *provisioner.Config) {
+func (config *Config) FillProvisionerConfig(to *provisioner.Config) {
 	to.Debug = &config.Processor.Debug
 	to.Timeout = &config.Processor.Threads.Timeout
 	to.Standalone = &config.Processor.StandaloneMode

@@ -35,8 +35,8 @@ func Gateway() (string, error) {
 
 func Connect(core string) error {
 
-	url := fmt.Sprintf("http://localhost:5023/core?=%saction&=connect", core)
-	fmt.Println(url)
+	url := fmt.Sprintf("http://localhost:5023/gate?=%saction&=connect", core)
+
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func Connect(core string) error {
 
 func Disconnect(core string) error {
 
-	url := fmt.Sprintf("http://localhost:5023/core?=%saction&=disconnect", core)
+	url := fmt.Sprintf("http://localhost:5023/gate?=%saction&=disconnect", core)
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		return err

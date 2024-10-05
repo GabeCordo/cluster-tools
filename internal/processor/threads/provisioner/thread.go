@@ -10,6 +10,7 @@ import (
 
 func (thread *Thread) Setup() {
 
+	thread.registerModulesToCore()
 	thread.accepting = true
 }
 

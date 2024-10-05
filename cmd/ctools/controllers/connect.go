@@ -19,10 +19,11 @@ func (controller ConnectController) Run(cli *commandline.CommandLine) commandlin
 
 	err := api.Connect(gatewayHost)
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("[!] error connecting to gateway")
 	} else {
 		fmt.Println("[+] connected to gateway")
 	}
-	
+
 	return commandline.Terminate
 }

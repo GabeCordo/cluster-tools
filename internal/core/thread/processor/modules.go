@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"fmt"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 )
 
@@ -57,6 +58,7 @@ func (t *Thread) addModule(processorName string, cfg *processor.ModuleConfig) er
 	// let the operator have an understanding of the ctgate's state
 	// ->	when a processor is added it may change what modules/configs/processors are available to use
 	//		and whether they are mounted in the ctgate currently
+	fmt.Println("UPDATED ==================>")
 	t.processorTable.Print()
 
 	return nil

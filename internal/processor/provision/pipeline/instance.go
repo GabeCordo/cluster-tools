@@ -39,7 +39,7 @@ type Status string
 
 const (
 	UnTouched    Status = "untouched"
-	Running             = "running"
+	Active              = "active"
 	Provisioning        = "provisioning"
 	Failed              = "failed"
 	Stopping            = "stopping"
@@ -126,13 +126,13 @@ func (supervisor *Instance) Event(event Event) bool {
 
 	if supervisor.State == UnTouched {
 		if event == Startup {
-			supervisor.State = Running
+			supervisor.State = Active
 		} else if (event == Suspend) || (event == TearedDown) {
 			supervisor.State = Stopping
 		} else {
 			return false
 		}
-	} else if supervisor.State == Running {
+	} else if supervisor.State == Active {
 		if event == StartProvision {
 			supervisor.State = Provisioning
 		} else if event == Error {
@@ -146,7 +146,7 @@ func (supervisor *Instance) Event(event Event) bool {
 		}
 	} else if supervisor.State == Provisioning {
 		if event == EndProvision {
-			supervisor.State = Running
+			supervisor.State = Active
 		} else if event == Error {
 			supervisor.State = Failed
 		} else if event == Suspend {
@@ -648,8 +648,8 @@ func (status Status) ToString() string {
 	switch status {
 	case UnTouched:
 		return "UnTouched"
-	case Running:
-		return "Running"
+	case Active:
+		return "Active"
 	case Provisioning:
 		return "Provisioning"
 	case Failed:

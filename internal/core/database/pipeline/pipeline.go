@@ -34,7 +34,7 @@ type Function struct {
 	Identifier string `json:"id" yaml:"id"`
 	From       string `json:"from,omitempty" yaml:"from,omitempty"`
 	To         string `json:"to,omitempty" yaml:"to,omitempty"`
-	StartWith  int    `json:"start_with" yaml:"start_with"`
+	StartWith  int    `json:"start_with,omitempty" yaml:"start_with,omitempty"`
 	WaitBefore bool   `json:"wait_before,omitempty" yaml:"wait_before"`
 }
 

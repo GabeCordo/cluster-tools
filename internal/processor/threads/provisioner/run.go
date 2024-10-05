@@ -48,8 +48,14 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		return err
 	}
 
-	thread.logger.Printf("%s[%s]%s Pipeline Running (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
+	thread.logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
 	go func(supervisorInstance *pipeline.Instance) {
+
+		if !*thread.Config.Standalone {
+			go func() {
+				api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), supervisorInstance.Pipeline.Stats)
+			}()
+		}
 
 		// block until the runner completes
 		response := supervisorInstance.Start()

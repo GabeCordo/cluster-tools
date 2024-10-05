@@ -3,7 +3,6 @@ package cluster_tools
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/cluster-tools/internal/processor/api"
 	"github.com/GabeCordo/cluster-tools/internal/processor/config"
@@ -12,7 +11,6 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads/http"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads/provisioner"
 	"github.com/GabeCordo/toolchain/logging"
-	"gopkg.in/yaml.v3"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -139,6 +137,8 @@ func New() (*Processor, error) {
 		}
 	}
 
+	instance.config.Processor.StandaloneMode = true
+
 	instance.channels.interrupt = make(chan threads.InterruptEvent, 1)
 	instance.channels.c1 = make(chan threads.ProvisionerRequest, 10)
 	instance.channels.c2 = make(chan threads.ProvisionerResponse, 10)
@@ -222,6 +222,12 @@ func (p *Processor) Run() {
 		}
 	}
 
+	// connect to the core when the binary starts
+
+	if err := p.Connect(p.config.Core.Host); err != nil {
+		panic(err)
+	}
+
 	p.threads.provisioner.Setup()
 	if p.config.Processor.Debug {
 		p.logger.Println("started modules thread")
@@ -236,81 +242,81 @@ func (p *Processor) Run() {
 
 	// check if the config has a default pipeline to run on start
 
-	if p.config.Processor.Pipeline.Default != "" {
-
-		deploymentsDir := os.Getenv(ClusterToolsDeploymentsEnvVar)
-
-		wrapper := &struct {
-			Pipeline *pipeline.Pipeline `yaml:"pipeline"`
-		}{}
-
-		var pipelineFile string
-		var f *os.File
-		var err error
-		if deploymentsDir != "" {
-
-			// an environment variables has been specified for the deployments directory
-
-			var finfo os.FileInfo
-			if finfo, err = os.Stat(deploymentsDir); os.IsNotExist(err) || !finfo.IsDir() {
-				panic(fmt.Sprintf("cannot find deployments directory %s\n", deploymentsDir))
-			}
-
-			pipelineFile = filepath.Join(deploymentsDir, p.config.Processor.Pipeline.Default+".yml")
-			if _, err = os.Stat(pipelineFile); err != nil {
-				panic("no pipeline exists with that default identifier")
-			}
-
-		} else {
-
-			// look for the deployment file in common locations that is (should) be
-
-			ex, err := os.Executable()
-			if err != nil {
-				panic(err)
-			}
-			workingDir := filepath.Dir(ex)
-
-			fileName := filepath.Join("deployments", p.config.Processor.Pipeline.Default+".yml")
-
-			// the executable is in the same folder as the config file
-			fp := filepath.Join(workingDir, fileName)
-			_, err = os.Stat(fp)
-
-			// the executable is in the /bin or /cmd folder
-			fp = filepath.Join(workingDir, "..", fileName)
-			if os.IsNotExist(err) {
-				_, err = os.Stat(fp)
-			}
-
-			// the executable is in the /cmd/binary-name folder
-			fp = filepath.Join(workingDir, "..", "..", fileName)
-			if os.IsNotExist(err) {
-				_, err = os.Stat(fp)
-			}
-
-			if err != nil {
-				panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", fileName))
-			}
-		}
-
-		f, err = os.Open(pipelineFile)
-		if err != nil {
-			panic(err)
-		}
-
-		if err = yaml.NewDecoder(f).Decode(wrapper); err != nil {
-			panic("the default pipeline file is corrupted")
-		}
-
-		p.channels.c1 <- threads.ProvisionerRequest{
-			Action:     threads.ProvisionerRunCreate,
-			Namespace:  "common",
-			Supervisor: 0,
-			Pipeline:   wrapper.Pipeline,
-			Metadata:   make(map[string]string),
-		}
-	}
+	//if p.config.Processor.Pipeline.Default != "" {
+	//
+	//	deploymentsDir := os.Getenv(ClusterToolsDeploymentsEnvVar)
+	//
+	//	wrapper := &struct {
+	//		Pipeline *pipeline.Pipeline `yaml:"pipeline"`
+	//	}{}
+	//
+	//	var pipelineFile string
+	//	var f *os.File
+	//	var err error
+	//	if deploymentsDir != "" {
+	//
+	//		// an environment variables has been specified for the deployments directory
+	//
+	//		var finfo os.FileInfo
+	//		if finfo, err = os.Stat(deploymentsDir); os.IsNotExist(err) || !finfo.IsDir() {
+	//			panic(fmt.Sprintf("cannot find deployments directory %s\n", deploymentsDir))
+	//		}
+	//
+	//		pipelineFile = filepath.Join(deploymentsDir, p.config.Processor.Pipeline.Default+".yml")
+	//		if _, err = os.Stat(pipelineFile); err != nil {
+	//			panic("no pipeline exists with that default identifier")
+	//		}
+	//
+	//	} else {
+	//
+	//		// look for the deployment file in common locations that is (should) be
+	//
+	//		ex, err := os.Executable()
+	//		if err != nil {
+	//			panic(err)
+	//		}
+	//		workingDir := filepath.Dir(ex)
+	//
+	//		fileName := filepath.Join("deployments", p.config.Processor.Pipeline.Default+".yml")
+	//
+	//		// the executable is in the same folder as the config file
+	//		fp := filepath.Join(workingDir, fileName)
+	//		_, err = os.Stat(fp)
+	//
+	//		// the executable is in the /bin or /cmd folder
+	//		fp = filepath.Join(workingDir, "..", fileName)
+	//		if os.IsNotExist(err) {
+	//			_, err = os.Stat(fp)
+	//		}
+	//
+	//		// the executable is in the /cmd/binary-name folder
+	//		fp = filepath.Join(workingDir, "..", "..", fileName)
+	//		if os.IsNotExist(err) {
+	//			_, err = os.Stat(fp)
+	//		}
+	//
+	//		if err != nil {
+	//			panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", fileName))
+	//		}
+	//	}
+	//
+	//	f, err = os.Open(pipelineFile)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	if err = yaml.NewDecoder(f).Decode(wrapper); err != nil {
+	//		panic("the default pipeline file is corrupted")
+	//	}
+	//
+	//	p.channels.c1 <- threads.ProvisionerRequest{
+	//		Action:     threads.ProvisionerRunCreate,
+	//		Namespace:  "common",
+	//		Supervisor: 0,
+	//		Pipeline:   wrapper.Pipeline,
+	//		Metadata:   make(map[string]string),
+	//	}
+	//}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
@@ -330,6 +336,12 @@ func (p *Processor) Run() {
 
 	p.logger.SetColour(logging.Red)
 
+	if !p.config.Processor.StandaloneMode {
+		if err := p.Disconnect(); err != nil {
+			p.logger.Warnln("failed to disconnect from the core")
+		}
+	}
+
 	p.threads.http.Teardown()
 	if p.config.Processor.Debug {
 		p.logger.Println("http processor thread shutdown")
@@ -343,7 +355,11 @@ func (p *Processor) Run() {
 
 func (p *Processor) Connect(host string) error {
 
-	if p.state == Connected {
+	// TODO: fix
+	//if p.state == Connected {
+	//	return nil
+	//}
+	if !p.config.Processor.StandaloneMode {
 		return nil
 	}
 
@@ -376,9 +392,13 @@ func (p *Processor) Connect(host string) error {
 
 func (p *Processor) Disconnect() error {
 
-	if p.state != Connected {
+	if p.config.Processor.StandaloneMode {
 		return errors.New("not connected to a core")
 	}
+	// TODO: support
+	//if p.state != Connected {
+	//	return errors.New("not connected to a core")
+	//}
 
 	cfg := &processor.Config{Host: p.config.Net.External.Host, Port: p.config.Net.External.Port}
 

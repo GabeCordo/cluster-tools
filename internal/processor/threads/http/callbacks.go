@@ -150,6 +150,7 @@ func (thread *Thread) postGateCallback(w http.ResponseWriter, r *http.Request) {
 	action, actionFound := urlMapping["action"]
 	if !actionFound || !((action[0] == "connect") || (action[0] == "disconnect")) {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println("foo")
 		return
 	}
 
@@ -164,6 +165,7 @@ func (thread *Thread) postGateCallback(w http.ResponseWriter, r *http.Request) {
 		// relation: [core] 1-* [processor]
 		//
 		if !*thread.Config.Standalone {
+			fmt.Println("we're in standalone mode")
 			err := api.DisconnectFromCore(*thread.Config.Core, &thread.Config.ExternalNet)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)

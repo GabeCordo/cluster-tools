@@ -3,6 +3,7 @@ package processor
 import (
 	"github.com/GabeCordo/cluster-tools/internal/core/processor"
 	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"time"
 )
 
 func (t *Thread) Setup() {
@@ -36,15 +37,14 @@ func (t *Thread) Start() {
 
 	// PROCESSOR PROBE LOOP
 
-	// TODO : stopping probe feature for testing
-	//go func() {
-	//	sleepDuration := time.Duration(t.pipeline.ProbeEvery) * time.Second
-	//
-	//	for {
-	//		t.processorPing()
-	//		time.Sleep(sleepDuration)
-	//	}
-	//}()
+	go func() {
+		sleepDuration := time.Duration(t.config.ProbeEvery) * time.Second
+
+		for {
+			t.processorPing()
+			time.Sleep(sleepDuration)
+		}
+	}()
 }
 
 func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
