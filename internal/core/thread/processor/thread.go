@@ -13,6 +13,7 @@ func (t *Thread) Setup() {
 func (t *Thread) Start() {
 
 	// INCOMING REQUESTS
+
 	thread.SetupListener(t.C5, t.C6, &t.accepting, &t.wg, thread.Processor, t.Handle)
 
 	thread.SetupListener(t.C7, t.C8, &t.accepting, &t.wg, thread.Processor, t.Handle)

@@ -67,6 +67,6 @@ func (job Job) Equals(other *Job) bool {
 
 func (job Job) ToString() string {
 
-	return fmt.Sprintf("%s %s.%s (pipeline: %s)\n",
+	return fmt.Sprintf("%s %s.%s (pipeline: %s)",
 		job.Interval.ToString(), job.Namespace, job.Identifier, job.Pipeline)
 }

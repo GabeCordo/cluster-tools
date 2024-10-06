@@ -20,6 +20,12 @@ func main() {
 	pc := cli.AddCommand("pipeline", controllers.PipelineController{})
 	pc.SetCategory("utils").SetDescription("register a pipeline on the gateway")
 
+	sc := cli.AddCommand("schedule", controllers.ScheduleController{})
+	sc.SetCategory("utils").SetDescription("schedule jobs on the gateway")
+
+	stc := cli.AddCommand("stats", controllers.StatsController{})
+	stc.SetCategory("utils").SetDescription("view stats associated with jobs on the gateway")
+
 	// configuration controllers
 
 	nc := cli.AddCommand("namespace", controllers.NamespaceController{})

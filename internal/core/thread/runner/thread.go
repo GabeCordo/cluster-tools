@@ -19,23 +19,6 @@ func (t *Thread) Start() {
 
 	thread.SetupListener(t.C13, t.C14, &t.accepting, &t.wg, thread.Supervisor, t.Handle)
 
-	//go func() {
-	//	for request := range t.C13 {
-	//		if !t.accepting {
-	//			break
-	//		}
-	//
-	//		t.wg.Add(1)
-	//
-	//		request.Source = thread.Processor
-	//		response := thread.Response{Source: thread.Run, Nonce: request.Nonce}
-	//		t.Handle(&request, &response)
-	//
-	//		t.C14 <- response
-	//		t.wg.Done()
-	//	}
-	//}()
-
 	// INCOMING RESPONSES
 
 	go func() {

@@ -15,6 +15,8 @@ func (t *Thread) Start() {
 
 	thread.SetupListener(t.C24, t.C25, &t.accepting, &t.wg, thread.Cache, t.Handle)
 
+	// RUNTIME
+
 	go func() {
 		// cleaning the t of expired records
 		for t.accepting {
