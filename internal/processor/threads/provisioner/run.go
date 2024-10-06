@@ -7,6 +7,7 @@ import (
 	"github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
+	"sync"
 	"time"
 )
 
@@ -51,18 +52,46 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 	thread.logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
 	go func(supervisorInstance *pipeline.Instance) {
 
+		m := sync.Mutex{} // used for sending updates to the gateway
+
+		// premise:
+		// the statistics associated with the running pipeline instance will be updated on-demand
+		// as data flows through the channels between functions.
+		//
+		// idea:
+		// every 1s send an update of the statistics to the cluster.tools gateway so the operator
+		// or developer can track the progress of the pipeline instance in real-time
+		//
+		// important note:
+		// we need a mutex because there are 2 instances inside the code where the gateway can be updated
+		// with the status of the pipeline instance:
+		// 	1) here
+		//  2) bellow; when the pipeline instance has stopped
+		// the mutex ensures there is (no) data race between the two and the statistic updates in the block
+		// bellow are only sent in the pipeline instance has not come to a stop.
 		if !*thread.Config.Standalone {
 			go func() {
-				api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), supervisorInstance.Pipeline.Stats)
+				for {
+					m.Lock()
+					if !supervisorInstance.IsAlive() {
+						break
+					}
+
+					api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), supervisorInstance.Pipeline.Stats)
+					m.Unlock()
+
+					time.Sleep(1 * time.Second) // wait before the next update
+				}
 			}()
 		}
 
 		// block until the runner completes
 		response := supervisorInstance.Start()
-		// TODO : should we send the response instead?
 
 		if !*thread.Config.Standalone {
+			m.Lock()
 			api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), response.Stats)
+			m.Unlock()
 		}
 
 		// provide the console with output indicating that the cluster has completed

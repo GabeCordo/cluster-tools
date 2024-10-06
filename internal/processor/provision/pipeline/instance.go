@@ -94,22 +94,6 @@ func NewInstance(config *pipeline_cfg.Pipeline, functions []any, metadata map[st
 	supervisor.Pipeline = New(config, functions)
 	supervisor.metadata = metadata
 
-	// TODO : Pipeline creation
-
-	// TODO : future?
-	//if helper != nil {
-	//	supervisor.helper = helper
-	//} else {
-	//	// TODO : fix
-	//	panic("helper cannot be nil")
-	//}
-	//
-	//if metadata != nil {
-	//	supervisor.metadata = NewMetadata(metadata)
-	//} else {
-	//	supervisor.metadata = NewMetadata(nil)
-	//}
-
 	return supervisor
 }
 
@@ -214,8 +198,6 @@ func (supervisor *Instance) Start() (response *Response) {
 			supervisor.Provision(function)
 			function.Stats.Active++
 			function.Stats.Provisions++
-			//supervisor.Stats.Functions[i].Active++
-			//supervisor.Stats.Functions[i].Provisions++
 		}
 	}
 
@@ -371,6 +353,11 @@ func (supervisor *Instance) ExtractShutdownWrapper() <-chan struct{} {
 
 var errorInterface = reflect.TypeOf((*error)(nil)).Elem()
 
+// Call
+// a wrapper function that checks the returned values from a function call for
+// error values. if the function returns an error that is non-nil we will set
+// the returned boolean flag to true indicating something may have gone wrong
+// inside the function call.
 func (supervisor *Instance) Call(function *Function, in []reflect.Value) ([]reflect.Value, bool) {
 
 	drop := false
@@ -378,13 +365,32 @@ func (supervisor *Instance) Call(function *Function, in []reflect.Value) ([]refl
 
 	// TODO : the number of results returned by a function can be pre-computed
 	numResults := len(results)
+
+	// a common pattern in golang is to return (value, error) where error can be used
+	// to identify that the function was not able to run to completion.
+	//
+	// the pipeline supports a similar method of identifying that the function failed
+	// to run successfully to completion. when the function returns an error value
+	// (that must be the last value returned) the pipeline will check whether the
+	// error is nil or not to determine whether the resultant data should be used.
+	//
+	// error is nil -> keep sending the resultant data along the pipeline
+	// error -> do NOT pass the data along the pipeline (aka. drop the data)
 	if numResults > 0 {
 
 		lastResult := results[numResults-1]
 
-		if reflect.TypeOf(lastResult).Implements(errorInterface) && !lastResult.IsNil() {
+		isError := lastResult.Type().Implements(errorInterface)
+
+		if isError {
+			isNil := lastResult.IsNil()
+
+			if !isNil {
+				drop = true
+			}
+
+			// never pass an error along the pipeline
 			results = results[:numResults-1]
-			drop = true
 		}
 	}
 
@@ -456,6 +462,7 @@ func (supervisor *Instance) Provision(function *Function) {
 				}
 			}()
 
+			// todo ?
 			if function.Config.WaitBefore {
 
 			}
