@@ -2,7 +2,7 @@ package job
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/Sentmint/cluster-tools/internal/core/database"
 	"time"
 )
 

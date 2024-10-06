@@ -3,9 +3,9 @@ package config
 import (
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/processor/threads/http"
-	"github.com/GabeCordo/cluster-tools/internal/processor/threads/provisioner"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/cluster-tools/internal/processor/threads/http"
+	"github.com/Sentmint/cluster-tools/internal/processor/threads/provisioner"
 	"os"
 )
 

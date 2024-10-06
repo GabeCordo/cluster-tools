@@ -2,10 +2,10 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/run"
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
+	"github.com/Sentmint/cluster-tools/internal/core/database/run"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"math/rand"
 )
 

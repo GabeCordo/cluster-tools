@@ -1,9 +1,9 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/message"
-	"github.com/GabeCordo/cluster-tools/internal/core/message/log"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/cluster-tools/internal/core/message"
+	"github.com/Sentmint/cluster-tools/internal/core/message/log"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 )
 
 func (th *Thread) Setup() {

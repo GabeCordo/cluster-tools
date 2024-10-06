@@ -2,7 +2,7 @@ package duplex
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
 	"reflect"
 	"sync"
 	"time"

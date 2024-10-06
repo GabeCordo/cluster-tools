@@ -2,7 +2,7 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
 )
 
 func (t *Thread) getFunctions(name string) ([]processor.FunctionData, error) {

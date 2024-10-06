@@ -2,9 +2,9 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/core/cache"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
+	"github.com/Sentmint/cluster-tools/internal/core/cache"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"sync"
 )
 

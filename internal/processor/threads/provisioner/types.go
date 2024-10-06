@@ -2,10 +2,10 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/processor/provision"
-	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/cluster-tools/internal/processor/provision"
+	"github.com/Sentmint/cluster-tools/internal/processor/threads"
 	"sync"
 )
 

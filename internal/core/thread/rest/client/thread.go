@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"net/http"
 	"net/http/pprof"
 	"time"

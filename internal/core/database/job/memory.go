@@ -3,7 +3,7 @@ package job
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database"
+	"github.com/Sentmint/cluster-tools/internal/core/database"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"

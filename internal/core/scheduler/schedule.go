@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/Sentmint/cluster-tools/internal/core/database/job"
 )
 
 type Schedule struct {

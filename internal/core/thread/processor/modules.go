@@ -3,7 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
 )
 
 func (t *Thread) getModules() []processor.ModuleData {

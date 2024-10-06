@@ -3,8 +3,8 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor/api"
-	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
+	"github.com/Sentmint/cluster-tools/internal/processor/api"
+	"github.com/Sentmint/cluster-tools/internal/processor/threads"
 	"time"
 )
 

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/Sentmint/cluster-tools/internal/core/database/job"
 	"net/http"
 )
 

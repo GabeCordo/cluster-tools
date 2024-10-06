@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/cmd/ctools/local"
 	"github.com/GabeCordo/commandline"
+	"github.com/Sentmint/cluster-tools/cmd/ctools/local"
 )
 
 type NamespaceController struct {

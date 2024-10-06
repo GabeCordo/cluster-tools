@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"github.com/GabeCordo/cluster-tools/internal/processor/threads"
+	"github.com/Sentmint/cluster-tools/internal/processor/threads"
 	"net/http"
 	"net/http/pprof"
 	"time"

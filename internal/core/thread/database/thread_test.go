@@ -2,11 +2,11 @@ package database
 
 import (
 	"errors"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
+	"github.com/Sentmint/cluster-tools/internal/core/database/job"
+	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
+	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"testing"
 )
 

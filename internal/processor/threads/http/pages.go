@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
+	"github.com/Sentmint/cluster-tools/internal/processor/provision/pipeline"
 	"html/template"
 	"net/http"
 )

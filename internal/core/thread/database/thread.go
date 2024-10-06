@@ -1,10 +1,10 @@
 package database
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/database"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/cluster-tools/internal/core/database"
+	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
+	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"log"
 	"time"
 )

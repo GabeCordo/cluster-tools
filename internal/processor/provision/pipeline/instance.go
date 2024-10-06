@@ -2,9 +2,9 @@ package pipeline
 
 import (
 	"fmt"
-	pipeline_cfg "github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
-	"github.com/GabeCordo/cluster-tools/internal/processor/channel/duplex"
+	pipeline_cfg "github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
+	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
+	"github.com/Sentmint/cluster-tools/internal/processor/channel/duplex"
 	"log"
 	"os"
 	"reflect"
@@ -571,13 +571,54 @@ func (supervisor *Instance) Provision(function *Function) {
 
 							function.To.Mutex.Lock()
 							if !drop {
-								function.To.Stats.Pushed++
-								function.To.Value.Push(results)
+
+								// PROPOSAL 6.
+								// ~let there be two functions f1 and f2 that are transformers along the pipeline.
+								// ~let f1 return a slice of type A s.t. []A is the passed along value
+								// ~let f2 accept a value of type A s.t. we expect f1 to send us A
+								//
+								// if (f1 sends to f2) and (f1 returns []A while f2 accepts A) then:
+								// the pipeline shall break apart the []A returned by f1
+								// (and) push each element A from the slice to the successive function f2
+								if len(results) > 0 && results[0].Kind() == reflect.Slice {
+
+									// note: we should always have some receiver to pull data from the channel but
+									//		 this is a safety guard if something goes wrong
+									if len(function.To.Receiver) > 0 {
+										nextFunction := function.To.Receiver[0]
+										nextFunctionReflection := reflect.TypeOf(nextFunction.Value)
+
+										// note: the value should accept some value or the pipeline we've provisioned
+										// 		 is invalid and should have been rejected prior to this step
+										if (nextFunctionReflection.NumIn() > 0) && (nextFunctionReflection.In(0).Kind() != reflect.Slice) {
+
+											// f1 returns []A and f2 accepts A has been validated upto this point
+											// we should break apart []A and send the data 1-by-1 to f2
+											for i := 0; i < results[0].Len(); i++ {
+												function.To.Stats.Pushed++
+												function.To.Value.Push([]reflect.Value{results[0].Index(i)})
+											}
+										} else {
+											// default functionality
+											function.To.Stats.Pushed++
+											function.To.Value.Push(results)
+										}
+									} else {
+										// default functionality
+										function.To.Stats.Pushed++
+										function.To.Value.Push(results)
+									}
+
+								} else {
+									// default functionality
+									function.To.Stats.Pushed++
+									function.To.Value.Push(results)
+								}
+
 							} else {
 								function.From.Stats.Dropped++
 							}
 							function.To.Mutex.Unlock()
-
 						}
 					}
 				case <-quit:

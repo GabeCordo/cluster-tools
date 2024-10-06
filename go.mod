@@ -1,4 +1,4 @@
-module github.com/GabeCordo/cluster-tools
+module github.com/Sentmint/cluster-tools
 
 go 1.20
 

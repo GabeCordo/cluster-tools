@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/cmd/ctools/api"
-	"github.com/GabeCordo/cluster-tools/cmd/ctools/local"
-	"github.com/GabeCordo/cluster-tools/internal/core/database"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
 	"github.com/GabeCordo/commandline"
+	"github.com/Sentmint/cluster-tools/cmd/ctools/api"
+	"github.com/Sentmint/cluster-tools/cmd/ctools/local"
+	"github.com/Sentmint/cluster-tools/internal/core/database"
+	"github.com/Sentmint/cluster-tools/internal/core/database/job"
 	"strconv"
 )
 

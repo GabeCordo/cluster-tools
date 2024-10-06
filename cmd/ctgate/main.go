@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/GabeCordo/cluster-tools/cmd/ctgate/controllers"
 	"github.com/GabeCordo/commandline"
+	"github.com/Sentmint/cluster-tools/cmd/ctgate/controllers"
 )
 
 // @title Swagger Example API

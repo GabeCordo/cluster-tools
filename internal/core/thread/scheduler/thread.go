@@ -2,12 +2,12 @@ package scheduler
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/database"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	scheduler "github.com/GabeCordo/cluster-tools/internal/core/scheduler/job"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
+	"github.com/Sentmint/cluster-tools/internal/core/database"
+	"github.com/Sentmint/cluster-tools/internal/core/database/job"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	scheduler "github.com/Sentmint/cluster-tools/internal/core/scheduler/job"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 )
 
 func (t *Thread) Setup() {

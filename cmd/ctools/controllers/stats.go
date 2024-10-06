@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/cmd/ctools/api"
-	"github.com/GabeCordo/cluster-tools/cmd/ctools/local"
 	"github.com/GabeCordo/commandline"
+	"github.com/Sentmint/cluster-tools/cmd/ctools/api"
+	"github.com/Sentmint/cluster-tools/cmd/ctools/local"
 	"os"
 	"os/signal"
 	"strconv"

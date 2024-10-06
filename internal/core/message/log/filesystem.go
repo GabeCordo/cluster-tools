@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"github.com/GabeCordo/cluster-tools/internal/core/message"
+	"github.com/Sentmint/cluster-tools/internal/core/message"
 	"strings"
 )
 

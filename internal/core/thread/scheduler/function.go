@@ -1,8 +1,8 @@
 package scheduler
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/database"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/job"
+	"github.com/Sentmint/cluster-tools/internal/core/database"
+	"github.com/Sentmint/cluster-tools/internal/core/database/job"
 )
 
 func (t *Thread) get(filter database.Filter) []job.Job {

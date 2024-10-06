@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/processor"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"time"
 )
 

@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/cache/local"
-	"github.com/GabeCordo/cluster-tools/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
+	"github.com/Sentmint/cluster-tools/internal/core/cache/local"
+	"github.com/Sentmint/cluster-tools/internal/core/thread"
 	"testing"
 )
 

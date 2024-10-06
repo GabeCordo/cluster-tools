@@ -1,8 +1,8 @@
 package provision
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	"github.com/GabeCordo/cluster-tools/internal/core/database/statistic"
+	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
+	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
 	"sync"
 )
 

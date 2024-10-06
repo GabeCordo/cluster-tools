@@ -1,9 +1,9 @@
 package threads
 
 import (
-	"github.com/GabeCordo/cluster-tools/internal/core/database/pipeline"
-	pipeline_component "github.com/GabeCordo/cluster-tools/internal/processor/provision/pipeline"
 	"github.com/GabeCordo/toolchain/multithreaded"
+	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
+	pipeline_component "github.com/Sentmint/cluster-tools/internal/processor/provision/pipeline"
 	"math/rand"
 )
 
