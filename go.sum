@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/GabeCordo/commandline v0.1.9 h1:UN2o4ZM/lRhmod83wLaQHJ28D3DCw58XryvwuJfPEQ8=
-github.com/GabeCordo/commandline v0.1.9/go.mod h1:PpEJZ9in2hhhZKvLNViNCl26O9Aij/A0fiJmYazRmdI=
+github.com/GabeCordo/commandline v0.2.0 h1:hq5Fk2RTB6dTBDgq+E/QAdIpge/uuey33NxAaNaWRfE=
+github.com/GabeCordo/commandline v0.2.0/go.mod h1:PpEJZ9in2hhhZKvLNViNCl26O9Aij/A0fiJmYazRmdI=
 github.com/GabeCordo/toolchain v0.1.6 h1:DntZ5RQfQ9zh1VffdDajHjWV7eWe+9oZ+RIHk8d6NT0=
 github.com/GabeCordo/toolchain v0.1.6/go.mod h1:2UmX2lHst0LFC4GyFCprBfBk0XbLo9DAQM6cuXHYh3U=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

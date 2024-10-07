@@ -21,6 +21,7 @@ const (
 	ProvisionerModuleGet ProvisionerAction = iota
 	ProvisionerRunGet
 	ProvisionerRunCreate
+	ProvisionerRunStop
 	ProvisionerStatisticsGet
 	ProvisionerRegisterModules
 )

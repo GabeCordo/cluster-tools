@@ -352,6 +352,25 @@ func UpdateRun(mandatory Mandatory, data *run.Run) error {
 	return response.Error
 }
 
+func StopRun(mandatory Mandatory, id uint64) error {
+
+	request := Request{
+		Action:      DeleteAction,
+		Type:        RunRecord,
+		Identifiers: RequestIdentifiers{Supervisor: id},
+		Nonce:       rand.Uint32(),
+	}
+	mandatory.Pipe <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(Response)
+	return response.Error
+}
+
 func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []statistic.Statistics, found bool) {
 
 	databaseRequest := Request{

@@ -10,6 +10,7 @@ import (
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -36,6 +37,8 @@ func (thread *Thread) runCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 		thread.postRunCallback(w, r)
+	} else if r.Method == http.MethodDelete {
+		thread.deleteRunCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -65,6 +68,28 @@ func (thread *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	b, _ := json.Marshal(response)
 	w.Write(b)
+}
+
+func (thread *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	runIdStr, runIdStrFound := urlMapping["id"]
+	if !runIdStrFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	runId, err := strconv.ParseUint(runIdStr[0], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = threads.RunStop(thread.C1, thread.ProvisionerResponseTable, runId, *thread.Config.Timeout)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 type DebugJSONBody struct {

@@ -224,6 +224,8 @@ func (t *Thread) runCallback(w http.ResponseWriter, r *http.Request) {
 		t.getRunCallback(w, r)
 	} else if r.Method == "POST" {
 		t.postRunCallback(w, r)
+	} else if r.Method == http.MethodDelete {
+		t.deleteRunCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -308,6 +310,35 @@ func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
+func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	runIdStr, runIdStrFound := urlMapping["id"]
+	if !runIdStrFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	runId, err := strconv.ParseUint(runIdStr[0], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = thread.StopRun(
+		thread.Mandatory{
+			t.C5,
+			t.ProcessorResponseTable,
+			t.config.Timeout,
+		},
+		runId,
+	)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }

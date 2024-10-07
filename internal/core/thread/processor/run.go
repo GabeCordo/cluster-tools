@@ -182,3 +182,24 @@ func (t *Thread) logRun(r *thread.Request) error {
 	response := (rsp).(thread.Response)
 	return response.Error
 }
+
+func (t *Thread) stopRun(r *thread.Request) error {
+
+	request := thread.Request{
+		Action:      thread.DeleteAction,
+		Type:        thread.RunRecord,
+		Identifiers: r.Identifiers,
+		Nonce:       rand.Uint32(),
+	}
+	t.C13 <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(t.RunnerResponseTable, request.Nonce,
+		t.config.Timeout)
+
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	response := (rsp).(thread.Response)
+	return response.Error
+}

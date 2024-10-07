@@ -204,6 +204,8 @@ func (p *Processor) Run() {
 
 	p.logger.SetColour(logging.Purple)
 
+	startingTimestamp := time.Now()
+
 	// add all the modules to the provisioner
 	// note: this is a workaround to avoid exposing too much to the developer
 	// TODO: enhanced the comment
@@ -240,83 +242,11 @@ func (p *Processor) Run() {
 	}
 	go p.threads.http.Start()
 
-	// check if the config has a default pipeline to run on start
-
-	//if p.config.Processor.Pipeline.Default != "" {
-	//
-	//	deploymentsDir := os.Getenv(ClusterToolsDeploymentsEnvVar)
-	//
-	//	wrapper := &struct {
-	//		Pipeline *pipeline.Pipeline `yaml:"pipeline"`
-	//	}{}
-	//
-	//	var pipelineFile string
-	//	var f *os.File
-	//	var err error
-	//	if deploymentsDir != "" {
-	//
-	//		// an environment variables has been specified for the deployments directory
-	//
-	//		var finfo os.FileInfo
-	//		if finfo, err = os.Stat(deploymentsDir); os.IsNotExist(err) || !finfo.IsDir() {
-	//			panic(fmt.Sprintf("cannot find deployments directory %s\n", deploymentsDir))
-	//		}
-	//
-	//		pipelineFile = filepath.Join(deploymentsDir, p.config.Processor.Pipeline.Default+".yml")
-	//		if _, err = os.Stat(pipelineFile); err != nil {
-	//			panic("no pipeline exists with that default identifier")
-	//		}
-	//
-	//	} else {
-	//
-	//		// look for the deployment file in common locations that is (should) be
-	//
-	//		ex, err := os.Executable()
-	//		if err != nil {
-	//			panic(err)
-	//		}
-	//		workingDir := filepath.Dir(ex)
-	//
-	//		fileName := filepath.Join("deployments", p.config.Processor.Pipeline.Default+".yml")
-	//
-	//		// the executable is in the same folder as the config file
-	//		fp := filepath.Join(workingDir, fileName)
-	//		_, err = os.Stat(fp)
-	//
-	//		// the executable is in the /bin or /cmd folder
-	//		fp = filepath.Join(workingDir, "..", fileName)
-	//		if os.IsNotExist(err) {
-	//			_, err = os.Stat(fp)
-	//		}
-	//
-	//		// the executable is in the /cmd/binary-name folder
-	//		fp = filepath.Join(workingDir, "..", "..", fileName)
-	//		if os.IsNotExist(err) {
-	//			_, err = os.Stat(fp)
-	//		}
-	//
-	//		if err != nil {
-	//			panic(fmt.Sprintf("cannot find pipeline %s file in the deployments directory.\n", fileName))
-	//		}
-	//	}
-	//
-	//	f, err = os.Open(pipelineFile)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	if err = yaml.NewDecoder(f).Decode(wrapper); err != nil {
-	//		panic("the default pipeline file is corrupted")
-	//	}
-	//
-	//	p.channels.c1 <- threads.ProvisionerRequest{
-	//		Action:     threads.ProvisionerRunCreate,
-	//		Namespace:  "common",
-	//		Supervisor: 0,
-	//		Pipeline:   wrapper.Pipeline,
-	//		Metadata:   make(map[string]string),
-	//	}
-	//}
+	doneStartingTimestamp := time.Now()
+	timeToStart := doneStartingTimestamp.Sub(startingTimestamp).Milliseconds()
+	if p.config.Processor.Debug {
+		p.logger.Printf("startup took %d ms\n", timeToStart)
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
@@ -372,10 +302,10 @@ func (p *Processor) Connect(host string) error {
 
 		err := api.ConnectToCore(p.config.Core.Host, cfg)
 		if err == nil {
-			p.logger.Printf("connected to a new core at %s\n", p.config.Core)
+			p.logger.Printf("connected to a new core at %s\n", p.config.Core.Host)
 			break
 		} else {
-			p.logger.Alertf("failed to connect to the core at %s\n", p.config.Core)
+			p.logger.Alertf("failed to connect to the core at %s\n", p.config.Core.Host)
 			if i == (p.config.Core.Attempts - 1) {
 				return errors.New("max attempts to connect to core exceeded")
 			} else {
@@ -405,9 +335,9 @@ func (p *Processor) Disconnect() error {
 	defer func() {
 		err := api.DisconnectFromCore(p.config.Core.Host, cfg)
 		if err == nil {
-			p.logger.Printf("disconnected from the core at %s\n", p.config.Core)
+			p.logger.Printf("disconnected from the core at %s\n", p.config.Core.Host)
 		} else {
-			p.logger.Alertf("failed to disconnect from the core at %s\n", p.config.Core)
+			p.logger.Alertf("failed to disconnect from the core at %s\n", p.config.Core.Host)
 			p.logger.Alertln("\t1. the core is unreachable at the moment")
 			p.logger.Alertln("\t2. the core has crashed")
 			os.Exit(-1)

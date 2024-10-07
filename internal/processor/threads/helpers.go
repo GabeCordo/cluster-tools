@@ -34,6 +34,25 @@ func RunProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.R
 	return provisionerResponse.Error
 }
 
+func RunStop(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
+	run uint64, timeout float64) error {
+
+	request := ProvisionerRequest{
+		Action:     ProvisionerRunStop,
+		Supervisor: run,
+		Nonce:      rand.Uint32(),
+	}
+	pipe <- request
+
+	response, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	provisionerResponse := response.(ProvisionerResponse)
+	return provisionerResponse.Error
+}
+
 func ShutdownCore(pipe chan<- InterruptEvent) {
 	pipe <- Shutdown
 }

@@ -226,3 +226,23 @@ func GetRunStatus(host, namespace string, id uint64) (run.Run, error) {
 
 	return run.Run{}, errors.New("run not found")
 }
+
+func StopRun(host string, id uint64) error {
+
+	url := fmt.Sprintf("%s/run?id=%d", host, id)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+
+	rsp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if rsp.StatusCode != http.StatusOK {
+		return errors.New("something went wrong while stopping the run")
+	} else {
+		return nil
+	}
+}

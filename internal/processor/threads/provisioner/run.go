@@ -128,3 +128,14 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 
 	return nil
 }
+
+func (thread *Thread) stopRun(request *threads.ProvisionerRequest) error {
+
+	instance, found := thread.provisioner.GetSupervisor(request.Supervisor)
+	if !found {
+		return errors.New("no supervisor with that id exists")
+	}
+
+	instance.Teardown()
+	return nil
+}

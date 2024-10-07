@@ -165,3 +165,16 @@ func (t *Thread) logRun(l *log.Log) error {
 
 	return nil
 }
+
+func (t *Thread) stopRun(id uint64) error {
+
+	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(id, 10)})
+	if len(results) != 1 {
+		return errors.New("no run found with the provided id")
+	}
+
+	r := (results[0]).(*run.Run)
+	r.Status = run.Cancelled
+
+	return api.StopRun(r.Processor, id)
+}

@@ -89,6 +89,8 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				response.Error = t.processorRemove(&cfg)
 			case thread.ModuleRecord:
 				response.Error = t.deleteModule(request.Identifiers.Processor, request.Identifiers.Module)
+			case thread.RunRecord:
+				response.Error = t.stopRun(request)
 			default:
 				response.Error = thread.UnknownRequest
 			}

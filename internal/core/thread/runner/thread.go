@@ -103,6 +103,20 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				}
 			}
 		}
+	case thread.DeleteAction:
+		{
+			switch request.Type {
+			case thread.RunRecord:
+				{
+					response.Error = t.stopRun(request.Identifiers.Supervisor)
+				}
+			default:
+				{
+					t.Logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.BadRequestType
+				}
+			}
+		}
 	default:
 		{
 			t.Logger.Warn(thread.UnknownRequest.Error())

@@ -30,13 +30,6 @@ func New() *Provisioner {
 	provisioner.Modules = make(map[string]*Module)
 	provisioner.Supervisors = make(map[uint64]*pipeline2.Instance)
 
-	// TODO : I don't like this
-	//defaultFrameworkModule := new(Module)
-	//defaultFrameworkModule.Name = DefaultFrameworkModule
-	//defaultFrameworkModule.Version = "1.0"
-	//
-	//provisioner.Modules[DefaultFrameworkModule] = defaultFrameworkModule
-
 	return provisioner
 }
 
@@ -122,9 +115,6 @@ func (provisioner *Provisioner) CreateSupervisor(namespace string, identifier ui
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
-
-	// TODO : remove standalone param
-	//helper := supervisor.NewHelper(core, namespace, pipeline.Identifier, identifier, false)
 
 	functions := make([]any, len(pipeline.Functions))
 

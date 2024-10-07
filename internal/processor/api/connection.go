@@ -15,8 +15,6 @@ var client http.Client = http.Client{Timeout: 2 * time.Second}
 
 func ConnectToCore(host string, config *processor.Config) error {
 
-	fmt.Printf("Connecting to Core at %s\n", host)
-
 	url := fmt.Sprintf("%s/processor", host)
 
 	var buf bytes.Buffer

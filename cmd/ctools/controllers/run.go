@@ -19,6 +19,8 @@ func (controller RunController) Run(cli *commandline.CommandLine) commandline.Te
 
 	if cli.Flag(commandline.Show) {
 		controller.show(cli)
+	} else if cli.Flag(commandline.Stop) {
+		controller.stop(cli)
 	} else {
 		controller.create(cli)
 	}
@@ -101,4 +103,28 @@ func (controller RunController) show(cli *commandline.CommandLine) {
 		return
 	}
 	fmt.Println(string(run.Status))
+}
+
+func (controller RunController) stop(cli *commandline.CommandLine) {
+
+	idStr := cli.NextArg()
+	if idStr == commandline.FinalArg {
+		fmt.Println("you need to specify a run id")
+		return
+	}
+
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		fmt.Println("the run id must be a uint64")
+		return
+	}
+
+	core := local.GetCore()
+
+	err = api.StopRun(core, id)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("triggered run stop")
+	}
 }

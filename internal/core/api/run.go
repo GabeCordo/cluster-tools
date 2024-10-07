@@ -44,3 +44,23 @@ func ProvisionRun(processor string, namespaceName string, id uint64, cfg *pipeli
 	}
 	return nil
 }
+
+func StopRun(processor string, id uint64) error {
+
+	url := fmt.Sprintf("http://%s/run?id=%d", processor, id)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+
+	rsp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if rsp.StatusCode != http.StatusOK {
+		return errors.New("non 200 error code returned")
+	} else {
+		return nil
+	}
+}

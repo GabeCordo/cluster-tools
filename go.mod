@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.4.0
-	github.com/GabeCordo/commandline v0.1.9
+	github.com/GabeCordo/commandline v0.2.0
 	github.com/GabeCordo/toolchain v0.1.6
 	go.mongodb.org/mongo-driver v1.16.0
 	gopkg.in/yaml.v3 v3.0.1

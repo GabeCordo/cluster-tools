@@ -83,6 +83,8 @@ func (thread *Thread) processRequest(request *threads.ProvisionerRequest) {
 		response.Error = errors.New("implement me")
 	case threads.ProvisionerRunCreate:
 		response.Error = thread.provisionRun(request)
+	case threads.ProvisionerRunStop:
+		response.Error = thread.stopRun(request)
 	case threads.ProvisionerStatisticsGet:
 		response.Data = thread.getStatistics()
 	case threads.ProvisionerRegisterModules:
