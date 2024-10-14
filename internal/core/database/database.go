@@ -57,7 +57,7 @@ type Filter struct {
 	Namespace  string
 	Pipeline   string
 	Interval   Interval
-	Processor  string
+	Processor  uint64
 	Identifier string
 	Config     string
 	Verbose    bool

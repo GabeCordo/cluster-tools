@@ -11,13 +11,13 @@ func (t *Thread) getModules() []processor.ModuleData {
 	return t.processorTable.RegisteredModules()
 }
 
-func (t *Thread) addModule(processorName string, cfg *processor.ModuleConfig) error {
+func (t *Thread) addModule(processorId uint64, cfg *processor.ModuleConfig) error {
 
 	if !cfg.Verify() {
 		return errors.New("module pipeline is not valid")
 	}
 
-	if err := t.processorTable.AddModule(processorName, cfg); err != nil {
+	if err := t.processorTable.AddModule(processorId, cfg); err != nil {
 		return err
 	}
 
@@ -64,7 +64,7 @@ func (t *Thread) addModule(processorName string, cfg *processor.ModuleConfig) er
 	return nil
 }
 
-func (t *Thread) deleteModule(processorName, moduleName string) error {
+func (t *Thread) deleteModule(processorName uint64, moduleName string) error {
 
 	return t.processorTable.RemoveModule(processorName, moduleName)
 }

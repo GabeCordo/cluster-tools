@@ -6,8 +6,7 @@ import (
 )
 
 type Config struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
+	Identifier uint64 `json:"identifier"`
 }
 
 type Status string
@@ -19,8 +18,7 @@ const (
 )
 
 type Processor struct {
-	Host       string
-	Port       int
+	Id         uint64
 	Status     Status
 	LastUpdate time.Time
 	Modules    []string
@@ -29,14 +27,13 @@ type Processor struct {
 }
 
 func (processor *Processor) ToString() string {
-	return fmt.Sprintf("%s:%d", processor.Host, processor.Port)
+	return fmt.Sprintf("%d", processor.Id)
 }
 
-func newProcessor(host string, port int) *Processor {
+func newProcessor(id uint64) *Processor {
 	processor := new(Processor)
 
-	processor.Host = host
-	processor.Port = port
+	processor.Id = id
 	processor.Status = Active
 	processor.LastUpdate = time.Now()
 	processor.Modules = make([]string, 0)

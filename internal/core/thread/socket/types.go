@@ -46,7 +46,8 @@ type Thread struct {
 		config *tls.Config
 	}
 
-	connections map[string]net.Conn
+	connections      map[uint64]net.Conn
+	numOfConnections uint64
 
 	config *Config
 	Logger *logging.Logger
@@ -98,7 +99,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	t.connections = make(map[string]net.Conn)
+	t.connections = make(map[uint64]net.Conn)
 
 	t.responseTables.processor = multithreaded.NewResponseTable()
 	t.responseTables.runner = multithreaded.NewResponseTable()

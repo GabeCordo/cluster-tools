@@ -118,7 +118,7 @@ func (t *Thread) createRun(r *thread.Request) (uint64, error) {
 		return 0, errors.New("no processors are available to support the pipeline")
 	}
 	selectedProcessor.NumOfRuns++
-	request.Identifiers.Processor = selectedProcessor.ToString()
+	request.Identifiers.Processor = selectedProcessor.Id
 
 	// send the request to the scheduler t
 	// the scheduler t will:

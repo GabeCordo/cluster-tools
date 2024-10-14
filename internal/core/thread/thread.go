@@ -61,7 +61,7 @@ const (
 )
 
 type RequestIdentifiers struct {
-	Processor  string
+	Processor  uint64
 	Namespace  string
 	Pipeline   string
 	Module     string

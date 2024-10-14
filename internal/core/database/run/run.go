@@ -50,7 +50,7 @@ const (
 type Request struct {
 	Id        uint64             `json:"id"`
 	Namespace string             `json:"namespace"`
-	Processor string             `json:"processor"`
+	Processor uint64             `json:"processor"`
 	Config    *pipeline.Pipeline `json:"config"`
 	Metadata  map[string]string  `json:"data"`
 }
@@ -59,7 +59,7 @@ type Run struct {
 	Id     uint64 `json:"id"`
 	Status Status `json:"status,omitempty"`
 
-	Processor string `json:"processor,omitempty"`
+	Processor uint64 `json:"processor,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 
 	Pipeline pipeline.Pipeline `json:"pipeline,omitempty"`
@@ -69,12 +69,12 @@ type Run struct {
 	mutex sync.RWMutex
 }
 
-func New(id uint64, processorName, namespaceName string, cfg *pipeline.Pipeline) *Run {
+func New(runId, processorId uint64, namespaceName string, cfg *pipeline.Pipeline) *Run {
 	supervisor := new(Run)
 
 	supervisor.Status = Created
-	supervisor.Id = id
-	supervisor.Processor = processorName
+	supervisor.Id = runId
+	supervisor.Processor = processorId
 	supervisor.Namespace = namespaceName
 	supervisor.Pipeline = *cfg // copy instance
 	supervisor.Statistics = statistic.NewStatistics(0, 0)

@@ -2,7 +2,6 @@ package thread
 
 import (
 	"errors"
-	"fmt"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"github.com/Sentmint/cluster-tools/internal/core/database"
 	"github.com/Sentmint/cluster-tools/internal/core/database/job"
@@ -427,13 +426,13 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleDa
 	return true, (provisionerResponse.Data).([]processor.ModuleData)
 }
 
-func AddModule(mandatory Mandatory, processorName string, cfg *processor.ModuleConfig) (bool, error) {
+func AddModule(mandatory Mandatory, processorId uint64, cfg *processor.ModuleConfig) (bool, error) {
 
 	request := Request{
 		Action:      CreateAction,
 		Type:        ModuleRecord,
 		Source:      Socket,
-		Identifiers: RequestIdentifiers{Processor: processorName},
+		Identifiers: RequestIdentifiers{Processor: processorId},
 		Data:        *cfg,
 		Nonce:       rand.Uint32(),
 	}
@@ -491,13 +490,13 @@ func UnmountModule(mandatory Mandatory, moduleName string) (bool, error) {
 	return response.Success, response.Error
 }
 
-func DeleteModule(mandatory Mandatory, host string, port int, moduleName string) (bool, error) {
+func DeleteModule(mandatory Mandatory, processorId uint64, moduleName string) (bool, error) {
 
 	request := Request{
 		Action:      DeleteAction,
 		Type:        ModuleRecord,
 		Source:      Socket,
-		Identifiers: RequestIdentifiers{Processor: fmt.Sprintf("%s:%d", host, port), Module: moduleName},
+		Identifiers: RequestIdentifiers{Processor: processorId, Module: moduleName},
 		Nonce:       rand.Uint32(),
 	}
 	mandatory.Pipe <- request

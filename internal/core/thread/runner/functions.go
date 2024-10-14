@@ -27,7 +27,7 @@ func (t *Thread) getSupervisor(filter *database.Filter) ([]*run.Run, error) {
 	return supervisors, nil
 }
 
-func (t *Thread) createRun(processorName, namespaceName, pipelineName string, metadata map[string]string) (uint64, error) {
+func (t *Thread) createRun(processorId uint64, namespaceName, pipelineName string, metadata map[string]string) (uint64, error) {
 
 	// TODO : change it so that configs are received via pointer over the channel
 	mandatory := thread.Mandatory{
@@ -41,7 +41,7 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 	}
 
 	filter := database.Filter{
-		Processor: processorName,
+		Processor: processorId,
 		Namespace: namespaceName,
 	}
 	result, _ := t.registry.Create(filter, &conf)
@@ -59,7 +59,7 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 	runRequest := run.Request{
 		Id:        id,
 		Namespace: namespaceName,
-		Processor: processorName,
+		Processor: processorId,
 		Config:    &conf,
 		Metadata:  metadata,
 	}
@@ -67,7 +67,7 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 	socketRequest := thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.RunRecord,
-		Identifiers: thread.RequestIdentifiers{Processor: processorName},
+		Identifiers: thread.RequestIdentifiers{Processor: processorId},
 		Data:        runRequest,
 		Nonce:       rand.Uint32(),
 	}
@@ -75,7 +75,7 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 
 	rsp, timedOut := multithreaded.SendAndWait(t.responseTable.socket, socketRequest.Nonce, t.config.Timeout)
 	if timedOut {
-		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "could not connect to the processor and runner is canceled")
+		t.Logger.Printf("[ctgate -> proc: %s][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
 		return 0, errors.New("could not send create run to processor")
 	}
@@ -83,11 +83,11 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 	socketResponse := rsp.(thread.Response)
 	if socketResponse.Error != nil {
 		t.Logger.Print(socketResponse.Error.Error())
-		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "could not connect to the processor and runner is canceled")
+		t.Logger.Printf("[ctgate -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
 		return 0, socketResponse.Error
 	} else {
-		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "connected to processor and runner is active")
+		t.Logger.Printf("[ctgate -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "connected to processor and runner is active")
 		sup.Status = run.Active
 	}
 

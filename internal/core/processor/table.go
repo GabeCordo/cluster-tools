@@ -39,12 +39,12 @@ func (table *Table) AddProcessor(cfg *Config) error {
 	defer table.mutex.Unlock()
 
 	for _, processor := range table.processors {
-		if (processor.Host == cfg.Host) && (processor.Port == cfg.Port) {
+		if processor.Id == cfg.Identifier {
 			return AlreadyExists
 		}
 	}
 
-	processor := newProcessor(cfg.Host, cfg.Port)
+	processor := newProcessor(cfg.Identifier)
 	table.processors = append(table.processors, processor)
 	table.NumOfProcessors++
 
@@ -61,7 +61,7 @@ func (table *Table) RemoveProcessor(cfg *Config) error {
 	idx := 0
 	var instance *Processor = nil
 	for idx, instance = range table.processors {
-		if (instance.Host == cfg.Host) && (instance.Port == cfg.Port) {
+		if instance.Id == cfg.Identifier {
 			break
 		}
 	}
@@ -125,15 +125,14 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 // AddModule
 // inform the ctgate that the processor now supports provisioning calls
 // for a module and all its listed functions
-func (table *Table) AddModule(processorName string, config *ModuleConfig) error {
+func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
 
 	var processorInstance *Processor
 	for _, instance := range table.processors {
-		name := fmt.Sprintf("%s:%d", instance.Host, instance.Port)
-		if processorName == name {
+		if instance.Id == processorId {
 			processorInstance = instance
 			break
 		}
@@ -213,15 +212,14 @@ func (table *Table) AddModule(processorName string, config *ModuleConfig) error 
 
 // RemoveModule
 // remove a module from a processor
-func (table *Table) RemoveModule(processor, name string) error {
+func (table *Table) RemoveModule(processor uint64, name string) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
 
 	var instance *Processor
 	for _, instance = range table.processors {
-
-		if instance.ToString() == processor {
+		if instance.Id == processor {
 			break
 		}
 	}

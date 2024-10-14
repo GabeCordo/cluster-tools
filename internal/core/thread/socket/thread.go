@@ -11,8 +11,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
-	"strings"
 )
 
 func (t *Thread) Setup() {
@@ -95,18 +93,14 @@ func (t *Thread) Start() {
 
 		go func(c net.Conn) {
 
-			addr := strings.Split(c.RemoteAddr().String(), ":")
-			if len(addr) != 2 {
-				t.Logger.Alertln("failed to split the golang remote addr string")
-				conn.Close()
-				return
-			}
-			port, err := strconv.Atoi(addr[1])
-			if err != nil {
-				t.Logger.Alertln("failed to parse the golang remote addr string")
-				conn.Close()
-				return
-			}
+			// lock the mutex to increment the counter in a thread-safe way
+			t.mutex.Lock()
+
+			t.numOfConnections++ // todo: handle what happens when the counter overlaps
+			id := t.numOfConnections
+
+			// unlock the mutex now that the counter is acquired
+			t.mutex.Unlock()
 
 			mandatory := thread.Mandatory{
 				t.channels.c7,
@@ -114,7 +108,7 @@ func (t *Thread) Start() {
 				t.config.Timeout,
 			}
 
-			cfg := &processor.Config{Host: addr[0], Port: port}
+			cfg := &processor.Config{Identifier: id}
 			success, err := thread.AddProcessor(mandatory, cfg)
 			if !success {
 				t.Logger.Alertln("failed to register a new processor on the processor thread")
@@ -123,13 +117,12 @@ func (t *Thread) Start() {
 			}
 
 			// add the processor connection to the map of ongoing connections
-			h := c.RemoteAddr().String()
-			if _, found := t.connections[h]; found {
+			if _, found := t.connections[id]; found {
 				t.Logger.Alertln("failed to create a local association to the ongoing connection")
 				conn.Close()
 				return
 			} else {
-				t.connections[h] = conn
+				t.connections[id] = conn
 			}
 
 			decode := json.NewDecoder(c)
@@ -141,7 +134,7 @@ func (t *Thread) Start() {
 					log.Println(err)
 					break
 				} else {
-					t.HandleSocketRequest(conn.RemoteAddr().String(), &request)
+					t.HandleSocketRequest(id, &request)
 				}
 			}
 
@@ -149,7 +142,7 @@ func (t *Thread) Start() {
 
 			err = thread.DeleteProcessor(mandatory, cfg)
 			if err != nil {
-				t.Logger.Alertf("dandling processor %s:%d\n", cfg.Host, cfg.Port)
+				t.Logger.Alertf("dandling processor %s\n", c.RemoteAddr())
 			}
 
 			t.Logger.Printf("closed connection from %s\n", c.RemoteAddr())
@@ -157,7 +150,7 @@ func (t *Thread) Start() {
 	}
 }
 
-func (t *Thread) HandleSocketRequest(host string, request *common.Request) {
+func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request) {
 
 	switch request.Action {
 	case common.Create:
@@ -187,7 +180,7 @@ func (t *Thread) HandleSocketRequest(host string, request *common.Request) {
 					t.Logger.Printf("received module %s (%s)\n", config.Name, config.Version)
 
 					// TODO: needs processor name
-					_, err = thread.AddModule(mandatory, host, config)
+					_, err = thread.AddModule(mandatory, processorId, config)
 					if err != nil {
 						log.Println(err)
 					}
@@ -252,7 +245,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			case thread.RunRecord:
 				{
 
-					if request.Identifiers.Processor == "" {
+					if request.Identifiers.Processor == 0 {
 						t.Logger.Warnln("processor identifier missing for create run")
 						response.Error = thread.BadRequestType
 						return
@@ -303,7 +296,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					if request.Identifiers.Processor == "" {
+					if request.Identifiers.Processor == 0 {
 						t.Logger.Warnln("missing processor identifier for delete run")
 						response.Error = thread.InternalError
 					}
