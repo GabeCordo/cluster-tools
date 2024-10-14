@@ -37,6 +37,10 @@ type Thread struct {
 		C2        <-chan threads.ProvisionerResponse // Core is receiving responses from the Database
 	}
 
+	flags struct {
+		useTLS bool
+	}
+
 	ProvisionerResponseTable *multithreaded.ResponseTable
 
 	tls struct {

@@ -21,19 +21,32 @@ func (t *Thread) Setup() {
 
 	certificatePath := os.Getenv("CTOOLS_TLS_CERT")
 	if certificatePath == "" {
-		panic("CTOOLS_TLS_CERT environment variable not set")
+		t.Logger.Warnln("CTOOLS_TLS_CERT environment variable not set")
 	}
 
 	keyPath := os.Getenv("CTOOLS_TLS_KEY")
 	if keyPath == "" {
-		panic("CTOOLS_TLS_KEY environment variable not set")
+		t.Logger.Warnln("CTOOLS_TLS_KEY environment variable not set")
 	}
 
-	cert, err := tls.LoadX509KeyPair(certificatePath, keyPath)
-	if err != nil {
-		panic(err)
+	// [requirements]
+	// 1. the core(gateway) shall default to an un-encrypted socket when the TLS cert is missing
+	// 2. the core(gateway) shall default to an un-encrypted socket when the TLS key is missing
+	// 3. the core shall output a warning message when an un-encrypted socket is opened
+	if certificatePath == "" || keyPath == "" {
+		t.Logger.Alertln("the gateway has defaulted to an unencrypted socket! Do NOT use in production!")
+		t.flags.useTLS = false
+	} else {
+		t.flags.useTLS = true
 	}
-	t.tls.config = &tls.Config{Certificates: []tls.Certificate{cert}}
+
+	if t.flags.useTLS {
+		cert, err := tls.LoadX509KeyPair(certificatePath, keyPath)
+		if err != nil {
+			panic(err)
+		}
+		t.tls.config = &tls.Config{Certificates: []tls.Certificate{cert}}
+	}
 }
 
 func (t *Thread) Start() {
@@ -52,12 +65,21 @@ func (t *Thread) Start() {
 
 	// TLS SOCKET
 
-	if t.tls.config == nil {
+	if t.flags.useTLS && (t.tls.config == nil) {
 		panic("tls config cannot be nil")
 	}
 
 	laddr := fmt.Sprintf("%s:%d", t.config.Net.Host, t.config.Net.Port)
-	listener, err := tls.Listen("tcp", laddr, t.tls.config)
+
+	var listener net.Listener
+	var err error
+
+	if t.flags.useTLS {
+		listener, err = tls.Listen("tcp", laddr, t.tls.config)
+	} else {
+		listener, err = net.Listen("tcp", laddr)
+	}
+
 	if err != nil {
 		panic(err)
 	}

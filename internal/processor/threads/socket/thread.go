@@ -10,6 +10,7 @@ import (
 	"github.com/Sentmint/cluster-tools/internal/core/processor"
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
 	"log"
+	"net"
 	"os"
 )
 
@@ -17,24 +18,44 @@ func (thread *Thread) Setup() {
 
 	certificatePath := os.Getenv("CTOOLS_TLS_CERT")
 	if certificatePath == "" {
-		panic("CTOOLS_TLS_CERT environment variable not set")
+		thread.logger.Warnln("CTOOLS_TLS_CERT environment variable not set")
 	}
 
-	cert, err := os.ReadFile(certificatePath)
-	if err != nil {
-		panic(err)
+	// [requirements]
+	// 1. the processor shall use an un-encrypted socket when the tls-certificate is missing
+	// 2. the processor shall output a console warn when an un-encrypted socket is opened
+	if certificatePath == "" {
+		thread.logger.Alertln("the processor has opened an unencrypted socket to the gateway! Do NOT use in production!")
+		thread.flags.useTLS = false
+	} else {
+		thread.flags.useTLS = true
 	}
 
-	thread.tls.pool = x509.NewCertPool()
-	if ok := thread.tls.pool.AppendCertsFromPEM(cert); !ok {
-		log.Fatalf("failed to parse root certificate from %s",
-			thread.Config.Tls.Certificate)
+	if thread.flags.useTLS {
+		cert, err := os.ReadFile(certificatePath)
+		if err != nil {
+			panic(err)
+		}
+
+		thread.tls.pool = x509.NewCertPool()
+		if ok := thread.tls.pool.AppendCertsFromPEM(cert); !ok {
+			log.Fatalf("failed to parse root certificate from %s",
+				thread.Config.Tls.Certificate)
+		}
 	}
 
 	// CONNECTION TO GATEWAY
 
-	config := &tls.Config{RootCAs: thread.tls.pool}
-	connection, err := tls.Dial("tcp", *thread.Config.Core, config)
+	var connection net.Conn
+	var err error
+
+	if thread.flags.useTLS {
+		config := &tls.Config{RootCAs: thread.tls.pool}
+		connection, err = tls.Dial("tcp", *thread.Config.Core, config)
+	} else {
+		connection, err = net.Dial("tcp", *thread.Config.Core)
+	}
+
 	if err != nil {
 		panic(err)
 	}

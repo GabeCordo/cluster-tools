@@ -38,6 +38,10 @@ type Thread struct {
 		runner    *multithreaded.ResponseTable
 	}
 
+	flags struct {
+		useTLS bool
+	}
+
 	tls struct {
 		config *tls.Config
 	}
