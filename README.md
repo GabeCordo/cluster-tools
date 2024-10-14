@@ -11,24 +11,33 @@ are provisioned, how they should be taken offline, how they should be made redun
 > to the engine. If you are interested, feel free to reach out.
 
 ### Local Installation
+Before performing a local installation make sure the GOPATH bin folder has been added to your environment PATH variable. The
+'go install' command is a quick way to build and store a binary inside $(go env GOPATH)/bin. You will not be able to call a binary
+installed with 'go install' otherwise.
 
 ```shell
    # create a log copy of the thread
    git clone https://github.com/GabeCordo/cluster-tools
    
-   # generate a thread binary in the GOPATH bin folder
+   # install the ctgate binary
+   cd /cmd/ctgate
+   # generate the ctgate binary in the GOPATH bin folder
    go install
-   
-   # add $(go env GOPATH)/bin to your environment PATH
-   
    # generate global files used by the thread when statistic
    ctgate init
-   
-   # validate ctgate installed correctly
+   # validate ctgate is installed correctly
    ctgate doctor
+   
+   # install the ctools binary
+   cd ../ctools
+   # generate the ctools binary in the GOPATH bin folder
+   go install
+  
 ```
 
-### Running the Cluster.tools Process
+### Running the Cluster.tools Gateway
+The gateway is an orchestrator that manages various pipeline deployments. The developer communicates with the gateway to
+create, run, and watch pipelines defined by yaml files.
 
 ```shell
 ctgate start
@@ -43,13 +52,4 @@ of code coverage is a crucial step in convincing individuals to try cluster.tool
 
 ### Documentation
 
-Documentation is continuously being added to the Github Wiki found [here](docs)
-
-### Commercial Use
-
-Anyone is free to use cluster.tools inside their production environments **but it is not unlikely this comes with the
-raising fixes until the project becomes mature.**
-
-### Disclosure
-
-This repository is not related to the contributing members (of the repository) to the organizations they currently belong, the work they have, currently, or will perform at such organizations. All work completed within this repository pre-dates these organizations. All work completed withon this repository shall not be through company resources. Where "company resources" includes but is not limited to working hours, intellectual property, and electronic devices.
+Documentation can be found inside the docs folder [here](docs).

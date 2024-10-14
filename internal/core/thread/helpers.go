@@ -177,7 +177,7 @@ func AddProcessor(mandatory Mandatory, cfg *processor.Config) (bool, error) {
 	request := Request{
 		Action: CreateAction,
 		Type:   ProcessorRecord,
-		Source: HttpProcessor,
+		Source: Socket,
 		Data:   *cfg,
 		Nonce:  rand.Uint32(),
 	}
@@ -197,7 +197,7 @@ func DeleteProcessor(mandatory Mandatory, cfg *processor.Config) error {
 	request := Request{
 		Action: DeleteAction,
 		Type:   ProcessorRecord,
-		Source: HttpProcessor,
+		Source: Socket,
 		Data:   *cfg,
 		Nonce:  rand.Uint32(),
 	}
@@ -432,7 +432,7 @@ func AddModule(mandatory Mandatory, processorName string, cfg *processor.ModuleC
 	request := Request{
 		Action:      CreateAction,
 		Type:        ModuleRecord,
-		Source:      HttpProcessor,
+		Source:      Socket,
 		Identifiers: RequestIdentifiers{Processor: processorName},
 		Data:        *cfg,
 		Nonce:       rand.Uint32(),
@@ -496,7 +496,7 @@ func DeleteModule(mandatory Mandatory, host string, port int, moduleName string)
 	request := Request{
 		Action:      DeleteAction,
 		Type:        ModuleRecord,
-		Source:      HttpProcessor,
+		Source:      Socket,
 		Identifiers: RequestIdentifiers{Processor: fmt.Sprintf("%s:%d", host, port), Module: moduleName},
 		Nonce:       rand.Uint32(),
 	}

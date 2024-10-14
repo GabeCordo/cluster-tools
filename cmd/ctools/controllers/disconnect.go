@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/cluster-tools/cmd/ctools/api"
+	"github.com/Sentmint/cluster-tools/internal/api"
 )
 
 type DisconnectController struct {

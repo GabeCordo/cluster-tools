@@ -18,6 +18,25 @@ const (
 	Cancelled         = "cancelled"
 )
 
+func FromString(s string) Status {
+	switch s {
+	case "created":
+		return Created
+	case "active":
+		return Active
+	case "crashed":
+		return Crashed
+	case "completed":
+		return Completed
+	case "terminated":
+		return Terminated
+	case "cancelled":
+		return Cancelled
+	default:
+		return Cancelled
+	}
+}
+
 type Event string
 
 const (
@@ -27,6 +46,14 @@ const (
 	Error          = "error"
 	Complete       = "complete"
 )
+
+type Request struct {
+	Id        uint64             `json:"id"`
+	Namespace string             `json:"namespace"`
+	Processor string             `json:"processor"`
+	Config    *pipeline.Pipeline `json:"config"`
+	Metadata  map[string]string  `json:"data"`
+}
 
 type Run struct {
 	Id     uint64 `json:"id"`

@@ -1,4 +1,4 @@
-package client
+package rest
 
 import (
 	"context"
@@ -36,9 +36,6 @@ type Thread struct {
 
 	C22 chan<- thread.Request  // Core is sending requests to the Messenger
 	C23 <-chan thread.Response // Core is receiving responses from the Messenger
-
-	C24 chan<- thread.Request  // Core is sending requests to the Cache
-	C25 <-chan thread.Response // Core is receiving responses from the Cache
 
 	ProcessorResponseTable *multithreaded.ResponseTable
 	DatabaseResponseTable  *multithreaded.ResponseTable
@@ -104,14 +101,6 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	t.C23, ok = (channels[8]).(chan thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 8")
-	}
-	t.C24, ok = (channels[9]).(chan thread.Request)
-	if !ok {
-		return nil, errors.New("expected type 'chan CacheRequest' in index 9")
-	}
-	t.C25, ok = (channels[10]).(chan thread.Response)
-	if !ok {
-		return nil, errors.New("expected type 'chan CacheResponse' in index 10")
 	}
 
 	t.ProcessorResponseTable = multithreaded.NewResponseTable()

@@ -1,4 +1,4 @@
-package client
+package rest
 
 import (
 	"context"
@@ -115,15 +115,6 @@ func (t *Thread) Start() {
 				break
 			}
 			t.MessengerResponseTable.Write(messengerResponse.Nonce, messengerResponse)
-		}
-	}()
-
-	go func() {
-		for cacheResponse := range t.C25 {
-			if !t.accepting {
-				break
-			}
-			t.SchedulerResponseTable.Write(cacheResponse.Nonce, cacheResponse)
 		}
 	}()
 

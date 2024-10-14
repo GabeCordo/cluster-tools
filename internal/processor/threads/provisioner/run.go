@@ -3,10 +3,11 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/processor/api"
+	"github.com/Sentmint/cluster-tools/internal/core/database/run"
 	"github.com/Sentmint/cluster-tools/internal/processor/provision"
 	"github.com/Sentmint/cluster-tools/internal/processor/provision/pipeline"
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -69,30 +70,54 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		//  2) bellow; when the pipeline instance has stopped
 		// the mutex ensures there is (no) data race between the two and the statistic updates in the block
 		// bellow are only sent in the pipeline instance has not come to a stop.
-		if !*thread.Config.Standalone {
-			go func() {
-				for {
-					m.Lock()
-					if !supervisorInstance.IsAlive() {
-						break
-					}
-
-					api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), supervisorInstance.Pipeline.Stats)
-					m.Unlock()
-
-					time.Sleep(1 * time.Second) // wait before the next update
+		go func() {
+			for {
+				m.Lock()
+				if !supervisorInstance.IsAlive() {
+					thread.logger.Warnf("cannot send update for supervisor %d that is not alive\n", supervisorInstance.Id)
+					break
 				}
-			}()
-		}
+
+				run := run.Run{
+					Id:         supervisorInstance.Id,
+					Status:     run.Active,
+					Statistics: supervisorInstance.Pipeline.Stats,
+				}
+
+				thread.C0 <- threads.SocketRequest{
+					Action: threads.SocketRunUpdate,
+					Data:   run,
+					Nonce:  rand.Uint32(),
+				}
+
+				m.Unlock()
+
+				time.Sleep(1 * time.Second) // wait before the next update
+			}
+		}()
+
+		thread.runWg.Add(1)
 
 		// block until the runner completes
-		response := supervisorInstance.Start()
+		supervisorInstance.Start()
 
-		if !*thread.Config.Standalone {
-			m.Lock()
-			api.UpdateRun(*thread.Config.Core, supervisorInstance.Id, provision.RunStatus(supervisorInstance.State), response.Stats)
-			m.Unlock()
+		m.Lock()
+
+		status := string(supervisorInstance.State)
+
+		run := run.Run{
+			Id:         supervisorInstance.Id,
+			Status:     run.FromString(status), // TODO: provision.RunStatus(supervisorInstance.State)
+			Statistics: supervisorInstance.Pipeline.Stats,
 		}
+
+		thread.C0 <- threads.SocketRequest{
+			Action: threads.SocketRunUpdate,
+			Data:   run,
+			Nonce:  rand.Uint32(),
+		}
+
+		m.Unlock()
 
 		// provide the console with output indicating that the cluster has completed
 		// we already provide output when a cluster is provisioned, so it completes the state
@@ -123,7 +148,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		// the provisioned cluster to complete before allowing the etl-threads to shut down
 		//if !clusterWrapper.IsStream() {
 		thread.DecrementActiveSupervisors()
-		thread.requestWg.Done()
+		thread.runWg.Done()
 	}(supervisorInstance)
 
 	return nil

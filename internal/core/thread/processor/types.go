@@ -23,8 +23,8 @@ type Config struct {
 type Thread struct {
 	Interrupt chan<- thread.InterruptEvent
 
-	C5 <-chan thread.Request  // Processor rec req from the client thread
-	C6 chan<- thread.Response // Processor sending rsp to the client thread
+	C5 <-chan thread.Request  // Processor rec req from the rest thread
+	C6 chan<- thread.Response // Processor sending rsp to the rest thread
 
 	C7 <-chan thread.Request  // Processor rec req from the processor thread
 	C8 chan<- thread.Response // Processor sending rsp to the processor thread

@@ -17,15 +17,23 @@ func (t *Thread) Start() {
 
 	// INCOMING REQUESTS
 
-	thread.SetupListener(t.C13, t.C14, &t.accepting, &t.wg, thread.Supervisor, t.Handle)
+	thread.SetupListener(t.channels.C13, t.channels.C14, &t.accepting, &t.wg, thread.Runner, t.Handle)
 
 	// INCOMING RESPONSES
 
 	go func() {
 		// response coming from database thread
-		for response := range t.C16 {
+		for response := range t.channels.C16 {
 			// if this doesn't spawn its own thread we will be left waiting
-			t.DatabaseResponseTable.Write(response.Nonce, response)
+			t.responseTable.database.Write(response.Nonce, response)
+		}
+	}()
+
+	go func() {
+		// response coming from database thread
+		for response := range t.channels.C10 {
+			// if this doesn't spawn its own thread we will be left waiting
+			t.responseTable.socket.Write(response.Nonce, response)
 		}
 	}()
 }

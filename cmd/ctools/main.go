@@ -34,13 +34,5 @@ func main() {
 	gc := cli.AddCommand("gate", controllers.GatewayController{})
 	gc.SetCategory("config").SetDescription("switch the gateway used by ctools")
 
-	// gateway controllers
-
-	//cc := cli.AddCommand("connect", controllers.ConnectController{})
-	//cc.SetCategory("gateway").SetDescription("connect the processor to a gateway")
-	//
-	//dc := cli.AddCommand("disconnect", controllers.DisconnectController{})
-	//dc.SetCategory("gateway").SetDescription("disconnect the processor from a gateway")
-
 	cli.Run()
 }

@@ -130,10 +130,10 @@ type Module uint8
 
 const (
 	HttpClient Module = iota
-	HttpProcessor
+	Socket
 	Database
 	Processor
-	Supervisor
+	Runner
 	Messenger
 	Cache
 	Scheduler

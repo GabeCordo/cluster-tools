@@ -46,7 +46,7 @@ func (controller ExampleController) Run(cli *commandline.CommandLine) commandlin
 	m.LinkFunction("mul2", mul2)
 	m.LinkFunction("prt", prt)
 
-	p.Run()
+	p.Runtime()
 
 	return commandline.Terminate
 }

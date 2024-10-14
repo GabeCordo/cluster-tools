@@ -3,7 +3,6 @@ package processor
 import (
 	"github.com/Sentmint/cluster-tools/internal/core/processor"
 	"github.com/Sentmint/cluster-tools/internal/core/thread"
-	"time"
 )
 
 func (t *Thread) Setup() {
@@ -33,17 +32,6 @@ func (t *Thread) Start() {
 		// response coming from the database t
 		for response := range t.C12 {
 			t.DatabaseResponseTable.Write(response.Nonce, response)
-		}
-	}()
-
-	// PROCESSOR PROBE LOOP
-
-	go func() {
-		sleepDuration := time.Duration(t.config.ProbeEvery) * time.Second
-
-		for {
-			t.processorPing()
-			time.Sleep(sleepDuration)
 		}
 	}()
 }

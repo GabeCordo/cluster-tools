@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/GabeCordo/toolchain/logging"
-	cache_cmp "github.com/Sentmint/cluster-tools/internal/core/cache/local"
 	"github.com/Sentmint/cluster-tools/internal/core/database/job"
 	config_db "github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
 	supervisor_db "github.com/Sentmint/cluster-tools/internal/core/database/run"
@@ -10,28 +9,26 @@ import (
 	"github.com/Sentmint/cluster-tools/internal/core/message/log"
 	processor_cmp "github.com/Sentmint/cluster-tools/internal/core/processor"
 	"github.com/Sentmint/cluster-tools/internal/core/thread"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/cache"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/database"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/messenger"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/processor"
-	http_client "github.com/Sentmint/cluster-tools/internal/core/thread/rest/client"
-	http_processor "github.com/Sentmint/cluster-tools/internal/core/thread/rest/processor"
+	rest_api "github.com/Sentmint/cluster-tools/internal/core/thread/rest"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/runner"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/scheduler"
+	"github.com/Sentmint/cluster-tools/internal/core/thread/socket"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 type Core struct {
-	HttpClientThread    *http_client.Thread
-	HttpProcessorThread *http_processor.Thread
-	ProcessorThread     *processor.Thread
-	SupervisorThread    *runner.Thread
-	MessengerThread     *messenger.Thread
-	DatabaseThread      *database.Thread
-	CacheThread         *cache.Thread
-	SchedulerThread     *scheduler.Thread
+	RestThread      *rest_api.Thread
+	SocketThread    *socket.Thread
+	ProcessorThread *processor.Thread
+	RunnerThread    *runner.Thread
+	MessengerThread *messenger.Thread
+	DatabaseThread  *database.Thread
+	SchedulerThread *scheduler.Thread
 
 	C1        chan thread.Request        // DatabaseRequest
 	C2        chan thread.Response       // DatabaseResponse
@@ -93,41 +90,47 @@ func New(configPath string) (*Core, error) {
 	core.C21 = make(chan thread.Response, 10)
 	core.C22 = make(chan thread.Request, 10)
 	core.C23 = make(chan thread.Response, 10)
-	core.C24 = make(chan thread.Request, 10)
-	core.C25 = make(chan thread.Response, 10)
+	core.C24 = make(chan thread.Request, 10)  // free for use
+	core.C25 = make(chan thread.Response, 10) // free for use
 	core.C26 = make(chan thread.Request, 10)
 	core.C27 = make(chan thread.Response, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)
 
-	httpLogger, err := logging.NewLogger(HttpClient.ToString(), &GetConfigInstance().Debug)
+	// HTTP CLIENT LOGICAL THREAD
+
+	restLogger, err := logging.NewLogger(RestAPI.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
 
-	httpConfig := &http_client.Config{}
+	httpConfig := &rest_api.Config{}
 	core.config.FillHttpClientConfig(httpConfig)
 
-	core.HttpClientThread, err = http_client.New(httpConfig, httpLogger,
-		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23, core.C24, core.C25)
+	core.RestThread, err = rest_api.New(httpConfig, restLogger,
+		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23)
 	if err != nil {
 		return nil, err
 	}
 
-	httpProcessorLogger, err := logging.NewLogger(HttpProcessor.ToString(), &GetConfigInstance().Debug)
+	httpProcessorLogger, err := logging.NewLogger(Socket.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
 
-	httpProcessorConfig := &http_processor.Config{}
-	core.config.FillHttpProcessorConfig(httpProcessorConfig)
+	// SOCKET LOGICAL THREAD
 
-	core.HttpProcessorThread, err = http_processor.New(httpProcessorConfig, httpProcessorLogger,
+	socketConfig := &socket.Config{}
+	core.config.FillSocketConfig(socketConfig)
+
+	core.SocketThread, err = socket.New(socketConfig, httpProcessorLogger,
 		core.interrupt, core.C7, core.C8, core.C9, core.C10)
 	if err != nil {
 		return nil, err
 	}
+
+	// PROCESSOR LOGICAL THREAD
 
 	processorLogger, err := logging.NewLogger(Processor.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
@@ -145,21 +148,25 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	supervisorLogger, err := logging.NewLogger(Supervisor.ToString(), &GetConfigInstance().Debug)
+	// SUPERVISOR LOGICAL THREAD
+
+	runnerLogger, err := logging.NewLogger(Runner.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
 
-	supervisorConfig := &runner.Config{}
-	core.config.FillSupervisorConfig(supervisorConfig)
+	runnerConfig := &runner.Config{}
+	core.config.FillRunnerConfig(runnerConfig)
 
 	registry := supervisor_db.NewLocalDatabase()
 
-	core.SupervisorThread, err = runner.NewThread(supervisorConfig, supervisorLogger, registry,
-		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17)
+	core.RunnerThread, err = runner.NewThread(runnerConfig, runnerLogger, registry,
+		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17, core.C9, core.C10)
 	if err != nil {
 		return nil, err
 	}
+
+	// MESSENGER LOGICAL THREAD
 
 	messengerLogger, err := logging.NewLogger(Messenger.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
@@ -176,6 +183,8 @@ func New(configPath string) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// DATABASE LOGICAL THREAD
 
 	databaseLogger, err := logging.NewLogger(Database.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
@@ -197,21 +206,25 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	cacheLogger, err := logging.NewLogger(Cache.ToString(), &GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
+	// CACHE LOGICAL THREAD
 
-	cacheConfig := &cache.Config{}
-	core.config.FillCacheConfig(cacheConfig)
+	//cacheLogger, err := logging.NewLogger(Cache.ToString(), &GetConfigInstance().Debug)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//cacheConfig := &cache.Config{}
+	//core.config.FillCacheConfig(cacheConfig)
+	//
+	//cacheInstance := cache_cmp.NewCache(1000)
+	//
+	//core.CacheThread, err = cache.New(cacheConfig, cacheLogger, cacheInstance,
+	//	core.interrupt, core.C9, core.C10, core.C24, core.C25)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	cacheInstance := cache_cmp.NewCache(1000)
-
-	core.CacheThread, err = cache.New(cacheConfig, cacheLogger, cacheInstance,
-		core.interrupt, core.C9, core.C10, core.C24, core.C25)
-	if err != nil {
-		return nil, err
-	}
+	// SCHEDULER LOGICAL THREAD
 
 	schedulerLogger, err := logging.NewLogger(Scheduler.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
@@ -221,13 +234,13 @@ func New(configPath string) (*Core, error) {
 	schedulerConig := &scheduler.Config{}
 	core.config.FillSchedulerConfig(schedulerConig)
 
-	//schedulerInstance, _ := scheduler_cmp.New(jobDatabase)
-
 	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, jobDatabase,
 		core.interrupt, core.C18, core.C19, core.C20, core.C21, core.C26, core.C27)
 	if err != nil {
 		return nil, err
 	}
+
+	// CORE DEFINITIONS
 
 	coreLogger, err := logging.NewLogger(Undefined.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
@@ -261,7 +274,7 @@ func (core *Core) Run() {
 		core.logger.Println("Messenger Thread Started")
 	}
 
-	// needed in-case the runner or client thread need to populate data on startup
+	// needed in-case the runner or rest thread need to populate data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
 	if core.config.Debug {
@@ -271,16 +284,16 @@ func (core *Core) Run() {
 	// if we chain requests, we should have a way to save that data for re-use
 	// FIX: the cache should start up before the provisioner in case the provisioner
 	//		has stream processes that need to start using it.
-	core.CacheThread.Setup()
-	go core.CacheThread.Start()
-	if core.config.Debug {
-		core.logger.Println("Cache Thread Started")
-	}
+	//core.CacheThread.Setup()
+	//go core.CacheThread.Start()
+	//if core.config.Debug {
+	//	core.logger.Println("Cache Thread Started")
+	//}
 
-	core.SupervisorThread.Setup()
-	go core.SupervisorThread.Start()
+	core.RunnerThread.Setup()
+	go core.RunnerThread.Start()
 	if core.config.Debug {
-		core.logger.Println("Run Thread Started")
+		core.logger.Println("Runtime Thread Started")
 	}
 
 	core.ProcessorThread.Setup()
@@ -296,8 +309,8 @@ func (core *Core) Run() {
 		core.SchedulerThread.Scheduler.Print()
 	}
 
-	core.HttpProcessorThread.Setup()
-	go core.HttpProcessorThread.Start()
+	core.SocketThread.Setup()
+	go core.SocketThread.Start()
 	if core.config.Debug {
 		core.logger.Println("HTTP Processor API Thread Started")
 		core.logger.Printf("\t- Listening on %s:%d\n",
@@ -305,8 +318,8 @@ func (core *Core) Run() {
 	}
 
 	// the gateway to the frontend cluster should be the last startup
-	core.HttpClientThread.Setup()
-	go core.HttpClientThread.Start() // event loop
+	core.RestThread.Setup()
+	go core.RestThread.Start() // event loop
 	if core.config.Debug {
 		core.logger.Println("HTTP Client API Thread Started")
 		core.logger.Printf("\t- Listening on %s:%d\n",
@@ -345,13 +358,13 @@ func (core *Core) Run() {
 	core.logger.SetColour(logging.Red)
 
 	// close the gateway, stop new thread from flooding into the servers
-	core.HttpClientThread.Teardown()
+	core.RestThread.Teardown()
 
 	if core.config.Debug {
-		core.logger.Println("client shutdown")
+		core.logger.Println("rest shutdown")
 	}
 
-	core.HttpProcessorThread.Teardown()
+	core.SocketThread.Teardown()
 
 	if core.config.Debug {
 		core.logger.Println("processor shutdown")
@@ -376,18 +389,18 @@ func (core *Core) Run() {
 		core.logger.Println("processor shutdown")
 	}
 
-	core.SupervisorThread.Teardown()
+	core.RunnerThread.Teardown()
 
 	if core.config.Debug {
 		core.logger.Println("runner shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the data is useless, shutdown
-	core.CacheThread.Teardown()
+	//core.CacheThread.Teardown()
 
-	if core.config.Debug {
-		core.logger.Println("cache shutdown")
-	}
+	//if core.config.Debug {
+	//	core.logger.Println("cache shutdown")
+	//}
 
 	// the runner might need to database data while finishing, close after
 	core.DatabaseThread.Teardown()

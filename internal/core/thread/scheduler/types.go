@@ -22,8 +22,8 @@ type Thread struct {
 	C18 chan<- thread.Request  // Processor rec req from the processor thread
 	C19 <-chan thread.Response // Processor sending rsp to the processor thread
 
-	C20 <-chan thread.Request  // Processor receives request from client thread
-	C21 chan<- thread.Response // Processor sends response to client thread
+	C20 <-chan thread.Request  // Processor receives request from rest thread
+	C21 chan<- thread.Response // Processor sends response to rest thread
 
 	C26 chan<- thread.Request  // Scheduler sends request to database_thread
 	C27 <-chan thread.Response // Scheduler receives response from database_thread

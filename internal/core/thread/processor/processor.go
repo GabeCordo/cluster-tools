@@ -1,8 +1,6 @@
 package processor
 
 import (
-	"fmt"
-	"github.com/Sentmint/cluster-tools/internal/core/api"
 	"github.com/Sentmint/cluster-tools/internal/core/processor"
 )
 
@@ -38,42 +36,4 @@ func (t *Thread) processorRemove(config *processor.Config) error {
 			config.Host, config.Port, err.Error())
 	}
 	return err
-}
-
-func (t *Thread) processorPing() {
-
-	table := t.processorTable
-	processors := table.GetProcessors()
-
-	// iterate over each processor and probe whether they are still
-	// reachable, if not, the processor state should be updated
-	for _, p := range processors {
-
-		// the processor probe failed if err is not nil
-		if err := api.Probe(p); err != nil {
-
-			var suffix string
-			if p.Retries > 0 {
-				suffix = fmt.Sprintf(" (retry %d)", p.Retries)
-			}
-
-			t.Logger.Printf("[ctgate -> %s:%d] unable to probe processor %s\n", p.Host, p.Port, suffix)
-
-			if (p.Retries + 1) >= t.config.MaxRetry {
-
-				t.Logger.Printf("max probe retries hit, removing processor %s:%d\n", p.Host, p.Port)
-
-				if err = table.RemoveProcessor(&processor.Config{
-					Host: p.Host,
-					Port: p.Port,
-				}); err != nil {
-					t.Logger.Println("failed to remove processor")
-				}
-			} else {
-				p.Retries++
-			}
-		} else {
-			p.Retries = 0
-		}
-	}
 }

@@ -446,6 +446,7 @@ func (supervisor *Instance) Provision(function *Function) {
 			// allows the Transform goroutines to terminate once they have
 			// completed processing all of their data
 			function.To.Value.ProducerDone()
+			fmt.Println(function.To.Value.ChannelFinished)
 		} else if (function.From != nil) && (function.To == nil) {
 			// the function is an ENDPOINT NODE of the Pipeline if no data is being sent
 
@@ -461,11 +462,6 @@ func (supervisor *Instance) Provision(function *Function) {
 					supervisor.waitGroup.Done()
 				}
 			}()
-
-			// todo ?
-			if function.Config.WaitBefore {
-
-			}
 
 			var queuedRequests reflect.Value
 			if function.Config.WaitBefore {

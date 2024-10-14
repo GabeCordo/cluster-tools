@@ -8,10 +8,10 @@ import (
 	"github.com/Sentmint/cluster-tools/internal/core/thread/database"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/messenger"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/processor"
-	http_client "github.com/Sentmint/cluster-tools/internal/core/thread/rest/client"
-	http_processor "github.com/Sentmint/cluster-tools/internal/core/thread/rest/processor"
+	http_client "github.com/Sentmint/cluster-tools/internal/core/thread/rest"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/runner"
 	"github.com/Sentmint/cluster-tools/internal/core/thread/scheduler"
+	"github.com/Sentmint/cluster-tools/internal/core/thread/socket"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -57,10 +57,14 @@ type Config struct {
 		Client struct {
 			Host string `yaml:"host"`
 			Port int    `yaml:"port"`
-		} `yaml:"client"`
+		} `yaml:"rest"`
 		Processor struct {
 			Host string `yaml:"host"`
 			Port int    `yaml:"port"`
+			TLS  struct {
+				Certificate string `yaml:"certificate"`
+				PrivateKey  string `yaml:"private_key"`
+			} `yaml:"TLS"`
 		} `yaml:"processor"`
 	} `yaml:"net"`
 	Processor struct {
@@ -163,12 +167,14 @@ func (config *Config) FillHttpClientConfig(httpClientConfig *http_client.Config)
 	httpClientConfig.Timeout = config.MaxWaitForResponse
 }
 
-func (config *Config) FillHttpProcessorConfig(processorClientConfig *http_processor.Config) {
+func (config *Config) FillSocketConfig(socketConfig *socket.Config) {
 	// TODO - add panic check
-	processorClientConfig.Debug = config.Debug
-	processorClientConfig.Net.Host = config.Net.Processor.Host
-	processorClientConfig.Net.Port = config.Net.Processor.Port
-	processorClientConfig.Timeout = config.MaxWaitForResponse
+	socketConfig.Debug = config.Debug
+	socketConfig.Net.Host = config.Net.Processor.Host
+	socketConfig.Net.Port = config.Net.Processor.Port
+	socketConfig.Timeout = config.MaxWaitForResponse
+	socketConfig.Tls.Certificate = config.Net.Processor.TLS.Certificate
+	socketConfig.Tls.Key = config.Net.Processor.TLS.PrivateKey
 }
 
 func (config *Config) FillMessengerConfig(messengerConfig *messenger.Config) {
@@ -202,7 +208,7 @@ func (config *Config) FillProcessorConfig(processorConfig *processor.Config) {
 	processorConfig.Net.Port = config.Net.Processor.Port
 }
 
-func (config *Config) FillSupervisorConfig(supervisorConfig *runner.Config) {
+func (config *Config) FillRunnerConfig(supervisorConfig *runner.Config) {
 	// TODO - add panic check
 	supervisorConfig.Debug = config.Debug
 	supervisorConfig.Timeout = config.MaxWaitForResponse

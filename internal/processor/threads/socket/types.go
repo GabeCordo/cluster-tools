@@ -1,13 +1,13 @@
-package http
+package socket
 
 import (
-	"context"
+	"crypto/x509"
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"github.com/Sentmint/cluster-tools/internal/core/processor"
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
-	"net/http"
+	"net"
 	"sync"
 )
 
@@ -18,25 +18,36 @@ type Config struct {
 	Timeout     *float64
 	Standalone  *bool
 	ExternalNet processor.Config
-	Core        *string
-	Net         string
+
+	Tls struct {
+		Certificate string
+	}
+
+	Core *string
+	Net  string
 }
 
 type Thread struct {
 	Config *Config
 
-	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
-
-	C1 chan<- threads.ProvisionerRequest  // Core is sending threads to the Database
-	C2 <-chan threads.ProvisionerResponse // Core is receiving responses from the Database
+	channels struct {
+		Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
+		C0        <-chan threads.SocketRequest
+		C1        chan<- threads.ProvisionerRequest  // Core is sending threads to the Database
+		C2        <-chan threads.ProvisionerResponse // Core is receiving responses from the Database
+	}
 
 	ProvisionerResponseTable *multithreaded.ResponseTable
 
-	server    *http.Server
-	mux       *http.ServeMux
-	cancelCtx context.CancelFunc
+	tls struct {
+		pool *x509.CertPool
+	}
+
+	connection net.Conn
 
 	logger *logging.Logger
+
+	requestWg sync.WaitGroup
 
 	accepting bool
 	counter   uint32
@@ -49,20 +60,22 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 
 	var ok bool
 
-	thread.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
+	thread.channels.Interrupt, ok = (channels[0]).(chan threads.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	thread.C1, ok = (channels[1]).(chan threads.ProvisionerRequest)
+	thread.channels.C0, ok = (channels[1]).(chan threads.SocketRequest)
+	if !ok {
+		return nil, errors.New("expected type 'chan SocketRequest' in index 1")
+	}
+	thread.channels.C1, ok = (channels[2]).(chan threads.ProvisionerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 1")
 	}
-	thread.C2, ok = (channels[2]).(chan threads.ProvisionerResponse)
+	thread.channels.C2, ok = (channels[3]).(chan threads.ProvisionerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 2")
 	}
-
-	thread.server = new(http.Server)
 
 	thread.accepting = true
 	thread.counter = 0

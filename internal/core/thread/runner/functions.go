@@ -3,7 +3,6 @@ package runner
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/cluster-tools/internal/core/api"
 	"github.com/Sentmint/cluster-tools/internal/core/database"
 	"github.com/Sentmint/cluster-tools/internal/core/database/run"
 	"github.com/Sentmint/cluster-tools/internal/core/message"
@@ -32,8 +31,8 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 
 	// TODO : change it so that configs are received via pointer over the channel
 	mandatory := thread.Mandatory{
-		Pipe:          t.C15,
-		ResponseTable: t.DatabaseResponseTable,
+		Pipe:          t.channels.C15,
+		ResponseTable: t.responseTable.database,
 		Timeout:       t.config.Timeout,
 	}
 	conf, found := thread.GetPipelineFromDatabase(mandatory, namespaceName, pipelineName)
@@ -56,18 +55,43 @@ func (t *Thread) createRun(processorName, namespaceName, pipelineName string, me
 	sup := (results[0]).(*run.Run)
 
 	// TODO : need to support sending the received metadata
-	err := api.ProvisionRun(processorName, namespaceName, id, &conf, metadata)
 
-	if err != nil {
-		t.Logger.Print(err.Error())
+	runRequest := run.Request{
+		Id:        id,
+		Namespace: namespaceName,
+		Processor: processorName,
+		Config:    &conf,
+		Metadata:  metadata,
+	}
+
+	socketRequest := thread.Request{
+		Action:      thread.CreateAction,
+		Type:        thread.RunRecord,
+		Identifiers: thread.RequestIdentifiers{Processor: processorName},
+		Data:        runRequest,
+		Nonce:       rand.Uint32(),
+	}
+	t.channels.C9 <- socketRequest
+
+	rsp, timedOut := multithreaded.SendAndWait(t.responseTable.socket, socketRequest.Nonce, t.config.Timeout)
+	if timedOut {
 		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
+		return 0, errors.New("could not send create run to processor")
+	}
+
+	socketResponse := rsp.(thread.Response)
+	if socketResponse.Error != nil {
+		t.Logger.Print(socketResponse.Error.Error())
+		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "could not connect to the processor and runner is canceled")
+		sup.Status = run.Cancelled
+		return 0, socketResponse.Error
 	} else {
 		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorName, sup.GetId(), "connected to processor and runner is active")
 		sup.Status = run.Active
 	}
 
-	return id, err
+	return id, socketResponse.Error
 }
 
 func (t *Thread) updateRun(instance *run.Run) error {
@@ -98,9 +122,9 @@ func (t *Thread) updateRun(instance *run.Run) error {
 			Data:  stored.GetStatistic(),
 			Nonce: rand.Uint32(),
 		}
-		t.C15 <- request
+		t.channels.C15 <- request
 
-		rsp, didTimeout := multithreaded.SendAndWait(t.DatabaseResponseTable, request.Nonce, t.config.Timeout)
+		rsp, didTimeout := multithreaded.SendAndWait(t.responseTable.database, request.Nonce, t.config.Timeout)
 		if didTimeout {
 			return multithreaded.NoResponseReceived
 		}
@@ -120,7 +144,7 @@ func (t *Thread) updateRun(instance *run.Run) error {
 			},
 			Nonce: rand.Uint32(),
 		}
-		t.C17 <- msgrRequest
+		t.channels.C17 <- msgrRequest
 	}
 
 	return nil
@@ -161,7 +185,7 @@ func (t *Thread) logRun(l *log.Log) error {
 		Data:  l.Message,
 		Nonce: rand.Uint32(),
 	}
-	t.C17 <- request
+	t.channels.C17 <- request
 
 	return nil
 }
@@ -176,5 +200,27 @@ func (t *Thread) stopRun(id uint64) error {
 	r := (results[0]).(*run.Run)
 	r.Status = run.Cancelled
 
-	return api.StopRun(r.Processor, id)
+	request := thread.Request{
+		Action: thread.DeleteAction,
+		Type:   thread.RunRecord,
+		Identifiers: thread.RequestIdentifiers{
+			Supervisor: id,
+			Processor:  r.Processor,
+		},
+		Nonce: rand.Uint32(),
+	}
+
+	t.channels.C9 <- request
+
+	rsp, didTimeout := multithreaded.SendAndWait(t.responseTable.socket, request.Nonce, t.config.Timeout)
+	if didTimeout {
+		return multithreaded.NoResponseReceived
+	}
+
+	socketResponse, ok := rsp.(thread.Response)
+	if !ok {
+		return errors.New("the thread did not return a thread.Response")
+	}
+
+	return socketResponse.Error
 }

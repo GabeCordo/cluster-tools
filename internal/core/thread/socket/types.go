@@ -1,11 +1,12 @@
-package processor
+package socket
 
 import (
+	"crypto/tls"
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 	"github.com/Sentmint/cluster-tools/internal/core/thread"
-	"net/http"
+	"net"
 	"sync"
 )
 
@@ -15,30 +16,41 @@ type Config struct {
 		Host string
 		Port int
 	}
+	Tls struct {
+		Certificate string
+		Key         string
+	}
 	Timeout float64
 }
 
 type Thread struct {
-	mutex sync.Mutex
-
 	Interrupt chan<- thread.InterruptEvent
 
-	C7 chan<- thread.Request  // HTTP Processor is sending req to the processor_thread
-	C8 <-chan thread.Response // HTTP Processor is rec rsp from the processor_thread
+	channels struct {
+		c7  chan<- thread.Request  // socket_thread is sending req to the processor_thread
+		c8  <-chan thread.Response // socket_thread is rec rsp from the processor_thread
+		c9  <-chan thread.Request  // runner_thread is sending req to the socket_thread
+		c10 chan<- thread.Response // socket_thread is sending rsp to the runner_thread
+	}
 
-	C9  chan<- thread.Request  // HTTP Processor is sending req to the cache_thread
-	C10 <-chan thread.Response // HTTP Processor is rec rsp from the cache_thread
+	responseTables struct {
+		processor *multithreaded.ResponseTable
+		runner    *multithreaded.ResponseTable
+	}
 
-	ProcessorResponseTable *multithreaded.ResponseTable
-	CacheResponseTable     *multithreaded.ResponseTable
+	tls struct {
+		config *tls.Config
+	}
 
-	server *http.Server
-	mux    *http.ServeMux
+	connections map[string]net.Conn
 
 	config *Config
 	Logger *logging.Logger
 
 	accepting bool
+
+	wg    sync.WaitGroup
+	mutex sync.RWMutex
 }
 
 func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
@@ -62,28 +74,30 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
 
-	t.C7, ok = (channels[1]).(chan thread.Request)
+	t.channels.c7, ok = (channels[1]).(chan thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	t.C8, ok = (channels[2]).(chan thread.Response)
+	t.channels.c8, ok = (channels[2]).(chan thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	t.C9, ok = (channels[3]).(chan thread.Request)
+	t.channels.c9, ok = (channels[3]).(chan thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	t.C10, ok = (channels[4]).(chan thread.Response)
+	t.channels.c10, ok = (channels[4]).(chan thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	t.ProcessorResponseTable = multithreaded.NewResponseTable()
-	t.CacheResponseTable = multithreaded.NewResponseTable()
+	t.connections = make(map[string]net.Conn)
+
+	t.responseTables.processor = multithreaded.NewResponseTable()
+	t.responseTables.runner = multithreaded.NewResponseTable()
 
 	return t, nil
 }

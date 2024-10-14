@@ -24,8 +24,9 @@ type Thread struct {
 
 	Interrupt chan<- threads.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C1 chan threads.ProvisionerRequest    // Run is receiving threads from the http_thread
-	C2 chan<- threads.ProvisionerResponse // Run is sending responses to the http_thread
+	C0 chan threads.SocketRequest
+	C1 chan threads.ProvisionerRequest    // Runtime is receiving threads from the http_thread
+	C2 chan<- threads.ProvisionerResponse // Runtime is sending responses to the http_thread
 
 	logger *logging.Logger
 
@@ -35,9 +36,9 @@ type Thread struct {
 	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
 	backlogMutex           sync.RWMutex
 
-	accepting   bool
-	listenersWg sync.WaitGroup
-	requestWg   sync.WaitGroup
+	accepting bool
+	runWg     sync.WaitGroup // wait group on the number of active runs
+	requestWg sync.WaitGroup // wait group on the number of processed async messages
 }
 
 func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provisioner, channels ...interface{}) (*Thread, error) {
@@ -48,13 +49,17 @@ func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provi
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	instance.C1, ok = (channels[1]).(chan threads.ProvisionerRequest)
+	instance.C0, ok = (channels[1]).(chan threads.SocketRequest)
 	if !ok {
-		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 1")
+		return nil, errors.New("expected type 'chan SocketRequest' in index 1")
 	}
-	instance.C2, ok = (channels[2]).(chan threads.ProvisionerResponse)
+	instance.C1, ok = (channels[2]).(chan threads.ProvisionerRequest)
 	if !ok {
-		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 2")
+		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 2")
+	}
+	instance.C2, ok = (channels[3]).(chan threads.ProvisionerResponse)
+	if !ok {
+		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 3")
 	}
 
 	if logger == nil {

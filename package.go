@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/core/processor"
-	"github.com/Sentmint/cluster-tools/internal/processor/api"
 	"github.com/Sentmint/cluster-tools/internal/processor/config"
 	provisioner_cmp "github.com/Sentmint/cluster-tools/internal/processor/provision"
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
-	"github.com/Sentmint/cluster-tools/internal/processor/threads/http"
 	"github.com/Sentmint/cluster-tools/internal/processor/threads/provisioner"
+	"github.com/Sentmint/cluster-tools/internal/processor/threads/socket"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -33,15 +31,15 @@ const (
 type Thread uint8
 
 const (
-	HttpProcessor Thread = iota
+	Socket Thread = iota
 	Provisioner
 	Undefined
 )
 
 func (module Thread) ToString() string {
 	switch module {
-	case HttpProcessor:
-		return "http-processor"
+	case Socket:
+		return "socket"
 	case Provisioner:
 		return "modules"
 	default:
@@ -77,16 +75,27 @@ func (module *Module) LinkFunction(name string, value any) error {
 	return nil
 }
 
+func (module *Module) Map(mappings map[string]any) error {
+
+	for name, value := range mappings {
+		if err := module.LinkFunction(name, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type Processor struct {
 	state State
 
 	threads struct {
-		http        *http.Thread
+		socket      *socket.Thread
 		provisioner *provisioner.Thread
 	}
 
 	channels struct {
 		interrupt chan threads.InterruptEvent
+		c0        chan threads.SocketRequest
 		c1        chan threads.ProvisionerRequest
 		c2        chan threads.ProvisionerResponse
 	}
@@ -140,17 +149,18 @@ func New() (*Processor, error) {
 	instance.config.Processor.StandaloneMode = true
 
 	instance.channels.interrupt = make(chan threads.InterruptEvent, 1)
+	instance.channels.c0 = make(chan threads.SocketRequest, 10)
 	instance.channels.c1 = make(chan threads.ProvisionerRequest, 10)
 	instance.channels.c2 = make(chan threads.ProvisionerResponse, 10)
 
-	httpConfig := &http.Config{}
-	instance.config.FillHttpConfig(httpConfig)
-	httpLogger, err := logging.NewLogger(HttpProcessor.ToString(), &instance.config.Processor.Debug)
+	socketConfig := &socket.Config{}
+	instance.config.FillSocketConfig(socketConfig)
+	httpLogger, err := logging.NewLogger(Socket.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
-	instance.threads.http, err = http.NewThread(httpConfig, httpLogger,
-		instance.channels.interrupt, instance.channels.c1, instance.channels.c2)
+	instance.threads.socket, err = socket.NewThread(socketConfig, httpLogger,
+		instance.channels.interrupt, instance.channels.c0, instance.channels.c1, instance.channels.c2)
 
 	provisionerConfig := &provisioner.Config{}
 	instance.config.FillProvisionerConfig(provisionerConfig)
@@ -162,7 +172,7 @@ func New() (*Processor, error) {
 	instance.provisioner = provisioner_cmp.New()
 
 	instance.threads.provisioner, err = provisioner.NewThread(provisionerConfig, provisionerLogger, instance.provisioner,
-		instance.channels.interrupt, instance.channels.c1, instance.channels.c2)
+		instance.channels.interrupt, instance.channels.c0, instance.channels.c1, instance.channels.c2)
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +208,9 @@ func (p *Processor) Module(name string) *Module {
 	return p.modules[name]
 }
 
-// Run
+// Runtime
 // Start the processor and wait for SYSINT blocking the calling thread.
-func (p *Processor) Run() {
+func (p *Processor) Runtime() {
 
 	p.logger.SetColour(logging.Purple)
 
@@ -224,23 +234,17 @@ func (p *Processor) Run() {
 		}
 	}
 
-	// connect to the core when the binary starts
-
-	if err := p.Connect(p.config.Core.Host); err != nil {
-		panic(err)
-	}
-
 	p.threads.provisioner.Setup()
 	if p.config.Processor.Debug {
 		p.logger.Println("started modules thread")
 	}
 	go p.threads.provisioner.Start()
 
-	p.threads.http.Setup()
+	p.threads.socket.Setup()
 	if p.config.Processor.Debug {
-		p.logger.Println("started http processor thread")
+		p.logger.Println("started socket processor thread")
 	}
-	go p.threads.http.Start()
+	go p.threads.socket.Start()
 
 	doneStartingTimestamp := time.Now()
 	timeToStart := doneStartingTimestamp.Sub(startingTimestamp).Milliseconds()
@@ -266,86 +270,16 @@ func (p *Processor) Run() {
 
 	p.logger.SetColour(logging.Red)
 
-	if !p.config.Processor.StandaloneMode {
-		if err := p.Disconnect(); err != nil {
-			p.logger.Warnln("failed to disconnect from the core")
-		}
-	}
-
-	p.threads.http.Teardown()
-	if p.config.Processor.Debug {
-		p.logger.Println("http processor thread shutdown")
-	}
-
 	p.threads.provisioner.Teardown()
 	if p.config.Processor.Debug {
 		p.logger.Println("modules thread shutdown")
 	}
-}
 
-func (p *Processor) Connect(host string) error {
-
-	// TODO: fix
-	//if p.state == Connected {
-	//	return nil
-	//}
-	if !p.config.Processor.StandaloneMode {
-		return nil
+	p.threads.socket.Teardown()
+	if p.config.Processor.Debug {
+		p.logger.Println("socket processor thread shutdown")
 	}
 
-	p.config.Core.Host = host
-
-	cfg := &processor.Config{Host: p.config.Net.External.Host, Port: p.config.Net.External.Port}
-
-	// attempt to connect to the core 10 times before crashing the processor
-	for i := 0; i < p.config.Core.Attempts; i++ {
-
-		err := api.ConnectToCore(p.config.Core.Host, cfg)
-		if err == nil {
-			p.logger.Printf("connected to a new core at %s\n", p.config.Core.Host)
-			break
-		} else {
-			p.logger.Alertf("failed to connect to the core at %s\n", p.config.Core.Host)
-			if i == (p.config.Core.Attempts - 1) {
-				return errors.New("max attempts to connect to core exceeded")
-			} else {
-				p.logger.Alertf("attempt to connect attempt %d...\n", i+1)
-			}
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	*p.threads.provisioner.Config.Standalone = false // legacy; todo rework
-	p.state = Connected
-	return nil
-}
-
-func (p *Processor) Disconnect() error {
-
-	if p.config.Processor.StandaloneMode {
-		return errors.New("not connected to a core")
-	}
-	// TODO: support
-	//if p.state != Connected {
-	//	return errors.New("not connected to a core")
-	//}
-
-	cfg := &processor.Config{Host: p.config.Net.External.Host, Port: p.config.Net.External.Port}
-
-	defer func() {
-		err := api.DisconnectFromCore(p.config.Core.Host, cfg)
-		if err == nil {
-			p.logger.Printf("disconnected from the core at %s\n", p.config.Core.Host)
-		} else {
-			p.logger.Alertf("failed to disconnect from the core at %s\n", p.config.Core.Host)
-			p.logger.Alertln("\t1. the core is unreachable at the moment")
-			p.logger.Alertln("\t2. the core has crashed")
-			os.Exit(-1)
-		}
-	}()
-
-	p.state = Disconnected
-	return nil
 }
 
 func (p *Processor) Debug(debug bool) {

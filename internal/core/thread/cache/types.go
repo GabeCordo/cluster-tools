@@ -18,8 +18,8 @@ type Thread struct {
 	C9  <-chan thread.Request  // cache receiving requests from the rest processor
 	C10 chan<- thread.Response // cache sending responses to the rest processor
 
-	C24 <-chan thread.Request  // cache receiving requests from the rest client
-	C25 chan<- thread.Response // cache sending responses to the rest client
+	C24 <-chan thread.Request  // cache receiving requests from the rest rest
+	C25 chan<- thread.Response // cache sending responses to the rest rest
 
 	config *Config
 	logger *logging.Logger

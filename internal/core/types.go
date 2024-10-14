@@ -3,10 +3,10 @@ package core
 type ThreadType uint8
 
 const (
-	HttpClient ThreadType = iota
-	HttpProcessor
+	RestAPI ThreadType = iota
+	Socket
 	Processor
-	Supervisor
+	Runner
 	Database
 	Messenger
 	Cache
@@ -16,14 +16,14 @@ const (
 
 func (threadType ThreadType) ToString() string {
 	switch threadType {
-	case HttpClient:
+	case RestAPI:
 		return "HTTP-CLIENT"
-	case HttpProcessor:
-		return "HTTP-PROCESSOR"
+	case Socket:
+		return "TLS-SOCKET"
 	case Processor:
 		return "PROCESSOR"
-	case Supervisor:
-		return "SUPERVISOR"
+	case Runner:
+		return "RUNNER"
 	case Messenger:
 		return "MESSENGER"
 	case Database:

@@ -50,3 +50,17 @@ type ProvisionerResponse struct {
 	Data    any
 	Nonce   uint32
 }
+
+type SocketAction uint8
+
+const (
+	SocketModuleAdd SocketAction = iota
+	SocketLogAdd
+	SocketRunUpdate
+)
+
+type SocketRequest struct {
+	Action SocketAction
+	Data   any
+	Nonce  uint32
+}

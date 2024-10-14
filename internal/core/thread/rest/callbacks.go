@@ -1,4 +1,4 @@
-package client
+package rest
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
 	"github.com/Sentmint/cluster-tools/internal/core/processor"
 	"github.com/Sentmint/cluster-tools/internal/core/thread"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/rest"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,7 +23,7 @@ func (t *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 		/* show the operator all the processors attached to the ctgate */
 		t.getProcessorCallback(w, r)
 	} else {
-		/* the client does not support any other methods on the processor */
+		/* the rest does not support any other methods on the processor */
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
@@ -39,7 +38,7 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	response := rest.Response{Success: success}
+	response := Response{Success: success}
 
 	if success {
 		response.Data = processors
@@ -74,7 +73,7 @@ func (t *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	response := rest.Response{Success: success}
+	response := Response{Success: success}
 	if success {
 		response.Data = modules
 	} else {
@@ -110,7 +109,7 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 		success, err = thread.UnmountModule(mandatory, request.ModuleName)
 	}
 
-	response := rest.Response{Success: success}
+	response := Response{Success: success}
 
 	if errors.Is(err, processor.ModuleDoesNotExist) {
 		w.WriteHeader(http.StatusNotFound)
@@ -162,7 +161,7 @@ func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	response := rest.Response{Success: success}
+	response := Response{Success: success}
 
 	if success {
 		response.Data = clusterList
@@ -187,7 +186,7 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := rest.Response{}
+	response := Response{}
 
 	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
 
@@ -261,7 +260,7 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := &rest.Response{Success: true}
+	response := &Response{Success: true}
 
 	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
 	filter := database.Filter{Namespace: namespace, Pipeline: pipeline, Identifier: id}
@@ -463,7 +462,7 @@ func (t *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) getDebugCallback(w http.ResponseWriter, r *http.Request) {
 
 	t.logger.Printf("ping from %s\n", r.RemoteAddr)
-	response := rest.Response{Success: true, Description: "bonjour"}
+	response := Response{Success: true, Description: "bonjour"}
 	b, _ := json.Marshal(response)
 	w.Write(b)
 }
@@ -487,7 +486,7 @@ func (t *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := rest.Response{Success: true}
+	response := Response{Success: true}
 
 	if request.Action == "shutdown" {
 		err = thread.ShutdownCore(t.Interrupt)
@@ -547,7 +546,7 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	response := rest.Response{}
+	response := Response{}
 	response.Data, err = thread.GetJobs(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout}, filter)
 
 	response.Success = err == nil
@@ -572,7 +571,7 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := rest.Response{}
+	response := Response{}
 	if err := thread.CreateJob(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout}, &job); err != nil {
 		response.Success = false
 		response.Data = err.Error()
@@ -620,7 +619,7 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	response := rest.Response{}
+	response := Response{}
 	err = thread.DeleteJob(
 		thread.Mandatory{
 			t.C20,
@@ -652,7 +651,7 @@ func (t *Thread) jobQueueCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 
-	response := rest.Response{}
+	response := Response{}
 
 	var err error
 	response.Data, err = thread.JobQueue(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout})

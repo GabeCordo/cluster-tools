@@ -3,8 +3,8 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"github.com/Sentmint/cluster-tools/internal/processor/api"
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
+	"math/rand"
 	"time"
 )
 
@@ -25,17 +25,13 @@ func (thread *Thread) Start() {
 			}
 			thread.requestWg.Add(1)
 			thread.processRequest(&request)
+			thread.requestWg.Done()
 		}
-
-		thread.listenersWg.Wait()
 	}()
 
 	// CLEARING THE PROVISIONER BACKLOG
 
 	go thread.backlog()
-
-	thread.listenersWg.Wait()
-	thread.requestWg.Wait()
 }
 
 func (thread *Thread) registerModulesToCore() error {
@@ -44,12 +40,12 @@ func (thread *Thread) registerModulesToCore() error {
 	for _, moduleInst := range thread.provisioner.GetModules() {
 		cfg := moduleInst.ToConfig()
 
-		if err := api.CreateModule(*thread.Config.Core, &thread.Config.Processor, &cfg); err == nil {
-			thread.logger.Printf("registered module %s to core\n", cfg.Name)
-		} else {
-			thread.logger.Printf("failed to register module %s to core: %v\n", cfg.Name, err)
-			return err
+		thread.C0 <- threads.SocketRequest{
+			Action: threads.SocketModuleAdd,
+			Data:   cfg,
+			Nonce:  rand.Uint32(),
 		}
+
 	}
 
 	return nil
@@ -80,18 +76,29 @@ func (thread *Thread) processRequest(request *threads.ProvisionerRequest) {
 
 	switch request.Action {
 	case threads.ProvisionerModuleGet:
-		response.Error = errors.New("implement me")
+		{
+			response.Error = errors.New("implement me")
+		}
 	case threads.ProvisionerRunCreate:
-		response.Error = thread.provisionRun(request)
+		{
+			response.Error = thread.provisionRun(request)
+		}
 	case threads.ProvisionerRunStop:
-		response.Error = thread.stopRun(request)
+		{
+			response.Error = thread.stopRun(request)
+		}
 	case threads.ProvisionerStatisticsGet:
-		response.Data = thread.getStatistics()
+		{
+			response.Data = thread.getStatistics()
+		}
 	case threads.ProvisionerRegisterModules:
-		response.Error = thread.registerModulesToCore()
+		{
+			response.Error = thread.registerModulesToCore()
+		}
 	default:
-		response.Error = errors.New("bad request")
-		thread.requestWg.Done()
+		{
+			response.Error = errors.New("bad request")
+		}
 	}
 
 	response.Success = response.Error == nil
@@ -133,5 +140,12 @@ func (thread *Thread) Teardown() {
 		s.Teardown()
 	}
 
+	// wait for all the async messages to be processed before tearing down
 	thread.requestWg.Wait()
+
+	// wait for all the running pipelines to complete before tearing down
+	//
+	// note: wait for the runs (after) async messages have been completed in
+	// 		 case there was a pending run request in the async queue.
+	thread.runWg.Wait()
 }
