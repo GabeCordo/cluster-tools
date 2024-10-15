@@ -9,9 +9,15 @@ import (
 	"github.com/Sentmint/cluster-tools/internal/processor/threads"
 	"net"
 	"sync"
+	"time"
 )
 
 // Frontend Thread
+
+const (
+	MaxNumberOfRetries int           = 100
+	MaxWaitBeforeRetry time.Duration = 2 * time.Second
+)
 
 type Config struct {
 	Debug       *bool

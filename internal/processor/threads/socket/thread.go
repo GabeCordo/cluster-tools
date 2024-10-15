@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 func (thread *Thread) Setup() {
@@ -46,18 +47,35 @@ func (thread *Thread) Setup() {
 
 	// CONNECTION TO GATEWAY
 
+	var gatewayHost string
+
+	envGatewayHost := os.Getenv("CTOOLS_GATEWAY_HOST")
+	if envGatewayHost == "" {
+		gatewayHost = *thread.Config.Core
+	} else {
+		gatewayHost = envGatewayHost
+	}
+
 	var connection net.Conn
 	var err error
 
-	if thread.flags.useTLS {
-		config := &tls.Config{RootCAs: thread.tls.pool}
-		connection, err = tls.Dial("tcp", *thread.Config.Core, config)
-	} else {
-		connection, err = net.Dial("tcp", *thread.Config.Core)
-	}
+	for i := 0; i < MaxNumberOfRetries; i++ {
 
-	if err != nil {
-		panic(err)
+		if thread.flags.useTLS {
+			config := &tls.Config{RootCAs: thread.tls.pool}
+			connection, err = tls.Dial("tcp", gatewayHost, config)
+		} else {
+			connection, err = net.Dial("tcp", gatewayHost)
+		}
+
+		if err != nil {
+			thread.logger.Warnf("failed to connect to gateway (retry: %d)\n", i)
+		} else {
+			thread.logger.Println("connected to gateway")
+			break
+		}
+
+		time.Sleep(MaxWaitBeforeRetry)
 	}
 
 	// todo : is this the best practice?
