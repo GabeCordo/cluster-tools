@@ -104,8 +104,6 @@ func (t *Thread) updateRun(instance *run.Run) error {
 	stored.SetStatus(instance.Status)
 	stored.SetStatistic(instance.Statistics)
 
-	t.Logger.Printf("[id: %d][state: %s] updated runner record\n", instance.Id, instance.Status)
-
 	status := stored.GetStatus()
 	if (status == run.Completed) ||
 		(status == run.Crashed) ||
