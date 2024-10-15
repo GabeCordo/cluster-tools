@@ -13,36 +13,41 @@ func (t *Thread) Setup() {
 
 	mux := http.NewServeMux()
 
+	f := func(b func(w http.ResponseWriter, req *http.Request), w http.ResponseWriter, r *http.Request) {
+		t.logger.Printf("[%s] %s?%s\n", r.Method, r.URL.Path, r.URL.RawQuery)
+		b(w, r)
+	}
+
 	mux.HandleFunc("/processor", func(w http.ResponseWriter, r *http.Request) {
-		t.processorCallback(w, r)
+		f(t.processorCallback, w, r)
 	})
 
 	mux.HandleFunc("/module", func(w http.ResponseWriter, r *http.Request) {
-		t.moduleCallback(w, r)
+		f(t.moduleCallback, w, r)
 	})
 
 	mux.HandleFunc("/function", func(w http.ResponseWriter, r *http.Request) {
-		t.functionCallback(w, r)
+		f(t.functionCallback, w, r)
 	})
 
 	mux.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
-		t.runCallback(w, r)
+		f(t.runCallback, w, r)
 	})
 
 	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
-		t.statisticCallback(w, r)
+		f(t.statisticCallback, w, r)
 	})
 
 	mux.HandleFunc("/pipeline", func(w http.ResponseWriter, r *http.Request) {
-		t.pipelineCallback(w, r)
+		f(t.pipelineCallback, w, r)
 	})
 
 	mux.HandleFunc("/job", func(w http.ResponseWriter, r *http.Request) {
-		t.jobCallback(w, r)
+		f(t.jobCallback, w, r)
 	})
 
 	mux.HandleFunc("/job/queue", func(w http.ResponseWriter, r *http.Request) {
-		t.jobQueueCallback(w, r)
+		f(t.jobQueueCallback, w, r)
 	})
 
 	// TODO - explore this more, fucking cool - removed for now

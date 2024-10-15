@@ -33,22 +33,22 @@ func (table *Table) GetProcessors() []*Processor {
 	return table.processors
 }
 
-func (table *Table) AddProcessor(cfg *Config) error {
+func (table *Table) AddProcessor(cfg *Config) (*Processor, error) {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
 
 	for _, processor := range table.processors {
 		if processor.Id == cfg.Identifier {
-			return AlreadyExists
+			return nil, AlreadyExists
 		}
 	}
 
-	processor := newProcessor(cfg.Identifier)
+	processor := newProcessor(cfg.Identifier, cfg.RemoteAddr)
 	table.processors = append(table.processors, processor)
 	table.NumOfProcessors++
 
-	return nil
+	return processor, nil
 }
 
 // RemoveProcessor

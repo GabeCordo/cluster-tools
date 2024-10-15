@@ -108,7 +108,7 @@ func (t *Thread) Start() {
 				t.config.Timeout,
 			}
 
-			cfg := &processor.Config{Identifier: id}
+			cfg := &processor.Config{Identifier: id, RemoteAddr: c.RemoteAddr().String()}
 			success, err := thread.AddProcessor(mandatory, cfg)
 			if !success {
 				t.Logger.Alertln("failed to register a new processor on the processor thread")

@@ -283,6 +283,7 @@ func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
+		t.logger.Printf("[POST][/run] didn't receive a valid body %s\n", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -309,6 +310,7 @@ func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	} else {
+		t.logger.Printf("[POST][/run] encountered error %s\n", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }

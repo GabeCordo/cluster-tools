@@ -50,7 +50,6 @@ const (
 type Request struct {
 	Id        uint64             `json:"id"`
 	Namespace string             `json:"namespace"`
-	Processor uint64             `json:"processor"`
 	Config    *pipeline.Pipeline `json:"config"`
 	Metadata  map[string]string  `json:"data"`
 }

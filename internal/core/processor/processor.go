@@ -1,12 +1,12 @@
 package processor
 
 import (
-	"fmt"
 	"time"
 )
 
 type Config struct {
 	Identifier uint64 `json:"identifier"`
+	RemoteAddr string `json:"remote_addr"`
 }
 
 type Status string
@@ -19,6 +19,7 @@ const (
 
 type Processor struct {
 	Id         uint64
+	RemoteAddr string
 	Status     Status
 	LastUpdate time.Time
 	Modules    []string
@@ -27,13 +28,14 @@ type Processor struct {
 }
 
 func (processor *Processor) ToString() string {
-	return fmt.Sprintf("%d", processor.Id)
+	return processor.RemoteAddr
 }
 
-func newProcessor(id uint64) *Processor {
+func newProcessor(id uint64, remoteAddr string) *Processor {
 	processor := new(Processor)
 
 	processor.Id = id
+	processor.RemoteAddr = remoteAddr
 	processor.Status = Active
 	processor.LastUpdate = time.Now()
 	processor.Modules = make([]string, 0)

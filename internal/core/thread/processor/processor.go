@@ -11,15 +11,15 @@ func (t *Thread) processorGet() []*processor.Processor {
 
 func (t *Thread) processorAdd(config *processor.Config) error {
 
-	err := t.processorTable.AddProcessor(config)
-
+	_, err := t.processorTable.AddProcessor(config)
 	if err == nil {
-		t.Logger.Printf("[proc: %d -> ctgate] connected a new processor\n",
-			config.Identifier)
+		t.Logger.Printf("[%s -> ctgate] connected a new processor\n",
+			config.RemoteAddr)
 	} else {
-		t.Logger.Printf("[%s:%d -> ctgate] received a processor connection but there was a failure\n%s\n",
-			config.Identifier, err.Error())
+		t.Logger.Printf("[%s -> ctgate] received a processor connection but there was a failure\n%s\n",
+			config.RemoteAddr, err.Error())
 	}
+
 	return err
 }
 
@@ -28,12 +28,12 @@ func (t *Thread) processorRemove(config *processor.Config) error {
 	err := t.processorTable.RemoveProcessor(config)
 
 	if err == nil {
-		t.Logger.Printf("[proc: %d -> ctgate] disconnected a processor\n",
-			config.Identifier)
+		t.Logger.Printf("[%s -> ctgate] disconnected a processor\n",
+			config.RemoteAddr)
 		t.processorTable.Print()
 	} else {
-		t.Logger.Printf("[proc: %d -> ctgate] received a processor disconnected but there was a failure\n%s\n",
-			config.Identifier, err.Error())
+		t.Logger.Printf("[%s -> ctgate] received a processor disconnected but there was a failure\n%s\n",
+			config.RemoteAddr, err.Error())
 	}
 	return err
 }

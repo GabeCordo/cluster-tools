@@ -59,7 +59,6 @@ func (t *Thread) createRun(processorId uint64, namespaceName, pipelineName strin
 	runRequest := run.Request{
 		Id:        id,
 		Namespace: namespaceName,
-		Processor: processorId,
 		Config:    &conf,
 		Metadata:  metadata,
 	}
@@ -75,7 +74,7 @@ func (t *Thread) createRun(processorId uint64, namespaceName, pipelineName strin
 
 	rsp, timedOut := multithreaded.SendAndWait(t.responseTable.socket, socketRequest.Nonce, t.config.Timeout)
 	if timedOut {
-		t.Logger.Printf("[ctgate -> proc: %s][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
+		t.Logger.Printf("[ctgate -> %s][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
 		return 0, errors.New("could not send create run to processor")
 	}
