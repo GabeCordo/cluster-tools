@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ProcessorName = "test-proc"
+	ProcessorName = 0
 	ModuleName    = "test-mod"
 	ClusterName   = "test-mod"
 )
@@ -18,7 +18,7 @@ func TestRegistry_Create(t *testing.T) {
 	registry := NewLocalDatabase()
 
 	filter := database.Filter{
-		Processor: ProcessorName,
+		Processor: uint64(ProcessorName),
 		Namespace: ModuleName,
 		Pipeline:  ClusterName,
 		Config:    "tmp",
@@ -41,7 +41,7 @@ func TestRegistry_Get(t *testing.T) {
 	registry := NewLocalDatabase()
 
 	filter := database.Filter{
-		Processor: ProcessorName,
+		Processor: uint64(ProcessorName),
 		Namespace: ModuleName,
 		Pipeline:  ClusterName,
 		Config:    "tmp",
