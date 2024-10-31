@@ -4,16 +4,33 @@ on: [push, pull_request]
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
-      - uses: actions/setup-go@v2
+
+      - name: Setup Go 1.23
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.20'
-      - name: Run coverage
+          go-version: '1.23'
+
+      - name: Display Go version
+        run: go version
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test with the Go CLI
         run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
-        continue-on-error: true
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+
+      - name: Tag
+        uses: anothrNick/github-tag-action@1.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          WITH_V: true
