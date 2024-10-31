@@ -21,9 +21,9 @@ func main() {
 	lc := cli.AddCommand("logs", controllers.LogController{})
 	lc.SetCategory("data").SetDescription(
 		"used to view log files stored on the log system" +
-			"\n\t\t[path] specify the name of the log file to output" +
-			"\n\t\t[normal|warning|fatal] specify the priority of logs outputted " +
-			"\n\t\t\t(can help if you want to find fatal errors)")
+			"\n\t\t[path] specify the name of the log file" +
+			"\n\t\t[normal|warning|fatal] specify the log priority " +
+			"\n\t\t\t(ex. find fatal errors)")
 
 	stc := cli.AddCommand("stats", controllers.StatisticsController{})
 	stc.SetCategory("data").SetDescription("used to view the statistic files stored on the system")
