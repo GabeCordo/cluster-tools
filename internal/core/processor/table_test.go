@@ -11,9 +11,9 @@ func TestTable_AddProcessor(t *testing.T) {
 
 	table := NewTable()
 
-	cfg := &Config{Host: "127.0.0.1", Port: 1204}
+	cfg := &Config{Identifier: 0, RemoteAddr: "127.0.0.1:1204"}
 
-	if err := table.AddProcessor(cfg); err != nil {
+	if _, err := table.AddProcessor(cfg); err != nil {
 		t.Error(err)
 		return
 	}
@@ -30,11 +30,11 @@ func TestTable_AddProcessor2(t *testing.T) {
 
 	table := NewTable()
 
-	cfg := &Config{Host: "127.0.0.1", Port: 1204}
+	cfg := &Config{Identifier: 0, RemoteAddr: "127.0.0.1:1204"}
 
 	table.AddProcessor(cfg)
 
-	if err := table.AddProcessor(cfg); err == nil {
+	if _, err := table.AddProcessor(cfg); err == nil {
 		t.Error("expected the table to reject a duplicate processor")
 		return
 	}
@@ -51,7 +51,7 @@ func TestTable_AddModule(t *testing.T) {
 	table := NewTable()
 
 	moduleConfig := &ModuleConfig{}
-	if err := table.AddModule("foo", moduleConfig); !errors.Is(err, DoesNotExist) {
+	if err := table.AddModule(0, moduleConfig); !errors.Is(err, DoesNotExist) {
 		t.Error("table should throw DoesNotExist for unknown processor")
 	}
 }
@@ -63,13 +63,13 @@ func TestTable_AddModule2(t *testing.T) {
 
 	table := NewTable()
 
-	processorConfig := &Config{Host: "127.0.0.1", Port: 1204}
+	processorConfig := &Config{Identifier: 0, RemoteAddr: "127.0.0.1:1204"}
 	table.AddProcessor(processorConfig)
 
 	moduleConfig := &ModuleConfig{Name: "foo", Exports: make([]ModuleFunction, 1)}
 	moduleConfig.Exports[0] = ModuleFunction{Name: "bar"}
 
-	if err := table.AddModule("127.0.0.1:1204", moduleConfig); err != nil {
+	if err := table.AddModule(0, moduleConfig); err != nil {
 		t.Error(err)
 		return
 	}
@@ -96,10 +96,10 @@ func TestTable_AddModule2(t *testing.T) {
 		return
 	}
 
-	processorConfig2 := &Config{Host: "127.0.0.1", Port: 1205}
+	processorConfig2 := &Config{Identifier: 1, RemoteAddr: "127.0.0.1:1205"}
 	table.AddProcessor(processorConfig2)
 
-	if err := table.AddModule("127.0.0.1:1205", moduleConfig); err != nil {
+	if err := table.AddModule(1, moduleConfig); err != nil {
 		t.Error(err)
 		return
 	}

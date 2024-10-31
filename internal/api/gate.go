@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	http2 "github.com/Sentmint/cluster-tools/internal/processor/api"
 	"net/http"
 )
 
@@ -19,7 +18,7 @@ func Gateway() (string, error) {
 		return "", nil
 	}
 
-	r := http2.Response{}
+	r := Response{}
 	err = json.NewDecoder(rsp.Body).Decode(&r)
 	if err != nil {
 		return "", err
