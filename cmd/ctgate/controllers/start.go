@@ -16,7 +16,7 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	// check to see that the etl thread has been initialized with the required files
 	// if it has not, fail and tell the operator to call the 'etl init' command
 	if _, err := os.Stat(DefaultConfigsFolder); err != nil {
-		fmt.Println("the mango thread has never been initialized, statistic 'etl init'")
+		fmt.Printf("missing configurations folder at %s\nmake sure you run 'ctgate init'\n", DefaultConfigsFolder)
 		return commandline.Terminate
 	}
 
@@ -24,54 +24,6 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	if err != nil {
 		log.Panic(err.Error())
 	}
-
-	// TODO : move to the processor
-	// load in the ctools cluster into the "clusters" module
-	// ~ this may be helpful for people trying to spin up the thread for the first time and
-	//   want to use this as an ctools of how to use it as an operator rather than a developer
-	//Vec := clusters.VectorCluster{}
-	//
-	//pipeline := cluster.DefaultConfig
-	//pipeline.Identifier = "Vec"
-	//c.Function("Vec", cluster.Batch, &Vec, pipeline)
-	//
-	//VecWait := clusters.VectorWaitCluster{}
-	//
-	//configWait := cluster.DefaultConfig
-	//configWait.Identifier = "VecWait"
-	//configWait.OnLoad = cluster.WaitAndPush
-	//c.Function("VecWait", cluster.Batch, &VecWait, configWait)
-	//
-	//KeyTest := clusters.MetaDataCluster{}
-	//
-	//configMDC := cluster.DefaultConfig
-	//configMDC.Identifier = "KeyTest"
-	//c.Function("KeyTest", cluster.Batch, &KeyTest, configMDC)
-
-	// TODO : move to processor
-	//go func() {
-	//
-	//	// wait for the thread to be brought up
-	//	time.Sleep(1 * time.Second)
-	//
-	//	// load in any pre-compiled modules before startup
-	//	// ~ this allows us to 'statically' load them into the thread instance before it is
-	//	//	 operational, also, avoiding the need to dynamically load them over HTTP one by one
-	//	err := filepath.Walk(thread.DefaultModulesFolder, func(path string, info fs.FileInfo, err error) error {
-	//		if info == nil {
-	//			return nil
-	//		}
-	//		// the root folder will be included in the walk of the directory, we know this is not a module,
-	//		// so we should skip the path if it is pointing to the root
-	//		if info.IsDir() && (path != thread.DefaultModulesFolder) {
-	//			c.Namespace(path)
-	//		}
-	//		return nil
-	//	})
-	//	if err != nil {
-	//		log.Println("issue loading module")
-	//	}
-	//}()
 
 	c.Run()
 
