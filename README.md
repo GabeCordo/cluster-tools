@@ -2,7 +2,7 @@
 
 An open source ingress gateway for monitoring and load balancing requests to distributed data pipelines. 
 
-Peppermint provides fine-grained control over a deployment of horizontally distribute pipelines to control: how they
+Pops provides fine-grained control over a deployment of horizontally distribute pipelines to control: how they
 are provisioned, how they should be taken offline, how they should be made redundant, and how they should be versioned.
 
 > The gateway is still a work in progress with hopes of adding more SRE functionality such as SLIs and SLAs
@@ -15,7 +15,7 @@ installed with 'go install' otherwise.
 
 ```shell
    # create a log copy of the thread
-   git clone https://github.com/Sentmint/Peppermint
+   git clone https://github.com/Sentmint/PipelineOps
    
    # install the pipeline-gateway binary
    cd /cmd/pipeline-gateway
@@ -33,7 +33,7 @@ installed with 'go install' otherwise.
   
 ```
 
-### Running the Peppermint Gateway
+### Running the POPS Gateway
 The gateway is an orchestrator that manages various pipeline deployments. The developer communicates with the gateway to
 create, run, and watch pipelines defined by yaml files.
 
