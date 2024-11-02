@@ -3,14 +3,14 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/cluster-tools/internal/core"
+	"github.com/Sentmint/PipelineOps/internal/core"
 	"gopkg.in/yaml.v3"
 	"os"
 )
 
 var (
 	userCacheDir, _         = os.UserCacheDir()
-	DefaultFrameworkFolder  = userCacheDir + "/cluster.tools/"
+	DefaultFrameworkFolder  = userCacheDir + "/PipelineOps/"
 	DefaultConfigsFolder    = DefaultFrameworkFolder + "configs/"
 	DefaultConfigFile       = DefaultFrameworkFolder + "global.ct.yml"
 	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
@@ -53,11 +53,11 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Processor.MaxRetry = 10
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err == nil {
-		fmt.Println("cluster.tools has already been initialized")
+		fmt.Println("PipelineOps has already been initialized")
 		return commandline.Terminate
 	}
 
-	fmt.Println("cluster.tools has not been initialized")
+	fmt.Println("PipelineOps has not been initialized")
 
 	if err := os.Mkdir(DefaultFrameworkFolder, 0700); err != nil {
 		fmt.Printf("[x] failed to create %s directory %s\n", DefaultFrameworkFolder, err.Error())

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/cluster-tools/cmd/ctools/controllers"
+	"github.com/Sentmint/PipelineOps/cmd/ctools/controllers"
 )
 
 func main() {

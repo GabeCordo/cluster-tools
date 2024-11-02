@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/cluster-tools/internal/api"
+	"github.com/Sentmint/PipelineOps/internal/api"
 )
 
 type ConnectController struct {

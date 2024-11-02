@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/cluster-tools/internal/core"
+	"github.com/Sentmint/PipelineOps/internal/core"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -15,7 +15,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] cluster.tools has never been initialized, statistic 'ctgate init'")
+		fmt.Println("[x] PipelineOps has never been initialized, statistic 'ctgate init'")
 		return commandline.Terminate
 	}
 
