@@ -23,7 +23,7 @@ Invoke an interactive shell to monitor the state of the PipelineOps process.
 Create a new execution schedule for a module/cluster pair. 
 
 ### start
-Invoke the peppermint process.
+Invoke the POPS process.
 
 ### statistics
 View a list of statistics created by the PipelineOps process that exist in the local file system.
