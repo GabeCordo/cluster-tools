@@ -47,8 +47,9 @@ jobs:
     needs: build-and-push-container
     runs-on: ubuntu-latest
     steps:
-      - uses: sentmint/DevOps@0.3.0
+      - uses: sentmint/DevOps@0.7.0
         with:
           application: pipelines
           service: pipeline-ops
           tag: ${{  github.ref_name }}
+          token: ${{ secrets.PAT_TOKEN }}
