@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
-	"github.com/Sentmint/cluster-tools/internal/core/database/run"
+	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/Sentmint/PipelineOps/internal/core/database/run"
 	"net/http"
 )
 

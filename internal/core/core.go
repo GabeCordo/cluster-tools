@@ -2,20 +2,20 @@ package core
 
 import (
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/core/database/job"
-	config_db "github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
-	supervisor_db "github.com/Sentmint/cluster-tools/internal/core/database/run"
-	statistic_db "github.com/Sentmint/cluster-tools/internal/core/database/statistic"
-	"github.com/Sentmint/cluster-tools/internal/core/message/log"
-	processor_cmp "github.com/Sentmint/cluster-tools/internal/core/processor"
-	"github.com/Sentmint/cluster-tools/internal/core/thread"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/database"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/messenger"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/processor"
-	rest_api "github.com/Sentmint/cluster-tools/internal/core/thread/rest"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/runner"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/scheduler"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/socket"
+	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	config_db "github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	supervisor_db "github.com/Sentmint/PipelineOps/internal/core/database/run"
+	statistic_db "github.com/Sentmint/PipelineOps/internal/core/database/statistic"
+	"github.com/Sentmint/PipelineOps/internal/core/message/log"
+	processor_cmp "github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/database"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/messenger"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/processor"
+	rest_api "github.com/Sentmint/PipelineOps/internal/core/thread/rest"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/runner"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/scheduler"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/socket"
 	"os"
 	"os/signal"
 	"syscall"
@@ -371,10 +371,10 @@ func (core *Core) Run() {
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	//ctgate.ProvisionerThread.Teardown()
+	//pipeline-gateway.ProvisionerThread.Teardown()
 	//
 	//if common.GetConfigInstance().Debug {
-	//	ctgate.logger.Println("provisioner shutdown")
+	//	pipeline-gateway.logger.Println("provisioner shutdown")
 	//}
 
 	core.SchedulerThread.Teardown()

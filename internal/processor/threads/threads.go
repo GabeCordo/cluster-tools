@@ -1,7 +1,7 @@
 package threads
 
 import (
-	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
+	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
 )
 
 type InterruptEvent uint8

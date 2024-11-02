@@ -146,7 +146,7 @@ func (command ConfigCommand) updateField(c *core.Config, fields []string, value 
 func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultConfigFile); err != nil {
-		fmt.Println("[x] PipelineOps has never been initialized, statistic 'ctgate init'")
+		fmt.Println("[x] PipelineOps has never been initialized, statistic 'pipeline-gateway init'")
 		return commandline.Terminate
 	}
 
