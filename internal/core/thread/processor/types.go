@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/cluster-tools/internal/core/processor"
-	"github.com/Sentmint/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"sync"
 )
 

@@ -6,8 +6,8 @@ import (
 )
 
 func (core *Core) banner() {
-	fmt.Println("        __           __            __              __    \n  _____/ /_  _______/ /____  _____/ /_____  ____  / /____\n / ___/ / / / / ___/ __/ _ \\/ ___/ __/ __ \\/ __ \\/ / ___/\n/ /__/ / /_/ (__  ) /_/  __/ /  / /_/ /_/ / /_/ / (__  ) \n\\___/_/\\__,_/____/\\__/\\___/_(_) \\__/\\____/\\____/_/____/ ")
-	fmt.Println("[+] " + logging.Purple + "Function.tools Cloud Framework " + logging.Reset + Version)
+	fmt.Println("    ____  _            ___            ____            \n   / __ \\(_)___  ___  / (_)___  ___  / __ \\____  _____\n  / /_/ / / __ \\/ _ \\/ / / __ \\/ _ \\/ / / / __ \\/ ___/\n / ____/ / /_/ /  __/ / / / / /  __/ /_/ / /_/ (__  ) \n/_/   /_/ .___/\\___/_/_/_/ /_/\\___/\\____/ .___/____/  \n       /_/                             /_/           ")
+	fmt.Println("[+] " + logging.Purple + "Pipeline Operations Framework " + logging.Reset + Version)
 	fmt.Println("[+]" + logging.Purple + " by Gabriel Cordovado 2022-24" + logging.Reset)
 	fmt.Println()
 }

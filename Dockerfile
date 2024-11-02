@@ -8,14 +8,14 @@ WORKDIR /go/src
 
 COPY . .
 
-WORKDIR /go/src/cmd/ctgate
+WORKDIR /go/src/cmd/pipeline-gateway
 
 RUN go mod tidy
 
 ENV CGO_ENABLED=0
-RUN go build -o ctgate
-RUN ./ctgate init
-RUN ./ctgate doctor
+RUN go build -o pipeline-gateway
+RUN ./pipeline-gateway init
+RUN ./pipeline-gateway doctor
 
 ##########################################################################################################
 #       Production Container
@@ -23,10 +23,10 @@ RUN ./ctgate doctor
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=build-env /go/src/cmd/ctgate/ctgate /
-COPY --from=build-env /root/.cache/cluster.tools /root/.cache/cluster.tools
+COPY --from=build-env /go/src/cmd/pipeline-gateway/pipeline-gateway /
+COPY --from=build-env /root/.cache/PipelineOps /root/.cache/PipelineOps
 
 EXPOSE 8136
 EXPOSE 8137
 
-ENTRYPOINT ["/ctgate", "start"]
+ENTRYPOINT ["/pipeline-gateway", "start"]

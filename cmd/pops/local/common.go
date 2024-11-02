@@ -13,7 +13,7 @@ type Config struct {
 var (
 	userCacheDir, _        = os.UserCacheDir()
 	DefaultFrameworkFolder = userCacheDir + "/PipelineOps/"
-	CToolsFolder           = DefaultFrameworkFolder + "/ctools/"
+	CToolsFolder           = DefaultFrameworkFolder + "/pops/"
 	CToolsConfig           = CToolsFolder + "config.json"
 )
 

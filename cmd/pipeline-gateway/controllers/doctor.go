@@ -15,7 +15,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] PipelineOps has never been initialized, statistic 'ctgate init'")
+		fmt.Println("[x] PipelineOps has never been initialized, statistic 'pipeline-gateway init'")
 		return commandline.Terminate
 	}
 

@@ -3,9 +3,9 @@ package messenger
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/core/message"
-	"github.com/Sentmint/cluster-tools/internal/core/message/email"
-	"github.com/Sentmint/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/PipelineOps/internal/core/message"
+	"github.com/Sentmint/PipelineOps/internal/core/message/email"
+	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"sync"
 )
 

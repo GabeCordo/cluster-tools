@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/ctools/controllers"
+	"github.com/Sentmint/PipelineOps/cmd/pops/controllers"
 )
 
 func main() {
@@ -29,10 +29,10 @@ func main() {
 	// configuration controllers
 
 	nc := cli.AddCommand("namespace", controllers.NamespaceController{})
-	nc.SetCategory("config").SetDescription("switch the namespace used by ctools")
+	nc.SetCategory("config").SetDescription("switch the namespace used by pops")
 
 	gc := cli.AddCommand("gate", controllers.GatewayController{})
-	gc.SetCategory("config").SetDescription("switch the gateway used by ctools")
+	gc.SetCategory("config").SetDescription("switch the gateway used by pops")
 
 	cli.Run()
 }

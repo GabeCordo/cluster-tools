@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/ctools/local"
+	"github.com/Sentmint/PipelineOps/cmd/pops/local"
 	"github.com/Sentmint/PipelineOps/internal/api"
 	"os"
 	"os/signal"

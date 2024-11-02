@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/ctools/local"
+	"github.com/Sentmint/PipelineOps/cmd/pops/local"
 )
 
 type NamespaceController struct {

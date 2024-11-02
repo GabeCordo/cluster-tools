@@ -3,7 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/PipelineOps/internal/core/processor"
 )
 
 func (t *Thread) getModules() []processor.ModuleData {
@@ -55,9 +55,9 @@ func (t *Thread) addModule(processorId uint64, cfg *processor.ModuleConfig) erro
 	//}
 	//}
 
-	// let the operator have an understanding of the ctgate's state
+	// let the operator have an understanding of the pipeline-gateway's state
 	// ->	when a processor is added it may change what modules/configs/processors are available to use
-	//		and whether they are mounted in the ctgate currently
+	//		and whether they are mounted in the pipeline-gateway currently
 	fmt.Println("UPDATED ==================>")
 	t.processorTable.Print()
 

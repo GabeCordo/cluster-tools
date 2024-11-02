@@ -1,5 +1,5 @@
 # core
-The core is a collection of source files required by the cluster-tools process.
+The core is a collection of source files required by the PipelineOps process.
 
 ## Folders
 

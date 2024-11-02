@@ -3,9 +3,9 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/core/processor"
-	"github.com/Sentmint/cluster-tools/internal/processor/provision"
-	"github.com/Sentmint/cluster-tools/internal/processor/threads"
+	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/Sentmint/PipelineOps/internal/processor/provision"
+	"github.com/Sentmint/PipelineOps/internal/processor/threads"
 	"sync"
 )
 
