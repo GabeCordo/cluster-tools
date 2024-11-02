@@ -1,4 +1,4 @@
-# Peppermint Framework
+# PipelineOps (POPS) Framework
 
 An open source ingress gateway for monitoring and load balancing requests to distributed data pipelines. 
 
