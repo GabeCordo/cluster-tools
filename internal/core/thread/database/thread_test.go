@@ -3,10 +3,10 @@ package database
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/core/database/job"
-	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
-	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
-	"github.com/Sentmint/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
+	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"testing"
 )
 

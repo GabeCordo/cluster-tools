@@ -2,8 +2,8 @@ package config
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/Sentmint/cluster-tools/internal/processor/threads/provisioner"
-	"github.com/Sentmint/cluster-tools/internal/processor/threads/socket"
+	"github.com/Sentmint/PipelineOps/internal/processor/threads/provisioner"
+	"github.com/Sentmint/PipelineOps/internal/processor/threads/socket"
 	"os"
 )
 

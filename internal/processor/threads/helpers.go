@@ -2,8 +2,8 @@ package threads
 
 import (
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
-	pipeline_component "github.com/Sentmint/cluster-tools/internal/processor/provision/pipeline"
+	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	pipeline_component "github.com/Sentmint/PipelineOps/internal/processor/provision/pipeline"
 	"math/rand"
 )
 

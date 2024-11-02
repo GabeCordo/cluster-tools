@@ -2,8 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
-	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
+	"github.com/Sentmint/PipelineOps/internal/core/processor"
 	"net/http"
 )
 

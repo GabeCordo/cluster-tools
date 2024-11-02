@@ -2,8 +2,8 @@ package run
 
 import (
 	"errors"
-	"github.com/Sentmint/cluster-tools/internal/core/database/pipeline"
-	"github.com/Sentmint/cluster-tools/internal/core/database/statistic"
+	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
 	"sync"
 )
 

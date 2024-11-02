@@ -1,7 +1,7 @@
 package processor
 
 import (
-	"github.com/Sentmint/cluster-tools/internal/core/processor"
+	"github.com/Sentmint/PipelineOps/internal/core/processor"
 )
 
 func (t *Thread) processorGet() []*processor.Processor {
@@ -13,10 +13,10 @@ func (t *Thread) processorAdd(config *processor.Config) error {
 
 	_, err := t.processorTable.AddProcessor(config)
 	if err == nil {
-		t.Logger.Printf("[%s -> ctgate] connected a new processor\n",
+		t.Logger.Printf("[%s -> pipeline-gateway] connected a new processor\n",
 			config.RemoteAddr)
 	} else {
-		t.Logger.Printf("[%s -> ctgate] received a processor connection but there was a failure\n%s\n",
+		t.Logger.Printf("[%s -> pipeline-gateway] received a processor connection but there was a failure\n%s\n",
 			config.RemoteAddr, err.Error())
 	}
 
@@ -28,11 +28,11 @@ func (t *Thread) processorRemove(config *processor.Config) error {
 	err := t.processorTable.RemoveProcessor(config)
 
 	if err == nil {
-		t.Logger.Printf("[%s -> ctgate] disconnected a processor\n",
+		t.Logger.Printf("[%s -> pipeline-gateway] disconnected a processor\n",
 			config.RemoteAddr)
 		t.processorTable.Print()
 	} else {
-		t.Logger.Printf("[%s -> ctgate] received a processor disconnected but there was a failure\n%s\n",
+		t.Logger.Printf("[%s -> pipeline-gateway] received a processor disconnected but there was a failure\n%s\n",
 			config.RemoteAddr, err.Error())
 	}
 	return err

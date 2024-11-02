@@ -1,4 +1,4 @@
-module github.com/Sentmint/cluster-tools
+module github.com/Sentmint/PipelineOps
 
 go 1.20
 

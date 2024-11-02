@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/cache"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/database"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/messenger"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/processor"
-	http_client "github.com/Sentmint/cluster-tools/internal/core/thread/rest"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/runner"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/scheduler"
-	"github.com/Sentmint/cluster-tools/internal/core/thread/socket"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/cache"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/database"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/messenger"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/processor"
+	http_client "github.com/Sentmint/PipelineOps/internal/core/thread/rest"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/runner"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/scheduler"
+	"github.com/Sentmint/PipelineOps/internal/core/thread/socket"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -123,7 +123,7 @@ func (config *Config) Print() {
 
 func (config *Config) ToYAML(path string) {
 
-	// if a ctgate already exists, delete it
+	// if a pipeline-gateway already exists, delete it
 	if _, err := os.Stat(path); err == nil {
 		os.Remove(path)
 	}
@@ -136,7 +136,7 @@ func (config *Config) ToYAML(path string) {
 }
 
 func (config *Config) Store() bool {
-	// verify that the ctgate file we initially loaded from has not been deleted
+	// verify that the pipeline-gateway file we initially loaded from has not been deleted
 	if _, err := os.Stat(config.Paths.Root); errors.Is(err, os.ErrNotExist) {
 		return false
 	}
@@ -236,7 +236,7 @@ func YAMLToETLConfig(config *Config, path string) error {
 
 	err = yaml.Unmarshal([]byte(file), config)
 	if err != nil {
-		// the file is not a JSON or is a malformed (fields missing) ctgate
+		// the file is not a JSON or is a malformed (fields missing) pipeline-gateway
 		log.Println(err)
 		return err
 	}

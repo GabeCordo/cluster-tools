@@ -3,7 +3,7 @@ package core
 import (
 	"bufio"
 	"fmt"
-	"github.com/Sentmint/cluster-tools/internal/core/thread"
+	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"os"
 	"strings"
 )

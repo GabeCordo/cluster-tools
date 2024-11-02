@@ -3,10 +3,10 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/cluster-tools/internal/core/database/run"
-	"github.com/Sentmint/cluster-tools/internal/processor/provision"
-	"github.com/Sentmint/cluster-tools/internal/processor/provision/pipeline"
-	"github.com/Sentmint/cluster-tools/internal/processor/threads"
+	"github.com/Sentmint/PipelineOps/internal/core/database/run"
+	"github.com/Sentmint/PipelineOps/internal/processor/provision"
+	"github.com/Sentmint/PipelineOps/internal/processor/provision/pipeline"
+	"github.com/Sentmint/PipelineOps/internal/processor/threads"
 	"math/rand"
 	"sync"
 	"time"
@@ -60,7 +60,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		// as data flows through the channels between functions.
 		//
 		// idea:
-		// every 1s send an update of the statistics to the cluster.tools gateway so the operator
+		// every 1s send an update of the statistics to the PipelineOps gateway so the operator
 		// or developer can track the progress of the pipeline instance in real-time
 		//
 		// important note:
