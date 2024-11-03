@@ -12,6 +12,7 @@ WORKDIR /go/src/cmd/pipeline-gateway
 
 RUN go mod tidy
 
+# disable cgo so the binary can be brought to a smaller container
 ENV CGO_ENABLED=0
 RUN go build -o pipeline-gateway
 RUN ./pipeline-gateway init

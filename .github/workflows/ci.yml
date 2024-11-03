@@ -8,6 +8,8 @@ on:
       - cmd/**
       - internal/**
       - package.go
+      - go.mod
+      - Dockerfile
 
 jobs:
   build:
