@@ -1,8 +1,8 @@
 package job
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/pops/internal/core/database/job"
 	"sync"
 )
 

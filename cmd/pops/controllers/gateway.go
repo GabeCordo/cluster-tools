@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/local"
+	"github.com/Sentmint/pops/cmd/pops/local"
 )
 
 type GatewayController struct {

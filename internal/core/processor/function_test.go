@@ -1,12 +1,15 @@
 package processor
 
-import "testing"
+import (
+	"github.com/Sentmint/yule"
+	"testing"
+)
 
 // TestCluster_Add
 // Test that the number of Processors is incremented after Add
 func TestCluster_Add(t *testing.T) {
 
-	function := newFunction(&ModuleFunction{Name: "test"})
+	function := newFunction(&yule.ModuleFunction{Name: "test"})
 
 	processor := newProcessor(0, "localhost:8000")
 	function.Add(processor)
@@ -21,7 +24,7 @@ func TestCluster_Add(t *testing.T) {
 // fashion so that balances are distributed equally across them.
 func TestCluster_SelectProcessor(t *testing.T) {
 
-	function := newFunction(&ModuleFunction{Name: "test"})
+	function := newFunction(&yule.ModuleFunction{Name: "test"})
 
 	processor1 := newProcessor(0, "localhost:8000")
 	function.Add(processor1)

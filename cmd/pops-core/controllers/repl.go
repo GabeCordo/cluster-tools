@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/internal/core"
+	"github.com/Sentmint/pops/internal/core"
 	"gopkg.in/yaml.v3"
 	"os"
 )

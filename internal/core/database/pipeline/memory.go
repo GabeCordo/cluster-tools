@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/yule"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,7 +16,7 @@ import (
 )
 
 type LocalPipelineDatabase struct {
-	records map[string]map[string]Pipeline
+	records map[string]map[string]yule.Pipeline
 
 	mutex sync.RWMutex
 }
@@ -23,7 +24,7 @@ type LocalPipelineDatabase struct {
 func NewLocalPipelineDatabase() *LocalPipelineDatabase {
 
 	db := new(LocalPipelineDatabase)
-	db.records = make(map[string]map[string]Pipeline)
+	db.records = make(map[string]map[string]yule.Pipeline)
 
 	return db
 }
@@ -118,7 +119,7 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 			return err
 		}
 
-		cfg := &Pipeline{}
+		cfg := &yule.Pipeline{}
 		if err = json.Unmarshal(fBytes, cfg); err != nil {
 			return err
 		}
@@ -169,7 +170,7 @@ func (db *LocalPipelineDatabase) Get(filter database.Filter) []any {
 
 func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any, error) {
 
-	cfg, ok := record.(*Pipeline)
+	cfg, ok := record.(*yule.Pipeline)
 	if !ok {
 		return nil, errors.New("LocalPipelineDatabase expected *pipeline type")
 	}
@@ -182,7 +183,7 @@ func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]Pipeline)
+		idToCfgMap := make(map[string]yule.Pipeline)
 		db.records[filter.Namespace] = idToCfgMap
 		module = idToCfgMap
 	}
@@ -201,7 +202,7 @@ func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any
 
 func (db *LocalPipelineDatabase) Replace(filter database.Filter, record any) error {
 
-	cfg, ok := record.(*Pipeline)
+	cfg, ok := record.(*yule.Pipeline)
 	if !ok {
 		return errors.New("LocalPipelineDatabase expected *pipeline type")
 	}
@@ -214,7 +215,7 @@ func (db *LocalPipelineDatabase) Replace(filter database.Filter, record any) err
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]Pipeline)
+		idToCfgMap := make(map[string]yule.Pipeline)
 		db.records[filter.Namespace] = idToCfgMap
 	}
 

@@ -1,8 +1,9 @@
 package processor
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/thread"
+	"github.com/Sentmint/yule"
 )
 
 func (t *Thread) Setup() {
@@ -61,7 +62,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				cfg := (request.Data).(processor.Config)
 				response.Error = t.processorAdd(&cfg)
 			case thread.ModuleRecord:
-				cfg := (request.Data).(processor.ModuleConfig)
+				cfg := (request.Data).(yule.Module)
 				response.Error = t.addModule(request.Identifiers.Processor, &cfg)
 			case thread.RunRecord:
 				response.Data, response.Error = t.createRun(request)

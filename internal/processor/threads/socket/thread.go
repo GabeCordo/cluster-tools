@@ -1,18 +1,15 @@
 package socket
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	common "github.com/Sentmint/PipelineOps/internal"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/processor/threads"
+	common "github.com/Sentmint/pops/internal"
+	"github.com/Sentmint/pops/internal/core/database/run"
+	"github.com/Sentmint/pops/internal/processor/threads"
+	"github.com/Sentmint/yule"
 	"log"
-	"net"
 	"os"
-	"time"
 )
 
 func (thread *Thread) Setup() {
@@ -56,26 +53,9 @@ func (thread *Thread) Setup() {
 		gatewayHost = envGatewayHost
 	}
 
-	var connection net.Conn
-	var err error
-
-	for i := 0; i < MaxNumberOfRetries; i++ {
-
-		if thread.flags.useTLS {
-			config := &tls.Config{RootCAs: thread.tls.pool}
-			connection, err = tls.Dial("tcp", gatewayHost, config)
-		} else {
-			connection, err = net.Dial("tcp", gatewayHost)
-		}
-
-		if err != nil {
-			thread.logger.Warnf("failed to connect to gateway (retry: %d)\n", i)
-		} else {
-			thread.logger.Println("connected to gateway")
-			break
-		}
-
-		time.Sleep(MaxWaitBeforeRetry)
+	connection, err := thread.createSocketConnection(gatewayHost)
+	if err != nil {
+		panic(err)
 	}
 
 	// todo : is this the best practice?
@@ -117,8 +97,20 @@ func (thread *Thread) Start() {
 	for {
 		err := decoder.Decode(data)
 		if err != nil {
+
+			// non-nil error indicates the socket was closed between the core-processor
+			// we need to attempt a reconnect to avoid interruptions
 			thread.logger.Alertln("gateway sent EOF closing the socket connection")
-			break
+
+			connection, err := thread.createSocketConnection("")
+			if err != nil {
+				// the core could have shutdown or crashed
+				break
+			}
+			thread.connection = connection
+
+			// listen to the next request coming from the socket
+			continue
 		}
 		thread.ProcessSocketRequest(data)
 	}
@@ -137,7 +129,7 @@ func (thread *Thread) ProcessRequest(request *threads.SocketRequest) {
 	switch request.Action {
 	case threads.SocketModuleAdd:
 		{
-			module, ok := request.Data.(processor.ModuleConfig)
+			module, ok := request.Data.(yule.Module)
 			if !ok {
 				thread.logger.Warnln("received module add with invalid data")
 				return

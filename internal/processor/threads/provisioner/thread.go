@@ -3,7 +3,7 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/processor/threads"
+	"github.com/Sentmint/pops/internal/processor/threads"
 	"math/rand"
 	"time"
 )
@@ -29,6 +29,13 @@ func (thread *Thread) Start() {
 		}
 	}()
 
+	// RUN STATIC FUNCTION IF PASSED TO LIBRARY
+
+	if thread.runnablePresent {
+		thread.runnable.Run(thread.injectables...)
+		thread.Interrupt <- threads.Shutdown
+	}
+
 	// CLEARING THE PROVISIONER BACKLOG
 
 	go thread.backlog()
@@ -36,8 +43,12 @@ func (thread *Thread) Start() {
 
 func (thread *Thread) registerModulesToCore() error {
 
+	if thread.repository == nil {
+		return errors.New("repository not initialized")
+	}
+
 	// logging enhancements
-	for _, moduleInst := range thread.provisioner.GetModules() {
+	for _, moduleInst := range thread.repository.GetModules() {
 		cfg := moduleInst.ToConfig()
 
 		thread.C0 <- threads.SocketRequest{
@@ -109,35 +120,37 @@ func (thread *Thread) NumOfActiveSupervisors() int {
 	thread.backlogMutex.RLock()
 	defer thread.backlogMutex.RUnlock()
 
-	return thread.numOfActiveSupervisors
+	return thread.numOfActiveRunners
 }
 
 func (thread *Thread) IncrementActiveSupervisors() {
 	thread.backlogMutex.Lock()
 	defer thread.backlogMutex.Unlock()
 
-	thread.numOfActiveSupervisors++
+	thread.numOfActiveRunners++
 }
 
 func (thread *Thread) DecrementActiveSupervisors() {
 	thread.backlogMutex.Lock()
 	defer thread.backlogMutex.Unlock()
 
-	thread.numOfActiveSupervisors--
+	thread.numOfActiveRunners--
 }
 
 func (thread *Thread) Teardown() {
 	thread.accepting = false
 
-	for _, s := range thread.provisioner.GetSupervisors() {
+	thread.backlogMutex.Lock()
+	defer thread.backlogMutex.Unlock()
 
-		if !s.IsAlive() {
-			fmt.Printf("runner is not alive %d %s\n", s.Id, s.State.ToString())
-			continue
+	for _, r := range thread.runnablePipelines {
+
+		if !r.IsAlive() {
+			fmt.Printf("runner is not alive %s\n", r.Identifier)
+		} else {
+			fmt.Printf("marking runner as teardown %s\n", r.Identifier)
+			r.Teardown()
 		}
-
-		fmt.Printf("marking runner as teardown %d\n", s.Id)
-		s.Teardown()
 	}
 
 	// wait for all the async messages to be processed before tearing down

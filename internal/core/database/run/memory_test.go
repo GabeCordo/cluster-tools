@@ -1,8 +1,8 @@
 package run
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/yule"
 	"strconv"
 	"testing"
 )
@@ -24,7 +24,7 @@ func TestRegistry_Create(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &pipeline.Pipeline{} // todo: this is a temp hack
+	cfg := &yule.Pipeline{} // todo: this is a temp hack
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new runner")
@@ -47,7 +47,7 @@ func TestRegistry_Get(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &pipeline.Pipeline{Identifier: ClusterName}
+	cfg := &yule.Pipeline{Identifier: ClusterName}
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new runner")

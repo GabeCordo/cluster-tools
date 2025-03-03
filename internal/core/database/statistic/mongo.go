@@ -25,7 +25,7 @@ func NewMongoStatisticsDatabase(uri string) (*MongoStatisticsDatabase, error) {
 
 func (database *MongoStatisticsDatabase) Get(filter StatisticFilter) (records []Wrapper, err error) {
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("pops-core")
 	c := d.Collection("statistics")
 
 	var mongoFilter bson.D
@@ -57,7 +57,7 @@ func (database *MongoStatisticsDatabase) Get(filter StatisticFilter) (records []
 
 func (database *MongoStatisticsDatabase) Create(moduleId, clusterId string, statistic Wrapper) (err error) {
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("pops-core")
 	c := d.Collection("statistics")
 
 	_, err = c.InsertOne(context.TODO(), statistic)
@@ -70,7 +70,7 @@ func (database *MongoStatisticsDatabase) Create(moduleId, clusterId string, stat
 
 func (database *MongoStatisticsDatabase) Delete(moduleId string) (err error) {
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("pops-core")
 	c := d.Collection("statistics")
 
 	mongoFilter := bson.D{{"module", moduleId}}

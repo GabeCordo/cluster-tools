@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/controllers"
+	"github.com/Sentmint/pops/cmd/pops/controllers"
 )
 
 func main() {
@@ -10,9 +10,6 @@ func main() {
 	cli := commandline.NewCommandLine()
 
 	// util controllers
-
-	ic := cli.AddCommand("example", controllers.ExampleController{})
-	ic.SetCategory("utils").SetDescription("an example processor node to test the gateway")
 
 	rc := cli.AddCommand("run", controllers.RunController{})
 	rc.SetCategory("utils").SetDescription("run a pipeline on the gateway")
@@ -29,10 +26,10 @@ func main() {
 	// configuration controllers
 
 	nc := cli.AddCommand("namespace", controllers.NamespaceController{})
-	nc.SetCategory("config").SetDescription("switch the namespace used by pops")
+	nc.SetCategory("config").SetDescription("switch the namespace used by pops-core-processor")
 
 	gc := cli.AddCommand("gate", controllers.GatewayController{})
-	gc.SetCategory("config").SetDescription("switch the gateway used by pops")
+	gc.SetCategory("config").SetDescription("switch the gateway used by pops-core-processor")
 
 	cli.Run()
 }

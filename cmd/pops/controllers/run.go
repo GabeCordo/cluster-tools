@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/local"
-	"github.com/Sentmint/PipelineOps/internal/api"
+	"github.com/Sentmint/pops/cmd/pops/local"
+	"github.com/Sentmint/pops/internal/api"
 	"os"
 	"os/signal"
 	"strconv"

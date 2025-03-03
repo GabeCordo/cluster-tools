@@ -3,10 +3,11 @@ package database
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/database/job"
+	"github.com/Sentmint/pops/internal/core/database/pipeline"
+	"github.com/Sentmint/pops/internal/core/database/statistic"
+	"github.com/Sentmint/pops/internal/core/thread"
+	"github.com/Sentmint/yule"
 	"testing"
 )
 
@@ -38,7 +39,7 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterConfig := pipeline.Pipeline{}
+	clusterConfig := yule.Pipeline{}
 
 	request := thread.Request{
 		Action: thread.CreateAction,
@@ -91,7 +92,7 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterStatistic := &statistic.Statistics{}
+	clusterStatistic := &yule.Statistics{}
 
 	request := thread.Request{
 		Action: thread.CreateAction,
@@ -117,7 +118,7 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	clusterStatistic := &statistic.Statistics{}
+	clusterStatistic := &yule.Statistics{}
 
 	request := thread.Request{
 		Action: thread.CreateAction,
@@ -147,7 +148,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	pipelineRecord := pipeline.Pipeline{Identifier: "test_pipeline"}
+	pipelineRecord := yule.Pipeline{Identifier: "test_pipeline"}
 
 	n := "test_namespace"
 	p := "test_pipeline"
@@ -175,7 +176,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 		return
 	}
 
-	fetchedPipelines, ok := (response.Data).([]pipeline.Pipeline)
+	fetchedPipelines, ok := (response.Data).([]yule.Pipeline)
 	if !ok {
 		t.Error("expected fetched record to be of type []cluster.pipeline")
 		return
@@ -200,9 +201,9 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	th.accepting = true
 	go th.Start()
 
-	stat := &statistic.Statistics{}
-	stat.Functions = make([]statistic.FunctionStatistic, 3)
-	stat.Pipes = make([]statistic.PipeStatistic, 2)
+	stat := &yule.Statistics{}
+	stat.Functions = make([]yule.FunctionStatistic, 3)
+	stat.Pipes = make([]yule.PipeStatistic, 2)
 	stat.Functions[0].Provisions = 5
 
 	n := "test_namespace"
@@ -231,7 +232,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 		return
 	}
 
-	fetchedClusterStats, ok := (response.Data).([]statistic.Statistics)
+	fetchedClusterStats, ok := (response.Data).([]yule.Statistics)
 	if !ok {
 		t.Error("expected fetched record to be of type []database.Statistic")
 		return
@@ -261,7 +262,7 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterConfig := pipeline.Pipeline{Identifier: c}
+	clusterConfig := yule.Pipeline{Identifier: c}
 
 	in <- thread.Request{
 		Action:      thread.CreateAction,
@@ -308,9 +309,9 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterStat := &statistic.Statistics{}
-	clusterStat.Functions = make([]statistic.FunctionStatistic, 3)
-	clusterStat.Pipes = make([]statistic.PipeStatistic, 2)
+	clusterStat := &yule.Statistics{}
+	clusterStat.Functions = make([]yule.FunctionStatistic, 3)
+	clusterStat.Pipes = make([]yule.PipeStatistic, 2)
 	clusterStat.Functions[2].Provisions = 5
 
 	in <- thread.Request{

@@ -1,4 +1,4 @@
-module github.com/Sentmint/PipelineOps
+module github.com/Sentmint/pops
 
 go 1.20
 
@@ -10,7 +10,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+replace github.com/Sentmint/yule => /Users/gabecordovado/GolandProjects/github.com/GabeCordo/yule
+
 require (
+	github.com/Sentmint/yule v0.1.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect

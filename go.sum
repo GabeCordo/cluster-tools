@@ -4,6 +4,8 @@ github.com/GabeCordo/commandline v0.2.0 h1:hq5Fk2RTB6dTBDgq+E/QAdIpge/uuey33NxAa
 github.com/GabeCordo/commandline v0.2.0/go.mod h1:PpEJZ9in2hhhZKvLNViNCl26O9Aij/A0fiJmYazRmdI=
 github.com/GabeCordo/toolchain v0.1.6 h1:DntZ5RQfQ9zh1VffdDajHjWV7eWe+9oZ+RIHk8d6NT0=
 github.com/GabeCordo/toolchain v0.1.6/go.mod h1:2UmX2lHst0LFC4GyFCprBfBk0XbLo9DAQM6cuXHYh3U=
+github.com/Sentmint/yule v0.1.1 h1:s8FCQSFgT/8W6w/fHLv3ns+ja5nfbX1YTqLXLqLn68I=
+github.com/Sentmint/yule v0.1.1/go.mod h1:yRVTwZ63istYERUHBrNQQRGg13odVJOF2dkWXAP3/Qc=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
 github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=

@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	common "github.com/Sentmint/PipelineOps/internal"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	common "github.com/Sentmint/pops/internal"
+	"github.com/Sentmint/pops/internal/core/database/run"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/thread"
+	"github.com/Sentmint/yule"
 	"log"
 	"net"
 	"os"
@@ -164,7 +165,7 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 						return
 					}
 
-					config := new(processor.ModuleConfig)
+					config := new(yule.Module)
 					err = json.Unmarshal(b, config)
 					if err != nil {
 						t.Logger.Warnln("received invalid data for Create Module")

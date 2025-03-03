@@ -2,7 +2,7 @@ package email
 
 import (
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
+	"github.com/Sentmint/pops/internal/core/message"
 	"sync"
 )
 

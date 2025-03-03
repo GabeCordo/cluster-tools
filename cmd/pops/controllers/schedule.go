@@ -3,10 +3,10 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/local"
-	"github.com/Sentmint/PipelineOps/internal/api"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	"github.com/Sentmint/pops/cmd/pops/local"
+	"github.com/Sentmint/pops/internal/api"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/pops/internal/core/database/job"
 	"strconv"
 )
 

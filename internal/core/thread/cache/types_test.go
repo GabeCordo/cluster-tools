@@ -2,8 +2,8 @@ package cache
 
 import (
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/cache/local"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/cache/local"
+	"github.com/Sentmint/pops/internal/core/thread"
 	"testing"
 )
 

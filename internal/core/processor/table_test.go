@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"github.com/Sentmint/yule"
 	"testing"
 )
 
@@ -50,7 +51,7 @@ func TestTable_AddModule(t *testing.T) {
 
 	table := NewTable()
 
-	moduleConfig := &ModuleConfig{}
+	moduleConfig := &yule.Module{}
 	if err := table.AddModule(0, moduleConfig); !errors.Is(err, DoesNotExist) {
 		t.Error("table should throw DoesNotExist for unknown processor")
 	}
@@ -66,8 +67,8 @@ func TestTable_AddModule2(t *testing.T) {
 	processorConfig := &Config{Identifier: 0, RemoteAddr: "127.0.0.1:1204"}
 	table.AddProcessor(processorConfig)
 
-	moduleConfig := &ModuleConfig{Name: "foo", Exports: make([]ModuleFunction, 1)}
-	moduleConfig.Exports[0] = ModuleFunction{Name: "bar"}
+	moduleConfig := &yule.Module{Name: "foo", Exports: make([]yule.ModuleFunction, 1)}
+	moduleConfig.Exports[0] = yule.ModuleFunction{Name: "bar"}
 
 	if err := table.AddModule(0, moduleConfig); err != nil {
 		t.Error(err)

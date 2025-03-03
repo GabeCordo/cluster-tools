@@ -1,7 +1,7 @@
 package threads
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/Sentmint/yule"
 )
 
 type InterruptEvent uint8
@@ -38,7 +38,7 @@ type ProvisionerRequest struct {
 	Source     ProvisionerSource
 	Namespace  string
 	Supervisor uint64
-	Pipeline   *pipeline.Pipeline
+	Pipeline   *yule.Pipeline
 	Metadata   map[string]string
 	Path       string
 	Nonce      uint32

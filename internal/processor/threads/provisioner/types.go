@@ -3,9 +3,9 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/processor/provision"
-	"github.com/Sentmint/PipelineOps/internal/processor/threads"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/pops/internal/processor/threads"
+	"github.com/Sentmint/yule"
 	"sync"
 )
 
@@ -30,18 +30,25 @@ type Thread struct {
 
 	logger *logging.Logger
 
-	provisioner *provision.Provisioner
+	repository        *yule.Repository
+	repositoryPresent bool
 
-	requestBacklog         []threads.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
-	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
-	backlogMutex           sync.RWMutex
+	runnable        yule.RunnablePipeline
+	injectables     []any
+	runnablePresent bool
+
+	requestBacklog []threads.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
+	backlogMutex   sync.RWMutex
+
+	runnablePipelines  []yule.RunnablePipeline
+	numOfActiveRunners int // tracks the number of runners active on the system at a time
 
 	accepting bool
 	runWg     sync.WaitGroup // wait group on the number of active runs
 	requestWg sync.WaitGroup // wait group on the number of processed async messages
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provisioner, channels ...interface{}) (*Thread, error) {
+func NewThread(cfg *Config, logger *logging.Logger, repository *yule.Repository, runnable *yule.RunnablePipeline, injectables []any, channels ...interface{}) (*Thread, error) {
 	instance := new(Thread)
 	var ok bool
 
@@ -72,10 +79,21 @@ func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provi
 	}
 	instance.Config = cfg
 
-	instance.provisioner = provisioner
+	if repository != nil {
+		instance.repository = repository
+		instance.repositoryPresent = true
+	}
+
+	if runnable != nil {
+		instance.runnable = *runnable
+		instance.injectables = injectables
+		instance.runnablePresent = true
+	}
 
 	instance.requestBacklog = make([]threads.ProvisionerRequest, 0)
-	instance.numOfActiveSupervisors = 0
+
+	instance.runnablePipelines = make([]yule.RunnablePipeline, 0)
+	instance.numOfActiveRunners = 0
 
 	instance.logger.SetColour(logging.Orange)
 

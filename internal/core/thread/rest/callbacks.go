@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/pops/internal/core/database/job"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/thread"
+	"github.com/Sentmint/yule"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,7 +20,7 @@ import (
 func (t *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* show the operator all the processors attached to the pipeline-gateway */
+		/* show the operator all the processors attached to the pops-core */
 		t.getProcessorCallback(w, r)
 	} else {
 		/* the rest does not support any other methods on the processor */
@@ -53,7 +53,7 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* show the operator all the modules registered to the pipeline-gateway */
+		/* show the operator all the modules registered to the pops-core */
 		t.getModuleCallback(w, r)
 	} else if r.Method == "PUT" {
 		/* the operator shall be allowed to mount and unmount modules */
@@ -128,11 +128,11 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) functionCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* the operator shall see clusters registered to the pipeline-gateway */
+		/* the operator shall see clusters registered to the pops-core */
 		t.getFunctionCallback(w, r)
 	} else if r.Method == "PUT" {
-		/* the operator shall mount clusters in the pipeline-gateway */
-		/* the operator shall unmount clusters in the pipeline-gateway */
+		/* the operator shall mount clusters in the pops-core */
+		/* the operator shall unmount clusters in the pops-core */
 		t.putFunctionCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -348,7 +348,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	request := &pipeline.Pipeline{}
+	request := &yule.Pipeline{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if (r.Method != "GET") && (r.Method != "DELETE") && (err != nil) {
 		w.WriteHeader(http.StatusBadRequest)

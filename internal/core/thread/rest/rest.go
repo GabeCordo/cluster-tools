@@ -2,8 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/yule"
 	"net/http"
 )
 
@@ -14,10 +14,10 @@ type Request struct {
 }
 
 type ModuleRequest struct {
-	Name    string                 `json:"name"`
-	Config  processor.ModuleConfig `json:"config,omitempty"`
-	Mount   bool                   `json:"mount,omitempty"`
-	Cluster ClusterRequest         `json:"cluster,omitempty"`
+	Name    string           `json:"name"`
+	Config  processor.Module `json:"config,omitempty"`
+	Mount   bool             `json:"mount,omitempty"`
+	Cluster ClusterRequest   `json:"cluster,omitempty"`
 }
 
 type ClusterRequest struct {
@@ -35,11 +35,11 @@ const (
 )
 
 type SupervisorRequest struct {
-	Identifier uint64               `json:"identifier"`
-	Action     SupervisorAction     `json:"action,omitempty"`
-	Statistics statistic.Statistics `json:"statistics,omitempty"`
-	Log        LogRequest           `json:"log,omitempty"`
-	Cache      CacheRequest         `json:"cache,omitempty"`
+	Identifier uint64           `json:"identifier"`
+	Action     SupervisorAction `json:"action,omitempty"`
+	Statistics yule.Statistics  `json:"statistics,omitempty"`
+	Log        LogRequest       `json:"log,omitempty"`
+	Cache      CacheRequest     `json:"cache,omitempty"`
 }
 
 type LogLevel string

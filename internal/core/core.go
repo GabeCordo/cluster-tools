@@ -2,20 +2,20 @@ package core
 
 import (
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
-	config_db "github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	supervisor_db "github.com/Sentmint/PipelineOps/internal/core/database/run"
-	statistic_db "github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
-	processor_cmp "github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/database"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/messenger"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/processor"
-	rest_api "github.com/Sentmint/PipelineOps/internal/core/thread/rest"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/runner"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/scheduler"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/socket"
+	"github.com/Sentmint/pops/internal/core/database/job"
+	config_db "github.com/Sentmint/pops/internal/core/database/pipeline"
+	supervisor_db "github.com/Sentmint/pops/internal/core/database/run"
+	statistic_db "github.com/Sentmint/pops/internal/core/database/statistic"
+	"github.com/Sentmint/pops/internal/core/message/log"
+	processor_cmp "github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/thread/database"
+	"github.com/Sentmint/pops/internal/core/thread/messenger"
+	"github.com/Sentmint/pops/internal/core/thread/processor"
+	rest_api "github.com/Sentmint/pops/internal/core/thread/rest"
+	"github.com/Sentmint/pops/internal/core/thread/runner"
+	"github.com/Sentmint/pops/internal/core/thread/scheduler"
+	"github.com/Sentmint/pops/internal/core/thread/socket"
 	"os"
 	"os/signal"
 	"syscall"
@@ -371,10 +371,10 @@ func (core *Core) Run() {
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	//pipeline-gateway.ProvisionerThread.Teardown()
+	//pops-core.ProvisionerThread.Teardown()
 	//
 	//if common.GetConfigInstance().Debug {
-	//	pipeline-gateway.logger.Println("provisioner shutdown")
+	//	pops-core.logger.Println("provisioner shutdown")
 	//}
 
 	core.SchedulerThread.Teardown()

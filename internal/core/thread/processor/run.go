@@ -3,9 +3,9 @@ package processor
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/database/run"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/thread"
 	"math/rand"
 )
 

@@ -2,13 +2,12 @@ package threads
 
 import (
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	pipeline_component "github.com/Sentmint/PipelineOps/internal/processor/provision/pipeline"
+	"github.com/Sentmint/yule"
 	"math/rand"
 )
 
 func RunProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	namespace string, supervisor uint64, cfg *pipeline.Pipeline, meta map[string]string, timeout float64) error {
+	namespace string, supervisor uint64, cfg *yule.Pipeline, meta map[string]string, timeout float64) error {
 
 	// there is a possibility the user never passed an args value to the HTTP endpoint,
 	// so we need to replace it with and empty array
@@ -55,24 +54,4 @@ func RunStop(pipe chan<- ProvisionerRequest, responseTable *multithreaded.Respon
 
 func ShutdownCore(pipe chan<- InterruptEvent) {
 	pipe <- Shutdown
-}
-
-func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	timeout float64) ([]*pipeline_component.Pipeline, error) {
-
-	request := ProvisionerRequest{
-		Action: ProvisionerStatisticsGet,
-		Nonce:  rand.Uint32(),
-	}
-	pipe <- request
-
-	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
-	if didTimeout {
-		return nil, multithreaded.NoResponseReceived
-	}
-
-	rsp := (data).(ProvisionerResponse)
-
-	collectedStatistics := (rsp.Data).([]*pipeline_component.Pipeline)
-	return collectedStatistics, nil
 }

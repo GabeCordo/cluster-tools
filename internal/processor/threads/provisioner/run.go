@@ -3,16 +3,15 @@ package provisioner
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/processor/provision"
-	"github.com/Sentmint/PipelineOps/internal/processor/provision/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/processor/threads"
+	"github.com/Sentmint/pops/internal/core/database/run"
+	"github.com/Sentmint/pops/internal/processor/threads"
+	"github.com/Sentmint/yule"
 	"math/rand"
 	"sync"
 	"time"
 )
 
-func (thread *Thread) getSupervisor() []*provision.Run {
+func (thread *Thread) getSupervisor() []*yule.Pipeline {
 
 	return nil
 }
@@ -41,17 +40,17 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 	// TODO : cleanup
 	thread.logger.Printf("%s[%s]%s Provisioning pipeline in module %s\n", logging.Green, request.Pipeline.Identifier, logging.Reset, "foo")
 
-	supervisorInstance, err := thread.provisioner.CreateSupervisor(
-		request.Namespace, request.Supervisor, request.Metadata, *thread.Config.Core, request.Pipeline)
+	pInstance := yule.Build(request.Pipeline, thread.repository)
 
-	if err != nil {
-		thread.logger.Printf("%s[%s]%s Failed to create runner %s\n", logging.Red, request.Pipeline.Identifier, logging.Reset, err)
-		thread.requestWg.Done()
-		return err
-	}
+	// TODO : fix
+	//if err != nil {
+	//	thread.logger.Printf("%s[%s]%s Failed to create runner %s\n", logging.Red, request.Pipeline.Identifier, logging.Reset, err)
+	//	thread.requestWg.Done()
+	//	return err
+	//}
 
-	thread.logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, supervisorInstance.Id)
-	go func(supervisorInstance *pipeline.Instance) {
+	thread.logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", logging.Green, request.Pipeline.Identifier, logging.Reset, pInstance.Identifier)
+	go func(p yule.RunnablePipeline) {
 
 		m := sync.Mutex{} // used for sending updates to the gateway
 
@@ -73,15 +72,15 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		go func() {
 			for {
 				m.Lock()
-				if !supervisorInstance.IsAlive() {
-					thread.logger.Warnf("cannot send update for supervisor %d that is not alive\n", supervisorInstance.Id)
+				if !p.IsAlive() {
+					thread.logger.Warnf("cannot send update for supervisor %d that is not alive\n", pInstance.Identifier)
 					break
 				}
 
 				run := run.Run{
-					Id:         supervisorInstance.Id,
+					Id:         p.Identifier,
 					Status:     run.Active,
-					Statistics: supervisorInstance.Pipeline.Stats,
+					Statistics: p.Stats,
 				}
 
 				thread.C0 <- threads.SocketRequest{
@@ -99,16 +98,14 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		thread.runWg.Add(1)
 
 		// block until the runner completes
-		supervisorInstance.Start()
+		p.Run()
 
 		m.Lock()
 
-		status := string(supervisorInstance.State)
-
 		run := run.Run{
-			Id:         supervisorInstance.Id,
-			Status:     run.FromString(status), // TODO: provision.RunStatus(supervisorInstance.State)
-			Statistics: supervisorInstance.Pipeline.Stats,
+			Id:         p.Identifier,
+			Status:     run.FromString(p.GetState().ToString()), // TODO: provision.RunStatus(supervisorInstance.State)
+			Statistics: p.Stats,
 		}
 
 		thread.C0 <- threads.SocketRequest{
@@ -122,10 +119,10 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		// provide the console with output indicating that the cluster has completed
 		// we already provide output when a cluster is provisioned, so it completes the state
 		if *thread.Config.Debug {
-			duration := time.Now().Sub(supervisorInstance.StartTime)
-			thread.logger.Printf("%s[%s]%s Pipeline complete, took %dhr %dm %ds %dms %dus\n",
+			duration := time.Now().Sub(p.Stats.StartTime)
+			thread.logger.Printf("%s[%d]%s Pipeline complete, took %dhr %dm %ds %dms %dus\n",
 				logging.Green,
-				supervisorInstance.Pipeline.Identifier,
+				p.Identifier,
 				logging.Reset,
 				int(duration.Hours()),
 				int(duration.Minutes()),
@@ -135,32 +132,43 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 			)
 		}
 
+		// TODO : do we need this anymore?
 		// once a runner has sent its data to the core there is no reason to keep the data
 		// stored in memory without risking it staying unused till the program is terminated
-		deleted, _ := thread.provisioner.DeleteSupervisor(supervisorInstance.Id)
-		if deleted {
-			thread.logger.Printf("deleted runner %d\n", supervisorInstance.Id)
-		} else {
-			thread.logger.Warnf("failed to delete runner %d\n", supervisorInstance.Id)
-		}
+		//deleted, _ := thread.DeleteSupervisor(supervisorInstance.Id)
+		//if deleted {
+		//	thread.logger.Printf("deleted runner %d\n", p.Id)
+		//} else {
+		//	thread.logger.Warnf("failed to delete runner %d\n", p.Id)
+		//}
 
 		// let the modules thread decrement the semaphore otherwise we will be stuck in deadlock waiting for
 		// the provisioned cluster to complete before allowing the etl-threads to shut down
 		//if !clusterWrapper.IsStream() {
 		thread.DecrementActiveSupervisors()
 		thread.runWg.Done()
-	}(supervisorInstance)
+	}(pInstance)
 
 	return nil
 }
 
 func (thread *Thread) stopRun(request *threads.ProvisionerRequest) error {
 
-	instance, found := thread.provisioner.GetSupervisor(request.Supervisor)
-	if !found {
-		return errors.New("no supervisor with that id exists")
+	thread.backlogMutex.Lock()
+	defer thread.backlogMutex.Unlock()
+
+	foundRunnable := false
+	for _, r := range thread.runnablePipelines {
+		if r.Identifier == request.Supervisor {
+			foundRunnable = true
+			r.Teardown()
+			break
+		}
 	}
 
-	instance.Teardown()
-	return nil
+	if !foundRunnable {
+		return errors.New("no supervisor with that id exists")
+	} else {
+		return nil
+	}
 }

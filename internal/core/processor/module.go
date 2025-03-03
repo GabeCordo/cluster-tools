@@ -1,75 +1,35 @@
 package processor
 
 import (
+	"github.com/Sentmint/yule"
 	"sync"
 )
 
-type ModuleData struct {
-	Name    string
-	Version string
-	Contact ModuleContact
-	Mounted bool
-}
-
 type Module struct {
-	data ModuleData
+	Metadata yule.Module
+	mounted  bool
 
 	functions map[string]*Function
 	mutex     sync.RWMutex
 }
 
-func newModule(name string, version string, contact ...ModuleContact) *Module {
+func newModule(name string, version string, contact ...yule.ModuleContact) *Module {
 	module := new(Module)
 
-	module.data.Name = name
-	module.data.Version = version
+	module.Metadata.Name = name
+	module.Metadata.Version = version
 
 	for _, c := range contact {
-		module.data.Contact = c
+		module.Metadata.Contact = c
 	}
 
-	module.data.Mounted = false
+	module.mounted = false
 	module.functions = make(map[string]*Function)
 
 	return module
 }
 
-type ModuleFunction struct {
-	Name        string   `yaml:"name" json:"name"`
-	StaticMount bool     `yaml:"static_mount,omitempty" json:"static_mount,omitempty"`
-	Parameters  []string `yaml:"parameters" json:"params"`
-	Returns     []string `yaml:"returns" json:"returns"`
-}
-
-type ModuleContact struct {
-	Name  string `yaml:"name,omitempty" json:"name,omitempty"`
-	Email string `yaml:"email,omitempty" json:"email,omitempty"`
-}
-
-type ModuleConfig struct {
-	Name        string           `yaml:"name" json:"name"`
-	Version     string           `yaml:"version" json:"version"`
-	StaticMount bool             `yaml:"static_mount,omitempty" json:"static_mount,omitempty"`
-	Contact     ModuleContact    `yaml:"contact,omitempty" json:"contact,omitempty"`
-	Exports     []ModuleFunction `yaml:"exports" json:"functions"`
-}
-
-func (config ModuleConfig) Verify() bool {
-
-	// ensure that every export identifier is unique
-	exports := make(map[string]bool)
-	for _, export := range config.Exports {
-		if _, found := exports[export.Name]; found {
-			return false
-		} else {
-			exports[export.Name] = true
-		}
-	}
-
-	return true
-}
-
-func (module *Module) addFunction(builder *ModuleFunction) (success bool) {
+func (module *Module) addFunction(builder *yule.ModuleFunction) (success bool) {
 
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
@@ -83,7 +43,11 @@ func (module *Module) addFunction(builder *ModuleFunction) (success bool) {
 }
 
 func (module *Module) IsMounted() bool {
-	return module.data.Mounted
+
+	module.mutex.RLock()
+	defer module.mutex.RUnlock()
+
+	return module.mounted
 }
 
 func (module *Module) Mount() {
@@ -91,7 +55,7 @@ func (module *Module) Mount() {
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
 
-	module.data.Mounted = true
+	module.mounted = true
 }
 
 func (module *Module) Unmount() {
@@ -99,12 +63,7 @@ func (module *Module) Unmount() {
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
 
-	module.data.Mounted = false
-}
-
-func (module *Module) GetData() ModuleData {
-
-	return module.data
+	module.mounted = false
 }
 
 func (module *Module) GetFunction(name string) (instance *Function, found bool) {

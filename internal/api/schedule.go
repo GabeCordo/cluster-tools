@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	"github.com/Sentmint/pops/internal/core/database/job"
 	"net/http"
 )
 

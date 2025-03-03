@@ -14,9 +14,9 @@ RUN go mod tidy
 
 # disable cgo so the binary can be brought to a smaller container
 ENV CGO_ENABLED=0
-RUN go build -o pipeline-gateway
-RUN ./pipeline-gateway init
-RUN ./pipeline-gateway doctor
+RUN go build -o pops-core
+RUN ./pops-core init
+RUN ./pops-core doctor
 
 ##########################################################################################################
 #       Production Container

@@ -3,6 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
+	"github.com/Sentmint/yule"
 	"sync"
 )
 
@@ -123,9 +124,9 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 }
 
 // AddModule
-// inform the pipeline-gateway that the processor now supports provisioning calls
+// inform the pops-core that the processor now supports provisioning calls
 // for a module and all its listed functions
-func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
+func (table *Table) AddModule(processorId uint64, config *yule.Module) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -159,13 +160,13 @@ func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 	if instance, found := table.modules[config.Name]; found {
 
 		// TODO : support different module versions
-		if instance.data.Version != config.Version {
+		if instance.Metadata.Version != config.Version {
 			return ModuleVersionClash
 		}
 
 		// TODO : support different contacts based on versions
-		if (instance.data.Contact.Name != config.Contact.Name) ||
-			(instance.data.Contact.Email != config.Contact.Email) {
+		if (instance.Metadata.Contact.Name != config.Contact.Name) ||
+			(instance.Metadata.Contact.Email != config.Contact.Email) {
 			return ModuleContactClash
 		}
 
@@ -264,17 +265,17 @@ func (table *Table) RemoveModule(processor uint64, name string) error {
 }
 
 // RegisteredModules
-// Fetch a copy of all modules stored on the pipeline-gateway.
-func (table *Table) RegisteredModules() []ModuleData {
+// Fetch a copy of all modules stored on the pops-core.
+func (table *Table) RegisteredModules() []yule.Module {
 
 	table.mutex.RLock()
 	defer table.mutex.RUnlock()
 
-	modules := make([]ModuleData, len(table.modules))
+	modules := make([]yule.Module, len(table.modules))
 
 	idx := 0
 	for _, instance := range table.modules {
-		modules[idx] = instance.data
+		modules[idx] = instance.Metadata
 		idx++
 	}
 

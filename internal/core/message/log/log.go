@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/toolchain/files"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
+	"github.com/Sentmint/pops/internal/core/message"
 	"os"
 	"regexp"
 	"strings"

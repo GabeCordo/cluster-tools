@@ -1,10 +1,10 @@
 package database
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/pops/internal/core/database/statistic"
+	"github.com/Sentmint/pops/internal/core/thread"
+	"github.com/Sentmint/yule"
 	"log"
 	"time"
 )
@@ -19,7 +19,7 @@ func (t *Thread) Setup() {
 
 	// some configs may have carried over from previous runs
 	// let the operator know these configs are being loaded into the
-	// pipeline-gateway without having to query the database over HTTP
+	// pops-core without having to query the database over HTTP
 	t.pipelineDatabase.Print()
 }
 
@@ -82,7 +82,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					if configData, ok := (request.Data).(pipeline.Pipeline); ok {
+					if configData, ok := (request.Data).(yule.Pipeline); ok {
 						_, err := t.pipelineDatabase.Create(
 							database.Filter{
 								Namespace: request.Identifiers.Namespace,
@@ -103,7 +103,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 				}
 			case thread.StatisticRecord:
 				{
-					if statisticsData, ok := (request.Data).(*statistic.Statistics); ok {
+					if statisticsData, ok := (request.Data).(*yule.Statistics); ok {
 						_, err := t.statisticDatabase.Create(
 							database.Filter{
 								Namespace: request.Identifiers.Namespace,
@@ -140,9 +140,9 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 						Identifier: request.Identifiers.Pipeline,
 					})
 
-					configs := make([]pipeline.Pipeline, len(results))
+					configs := make([]yule.Pipeline, len(results))
 					for i, result := range results {
-						configs[i] = result.(pipeline.Pipeline)
+						configs[i] = result.(yule.Pipeline)
 					}
 
 					response.Success = len(results) > 0
@@ -155,9 +155,9 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 						Pipeline:  request.Identifiers.Pipeline,
 					})
 
-					statistics := make([]statistic.Statistics, len(results))
+					statistics := make([]yule.Statistics, len(results))
 					for i, result := range results {
-						statistics[i] = result.(statistic.Statistics)
+						statistics[i] = result.(yule.Statistics)
 					}
 
 					response.Success = len(results) > 0
@@ -208,7 +208,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					cfg := (request.Data).(pipeline.Pipeline)
+					cfg := (request.Data).(yule.Pipeline)
 					err := t.pipelineDatabase.Replace(database.Filter{
 						Namespace: request.Identifiers.Namespace,
 						Pipeline:  request.Identifiers.Pipeline,

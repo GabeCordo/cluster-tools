@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/Sentmint/yule"
 	"sync"
 )
 
@@ -21,11 +22,11 @@ type Function struct {
 	mutex sync.Mutex
 }
 
-func newFunction(builder *ModuleFunction) *Function {
+func newFunction(builder *yule.ModuleFunction) *Function {
 	function := new(Function)
 
 	function.data.Name = builder.Name
-	function.data.Parameters = make([]string, len(builder.Parameters))
+	function.data.Parameters = make([]string, 0) // todo: what is this?
 	copy(function.data.Parameters, builder.Parameters)
 	function.data.Returns = make([]string, len(builder.Returns))
 	copy(function.data.Returns, builder.Returns)

@@ -3,13 +3,12 @@ package thread
 import (
 	"errors"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/pops/internal/core/database/job"
+	"github.com/Sentmint/pops/internal/core/database/run"
+	"github.com/Sentmint/pops/internal/core/message/log"
+	"github.com/Sentmint/pops/internal/core/processor"
+	"github.com/Sentmint/yule"
 	"math/rand"
 	"strconv"
 )
@@ -20,7 +19,7 @@ type Mandatory struct {
 	Timeout       float64
 }
 
-func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf pipeline.Pipeline, found bool) {
+func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf yule.Pipeline, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -36,18 +35,18 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 	data, didTimeout := multithreaded.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return pipeline.Pipeline{}, false
+		return yule.Pipeline{}, false
 	}
 
 	databaseResponse := (data).(Response)
 
 	if !databaseResponse.Success {
-		return pipeline.Pipeline{}, false
+		return yule.Pipeline{}, false
 	}
-	return databaseResponse.Data.([]pipeline.Pipeline)[0], true
+	return databaseResponse.Data.([]yule.Pipeline)[0], true
 }
 
-func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []pipeline.Pipeline, found bool) {
+func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []yule.Pipeline, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -70,10 +69,10 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 	if !databaseResponse.Success {
 		return nil, false
 	}
-	return databaseResponse.Data.([]pipeline.Pipeline), true
+	return databaseResponse.Data.([]yule.Pipeline), true
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeline.Pipeline) error {
+func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p yule.Pipeline) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
@@ -102,7 +101,7 @@ func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeli
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeline.Pipeline) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p yule.Pipeline) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,
@@ -370,7 +369,7 @@ func StopRun(mandatory Mandatory, id uint64) error {
 	return response.Error
 }
 
-func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []statistic.Statistics, found bool) {
+func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []yule.Statistics, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -394,7 +393,7 @@ func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (en
 		return nil, false
 	}
 
-	return databaseResponse.Data.([]statistic.Statistics), true
+	return databaseResponse.Data.([]yule.Statistics), true
 }
 
 func ShutdownCore(pipe chan<- InterruptEvent) error {
@@ -402,7 +401,7 @@ func ShutdownCore(pipe chan<- InterruptEvent) error {
 	return nil
 }
 
-func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleData) {
+func GetModules(mandatory Mandatory) (success bool, modules []yule.Module) {
 
 	request := Request{
 		Action: GetAction,
@@ -423,10 +422,10 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleDa
 		return false, nil
 	}
 
-	return true, (provisionerResponse.Data).([]processor.ModuleData)
+	return true, (provisionerResponse.Data).([]yule.Module)
 }
 
-func AddModule(mandatory Mandatory, processorId uint64, cfg *processor.ModuleConfig) (bool, error) {
+func AddModule(mandatory Mandatory, processorId uint64, cfg *yule.Module) (bool, error) {
 
 	request := Request{
 		Action:      CreateAction,

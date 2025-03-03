@@ -2,7 +2,7 @@ package processor
 
 import (
 	"errors"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/Sentmint/pops/internal/core/processor"
 )
 
 func (t *Thread) getFunctions(name string) ([]processor.FunctionData, error) {

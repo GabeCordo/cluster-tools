@@ -2,8 +2,8 @@ package run
 
 import (
 	"errors"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/Sentmint/pops/internal/core/database"
+	"github.com/Sentmint/yule"
 	"strconv"
 	"sync"
 )
@@ -70,7 +70,7 @@ func (database *LocalDatabase) Create(filter database.Filter, record any) (any, 
 	identifier := database.counter
 
 	// todo : hack for now
-	cfg, ok := record.(*pipeline.Pipeline)
+	cfg, ok := record.(*yule.Pipeline)
 	if !ok {
 		return nil, errors.New("invalid record")
 	}

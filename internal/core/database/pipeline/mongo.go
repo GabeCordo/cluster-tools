@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"github.com/Sentmint/yule"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -24,7 +25,7 @@ func NewMongoConfigDatabase(uri string) (*MongoConfigDatabase, error) {
 	return database, nil
 }
 
-func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline, err error) {
+func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []yule.Pipeline, err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(filter.Module)
@@ -45,7 +46,7 @@ func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline
 	} else {
 		mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
 
-		config := &Pipeline{}
+		config := &yule.Pipeline{}
 		err = c.FindOne(context.TODO(), mongoFilter).Decode(&config)
 		if err != nil {
 			return nil, err
@@ -57,7 +58,7 @@ func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline
 	return records, nil
 }
 
-func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg Pipeline) (err error) {
+func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg yule.Pipeline) (err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(moduleIdentifier)
@@ -75,7 +76,7 @@ func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier st
 	return nil
 }
 
-func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg Pipeline) (err error) {
+func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg yule.Pipeline) (err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(moduleIdentifier)

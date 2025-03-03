@@ -3,7 +3,7 @@ package rest
 import (
 	"context"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/thread"
 	"net/http"
 	"net/http/pprof"
 	"time"

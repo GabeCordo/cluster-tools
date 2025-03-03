@@ -1,16 +1,16 @@
 package provisioner
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/processor/provision/pipeline"
+	"github.com/Sentmint/yule"
 )
 
-func (thread *Thread) getStatistics() []*pipeline.Pipeline {
+func (thread *Thread) getStatistics() []*yule.Statistics {
 
-	statistics := make([]*pipeline.Pipeline, 0)
+	statistics := make([]*yule.Statistics, 0)
 
-	for _, s := range thread.provisioner.GetSupervisors() {
+	for _, r := range thread.runnablePipelines {
 
-		statistics = append(statistics, s.Pipeline)
+		statistics = append(statistics, r.Stats)
 	}
 
 	return statistics

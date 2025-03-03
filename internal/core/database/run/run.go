@@ -2,8 +2,7 @@ package run
 
 import (
 	"errors"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
+	"github.com/Sentmint/yule"
 	"sync"
 )
 
@@ -48,10 +47,10 @@ const (
 )
 
 type Request struct {
-	Id        uint64             `json:"id"`
-	Namespace string             `json:"namespace"`
-	Config    *pipeline.Pipeline `json:"config"`
-	Metadata  map[string]string  `json:"data"`
+	Id        uint64            `json:"id"`
+	Namespace string            `json:"namespace"`
+	Config    *yule.Pipeline    `json:"config"`
+	Metadata  map[string]string `json:"data"`
 }
 
 type Run struct {
@@ -61,14 +60,14 @@ type Run struct {
 	Processor uint64 `json:"processor,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 
-	Pipeline pipeline.Pipeline `json:"pipeline,omitempty"`
+	Pipeline yule.Pipeline `json:"pipeline,omitempty"`
 
-	Statistics *statistic.Statistics `json:"statistics"`
+	Statistics *yule.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func New(runId, processorId uint64, namespaceName string, cfg *pipeline.Pipeline) *Run {
+func New(runId, processorId uint64, namespaceName string, cfg *yule.Pipeline) *Run {
 	supervisor := new(Run)
 
 	supervisor.Status = Created
@@ -76,7 +75,7 @@ func New(runId, processorId uint64, namespaceName string, cfg *pipeline.Pipeline
 	supervisor.Processor = processorId
 	supervisor.Namespace = namespaceName
 	supervisor.Pipeline = *cfg // copy instance
-	supervisor.Statistics = statistic.NewStatistics(0, 0)
+	supervisor.Statistics = yule.NewStatistics(0, 0)
 
 	return supervisor
 }
@@ -126,15 +125,15 @@ func (supervisor *Run) GetId() uint64 {
 	return supervisor.Id
 }
 
-func (supervisor *Run) GetPipeline() *pipeline.Pipeline {
+func (supervisor *Run) GetPipeline() *yule.Pipeline {
 	return &supervisor.Pipeline
 }
 
-func (supervisor *Run) GetStatistic() *statistic.Statistics {
+func (supervisor *Run) GetStatistic() *yule.Statistics {
 	return supervisor.Statistics
 }
 
-func (supervisor *Run) SetStatistic(statistic *statistic.Statistics) error {
+func (supervisor *Run) SetStatistic(statistic *yule.Statistics) error {
 	if statistic == nil {
 		return errors.New("statistic is nil")
 	}

@@ -1,70 +1,14 @@
 package statistic
 
 import (
+	"github.com/Sentmint/yule"
 	"time"
 )
 
-type DataTiming struct {
-	ETIn  time.Time
-	ETOut time.Time
-	TLIn  time.Time
-	TLOut time.Time
-}
-
-type TimingStatistics struct {
-	MinTimeBeforePop time.Duration `json:"min_time_before_pop_ns"`
-	MaxTimeBeforePop time.Duration `json:"max_time_before_pop_ns"`
-	AverageTime      time.Duration `json:"average_time_ns"`
-	MedianTime       time.Duration `json:"median_time_ns"`
-}
-
-type FunctionStatistic struct {
-	Active     int `json:"active"`
-	Provisions int `json:"provisions"`
-}
-
-type PipeStatistic struct {
-	Pushed   int
-	Pulled   int              `json:"processed"`
-	Dropped  int              `json:"dropped"`
-	Breaches int              `json:"breaches"`
-	Timing   TimingStatistics `json:"timing"`
-}
-
-type Statistics struct {
-	NumOfFunctions int                 `json:"num_of_functions"`
-	Functions      []FunctionStatistic `json:"steps"`
-	NumOfChannels  int                 `json:"num_of_channels"`
-	Pipes          []PipeStatistic     `json:"channels"`
-}
-
-func NewStatistics(numOfFunctions, numOfPipes int) *Statistics {
-	stats := new(Statistics)
-
-	stats.NumOfFunctions = 0
-	stats.Functions = make([]FunctionStatistic, numOfFunctions)
-
-	stats.NumOfChannels = 0
-	stats.Pipes = make([]PipeStatistic, numOfPipes)
-
-	return stats
-}
-
 type Wrapper struct {
-	Timestamp time.Time     `json:"timestamp"`
-	Elapsed   time.Duration `json:"elapsed"`
-	Stats     Statistics    `json:"statistics"`
-}
-
-type DataTimer struct {
-	In  time.Time
-	Out time.Time
-}
-
-// TODO : move out of here to somewhere ELSE!
-
-func (dataTiming DataTiming) Valid() bool {
-	return !dataTiming.ETIn.IsZero() && !dataTiming.ETOut.IsZero() && !dataTiming.TLIn.IsZero() && !dataTiming.TLOut.IsZero()
+	Timestamp time.Time       `json:"timestamp"`
+	Elapsed   time.Duration   `json:"elapsed"`
+	Stats     yule.Statistics `json:"statistics"`
 }
 
 //

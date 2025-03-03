@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
+	"github.com/Sentmint/pops/internal/core/message"
+	"github.com/Sentmint/pops/internal/core/message/log"
 	"io/fs"
 	"os"
 	"path/filepath"

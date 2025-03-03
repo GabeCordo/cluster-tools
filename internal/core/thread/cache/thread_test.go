@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/Sentmint/pops/internal/core/thread"
 	"testing"
 )
 
