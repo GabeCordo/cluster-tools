@@ -41,3 +41,13 @@ jobs:
       - run: go version
       - name: check test coverage
         run: go test ./... -race -covermode=atomic -coverpkg=./...
+  gosec:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - uses: actions/checkout@v3
+      - name: check security vulnerabilities
+        uses: securego/gosec@master
+        with:
+          args: ./...
