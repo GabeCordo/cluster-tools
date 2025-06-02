@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	"github.com/GabeCordo/Flock/internal/core/database/job"
 )
 
 type Schedule struct {

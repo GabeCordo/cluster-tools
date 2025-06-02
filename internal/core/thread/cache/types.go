@@ -2,9 +2,9 @@ package cache
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/cache"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/cache"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"sync"
 )
 

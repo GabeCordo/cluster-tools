@@ -2,7 +2,7 @@ package duplex
 
 import (
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"reflect"
 	"sync"
 	"time"

@@ -123,7 +123,7 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 }
 
 // AddModule
-// inform the pipeline-gateway that the processor now supports provisioning calls
+// inform the flock that the processor now supports provisioning calls
 // for a module and all its listed functions
 func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 
@@ -264,7 +264,7 @@ func (table *Table) RemoveModule(processor uint64, name string) error {
 }
 
 // RegisteredModules
-// Fetch a copy of all modules stored on the pipeline-gateway.
+// Fetch a copy of all modules stored on the flock.
 func (table *Table) RegisteredModules() []ModuleData {
 
 	table.mutex.RLock()

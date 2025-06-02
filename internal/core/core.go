@@ -1,24 +1,25 @@
 package core
 
 import (
-	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
-	config_db "github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	supervisor_db "github.com/Sentmint/PipelineOps/internal/core/database/run"
-	statistic_db "github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
-	processor_cmp "github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/database"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/messenger"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/processor"
-	rest_api "github.com/Sentmint/PipelineOps/internal/core/thread/rest"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/runner"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/scheduler"
-	"github.com/Sentmint/PipelineOps/internal/core/thread/socket"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/GabeCordo/Flock/internal/core/database/job"
+	config_db "github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	supervisor_db "github.com/GabeCordo/Flock/internal/core/database/run"
+	statistic_db "github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/core/message/log"
+	processor_cmp "github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/thread/database"
+	"github.com/GabeCordo/Flock/internal/core/thread/messenger"
+	"github.com/GabeCordo/Flock/internal/core/thread/processor"
+	rest_api "github.com/GabeCordo/Flock/internal/core/thread/rest"
+	"github.com/GabeCordo/Flock/internal/core/thread/runner"
+	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
+	"github.com/GabeCordo/Flock/internal/core/thread/socket"
+	"github.com/GabeCordo/toolchain/logging"
 )
 
 type Core struct {
@@ -252,7 +253,7 @@ func New(configPath string) (*Core, error) {
 }
 
 const (
-	Version string = "v0.9.0"
+	Version string = "v0.22.0"
 )
 
 func (core *Core) Run() {
@@ -371,10 +372,10 @@ func (core *Core) Run() {
 	}
 
 	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	//pipeline-gateway.ProvisionerThread.Teardown()
+	//flock.ProvisionerThread.Teardown()
 	//
 	//if common.GetConfigInstance().Debug {
-	//	pipeline-gateway.logger.Println("provisioner shutdown")
+	//	flock.logger.Println("provisioner shutdown")
 	//}
 
 	core.SchedulerThread.Teardown()

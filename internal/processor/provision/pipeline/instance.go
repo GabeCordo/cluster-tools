@@ -2,9 +2,9 @@ package pipeline
 
 import (
 	"fmt"
-	pipeline_cfg "github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/processor/channel/duplex"
+	pipeline_cfg "github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/processor/channel/duplex"
 	"log"
 	"os"
 	"reflect"

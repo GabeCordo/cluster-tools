@@ -1,9 +1,9 @@
 package pipeline
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/processor/channel/duplex"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/processor/channel/duplex"
 	"sync"
 )
 

@@ -1,9 +1,9 @@
 package messenger
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/message"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/message"
+	"github.com/GabeCordo/Flock/internal/core/message/log"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (th *Thread) Setup() {

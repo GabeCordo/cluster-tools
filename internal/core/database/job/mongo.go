@@ -3,7 +3,7 @@ package job
 import (
 	"context"
 	"errors"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -28,7 +28,7 @@ func NewMongoJobDatabase(uri string) (*JobMongoDatabase, error) {
 
 func (database JobMongoDatabase) GetAll() (records []Job, err error) {
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("flock")
 	c := d.Collection("jobs")
 
 	cursor, err := c.Find(context.TODO(), bson.D{})
@@ -49,7 +49,7 @@ func (database JobMongoDatabase) GetBy(filter *database.Filter) (records []Job, 
 		return records, errors.New("filter can not be nil")
 	}
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("flock")
 	c := d.Collection("jobs")
 
 	var mongoFilter bson.D
@@ -86,7 +86,7 @@ func (database JobMongoDatabase) Create(job *Job) (err error) {
 		return errors.New("job can not be nil")
 	}
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("flock")
 	c := d.Collection("jobs")
 
 	_, err = c.InsertOne(context.TODO(), job)
@@ -103,7 +103,7 @@ func (database JobMongoDatabase) Delete(filter *database.Filter) (err error) {
 		return errors.New("filter can not be nil")
 	}
 
-	d := database.client.Database("pipeline-gateway")
+	d := database.client.Database("flock")
 	c := d.Collection("jobs")
 
 	var mongoFilter bson.D

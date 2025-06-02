@@ -3,7 +3,7 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/processor/threads"
+	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"math/rand"
 	"time"
 )

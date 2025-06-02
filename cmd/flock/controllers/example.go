@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/commandline"
-	cluster_tools "github.com/Sentmint/PipelineOps"
 	"time"
+
+	cluster_tools "github.com/GabeCordo/Flock"
+	"github.com/GabeCordo/commandline"
 )
 
 func generator(out chan int) {

@@ -2,10 +2,10 @@ package messenger
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/message"
+	"github.com/GabeCordo/Flock/internal/core/message/email"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
-	"github.com/Sentmint/PipelineOps/internal/core/message/email"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"sync"
 )
 

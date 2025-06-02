@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/Flock/internal/core"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/internal/core"
 	"gopkg.in/yaml.v3"
 	"os"
 )

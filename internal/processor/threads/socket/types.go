@@ -3,10 +3,10 @@ package socket
 import (
 	"crypto/x509"
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/processor/threads"
 	"net"
 	"sync"
 	"time"

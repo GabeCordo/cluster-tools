@@ -15,16 +15,16 @@ installed with 'go install' otherwise.
 
 ```shell
    # create a log copy of the thread
-   git clone https://github.com/Sentmint/PipelineOps
+   git clone https://github.com/GabeCordo/Flock
    
-   # install the pipeline-gateway binary
-   cd /cmd/pipeline-gateway
-   # generate the pipeline-gateway binary in the GOPATH bin folder
+   # install the flock binary
+   cd /cmd/flock
+   # generate the flock binary in the GOPATH bin folder
    go install
    # generate global files used by the thread when statistic
-   pipeline-gateway init
-   # validate pipeline-gateway is installed correctly
-   pipeline-gateway doctor
+   flock init
+   # validate flock is installed correctly
+   flock doctor
    
    # install the pops binary
    cd ../pops
@@ -38,7 +38,7 @@ The gateway is an orchestrator that manages various pipeline deployments. The de
 create, run, and watch pipelines defined by yaml files.
 
 ```shell
-pipeline-gateway start
+flock start
 ```
 
 ### Testing

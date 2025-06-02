@@ -3,9 +3,9 @@ package socket
 import (
 	"crypto/tls"
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"net"
 	"sync"
 )

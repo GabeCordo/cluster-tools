@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/local"
-	"github.com/Sentmint/PipelineOps/internal/api"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/GabeCordo/Flock/cmd/flock/local"
+	"github.com/GabeCordo/Flock/internal/api"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	"github.com/GabeCordo/commandline"
+	"gopkg.in/yaml.v3"
 )
 
 type PipelineController struct {

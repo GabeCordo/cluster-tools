@@ -3,7 +3,7 @@ package job
 import (
 	"errors"
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"

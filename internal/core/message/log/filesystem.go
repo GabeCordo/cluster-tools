@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
+	"github.com/GabeCordo/Flock/internal/core/message"
 	"strings"
 )
 

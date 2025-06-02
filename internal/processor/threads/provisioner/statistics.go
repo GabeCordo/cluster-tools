@@ -1,7 +1,7 @@
 package provisioner
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/processor/provision/pipeline"
+	"github.com/GabeCordo/Flock/internal/processor/provision/pipeline"
 )
 
 func (thread *Thread) getStatistics() []*pipeline.Pipeline {
