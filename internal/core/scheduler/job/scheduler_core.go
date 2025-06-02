@@ -1,8 +1,8 @@
 package job
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"log"
 	"time"
 )

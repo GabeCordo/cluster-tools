@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"fmt"
+
+	"github.com/GabeCordo/Flock/cmd/flock/local"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/local"
 )
 
 type GatewayController struct {

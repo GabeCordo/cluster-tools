@@ -1,4 +1,4 @@
-module github.com/Sentmint/PipelineOps
+module github.com/GabeCordo/Flock
 
 go 1.20
 

@@ -2,8 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/core/processor"
 	"net/http"
 )
 

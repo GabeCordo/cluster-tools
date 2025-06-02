@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {

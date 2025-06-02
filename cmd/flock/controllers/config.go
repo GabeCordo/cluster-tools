@@ -3,8 +3,8 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/Flock/internal/core"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/internal/core"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -146,7 +146,7 @@ func (command ConfigCommand) updateField(c *core.Config, fields []string, value 
 func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultConfigFile); err != nil {
-		fmt.Println("[x] PipelineOps has never been initialized, statistic 'pipeline-gateway init'")
+		fmt.Println("[x] PipelineOps has never been initialized, statistic 'flock init'")
 		return commandline.Terminate
 	}
 

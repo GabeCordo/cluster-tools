@@ -2,7 +2,7 @@ package provision
 
 import (
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/core/processor"
 	"reflect"
 	"sync"
 )

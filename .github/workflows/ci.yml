@@ -31,8 +31,4 @@ jobs:
       - name: Test with the Go CLI
         run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
 
-      - name: Tag
-        uses: anothrNick/github-tag-action@1.36.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          WITH_V: true
+

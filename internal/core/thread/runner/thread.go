@@ -2,10 +2,10 @@ package runner
 
 import (
 	"errors"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/run"
+	"github.com/GabeCordo/Flock/internal/core/message/log"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"strconv"
 )
 

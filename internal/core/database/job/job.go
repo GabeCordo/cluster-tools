@@ -2,7 +2,7 @@ package job
 
 import (
 	"fmt"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database"
 	"time"
 )
 

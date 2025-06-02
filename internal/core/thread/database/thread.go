@@ -1,10 +1,10 @@
 package database
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
-	"github.com/Sentmint/PipelineOps/internal/core/database/statistic"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"log"
 	"time"
 )
@@ -19,7 +19,7 @@ func (t *Thread) Setup() {
 
 	// some configs may have carried over from previous runs
 	// let the operator know these configs are being loaded into the
-	// pipeline-gateway without having to query the database over HTTP
+	// flock without having to query the database over HTTP
 	t.pipelineDatabase.Print()
 }
 

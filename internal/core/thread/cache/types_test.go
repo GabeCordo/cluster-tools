@@ -1,9 +1,9 @@
 package cache
 
 import (
+	"github.com/GabeCordo/Flock/internal/core/cache/local"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/Sentmint/PipelineOps/internal/core/cache/local"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"testing"
 )
 

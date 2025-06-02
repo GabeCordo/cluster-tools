@@ -2,12 +2,12 @@ package runner
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/run"
+	"github.com/GabeCordo/Flock/internal/core/message"
+	"github.com/GabeCordo/Flock/internal/core/message/log"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/run"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"math/rand"
 	"strconv"
 )
@@ -74,7 +74,7 @@ func (t *Thread) createRun(processorId uint64, namespaceName, pipelineName strin
 
 	rsp, timedOut := multithreaded.SendAndWait(t.responseTable.socket, socketRequest.Nonce, t.config.Timeout)
 	if timedOut {
-		t.Logger.Printf("[pipeline-gateway -> %s][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
+		t.Logger.Printf("[flock -> %s][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
 		return 0, errors.New("could not send create run to processor")
 	}
@@ -82,11 +82,11 @@ func (t *Thread) createRun(processorId uint64, namespaceName, pipelineName strin
 	socketResponse := rsp.(thread.Response)
 	if socketResponse.Error != nil {
 		t.Logger.Print(socketResponse.Error.Error())
-		t.Logger.Printf("[pipeline-gateway -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
+		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
 		return 0, socketResponse.Error
 	} else {
-		t.Logger.Printf("[pipeline-gateway -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "connected to processor and runner is active")
+		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "connected to processor and runner is active")
 		sup.Status = run.Active
 	}
 

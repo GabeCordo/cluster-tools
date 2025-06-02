@@ -1,8 +1,8 @@
 package run
 
 import (
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/pipeline"
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"strconv"
 	"testing"
 )

@@ -2,12 +2,12 @@ package scheduler
 
 import (
 	"fmt"
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/job"
+	"github.com/GabeCordo/Flock/internal/core/processor"
+	scheduler "github.com/GabeCordo/Flock/internal/core/scheduler/job"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/database"
-	"github.com/Sentmint/PipelineOps/internal/core/database/job"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	scheduler "github.com/Sentmint/PipelineOps/internal/core/scheduler/job"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 )
 
 func (t *Thread) Setup() {

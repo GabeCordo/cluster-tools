@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/cmd/pops/local"
-	"github.com/Sentmint/PipelineOps/internal/api"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/GabeCordo/Flock/cmd/flock/local"
+	"github.com/GabeCordo/Flock/internal/api"
+	"github.com/GabeCordo/commandline"
 )
 
 type StatsController struct {

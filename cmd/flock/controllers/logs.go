@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/Flock/internal/core/message"
+	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/commandline"
-	"github.com/Sentmint/PipelineOps/internal/core/message"
-	"github.com/Sentmint/PipelineOps/internal/core/message/log"
 	"io/fs"
 	"os"
 	"path/filepath"

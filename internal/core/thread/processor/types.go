@@ -2,10 +2,10 @@ package processor
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"github.com/Sentmint/PipelineOps/internal/core/processor"
-	"github.com/Sentmint/PipelineOps/internal/core/thread"
 	"sync"
 )
 
