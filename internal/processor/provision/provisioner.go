@@ -9,10 +9,6 @@ import (
 	"sync"
 )
 
-const (
-	DefaultFrameworkModule = "common"
-)
-
 type Provisioner struct {
 	Modules map[string]*Module
 

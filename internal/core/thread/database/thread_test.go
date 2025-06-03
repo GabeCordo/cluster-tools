@@ -2,19 +2,20 @@ package database
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"testing"
 )
 
 func generateDatabaseThread(in chan thread.Request, out chan thread.Response) *Thread {
 
 	irc := make(chan thread.InterruptEvent, 1)
-	min := make(chan thread.Request, 1)
-	mout := make(chan thread.Response, 1)
+	Min := make(chan thread.Request, 1)
+	Mout := make(chan thread.Response, 1)
 
 	sD := statistic.NewLocalStatisticDatabase()
 	cD := pipeline.NewLocalPipelineDatabase()
@@ -24,7 +25,7 @@ func generateDatabaseThread(in chan thread.Request, out chan thread.Response) *T
 	logger, _ := logging.NewLogger("database")
 	th, _ := New(cfg, logger, sD, cD, jD,
 		"/test/path", "/test/path2",
-		irc, in, out, min, mout, in, out, in, out, in, out)
+		irc, in, out, Min, Mout, in, out, in, out, in, out)
 
 	return th
 }
@@ -250,7 +251,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 
 	// TODO - fix
-	return
+	t.Skip("test case is failing and requires fixes")
 
 	in := make(chan thread.Request, 1)
 	out := make(chan thread.Response, 1)
@@ -297,7 +298,7 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 
 	// TODO - must be fixed in future
-	return
+	t.Skip("test case is failing and requires fixes")
 
 	in := make(chan thread.Request, 1)
 	out := make(chan thread.Response, 1)

@@ -1,10 +1,11 @@
 package cache
 
 import (
+	"testing"
+
 	"github.com/GabeCordo/Flock/internal/core/cache/local"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"testing"
 )
 
 func GenerateTestCacheThread(in chan thread.Request, out chan thread.Response) *Thread {
@@ -19,9 +20,8 @@ func GenerateTestCacheThread(in chan thread.Request, out chan thread.Response) *
 
 	irc := make(chan thread.InterruptEvent, 10)
 	c := local.NewCache(100)
-	thread, _ := New(cfg, logger, c, irc, in, out, in, out)
-
-	return thread
+	th, _ := New(cfg, logger, c, irc, in, out, in, out)
+	return th
 }
 
 func TestNewNilArguments(t *testing.T) {
@@ -37,7 +37,7 @@ func TestNew(t *testing.T) {
 	c1 := make(chan thread.Request, 1)
 	c2 := make(chan thread.Response, 1)
 
-	if thread := GenerateTestCacheThread(c1, c2); thread == nil {
+	if th := GenerateTestCacheThread(c1, c2); th == nil {
 		t.Error("expected success when creating cache thread")
 	}
 }

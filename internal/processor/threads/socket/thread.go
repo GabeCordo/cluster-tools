@@ -5,14 +5,15 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	common "github.com/GabeCordo/Flock/internal"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/core/processor"
-	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"log"
 	"net"
 	"os"
 	"time"
+
+	common "github.com/GabeCordo/Flock/internal"
+	"github.com/GabeCordo/Flock/internal/core/database/run"
+	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/processor/threads"
 )
 
 func (thread *Thread) Setup() {
@@ -158,7 +159,7 @@ func (thread *Thread) ProcessRequest(request *threads.SocketRequest) {
 		}
 	case threads.SocketRunUpdate:
 		{
-			run, ok := request.Data.(run.Run)
+			r, ok := request.Data.(run.Run)
 			if !ok {
 				thread.logger.Warnln("received run update with invalid data")
 			}
@@ -166,7 +167,7 @@ func (thread *Thread) ProcessRequest(request *threads.SocketRequest) {
 			req := &common.Request{
 				Action: common.Update,
 				Record: common.Run,
-				Data:   run,
+				Data:   r,
 			}
 
 			encoder := json.NewEncoder(thread.connection)

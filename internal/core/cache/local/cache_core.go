@@ -21,8 +21,8 @@ const (
 )
 
 func RandInteger(min int, max int) int {
-	rand.Seed(time.Now().UTC().UnixNano())
-	return min + rand.Intn(max-min)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return min + r.Intn(max-min)
 }
 
 func GenerateRandomString(seed int) string {

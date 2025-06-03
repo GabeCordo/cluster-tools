@@ -3,16 +3,17 @@ package log
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/message"
-	"github.com/GabeCordo/toolchain/files"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/core/message"
+	"github.com/GabeCordo/toolchain/files"
 )
 
-var logRegex = regexp.MustCompile(`\[(.+)\]\[(.+)\](.+)`)
+var logRegex = regexp.MustCompile(`\[(.+)]\[(.+)](.+)`)
 
 type Log struct {
 	Id        uint64

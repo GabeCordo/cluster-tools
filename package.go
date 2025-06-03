@@ -3,30 +3,22 @@ package cluster_tools
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/processor/config"
-	provisioner_cmp "github.com/GabeCordo/Flock/internal/processor/provision"
-	"github.com/GabeCordo/Flock/internal/processor/threads"
-	"github.com/GabeCordo/Flock/internal/processor/threads/provisioner"
-	"github.com/GabeCordo/Flock/internal/processor/threads/socket"
-	"github.com/GabeCordo/toolchain/logging"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/processor/config"
+	provisioner_cmp "github.com/GabeCordo/Flock/internal/processor/provision"
+	"github.com/GabeCordo/Flock/internal/processor/threads"
+	"github.com/GabeCordo/Flock/internal/processor/threads/provisioner"
+	"github.com/GabeCordo/Flock/internal/processor/threads/socket"
+	"github.com/GabeCordo/toolchain/logging"
 )
 
 const ClusterToolsConfigEnvVar = "CTOOLS_CONFIG"
-const ClusterToolsDeploymentsEnvVar = "CTOOLS_DEPLOYMENTS"
-
-type State uint8
-
-const (
-	Standalone State = iota
-	Connected
-	Disconnected
-)
 
 type Thread uint8
 

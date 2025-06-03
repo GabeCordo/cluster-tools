@@ -2,21 +2,19 @@ package pipeline
 
 import (
 	"fmt"
-	pipeline_cfg "github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"github.com/GabeCordo/Flock/internal/processor/channel/duplex"
 	"log"
 	"os"
 	"reflect"
 	"sync"
 	"time"
+
+	pipeline_cfg "github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/Flock/internal/processor/channel/duplex"
 )
 
 const (
-	DefaultNumberOfClusters       = 1
 	DefaultMonitorRefreshDuration = 100
-	DefaultChannelThreshold       = 10
-	DefaultChannelGrowthFactor    = 2
 )
 
 type Response struct {
@@ -221,7 +219,7 @@ func (supervisor *Instance) Start() (response *Response) {
 
 	//// cleanup environment variables that were dynamically set
 
-	for key, _ := range supervisor.metadata {
+	for key := range supervisor.metadata {
 		os.Unsetenv(key)
 	}
 

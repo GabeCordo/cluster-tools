@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/thread/cache"
 	"github.com/GabeCordo/Flock/internal/core/thread/database"
 	"github.com/GabeCordo/Flock/internal/core/thread/messenger"
@@ -13,10 +17,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
 	"github.com/GabeCordo/Flock/internal/core/thread/socket"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"log"
-	"os"
-	"sync"
 )
 
 type Config struct {
@@ -121,18 +121,30 @@ func (config *Config) Print() {
 	fmt.Println(string(bytes))
 }
 
-func (config *Config) ToYAML(path string) {
+func (config *Config) ToYAML(path string) error {
 
 	// if a flock already exists, delete it
-	if _, err := os.Stat(path); err == nil {
-		os.Remove(path)
+	_, err := os.Stat(path)
+	if err == nil {
+		// attempt to remove the path
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
 	}
 
 	file, err := yaml.Marshal(config)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	_ = ioutil.WriteFile(path, file, DefaultFilePermissions)
+
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(file) // todo: do we need DefaultFilePermissions?
+	return err
 }
 
 func (config *Config) Store() bool {
@@ -221,20 +233,18 @@ func (config *Config) FillSchedulerConfig(schedulerConfig *scheduler.Config) {
 }
 
 func YAMLToETLConfig(config *Config, path string) error {
+
 	if _, err := os.Stat(path); err != nil {
 		// file does not exist
-		log.Println(err)
 		return err
 	}
 
-	file, err := ioutil.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
-		// error reading the file
-		log.Println(err)
 		return err
 	}
 
-	err = yaml.Unmarshal([]byte(file), config)
+	err = yaml.NewDecoder(f).Decode(&config)
 	if err != nil {
 		// the file is not a JSON or is a malformed (fields missing) flock
 		log.Println(err)

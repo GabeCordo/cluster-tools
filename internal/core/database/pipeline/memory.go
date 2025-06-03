@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/GabeCordo/Flock/internal/core/database"
 )
 
 type LocalPipelineDatabase struct {
@@ -113,19 +114,23 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 		}
 		moduleIdentifier := tmp[len(tmp)-2]
 
+		f, err := os.Open(curPath)
+		if err != nil {
+			return err
+		}
+
 		fBytes, err := ioutil.ReadFile(curPath)
 		if err != nil {
 			return err
 		}
 
 		cfg := &Pipeline{}
-		if err = json.Unmarshal(fBytes, cfg); err != nil {
+		if err = json.NewDecoder(f).Decode(cfg); err != nil {
 			return err
 		}
 
-		db.Create(database.Filter{Namespace: moduleIdentifier, Pipeline: cfg.Identifier}, cfg)
-
-		return nil
+		_, err = db.Create(database.Filter{Namespace: moduleIdentifier, Pipeline: cfg.Identifier}, cfg)
+		return err
 	})
 
 	return nil
@@ -247,7 +252,7 @@ func (db *LocalPipelineDatabase) Print() {
 
 		fmt.Printf("├─ %s\n", moduleName)
 
-		for clusterName, _ := range module {
+		for clusterName := range module {
 			fmt.Printf("|   ├─ %s\n", clusterName)
 		}
 	}

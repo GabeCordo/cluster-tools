@@ -2,14 +2,15 @@ package provisioner
 
 import (
 	"errors"
+	"math/rand"
+	"sync"
+	"time"
+
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/processor/provision"
 	"github.com/GabeCordo/Flock/internal/processor/provision/pipeline"
 	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
-	"math/rand"
-	"sync"
-	"time"
 )
 
 func (thread *Thread) getSupervisor() []*provision.Run {
@@ -78,7 +79,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 					break
 				}
 
-				run := run.Run{
+				r := run.Run{
 					Id:         supervisorInstance.Id,
 					Status:     run.Active,
 					Statistics: supervisorInstance.Pipeline.Stats,
@@ -86,7 +87,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 
 				thread.C0 <- threads.SocketRequest{
 					Action: threads.SocketRunUpdate,
-					Data:   run,
+					Data:   r,
 					Nonce:  rand.Uint32(),
 				}
 
@@ -105,7 +106,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 
 		status := string(supervisorInstance.State)
 
-		run := run.Run{
+		r := run.Run{
 			Id:         supervisorInstance.Id,
 			Status:     run.FromString(status), // TODO: provision.RunStatus(supervisorInstance.State)
 			Statistics: supervisorInstance.Pipeline.Stats,
@@ -113,7 +114,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 
 		thread.C0 <- threads.SocketRequest{
 			Action: threads.SocketRunUpdate,
-			Data:   run,
+			Data:   r,
 			Nonce:  rand.Uint32(),
 		}
 

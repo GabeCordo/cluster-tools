@@ -3,6 +3,7 @@ package job
 import (
 	"context"
 	"errors"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,15 +16,15 @@ type JobMongoDatabase struct {
 
 func NewMongoJobDatabase(uri string) (*JobMongoDatabase, error) {
 
-	database := new(JobMongoDatabase)
+	db := new(JobMongoDatabase)
 
 	var err error
-	database.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+	db.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, err
 	}
 
-	return database, nil
+	return db, nil
 }
 
 func (database JobMongoDatabase) GetAll() (records []Job, err error) {

@@ -40,7 +40,7 @@ type Function struct {
 
 type Pipe struct {
 	Identifier   string  `json:"id" yaml:"id"`
-	Threshold    int     `json:"threshold yaml:"threshold""`
+	Threshold    int     `json:"threshold" yaml:"threshold"`
 	GrowthFactor float64 `json:"growth_factor" yaml:"growth_factor"`
 }
 

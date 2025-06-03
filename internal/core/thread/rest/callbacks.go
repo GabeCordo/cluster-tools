@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"net/http"
-	"net/url"
-	"strconv"
-	"time"
 )
 
 // TODO : add comments to the else conditions where the processor may support
@@ -239,9 +240,9 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 		namespace = namespaceStr[0]
 	}
 
-	pipeline := ""
+	pipelineVar := ""
 	if pipelineStr, found := urlMapping["cluster"]; found {
-		pipeline = pipelineStr[0]
+		pipelineVar = pipelineStr[0]
 	}
 
 	var id string
@@ -255,7 +256,7 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 		id = "0"
 	}
 
-	if (namespace == "") && (pipeline == "") && (id == "0") {
+	if (namespace == "") && (pipelineVar == "") && (id == "0") {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -263,7 +264,7 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 	response := &Response{Success: true}
 
 	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
-	filter := database.Filter{Namespace: namespace, Pipeline: pipeline, Identifier: id}
+	filter := database.Filter{Namespace: namespace, Pipeline: pipelineVar, Identifier: id}
 
 	instance, err := thread.GetRun(mandatory, filter)
 	if err != nil {
@@ -274,7 +275,10 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err = w.Write(b)
+	if err != nil {
+		t.logger.Alert(err.Error())
+	}
 }
 
 func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
@@ -565,8 +569,8 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 
-	var job job.Job
-	err := json.NewDecoder(r.Body).Decode(&job)
+	var j job.Job
+	err := json.NewDecoder(r.Body).Decode(&j)
 	if err != nil {
 		fmt.Println("missing job passed to body")
 		w.WriteHeader(http.StatusBadRequest)
@@ -574,7 +578,7 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := Response{}
-	if err := thread.CreateJob(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout}, &job); err != nil {
+	if err := thread.CreateJob(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout}, &j); err != nil {
 		response.Success = false
 		response.Data = err.Error()
 	} else {
@@ -584,7 +588,10 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 	if b, err := json.Marshal(response); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
-		w.Write(b)
+		_, err = w.Write(b)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
 
