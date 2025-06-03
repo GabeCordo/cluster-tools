@@ -124,7 +124,10 @@ func (thread *Thread) Start() {
 		thread.ProcessSocketRequest(data)
 	}
 
-	thread.connection.Close()
+	err := thread.connection.Close()
+	if err != nil {
+		fmt.Print(err)
+	}
 	thread.channels.Interrupt <- threads.Shutdown
 }
 
@@ -249,8 +252,13 @@ func (thread *Thread) ProcessSocketRequest(request *common.Request) {
 
 func (thread *Thread) Teardown() {
 
-	if thread.connection != nil {
-		thread.connection.Close()
+	if thread.connection == nil {
+		return
+	}
+
+	err := thread.connection.Close()
+	if err != nil {
+		fmt.Print(err)
 	}
 	thread.requestWg.Wait()
 }

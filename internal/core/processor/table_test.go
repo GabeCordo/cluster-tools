@@ -32,7 +32,11 @@ func TestTable_AddProcessor2(t *testing.T) {
 
 	cfg := &Config{Identifier: 0, RemoteAddr: "127.0.0.1:1204"}
 
-	table.AddProcessor(cfg)
+	_, err := table.AddProcessor(cfg)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	if _, err := table.AddProcessor(cfg); err == nil {
 		t.Error("expected the table to reject a duplicate processor")
@@ -64,7 +68,11 @@ func TestTable_AddModule2(t *testing.T) {
 	table := NewTable()
 
 	processorConfig := &Config{Identifier: 0, RemoteAddr: "127.0.0.1:1204"}
-	table.AddProcessor(processorConfig)
+	_, err := table.AddProcessor(processorConfig)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	moduleConfig := &ModuleConfig{Name: "foo", Exports: make([]ModuleFunction, 1)}
 	moduleConfig.Exports[0] = ModuleFunction{Name: "bar"}
@@ -97,7 +105,11 @@ func TestTable_AddModule2(t *testing.T) {
 	}
 
 	processorConfig2 := &Config{Identifier: 1, RemoteAddr: "127.0.0.1:1205"}
-	table.AddProcessor(processorConfig2)
+	_, err := table.AddProcessor(processorConfig2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	if err := table.AddModule(1, moduleConfig); err != nil {
 		t.Error(err)

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -12,7 +13,12 @@ func Gateway() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return "", nil
@@ -45,7 +51,12 @@ func Connect(core string) error {
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", rsp.Status)
@@ -66,7 +77,12 @@ func Disconnect(core string) error {
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", rsp.Status)

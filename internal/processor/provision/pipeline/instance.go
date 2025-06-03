@@ -186,7 +186,10 @@ func (supervisor *Instance) Start() (response *Response) {
 
 	// TODO : possibly enhance security?
 	for key, value := range supervisor.metadata {
-		os.Setenv(key, value)
+		err := os.Setenv(key, value)
+		if err != nil {
+			fmt.Print(err)
+		}
 	}
 
 	//// start creating the default frontend goroutines
@@ -220,7 +223,10 @@ func (supervisor *Instance) Start() (response *Response) {
 	//// cleanup environment variables that were dynamically set
 
 	for key := range supervisor.metadata {
-		os.Unsetenv(key)
+		err := os.Unsetenv(key)
+		if err != nil {
+			fmt.Print(err)
+		}
 	}
 
 	return response

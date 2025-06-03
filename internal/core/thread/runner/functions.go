@@ -2,14 +2,15 @@ package runner
 
 import (
 	"errors"
+	"math/rand"
+	"strconv"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/message"
 	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"math/rand"
-	"strconv"
 )
 
 func (t *Thread) getSupervisor(filter *database.Filter) ([]*run.Run, error) {
@@ -102,7 +103,10 @@ func (t *Thread) updateRun(instance *run.Run) error {
 	stored := (results[0]).(*run.Run)
 
 	stored.SetStatus(instance.Status)
-	stored.SetStatistic(instance.Statistics)
+	err := stored.SetStatistic(instance.Statistics)
+	if err != nil {
+		return err
+	}
 
 	status := stored.GetStatus()
 	if (status == run.Completed) ||

@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net"
+	"os"
+
 	common "github.com/GabeCordo/Flock/internal"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"log"
-	"net"
-	"os"
 )
 
 func (t *Thread) Setup() {
@@ -81,7 +82,12 @@ func (t *Thread) Start() {
 	if err != nil {
 		panic(err)
 	}
-	defer listener.Close()
+	defer func(listener net.Listener) {
+		err := listener.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(listener)
 
 	for {
 		conn, err := listener.Accept()
@@ -112,14 +118,20 @@ func (t *Thread) Start() {
 			success, err := thread.AddProcessor(mandatory, cfg)
 			if !success {
 				t.Logger.Alertln("failed to register a new processor on the processor thread")
-				conn.Close()
+				err = conn.Close()
+				if err != nil {
+					t.Logger.Alert(err.Error())
+				}
 				return
 			}
 
 			// add the processor connection to the map of ongoing connections
 			if _, found := t.connections[id]; found {
 				t.Logger.Alertln("failed to create a local association to the ongoing connection")
-				conn.Close()
+				err = conn.Close()
+				if err != nil {
+					t.Logger.Alert(err.Error())
+				}
 				return
 			} else {
 				t.connections[id] = conn
@@ -138,7 +150,10 @@ func (t *Thread) Start() {
 				}
 			}
 
-			c.Close()
+			err = c.Close()
+			if err != nil {
+				t.Logger.Alert(err.Error())
+			}
 
 			err = thread.DeleteProcessor(mandatory, cfg)
 			if err != nil {

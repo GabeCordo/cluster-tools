@@ -42,10 +42,22 @@ func (controller ExampleController) Run(cli *commandline.CommandLine) commandlin
 	p, _ := cluster_tools.New()
 
 	m := p.Module("common")
-	m.LinkFunction("generator", generator)
-	m.LinkFunction("add2", add2)
-	m.LinkFunction("mul2", mul2)
-	m.LinkFunction("prt", prt)
+	err := m.LinkFunction("generator", generator)
+	if err != nil {
+		fmt.Print(err)
+	}
+	err = m.LinkFunction("add2", add2)
+	if err != nil {
+		fmt.Print(err)
+	}
+	err = m.LinkFunction("mul2", mul2)
+	if err != nil {
+		fmt.Print(err)
+	}
+	err = m.LinkFunction("prt", prt)
+	if err != nil {
+		fmt.Print(err)
+	}
 
 	p.Runtime()
 

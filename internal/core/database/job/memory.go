@@ -3,12 +3,13 @@ package job
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"gopkg.in/yaml.v3"
 )
 
 type LocalJobDatabase struct {
@@ -83,8 +84,14 @@ func (database *LocalJobDatabase) Save(path string) error {
 
 	// clear all the files that already existed in the folder, they should have been loaded
 	// into the scheduler if the Load function was called correctly
-	os.RemoveAll(path)
-	os.MkdirAll(path, 0750)
+	err := os.RemoveAll(path)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(path, 0750)
+	if err != nil {
+		return err
+	}
 
 	moduleSeperatedJobs := make(map[string][]Job)
 

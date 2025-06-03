@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"fmt"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/processor"
@@ -50,38 +51,44 @@ func (t *Thread) Start() {
 
 	go scheduler.Watch(t.Scheduler)
 
-	go scheduler.Loop(t.Scheduler, func(jb job.Job) error {
+	go func() {
+		err := scheduler.Loop(t.Scheduler, func(jb job.Job) error {
 
-		// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
-		mandatory := thread.Mandatory{t.C18, t.processorResponseTable, t.config.Timeout}
-		_, err := thread.CreateRun(mandatory, jb.Namespace, jb.Pipeline, jb.Metadata)
+			// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
+			mandatory := thread.Mandatory{t.C18, t.processorResponseTable, t.config.Timeout}
+			_, err := thread.CreateRun(mandatory, jb.Namespace, jb.Pipeline, jb.Metadata)
 
-		e := ""
+			e := ""
+			if err != nil {
+
+				e = fmt.Sprintf("but encountered an error, %s", err.Error())
+			}
+
+			if (err != nil) && t.config.Debug {
+				t.logger.Printf("scheduled cluster is ready: %s (%s,%s) %s\n", jb.Identifier, jb.Namespace, jb.Pipeline, e)
+				t.logger.Printf("%d clusters are waiting to be provisioned\n", t.Scheduler.ItemsInQueue())
+			}
+
+			// if err is not nil, the Scheduler will stop running, so output to console
+			// if debug is enabled so the operator is aware of the runtime change
+			if ((err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived)) && t.config.Debug {
+				t.logger.Printf("the Scheduler stopped after encountering %s\n", err.Error())
+			}
+
+			// I only care about errors that might indicate a compromised state of the thread, the others
+			// like Namespace/Function's not existing really makes no sense to crash the Scheduler as someone
+			// likely put in the job for a future module/cluster pair they want to attach to mango
+			if (err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived) ||
+				(err == processor.ModuleDoesNotExist) || (err == processor.FunctionDoesNotExist) {
+				return err
+			} else {
+				return nil
+			}
+		})
 		if err != nil {
-			e = fmt.Sprintf("but encountered an error, %s", err.Error())
+			fmt.Print(err)
 		}
-
-		if (err != nil) && t.config.Debug {
-			t.logger.Printf("scheduled cluster is ready: %s (%s,%s) %s\n", jb.Identifier, jb.Namespace, jb.Pipeline, e)
-			t.logger.Printf("%d clusters are waiting to be provisioned\n", t.Scheduler.ItemsInQueue())
-		}
-
-		// if err is not nil, the Scheduler will stop running, so output to console
-		// if debug is enabled so the operator is aware of the runtime change
-		if ((err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived)) && t.config.Debug {
-			t.logger.Printf("the Scheduler stopped after encountering %s\n", err.Error())
-		}
-
-		// I only care about errors that might indicate a compromised state of the thread, the others
-		// like Namespace/Function's not existing really makes no sense to crash the Scheduler as someone
-		// likely put in the job for a future module/cluster pair they want to attach to mango
-		if (err == processor.CanNotProvisionStreamCluster) || (err == multithreaded.NoResponseReceived) ||
-			(err == processor.ModuleDoesNotExist) || (err == processor.FunctionDoesNotExist) {
-			return err
-		} else {
-			return nil
-		}
-	})
+	}()
 }
 
 func (t *Thread) Handle(request *thread.Request, response *thread.Response) {

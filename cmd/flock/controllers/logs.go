@@ -2,13 +2,14 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/message"
-	"github.com/GabeCordo/Flock/internal/core/message/log"
-	"github.com/GabeCordo/commandline"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/GabeCordo/Flock/internal/core/message"
+	"github.com/GabeCordo/Flock/internal/core/message/log"
+	"github.com/GabeCordo/commandline"
 )
 
 type LogController struct {
@@ -22,7 +23,7 @@ func (controller LogController) Run(cli *commandline.CommandLine) commandline.Te
 
 		// there is no log file specified, just output all the files
 
-		filepath.Walk(DefaultLogsFolder, func(path string, info fs.FileInfo, err error) error {
+		err := filepath.Walk(DefaultLogsFolder, func(path string, info fs.FileInfo, err error) error {
 
 			if (path == DefaultLogsFolder) || info.IsDir() {
 				return nil
@@ -39,6 +40,10 @@ func (controller LogController) Run(cli *commandline.CommandLine) commandline.Te
 			fmt.Printf("├─ %s\t(num: %d)\n", info.Name(), numOfLogs)
 			return nil
 		})
+
+		if err != nil {
+			fmt.Print(err)
+		}
 	} else {
 
 		// the operator specified a log file, scope into it

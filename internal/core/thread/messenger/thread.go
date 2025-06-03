@@ -1,6 +1,8 @@
 package messenger
 
 import (
+	"fmt"
+
 	"github.com/GabeCordo/Flock/internal/core/message"
 	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
@@ -60,7 +62,7 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
 		priority = message.Fatal
 	}
 
-	th.messenger.Message(
+	err := th.messenger.Message(
 		message.Source{
 			Module:     request.Identifiers.Module,
 			Cluster:    request.Identifiers.Function,
@@ -71,12 +73,15 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
 			Message:  (request.Data).(string),
 		},
 	)
+	if err != nil {
+		fmt.Print(err)
+	}
 }
 
 func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 
 	th.logger.Printf("closing log for %s/%s\n", request.Identifiers.Module, request.Identifiers.Function)
-	th.messenger.Flush(
+	err := th.messenger.Flush(
 		message.Source{
 			Module:     request.Identifiers.Module,
 			Cluster:    request.Identifiers.Function,
@@ -84,6 +89,9 @@ func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 		},
 		nil,
 	)
+	if err != nil {
+		fmt.Print(err)
+	}
 }
 
 func (th *Thread) Teardown() {

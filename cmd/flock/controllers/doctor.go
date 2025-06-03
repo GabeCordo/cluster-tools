@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"fmt"
+	"io"
+	"os"
+
 	"github.com/GabeCordo/Flock/internal/core"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
-	"io"
-	"os"
 )
 
 type DoctorCommand struct {
@@ -61,7 +62,12 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 		fmt.Printf("[x] the global common file is missing (%s)\n", DefaultConfigFile)
 		return commandline.Terminate
 	}
-	defer configFile.Close()
+	defer func(configFile *os.File) {
+		err := configFile.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(configFile)
 
 	bytes, err := io.ReadAll(configFile)
 	if err != nil {

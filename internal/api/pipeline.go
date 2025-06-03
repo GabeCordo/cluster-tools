@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"net/http"
 )
 
 func RunPipelineOnProcessor(host string, pl *pipeline.Pipeline) error {
@@ -56,7 +58,12 @@ func IsPipelineOnCore(host, namespace, pl string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode == http.StatusNotFound {
 		return false, nil
@@ -95,7 +102,12 @@ func CreatePipelineOnCore(host, namespace string, pl *pipeline.Pipeline) error {
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return errors.New("http status code " + rsp.Status)
@@ -122,7 +134,12 @@ func ReplacePipelineOnCore(host, namespace string, pl *pipeline.Pipeline) error 
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return errors.New("http status code " + rsp.Status)
@@ -143,7 +160,12 @@ func RemovePipelineFromCore(host, namespace, pipeline string) error {
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return errors.New("http status code " + rsp.Status)
@@ -175,7 +197,12 @@ func RunPipelineOnCore(host, namespace, pipeline string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	response := &struct{ Id uint64 }{}
 
@@ -191,31 +218,36 @@ func RunPipelineOnCore(host, namespace, pipeline string) (uint64, error) {
 	return response.Id, nil
 }
 
-func GetRunStatus(host, namespace string, id uint64) (run.Run, error) {
+func GetRunStatus(host, namespace string, id uint64) (*run.Run, error) {
 
 	url := fmt.Sprintf("%s/run?namespace=%s&id=%d", host, namespace, id)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return run.Run{}, err
+		return nil, err
 	}
 
 	rsp, err := client.Do(req)
 	if err != nil {
-		return run.Run{}, err
+		return nil, err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
-		return run.Run{}, errors.New("http status code " + rsp.Status)
+		return nil, errors.New("http status code " + rsp.Status)
 	}
 
 	r := &struct {
-		Data []run.Run `json:"data"`
+		Data []*run.Run `json:"data"`
 	}{}
 
 	if err = json.NewDecoder(rsp.Body).Decode(r); err != nil {
-		return run.Run{}, err
+		return nil, err
 	}
 
 	for _, j := range r.Data {
@@ -224,7 +256,7 @@ func GetRunStatus(host, namespace string, id uint64) (run.Run, error) {
 		}
 	}
 
-	return run.Run{}, errors.New("run not found")
+	return nil, errors.New("run not found")
 }
 
 func StopRun(host string, id uint64) error {

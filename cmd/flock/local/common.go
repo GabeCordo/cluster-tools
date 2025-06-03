@@ -2,6 +2,7 @@ package local
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -35,7 +36,12 @@ func createConfig(config *Config) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(f)
 
 	if err = json.NewEncoder(f).Encode(config); err != nil {
 		return err
@@ -54,7 +60,12 @@ func updateConfig(config *Config) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(f)
 
 	return json.NewEncoder(f).Encode(config)
 }
@@ -65,7 +76,12 @@ func getConfig(config *Config) error {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(f)
 
 	return json.NewDecoder(f).Decode(config)
 }

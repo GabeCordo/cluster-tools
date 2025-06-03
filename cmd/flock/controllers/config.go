@@ -3,13 +3,14 @@ package controllers
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core"
-	"github.com/GabeCordo/commandline"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/GabeCordo/Flock/internal/core"
+	"github.com/GabeCordo/commandline"
+	"gopkg.in/yaml.v3"
 )
 
 type ConfigCommand struct {
@@ -162,7 +163,11 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 		return commandline.Terminate
 	}
 
-	configFile.Close()
+	err = configFile.Close()
+	if err != nil {
+		fmt.Print(err)
+		return commandline.Terminate
+	}
 
 	c := &core.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
@@ -208,7 +213,12 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 			fmt.Printf("[Error] failed to truncate old pipeline file => %s\n", err.Error())
 			return commandline.Terminate
 		}
-		defer configFile.Close()
+		defer func(configFile *os.File) {
+			err := configFile.Close()
+			if err != nil {
+				fmt.Print(err)
+			}
+		}(configFile)
 
 		if _, err = configFile.Write(updatedBytes); err != nil {
 			fmt.Printf("[Error] failed to write bytes to pipeline file => %s\n", err.Error())

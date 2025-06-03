@@ -3,14 +3,18 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"math/rand"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/processor/threads"
 )
 
 func (thread *Thread) Setup() {
 
-	thread.registerModulesToCore()
+	err := thread.registerModulesToCore()
+	if err != nil {
+		fmt.Print(err)
+	}
 	thread.accepting = true
 }
 

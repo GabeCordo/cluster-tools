@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -38,7 +37,7 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 	db.mutex.RLock()
 	defer db.mutex.RUnlock()
 
-	filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -51,24 +50,39 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 			return nil
 		}
 
-		os.RemoveAll(curPath)
-
-		return nil
+		err = os.RemoveAll(curPath)
+		return err
 	})
+
+	if err != nil {
+		return err
+	}
 
 	for moduleId, configs := range db.records {
 		modulePath := path + moduleId
 		if _, err := os.Stat(modulePath); err == nil {
-			os.RemoveAll(modulePath)
+			err = os.RemoveAll(modulePath)
+			if err != nil {
+				continue
+			}
 		}
-		os.Mkdir(modulePath, 0700)
+		err := os.Mkdir(modulePath, 0700)
+		if err != nil {
+			continue
+		}
 
 		for identifier, config := range configs {
 			configBytes, _ := json.Marshal(config)
 			configPath := modulePath + "/" + identifier + ".json"
 			f, _ := os.Create(configPath)
-			f.Write(configBytes)
-			f.Close()
+			_, err := f.Write(configBytes)
+			if err != nil {
+				fmt.Println(err)
+			}
+			err = f.Close()
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 
@@ -81,7 +95,7 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 		return errors.New("path doesn't exist or isn't a directory")
 	}
 
-	filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -119,11 +133,6 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 			return err
 		}
 
-		fBytes, err := ioutil.ReadFile(curPath)
-		if err != nil {
-			return err
-		}
-
 		cfg := &Pipeline{}
 		if err = json.NewDecoder(f).Decode(cfg); err != nil {
 			return err
@@ -133,7 +142,7 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 		return err
 	})
 
-	return nil
+	return err
 }
 
 type ConfigFilter struct {

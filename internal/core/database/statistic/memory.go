@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/core/database"
 )
 
 type LocalStatisticDatabase struct {
@@ -42,12 +43,16 @@ func (db *LocalStatisticDatabase) Save(path string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(f)
 
 	statisticBytes, _ := json.Marshal(db.records)
-	f.Write(statisticBytes)
-
-	return nil
+	_, err = f.Write(statisticBytes)
+	return err
 }
 
 func (db *LocalStatisticDatabase) Load(path string) error {

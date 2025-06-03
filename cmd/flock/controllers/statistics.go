@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/commandline"
 	"io/fs"
 	"path/filepath"
+
+	"github.com/GabeCordo/commandline"
 )
 
 type StatisticsController struct {
@@ -12,7 +13,7 @@ type StatisticsController struct {
 
 func (controller StatisticsController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	filepath.Walk(DefaultStatisticsFolder, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.Walk(DefaultStatisticsFolder, func(path string, info fs.FileInfo, err error) error {
 
 		if (path == DefaultLogsFolder) || info.IsDir() {
 			return nil
@@ -21,6 +22,10 @@ func (controller StatisticsController) Run(cli *commandline.CommandLine) command
 		fmt.Printf("├─ %s (bytes: %d)\n", info.Name(), info.Size())
 		return nil
 	})
+
+	if err != nil {
+		fmt.Print(err)
+	}
 
 	return commandline.Terminate
 }

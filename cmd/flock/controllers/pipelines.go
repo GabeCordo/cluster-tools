@@ -50,7 +50,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	// if the path provided is a folder, try to grab all the deployment (pipeline) files
 	// inside the folder and register them on the core
 	if fInfo.IsDir() {
-		filepath.Walk(providedPath, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(providedPath, func(path string, info os.FileInfo, err error) error {
 			//fmt.Println(path)
 			if info.IsDir() || err != nil {
 				return nil
@@ -58,6 +58,9 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 			pipelinePaths = append(pipelinePaths, path)
 			return nil
 		})
+		if err != nil {
+			fmt.Println(err)
+		}
 	} else {
 		pipelinePaths = append(pipelinePaths, rootPath)
 	}
@@ -81,7 +84,10 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 			fmt.Println(err)
 		}
 
-		f.Close()
+		err = f.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	if cli.Flag(commandline.Add) {

@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
+	"io"
 	"net/http"
+
+	"github.com/GabeCordo/Flock/internal/core/database/job"
 )
 
 func GetJobs(host, namespace string) ([]job.Job, error) {
@@ -20,7 +22,12 @@ func GetJobs(host, namespace string) ([]job.Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("bad status: %s", rsp.Status)
@@ -51,7 +58,12 @@ func CreateJob(host string, job job.Job) error {
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", rsp.Status)
@@ -73,7 +85,12 @@ func DeleteJob(host, job string) error {
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", rsp.Status)

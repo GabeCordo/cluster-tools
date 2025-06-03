@@ -48,7 +48,10 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err := w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func (t *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +85,10 @@ func (t *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err := w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 type ModuleBody struct {
@@ -123,7 +129,10 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func (t *Thread) functionCallback(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +178,10 @@ func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err := w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 type FunctionConfigJSONBody struct {
@@ -202,7 +214,10 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 type JobConfigJSONBody struct {
@@ -470,7 +485,10 @@ func (t *Thread) getDebugCallback(w http.ResponseWriter, r *http.Request) {
 	t.logger.Printf("ping from %s\n", r.RemoteAddr)
 	response := Response{Success: true, Description: "bonjour"}
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err := w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 type DebugJSONBody struct {
@@ -503,7 +521,10 @@ func (t *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) {
 
 	response.Success = err == nil
 	b, _ := json.Marshal(response)
-	w.Write(b)
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func (t *Thread) jobCallback(w http.ResponseWriter, r *http.Request) {
@@ -560,10 +581,14 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 		response.Description = err.Error()
 	}
 
-	if b, err := json.Marshal(response); err != nil {
+	b, err := json.Marshal(response)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-	} else {
-		w.Write(b)
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -642,10 +667,14 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 		response.Description = err.Error()
 	}
 
-	if b, err := json.Marshal(response); err != nil {
+	b, err := json.Marshal(response)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-	} else {
-		w.Write(b)
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -670,9 +699,13 @@ func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	response.Success = err == nil
 
-	if b, err := json.Marshal(response); err != nil {
+	b, err := json.Marshal(response)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-	} else {
-		w.Write(b)
+	}
+	
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
