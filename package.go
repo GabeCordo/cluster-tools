@@ -78,8 +78,6 @@ func (module *Module) Map(mappings map[string]any) error {
 }
 
 type Processor struct {
-	state State
-
 	threads struct {
 		socket      *socket.Thread
 		provisioner *provisioner.Thread

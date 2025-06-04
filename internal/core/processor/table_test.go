@@ -105,7 +105,7 @@ func TestTable_AddModule2(t *testing.T) {
 	}
 
 	processorConfig2 := &Config{Identifier: 1, RemoteAddr: "127.0.0.1:1205"}
-	_, err := table.AddProcessor(processorConfig2)
+	_, err = table.AddProcessor(processorConfig2)
 	if err != nil {
 		t.Error(err)
 		return
