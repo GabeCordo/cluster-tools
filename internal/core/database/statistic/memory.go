@@ -59,7 +59,7 @@ func (db *LocalStatisticDatabase) Load(path string) error {
 	panic("implement me")
 }
 
-type StatisticFilter struct {
+type Filter struct {
 	Module  string
 	Cluster string
 	Verbose bool

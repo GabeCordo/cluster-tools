@@ -1,10 +1,11 @@
 package threads
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	pipeline_component "github.com/GabeCordo/Flock/internal/processor/provision/pipeline"
-	"github.com/GabeCordo/toolchain/multithreaded"
 	"math/rand"
+
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	pipelineComponent "github.com/GabeCordo/Flock/internal/processor/provision/pipeline"
+	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 func RunProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
@@ -58,7 +59,7 @@ func ShutdownCore(pipe chan<- InterruptEvent) {
 }
 
 func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	timeout float64) ([]*pipeline_component.Pipeline, error) {
+	timeout float64) ([]*pipelineComponent.Pipeline, error) {
 
 	request := ProvisionerRequest{
 		Action: ProvisionerStatisticsGet,
@@ -73,6 +74,6 @@ func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *mul
 
 	rsp := (data).(ProvisionerResponse)
 
-	collectedStatistics := (rsp.Data).([]*pipeline_component.Pipeline)
+	collectedStatistics := (rsp.Data).([]*pipelineComponent.Pipeline)
 	return collectedStatistics, nil
 }

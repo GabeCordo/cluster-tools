@@ -3,11 +3,12 @@ package socket
 import (
 	"crypto/tls"
 	"errors"
+	"net"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"net"
-	"sync"
 )
 
 type Config struct {
@@ -72,7 +73,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected logger to be a non-nil value")
 	}
 
-	var ok bool = false
+	var ok = false
 
 	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {

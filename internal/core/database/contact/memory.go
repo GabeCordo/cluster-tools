@@ -161,7 +161,7 @@ func (db *Database) DeleteContact(identifier string) error {
 
 	if _, found := db.contacts[identifier]; !found {
 		db.mutex.RUnlock()
-		return ContactNotFound
+		return NotFound
 	}
 
 	db.mutex.RUnlock()

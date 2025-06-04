@@ -10,13 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type JobMongoDatabase struct {
+type MongoDatabase struct {
 	client *mongo.Client
 }
 
-func NewMongoJobDatabase(uri string) (*JobMongoDatabase, error) {
+func NewMongoJobDatabase(uri string) (*MongoDatabase, error) {
 
-	db := new(JobMongoDatabase)
+	db := new(MongoDatabase)
 
 	var err error
 	db.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
@@ -27,7 +27,7 @@ func NewMongoJobDatabase(uri string) (*JobMongoDatabase, error) {
 	return db, nil
 }
 
-func (database JobMongoDatabase) GetAll() (records []Job, err error) {
+func (database MongoDatabase) GetAll() (records []Job, err error) {
 
 	d := database.client.Database("flock")
 	c := d.Collection("jobs")
@@ -44,7 +44,7 @@ func (database JobMongoDatabase) GetAll() (records []Job, err error) {
 	return records, nil
 }
 
-func (database JobMongoDatabase) GetBy(filter *database.Filter) (records []Job, err error) {
+func (database MongoDatabase) GetBy(filter *database.Filter) (records []Job, err error) {
 
 	if filter == nil {
 		return records, errors.New("filter can not be nil")
@@ -81,7 +81,7 @@ func (database JobMongoDatabase) GetBy(filter *database.Filter) (records []Job, 
 	return records, nil
 }
 
-func (database JobMongoDatabase) Create(job *Job) (err error) {
+func (database MongoDatabase) Create(job *Job) (err error) {
 
 	if job == nil {
 		return errors.New("job can not be nil")
@@ -98,7 +98,7 @@ func (database JobMongoDatabase) Create(job *Job) (err error) {
 	return nil
 }
 
-func (database JobMongoDatabase) Delete(filter *database.Filter) (err error) {
+func (database MongoDatabase) Delete(filter *database.Filter) (err error) {
 
 	if filter == nil {
 		return errors.New("filter can not be nil")

@@ -23,7 +23,7 @@ func NewMongoStatisticsDatabase(uri string) (*MongoStatisticsDatabase, error) {
 	return database, nil
 }
 
-func (database *MongoStatisticsDatabase) Get(filter StatisticFilter) (records []Wrapper, err error) {
+func (database *MongoStatisticsDatabase) Get(filter Filter) (records []Wrapper, err error) {
 
 	d := database.client.Database("flock")
 	c := d.Collection("statistics")

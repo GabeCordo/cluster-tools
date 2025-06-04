@@ -109,9 +109,9 @@ func (t *Thread) Start() {
 			t.mutex.Unlock()
 
 			mandatory := thread.Mandatory{
-				t.channels.c7,
-				t.responseTables.processor,
-				t.config.Timeout,
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				Timeout:       t.config.Timeout,
 			}
 
 			cfg := &processor.Config{Identifier: id, RemoteAddr: c.RemoteAddr().String()}

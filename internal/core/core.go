@@ -6,16 +6,16 @@ import (
 	"syscall"
 
 	"github.com/GabeCordo/Flock/internal/core/database/job"
-	config_db "github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	supervisor_db "github.com/GabeCordo/Flock/internal/core/database/run"
-	statistic_db "github.com/GabeCordo/Flock/internal/core/database/statistic"
+	configDb "github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	supervisorDb "github.com/GabeCordo/Flock/internal/core/database/run"
+	statisticDb "github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/message/log"
-	processor_cmp "github.com/GabeCordo/Flock/internal/core/processor"
+	processorCmp "github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/Flock/internal/core/thread/database"
 	"github.com/GabeCordo/Flock/internal/core/thread/messenger"
 	"github.com/GabeCordo/Flock/internal/core/thread/processor"
-	rest_api "github.com/GabeCordo/Flock/internal/core/thread/rest"
+	restApi "github.com/GabeCordo/Flock/internal/core/thread/rest"
 	"github.com/GabeCordo/Flock/internal/core/thread/runner"
 	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
 	"github.com/GabeCordo/Flock/internal/core/thread/socket"
@@ -23,7 +23,7 @@ import (
 )
 
 type Core struct {
-	RestThread      *rest_api.Thread
+	RestThread      *restApi.Thread
 	SocketThread    *socket.Thread
 	ProcessorThread *processor.Thread
 	RunnerThread    *runner.Thread
@@ -106,10 +106,10 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	httpConfig := &rest_api.Config{}
+	httpConfig := &restApi.Config{}
 	core.config.FillHttpClientConfig(httpConfig)
 
-	core.RestThread, err = rest_api.New(httpConfig, restLogger,
+	core.RestThread, err = restApi.New(httpConfig, restLogger,
 		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func New(configPath string) (*Core, error) {
 	processorConfig := &processor.Config{}
 	core.config.FillProcessorConfig(processorConfig)
 
-	table := processor_cmp.NewTable()
+	table := processorCmp.NewTable()
 
 	core.ProcessorThread, err = processor.New(processorConfig, processorLogger, table,
 		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14, core.C18, core.C19)
@@ -159,7 +159,7 @@ func New(configPath string) (*Core, error) {
 	runnerConfig := &runner.Config{}
 	core.config.FillRunnerConfig(runnerConfig)
 
-	registry := supervisor_db.NewLocalDatabase()
+	registry := supervisorDb.NewLocalDatabase()
 
 	core.RunnerThread, err = runner.NewThread(runnerConfig, runnerLogger, registry,
 		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17, core.C9, core.C10)
@@ -195,8 +195,8 @@ func New(configPath string) (*Core, error) {
 	databaseConfig := &database.Config{}
 	core.config.FillDatabaseConfig(databaseConfig)
 
-	configDatabase := config_db.NewLocalPipelineDatabase()
-	statDatabase := statistic_db.NewLocalStatisticDatabase()
+	configDatabase := configDb.NewLocalPipelineDatabase()
+	statDatabase := statisticDb.NewLocalStatisticDatabase()
 	jobDatabase := job.NewLocalJobDatabase()
 
 	core.DatabaseThread, err = database.New(databaseConfig, databaseLogger,

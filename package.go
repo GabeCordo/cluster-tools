@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/GabeCordo/Flock/internal/processor/config"
-	provisioner_cmp "github.com/GabeCordo/Flock/internal/processor/provision"
+	provisionerCmp "github.com/GabeCordo/Flock/internal/processor/provision"
 	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"github.com/GabeCordo/Flock/internal/processor/threads/provisioner"
 	"github.com/GabeCordo/Flock/internal/processor/threads/socket"
@@ -90,7 +90,7 @@ type Processor struct {
 		c2        chan threads.ProvisionerResponse
 	}
 
-	provisioner *provisioner_cmp.Provisioner
+	provisioner *provisionerCmp.Provisioner
 
 	config *config.Config
 	logger *logging.Logger
@@ -159,7 +159,7 @@ func New() (*Processor, error) {
 		return nil, err
 	}
 
-	instance.provisioner = provisioner_cmp.New()
+	instance.provisioner = provisionerCmp.New()
 
 	instance.threads.provisioner, err = provisioner.NewThread(provisionerConfig, provisionerLogger, instance.provisioner,
 		instance.channels.interrupt, instance.channels.c0, instance.channels.c1, instance.channels.c2)

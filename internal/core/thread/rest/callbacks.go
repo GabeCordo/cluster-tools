@@ -33,9 +33,9 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
 	processors, success := thread.GetProcessors(
 		thread.Mandatory{
-			t.C5,
-			t.ProcessorResponseTable,
-			t.config.Timeout,
+			Pipe:          t.C5,
+			ResponseTable: t.ProcessorResponseTable,
+			Timeout:       t.config.Timeout,
 		},
 	)
 
@@ -71,9 +71,9 @@ func (t *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
 
 	success, modules := thread.GetModules(
 		thread.Mandatory{
-			t.C5,
-			t.ProcessorResponseTable,
-			t.config.Timeout,
+			Pipe:          t.C5,
+			ResponseTable: t.ProcessorResponseTable,
+			Timeout:       t.config.Timeout,
 		},
 	)
 
@@ -106,9 +106,13 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* database the success of the request in this address */
-	var success bool = false
+	var success = false
 
-	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
+	mandatory := thread.Mandatory{
+		Pipe:          t.C5,
+		ResponseTable: t.ProcessorResponseTable,
+		Timeout:       t.config.Timeout,
+	}
 
 	if request.Mounted {
 		success, err = thread.MountModule(mandatory, request.ModuleName)
@@ -161,9 +165,9 @@ func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 
 	clusterList, success := thread.GetFunctions(
 		thread.Mandatory{
-			t.C5,
-			t.ProcessorResponseTable,
-			t.config.Timeout,
+			Pipe:          t.C5,
+			ResponseTable: t.ProcessorResponseTable,
+			Timeout:       t.config.Timeout,
 		},
 		moduleName[0],
 	)
@@ -201,7 +205,11 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{}
 
-	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
+	mandatory := thread.Mandatory{
+		Pipe:          t.C5,
+		ResponseTable: t.ProcessorResponseTable,
+		Timeout:       t.config.Timeout,
+	}
 
 	if request.Mounted {
 		response.Success = thread.MountFunction(mandatory, request.Module, request.Function)
@@ -278,8 +286,16 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	response := &Response{Success: true}
 
-	mandatory := thread.Mandatory{t.C5, t.ProcessorResponseTable, t.config.Timeout}
-	filter := database.Filter{Namespace: namespace, Pipeline: pipelineVar, Identifier: id}
+	mandatory := thread.Mandatory{
+		Pipe:          t.C5,
+		ResponseTable: t.ProcessorResponseTable,
+		Timeout:       t.config.Timeout,
+	}
+	filter := database.Filter{
+		Namespace:  namespace,
+		Pipeline:   pipelineVar,
+		Identifier: id,
+	}
 
 	instance, err := thread.GetRun(mandatory, filter)
 	if err != nil {
@@ -309,9 +325,9 @@ func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	if runId, err := thread.CreateRun(
 		thread.Mandatory{
-			t.C5,
-			t.ProcessorResponseTable,
-			t.config.Timeout,
+			Pipe:          t.C5,
+			ResponseTable: t.ProcessorResponseTable,
+			Timeout:       t.config.Timeout,
 		},
 		request.Namespace,
 		request.Pipeline,
@@ -352,9 +368,9 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	err = thread.StopRun(
 		thread.Mandatory{
-			t.C5,
-			t.ProcessorResponseTable,
-			t.config.Timeout,
+			Pipe:          t.C5,
+			ResponseTable: t.ProcessorResponseTable,
+			Timeout:       t.config.Timeout,
 		},
 		runId,
 	)
@@ -381,7 +397,11 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mandatory := thread.Mandatory{t.C1, t.DatabaseResponseTable, t.config.Timeout}
+	mandatory := thread.Mandatory{
+		Pipe:          t.C1,
+		ResponseTable: t.DatabaseResponseTable,
+		Timeout:       t.config.Timeout,
+	}
 
 	if r.Method == "GET" {
 
@@ -440,7 +460,11 @@ func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	mandatory := thread.Mandatory{t.C1, t.DatabaseResponseTable, t.config.Timeout}
+	mandatory := thread.Mandatory{
+		Pipe:          t.C1,
+		ResponseTable: t.DatabaseResponseTable,
+		Timeout:       t.config.Timeout,
+	}
 
 	if r.Method == "GET" {
 
@@ -574,7 +598,11 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	response := Response{}
-	response.Data, err = thread.GetJobs(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout}, filter)
+	response.Data, err = thread.GetJobs(thread.Mandatory{
+		Pipe:          t.C20,
+		ResponseTable: t.SchedulerResponseTable,
+		Timeout:       t.config.Timeout,
+	}, filter)
 
 	response.Success = err == nil
 	if err != nil {
@@ -603,7 +631,12 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := Response{}
-	if err := thread.CreateJob(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout}, &j); err != nil {
+	err = thread.CreateJob(thread.Mandatory{
+		Pipe:          t.C20,
+		ResponseTable: t.SchedulerResponseTable,
+		Timeout:       t.config.Timeout},
+		&j)
+	if err != nil {
 		response.Success = false
 		response.Data = err.Error()
 	} else {
@@ -654,13 +687,10 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	response := Response{}
-	err = thread.DeleteJob(
-		thread.Mandatory{
-			t.C20,
-			t.SchedulerResponseTable,
-			t.config.Timeout},
-		filter,
-	)
+	err = thread.DeleteJob(thread.Mandatory{
+		Pipe:          t.C20,
+		ResponseTable: t.SchedulerResponseTable,
+		Timeout:       t.config.Timeout}, filter)
 
 	response.Success = err == nil
 	if err != nil {
@@ -692,7 +722,11 @@ func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 	response := Response{}
 
 	var err error
-	response.Data, err = thread.JobQueue(thread.Mandatory{t.C20, t.SchedulerResponseTable, t.config.Timeout})
+	response.Data, err = thread.JobQueue(thread.Mandatory{
+		Pipe:          t.C20,
+		ResponseTable: t.SchedulerResponseTable,
+		Timeout:       t.config.Timeout,
+	})
 
 	if err != nil {
 		response.Description = err.Error()
@@ -703,7 +737,7 @@ func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	
+
 	_, err = w.Write(b)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

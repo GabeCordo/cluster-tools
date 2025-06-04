@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	pipeline_cfg "github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	pipelineCfg "github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/processor/channel/duplex"
 )
@@ -76,7 +76,7 @@ type Instance struct {
 	mutex         sync.RWMutex
 }
 
-func NewInstance(config *pipeline_cfg.Pipeline, functions []any, metadata map[string]string) *Instance {
+func NewInstance(config *pipelineCfg.Pipeline, functions []any, metadata map[string]string) *Instance {
 	supervisor := new(Instance)
 
 	/**

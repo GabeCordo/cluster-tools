@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// cache constants
 const (
 	DefaultCacheRecordIdentifierSize = 15
 )

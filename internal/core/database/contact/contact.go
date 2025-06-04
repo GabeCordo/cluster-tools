@@ -14,7 +14,7 @@ var UnknownEmail = errors.New("contact does not have this email")
 
 var NilContact = errors.New("received contact was nil")
 var DuplicateContact = errors.New("a contact with the same identifier already exists")
-var ContactNotFound = errors.New("a contact with the same identifier cannot be found")
+var NotFound = errors.New("a contact with the same identifier cannot be found")
 
 var InvalidEmailFormat = errors.New("the value held within the instance is not a valid email")
 

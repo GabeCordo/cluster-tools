@@ -3,20 +3,21 @@ package socket
 import (
 	"crypto/x509"
 	"errors"
+	"net"
+	"sync"
+	"time"
+
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"net"
-	"sync"
-	"time"
 )
 
 // Frontend Thread
 
 const (
-	MaxNumberOfRetries int           = 100
-	MaxWaitBeforeRetry time.Duration = 2 * time.Second
+	MaxNumberOfRetries int = 100
+	MaxWaitBeforeRetry     = 2 * time.Second
 )
 
 type Config struct {

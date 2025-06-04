@@ -12,7 +12,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/thread/database"
 	"github.com/GabeCordo/Flock/internal/core/thread/messenger"
 	"github.com/GabeCordo/Flock/internal/core/thread/processor"
-	http_client "github.com/GabeCordo/Flock/internal/core/thread/rest"
+	httpClient "github.com/GabeCordo/Flock/internal/core/thread/rest"
 	"github.com/GabeCordo/Flock/internal/core/thread/runner"
 	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
 	"github.com/GabeCordo/Flock/internal/core/thread/socket"
@@ -81,9 +81,8 @@ type Config struct {
 	} `yaml:"paths"`
 }
 
-// TODO : should this be here?
 const (
-	DefaultFilePermissions os.FileMode = 0755
+	DefaultFilePermissions os.FileMode = 0755 // TODO : should this be here?
 )
 
 func NewConfig(name string) *Config {
@@ -170,7 +169,7 @@ func (config *Config) FillCacheConfig(clientConfig *cache.Config) {
 	clientConfig.Debug = config.Debug
 }
 
-func (config *Config) FillHttpClientConfig(httpClientConfig *http_client.Config) {
+func (config *Config) FillHttpClientConfig(httpClientConfig *httpClient.Config) {
 	// TODO - add panic check
 	httpClientConfig.Debug = config.Debug
 	httpClientConfig.Net.Host = config.Net.Client.Host

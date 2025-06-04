@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	cluster_tools "github.com/GabeCordo/Flock"
+	flock "github.com/GabeCordo/Flock"
 	"github.com/GabeCordo/commandline"
 )
 
@@ -39,7 +39,7 @@ type ExampleController struct {
 
 func (controller ExampleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	p, _ := cluster_tools.New()
+	p, _ := flock.New()
 
 	m := p.Module("common")
 	err := m.LinkFunction("generator", generator)

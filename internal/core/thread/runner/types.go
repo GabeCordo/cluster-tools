@@ -2,11 +2,12 @@ package runner
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"sync"
 )
 
 type Config struct {
@@ -58,7 +59,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 		return nil, errors.New("expected logger to be a non-nil value")
 	}
 
-	var ok bool = false
+	var ok = false
 
 	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
