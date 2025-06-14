@@ -6,14 +6,14 @@ import (
 	"strconv"
 
 	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/message"
 	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
-func (t *Thread) getSupervisor(filter *database.Filter) ([]*run.Run, error) {
+func (t *Thread) syncGetSupervisor(filter *database.Filter) ([]*run.Run, error) {
 
 	if filter == nil {
 		return nil, errors.New("given nil pointer filter")
@@ -28,127 +28,143 @@ func (t *Thread) getSupervisor(filter *database.Filter) ([]*run.Run, error) {
 	return supervisors, nil
 }
 
-func (t *Thread) createRun(processorId uint64, namespaceName, pipelineName string, metadata map[string]string) (uint64, error) {
+func (t *Thread) asyncGetPipelineFromDatabase(request *thread.Request) {
 
-	// TODO : change it so that configs are received via pointer over the channel
-	mandatory := thread.Mandatory{
-		Pipe:          t.channels.C15,
-		ResponseTable: t.responseTable.database,
-		Timeout:       t.config.Timeout,
+	databaseRequest := thread.Request{
+		Action: thread.GetAction,
+		Type:   thread.PipelineRecord,
+		Identifiers: thread.RequestIdentifiers{
+			Namespace: request.Identifiers.Namespace,
+			Pipeline:  request.Identifiers.Pipeline,
+		},
+		Source: thread.Runner,
+		Nonce:  request.Nonce,
 	}
-	conf, found := thread.GetPipelineFromDatabase(mandatory, namespaceName, pipelineName)
-	if !found {
-		return 0, errors.New("no pipeline with that identifier exists")
+	t.channels.C15 <- databaseRequest
+}
+
+func (t *Thread) syncCreateNewRunRecord(request *thread.Request, response *thread.Response) (uint64, pipeline.Pipeline, error) {
+
+	if !response.Success {
+		return 0, pipeline.Pipeline{}, response.Error
 	}
+	pipelineConfig := response.Data.([]pipeline.Pipeline)[0]
 
 	filter := database.Filter{
-		Processor: processorId,
-		Namespace: namespaceName,
+		Processor: request.Identifiers.Processor,
+		Namespace: request.Identifiers.Namespace,
 	}
-	result, _ := t.registry.Create(filter, &conf)
+	result, _ := t.registry.Create(filter, &pipelineConfig)
 
 	id := result.(uint64)
 	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(id, 10)})
 
 	if len(results) != 1 {
-		return 0, errors.New("failed to create a runner")
+		return 0, pipeline.Pipeline{}, errors.New("failed to create an internal record for the runner")
 	}
-	sup := (results[0]).(*run.Run)
+
+	return id, pipelineConfig, nil
+}
+
+func (t *Thread) asyncSendRunToSocket(request *thread.Request, id uint64, cfg *pipeline.Pipeline) {
 
 	// TODO : need to support sending the received metadata
+	metadata := (request.Data).(map[string]string)
 
 	runRequest := run.Request{
 		Id:        id,
-		Namespace: namespaceName,
-		Config:    &conf,
+		Namespace: request.Identifiers.Namespace,
+		Config:    cfg,
 		Metadata:  metadata,
 	}
 
 	socketRequest := thread.Request{
-		Action:      thread.CreateAction,
-		Type:        thread.RunRecord,
-		Identifiers: thread.RequestIdentifiers{Processor: processorId},
-		Data:        runRequest,
-		Nonce:       rand.Uint32(),
+		Action: thread.CreateAction,
+		Type:   thread.RunRecord,
+		Identifiers: thread.RequestIdentifiers{
+			Processor:  request.Identifiers.Processor,
+			Supervisor: id,
+		},
+		Data:   runRequest,
+		Source: thread.Runner,
+		Nonce:  request.Nonce,
 	}
+
 	t.channels.C9 <- socketRequest
+}
 
-	rsp, timedOut := multithreaded.SendAndWait(t.responseTable.socket, socketRequest.Nonce, t.config.Timeout)
-	if timedOut {
-		t.Logger.Printf("[flock -> %s][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
-		sup.Status = run.Cancelled
-		return 0, errors.New("could not send create run to processor")
+func (t *Thread) syncUpdateRunAfterFirstResponseFromSocket(request *thread.Request, response *thread.Response) error {
+
+	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10)})
+	if len(results) != 1 {
+		return errors.New("could not find supervisor")
 	}
+	sup := results[0].(*run.Run)
 
-	socketResponse := rsp.(thread.Response)
-	if socketResponse.Error != nil {
-		t.Logger.Print(socketResponse.Error.Error())
-		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "could not connect to the processor and runner is canceled")
+	if response.Error != nil {
+		t.Logger.Print(response.Error.Error())
+		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", request.Identifiers.Processor, sup.GetId(), "could not connect to the processor and runner is canceled")
 		sup.Status = run.Cancelled
-		return 0, socketResponse.Error
+		return response.Error
 	} else {
-		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", processorId, sup.GetId(), "connected to processor and runner is active")
+		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", request.Identifiers.Processor, sup.GetId(), "connected to processor and runner is active")
 		sup.Status = run.Active
 	}
 
-	return id, socketResponse.Error
+	return nil
 }
 
-func (t *Thread) updateRun(instance *run.Run) error {
+func (t *Thread) syncUpdateRun(request *thread.Request) (*run.Run, error) {
 
-	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(instance.Id, 10)})
+	r, ok := (request.Data).(*run.Run)
+	if !ok {
+		return nil, errors.New("received the wrong data type for the request")
+	}
+
+	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(r.Id, 10)})
 	if len(results) != 1 {
-		return errors.New("cannot update a runner that does not exist")
+		return nil, errors.New("cannot update a runner that does not exist")
 	}
 	stored := (results[0]).(*run.Run)
 
-	stored.SetStatus(instance.Status)
-	err := stored.SetStatistic(instance.Statistics)
+	stored.SetStatus(r.Status)
+	err := stored.SetStatistic(r.Statistics)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	status := stored.GetStatus()
-	if (status == run.Completed) ||
-		(status == run.Crashed) ||
-		(status == run.Terminated) {
-		// TODO : this can probably encapsulate
-		request := thread.Request{
-			Action: thread.CreateAction,
-			Type:   thread.StatisticRecord,
-			Identifiers: thread.RequestIdentifiers{
-				Namespace: stored.Namespace,
-				Pipeline:  stored.Pipeline.Identifier,
-			},
-			Data:  stored.GetStatistic(),
-			Nonce: rand.Uint32(),
-		}
-		t.channels.C15 <- request
+	return r, nil
+}
 
-		rsp, didTimeout := multithreaded.SendAndWait(t.responseTable.database, request.Nonce, t.config.Timeout)
-		if didTimeout {
-			return multithreaded.NoResponseReceived
-		}
+func (t *Thread) asyncCreateStatisticRecordInDatabase(request *thread.Request, r *run.Run) {
 
-		// TODO : this can also be encapsulated
-		response := (rsp).(thread.Response)
-		if !response.Success {
-			return errors.New("failed to database statistics of runner")
-		}
-
-		msgrRequest := thread.Request{
-			Action: thread.CloseAction,
-			Identifiers: thread.RequestIdentifiers{
-				Namespace:  stored.Namespace,
-				Pipeline:   stored.Pipeline.Identifier,
-				Supervisor: instance.Id,
-			},
-			Nonce: rand.Uint32(),
-		}
-		t.channels.C17 <- msgrRequest
+	req := thread.Request{
+		Action: thread.CreateAction,
+		Type:   thread.StatisticRecord,
+		Identifiers: thread.RequestIdentifiers{
+			Namespace: request.Identifiers.Namespace,
+			Pipeline:  request.Identifiers.Pipeline,
+		},
+		Data:   r.GetStatistic(),
+		Source: thread.Runner,
+		Nonce:  request.Nonce,
 	}
+	t.channels.C15 <- req
+}
 
-	return nil
+func (t *Thread) asyncCloseMessengerForRun(request *thread.Request) {
+
+	msgrRequest := thread.Request{
+		Action: thread.CloseAction,
+		Identifiers: thread.RequestIdentifiers{
+			Namespace:  request.Identifiers.Namespace,
+			Pipeline:   request.Identifiers.Pipeline,
+			Supervisor: request.Identifiers.Supervisor,
+		},
+		Source: thread.Runner,
+		Nonce:  request.Nonce,
+	}
+	t.channels.C17 <- msgrRequest
 }
 
 func (t *Thread) logRun(l *log.Log) error {
@@ -191,7 +207,7 @@ func (t *Thread) logRun(l *log.Log) error {
 	return nil
 }
 
-func (t *Thread) stopRun(id uint64) error {
+func (t *Thread) asyncStopRun(id uint64) error {
 
 	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(id, 10)})
 	if len(results) != 1 {
@@ -212,16 +228,5 @@ func (t *Thread) stopRun(id uint64) error {
 	}
 
 	t.channels.C9 <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(t.responseTable.socket, request.Nonce, t.config.Timeout)
-	if didTimeout {
-		return multithreaded.NoResponseReceived
-	}
-
-	socketResponse, ok := rsp.(thread.Response)
-	if !ok {
-		return errors.New("the thread did not return a thread.Response")
-	}
-
-	return socketResponse.Error
+	return nil
 }

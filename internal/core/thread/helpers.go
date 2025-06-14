@@ -2,6 +2,9 @@ package thread
 
 import (
 	"errors"
+	"math/rand"
+	"strconv"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
@@ -10,8 +13,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"math/rand"
-	"strconv"
 )
 
 type Mandatory struct {
@@ -296,7 +297,8 @@ func CreateRun(mandatory Mandatory,
 
 	response := (rsp).(Response)
 
-	return (response.Data).(uint64), response.Error
+	id, _ := response.Data.(uint64)
+	return id, response.Error
 }
 
 func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
@@ -332,23 +334,16 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 	return (response.Data).([]*run.Run), nil
 }
 
-func UpdateRun(mandatory Mandatory, data *run.Run) error {
+func AsyncUpdateRun(mandatory Mandatory, data *run.Run) {
 
 	request := Request{
 		Action: UpdateAction,
 		Type:   RunRecord,
 		Data:   data,
+		Source: Socket,
 		Nonce:  rand.Uint32(),
 	}
 	mandatory.Pipe <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
-	if didTimeout {
-		return multithreaded.NoResponseReceived
-	}
-
-	response := (rsp).(Response)
-	return response.Error
 }
 
 func StopRun(mandatory Mandatory, id uint64) error {
@@ -426,7 +421,7 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleDa
 	return true, (provisionerResponse.Data).([]processor.ModuleData)
 }
 
-func AddModule(mandatory Mandatory, processorId uint64, cfg *processor.ModuleConfig) (bool, error) {
+func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *processor.ModuleConfig) {
 
 	request := Request{
 		Action:      CreateAction,
@@ -437,15 +432,6 @@ func AddModule(mandatory Mandatory, processorId uint64, cfg *processor.ModuleCon
 		Nonce:       rand.Uint32(),
 	}
 	mandatory.Pipe <- request
-
-	data, didTimeout := multithreaded.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
-	if didTimeout {
-		return false, errors.New("did not receive a response from the processor thread")
-	}
-
-	response := (data).(Response)
-
-	return response.Success, response.Error
 }
 
 func MountModule(mandatory Mandatory, moduleName string) (bool, error) {

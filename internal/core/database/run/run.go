@@ -2,9 +2,10 @@ package run
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"sync"
 )
 
 type Status string
@@ -16,6 +17,7 @@ const (
 	Completed         = "completed"
 	Terminated        = "terminated" // this is legacy
 	Cancelled         = "cancelled"
+	Unknown           = "unknown"
 )
 
 func FromString(s string) Status {

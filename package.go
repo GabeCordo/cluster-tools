@@ -18,8 +18,6 @@ import (
 	"github.com/GabeCordo/toolchain/logging"
 )
 
-const ClusterToolsConfigEnvVar = "CTOOLS_CONFIG"
-
 type Thread uint8
 
 const (
@@ -103,37 +101,31 @@ func New() (*Processor, error) {
 	instance := new(Processor)
 
 	var err error
-	if configPath := os.Getenv(ClusterToolsConfigEnvVar); configPath != "" {
-		instance.config, err = config.Load(configPath)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		ex, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
-		workingDir := filepath.Dir(ex)
 
-		// the executable is in the same folder as the config file
-		fp := filepath.Join(workingDir, "processor.toml")
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	workingDir := filepath.Dir(ex)
+
+	// the executable is in the same folder as the config file
+	fp := filepath.Join(workingDir, "processor.toml")
+	instance.config, err = config.Load(fp)
+
+	// the executable is in the /bin or /cmd folder
+	fp = filepath.Join(workingDir, "..", "processor.toml")
+	if err != nil {
 		instance.config, err = config.Load(fp)
+	}
 
-		// the executable is in the /bin or /cmd folder
-		fp = filepath.Join(workingDir, "..", "processor.toml")
-		if err != nil {
-			instance.config, err = config.Load(fp)
-		}
+	// the executable is in the /cmd/binary-name folder
+	fp = filepath.Join(workingDir, "..", "..", "processor.toml")
+	if err != nil {
+		instance.config, err = config.Load(fp)
+	}
 
-		// the executable is in the /cmd/binary-name folder
-		fp = filepath.Join(workingDir, "..", "..", "processor.toml")
-		if err != nil {
-			instance.config, err = config.Load(fp)
-		}
-
-		if err != nil {
-			panic("cannot find a processor.toml file in any of the expected directories")
-		}
+	if err != nil {
+		instance.config = config.NewConfig("debug")
 	}
 
 	instance.config.Processor.StandaloneMode = true

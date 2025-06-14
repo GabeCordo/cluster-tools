@@ -5,7 +5,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/processor"
 )
 
-func (t *Thread) getFunctions(name string) ([]processor.FunctionData, error) {
+func (t *Thread) syncGetFunctions(name string) ([]processor.FunctionData, error) {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
@@ -16,7 +16,7 @@ func (t *Thread) getFunctions(name string) ([]processor.FunctionData, error) {
 	return instance.Registered(), nil
 }
 
-func (t *Thread) mountFunction(moduleName, clusterName string) error {
+func (t *Thread) syncMountFunction(moduleName, clusterName string) error {
 
 	moduleInstance, found := t.processorTable.GetModule(moduleName)
 	if !found {
@@ -35,7 +35,7 @@ func (t *Thread) mountFunction(moduleName, clusterName string) error {
 	return nil
 }
 
-func (t *Thread) unmountFunction(moduleName, clusterName string) error {
+func (t *Thread) syncUnMountFunction(moduleName, clusterName string) error {
 
 	moduleInstance, found := t.processorTable.GetModule(moduleName)
 	if !found {

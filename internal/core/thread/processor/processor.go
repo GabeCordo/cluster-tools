@@ -4,12 +4,12 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/processor"
 )
 
-func (t *Thread) processorGet() []*processor.Processor {
+func (t *Thread) syncGetProcessors() []*processor.Processor {
 
 	return t.processorTable.GetProcessors()
 }
 
-func (t *Thread) processorAdd(config *processor.Config) error {
+func (t *Thread) synchAddProcessor(config *processor.Config) error {
 
 	_, err := t.processorTable.AddProcessor(config)
 	if err == nil {
@@ -23,7 +23,7 @@ func (t *Thread) processorAdd(config *processor.Config) error {
 	return err
 }
 
-func (t *Thread) processorRemove(config *processor.Config) error {
+func (t *Thread) syncDeleteProcessor(config *processor.Config) error {
 
 	err := t.processorTable.RemoveProcessor(config)
 

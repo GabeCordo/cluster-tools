@@ -16,14 +16,18 @@ func (th *Thread) Start() {
 
 	// LISTEN TO INCOMING REQUESTS
 
-	thread.SetupListener(th.C3, th.C4, &th.accepting, &th.wg, thread.Messenger, th.Handle)
+	thread.SetupListener(th.C3, th.C4, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
 
-	thread.SetupListener(th.C17, nil, &th.accepting, &th.wg, thread.Messenger, th.Handle)
+	thread.SetupListener(th.C17, nil, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
 
-	thread.SetupListener(th.C22, th.C23, &th.accepting, &th.wg, thread.Messenger, th.Handle)
+	thread.SetupListener(th.C22, th.C23, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
 }
 
-func (th *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (th *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+
+	response.Type = request.Type
+	response.Action = request.Action
+	response.Nonce = request.Nonce
 
 	switch request.Action {
 	case thread.GetAction:

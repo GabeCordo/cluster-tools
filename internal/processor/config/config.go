@@ -1,10 +1,11 @@
 package config
 
 import (
+	"os"
+
 	"github.com/BurntSushi/toml"
 	"github.com/GabeCordo/Flock/internal/processor/threads/provisioner"
 	"github.com/GabeCordo/Flock/internal/processor/threads/socket"
-	"os"
 )
 
 type NetworkConfig struct {
@@ -60,7 +61,7 @@ func NewConfig(name string) *Config {
 	config.Processor.Name = name
 	config.Processor.StandaloneMode = true
 	config.Processor.Debug = true
-	config.Core.Host = "http://localhost:8137"
+	config.Core.Host = "0.0.0.0:8137"
 	config.Core.Attempts = 10
 	config.Processor.Threads.Timeout = 2.0
 	return config

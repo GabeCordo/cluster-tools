@@ -75,7 +75,8 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 			for {
 				m.Lock()
 				if !supervisorInstance.IsAlive() {
-					thread.logger.Warnf("cannot send update for supervisor %d that is not alive\n", supervisorInstance.Id)
+					// the supervisor is expected to leave the 'alive' state at an
+					// undefined point in its run, this is the exit-case for the background loop
 					break
 				}
 

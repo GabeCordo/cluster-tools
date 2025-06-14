@@ -3,10 +3,11 @@ package rest
 import (
 	"context"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/thread"
 	"net/http"
 	"net/http/pprof"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
@@ -70,7 +71,7 @@ func (t *Thread) Setup() {
 	t.server.SetKeepAlivesEnabled(false)
 }
 
-func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (t *Thread) HandleRequest(request *thread.Request) {
 	// note: this isn't needed at this time but keep the plain definition to satisfy the interface
 	panic("implement me")
 }

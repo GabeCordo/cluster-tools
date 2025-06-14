@@ -1,8 +1,9 @@
 package cache
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/thread"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
@@ -11,9 +12,9 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	thread.SetupListener(t.C9, t.C10, &t.accepting, &t.wg, thread.Cache, t.Handle)
+	thread.SetupListener(t.C9, t.C10, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
 
-	thread.SetupListener(t.C24, t.C25, &t.accepting, &t.wg, thread.Cache, t.Handle)
+	thread.SetupListener(t.C24, t.C25, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
 
 	// RUNTIME
 
@@ -33,7 +34,7 @@ func (t *Thread) Respond(response *thread.Response) {
 	t.C10 <- *response
 }
 
-func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
 
 	switch request.Action {
 	case thread.CreateAction:

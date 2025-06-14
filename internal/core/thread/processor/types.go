@@ -7,7 +7,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 type Config struct {
@@ -22,7 +21,7 @@ type Config struct {
 }
 
 type Thread struct {
-	Interrupt chan<- thread.InterruptEvent
+	Interrupt <-chan thread.InterruptEvent
 
 	C5 <-chan thread.Request  // Processor rec req from the rest thread
 	C6 chan<- thread.Response // Processor sending rsp to the rest thread
@@ -39,8 +38,7 @@ type Thread struct {
 	C18 <-chan thread.Request  // Processor rec req from the scheduler thread
 	C19 chan<- thread.Response // Processor sending rsp to the scheduler thread
 
-	RunnerResponseTable   *multithreaded.ResponseTable
-	DatabaseResponseTable *multithreaded.ResponseTable
+	requestStore map[uint32]thread.Request
 
 	processorTable *processor.Table
 
@@ -124,8 +122,7 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}
 
-	t.RunnerResponseTable = multithreaded.NewResponseTable()
-	t.DatabaseResponseTable = multithreaded.NewResponseTable()
+	t.requestStore = make(map[uint32]thread.Request)
 
 	return t, nil
 }

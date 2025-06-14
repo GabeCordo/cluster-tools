@@ -52,7 +52,7 @@ func (t *Thread) Start() {
 
 	// REQUEST THREADS
 
-	thread.SetupListener(t.channels.c9, t.channels.c10, &t.accepting, &t.wg, thread.Socket, t.Handle)
+	thread.SetupListener(t.channels.c9, t.channels.c10, &t.accepting, &t.wg, thread.Socket, t.HandleRequest)
 
 	// RESPONSE THREADS
 
@@ -125,6 +125,7 @@ func (t *Thread) Start() {
 				return
 			}
 
+			t.connectionsMux.Lock()
 			// add the processor connection to the map of ongoing connections
 			if _, found := t.connections[id]; found {
 				t.Logger.Alertln("failed to create a local association to the ongoing connection")
@@ -132,9 +133,11 @@ func (t *Thread) Start() {
 				if err != nil {
 					t.Logger.Alert(err.Error())
 				}
+				t.connectionsMux.Unlock()
 				return
 			} else {
 				t.connections[id] = conn
+				t.connectionsMux.Unlock()
 			}
 
 			decode := json.NewDecoder(c)
@@ -195,10 +198,7 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 					t.Logger.Printf("received module %s (%s)\n", config.Name, config.Version)
 
 					// TODO: needs processor name
-					_, err = thread.AddModule(mandatory, processorId, config)
-					if err != nil {
-						log.Println(err)
-					}
+					thread.AsyncAddModule(mandatory, processorId, config)
 				}
 			case common.Log:
 				{
@@ -234,9 +234,7 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 						Timeout:       t.config.Timeout,
 					}
 
-					if err := thread.UpdateRun(mandatory, instance); err != nil {
-						t.Logger.Warnf("failed to update run")
-					}
+					thread.AsyncUpdateRun(mandatory, instance)
 				}
 			default:
 				{
@@ -251,7 +249,12 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 	}
 }
 
-func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+
+	response.Source = thread.Socket
+	response.Action = request.Action
+	response.Type = request.Type
+	response.Nonce = request.Nonce
 
 	switch request.Action {
 	case thread.CreateAction:
@@ -259,7 +262,6 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.RunRecord:
 				{
-
 					if request.Identifiers.Processor == 0 {
 						t.Logger.Warnln("processor identifier missing for create run")
 						response.Error = thread.BadRequestType
@@ -268,16 +270,21 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 
 					// TODO: any better way to clean this up + stop using strings for lookup
 					t.mutex.RLock()
+					t.connectionsMux.RLock()
+
 					var connection net.Conn
 					if c, found := t.connections[request.Identifiers.Processor]; !found {
 						t.Logger.Warnf("no processor exists with the identifier %s\n", request.Identifiers.Processor)
 						t.mutex.RUnlock()
 						response.Error = thread.BadRequestType
+						t.mutex.RUnlock()
+						t.connectionsMux.RUnlock()
 						return
 					} else {
 						connection = c
+						t.mutex.RUnlock()
+						t.connectionsMux.RUnlock()
 					}
-					t.mutex.RUnlock()
 
 					runRequest, ok := request.Data.(run.Request)
 					if !ok {
@@ -298,6 +305,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 						t.Logger.Warnln("failed to encode run request")
 						response.Error = thread.InternalError
 					}
+					response.Data = request.Identifiers.Supervisor
 				}
 			default:
 				{
@@ -327,12 +335,16 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 						Data:   request.Identifiers.Supervisor,
 					}
 
+					t.connectionsMux.RLock()
+
 					var connection net.Conn
 					if c, found := t.connections[request.Identifiers.Processor]; found {
 						connection = c
+						t.connectionsMux.RUnlock()
 					} else {
 						t.Logger.Warnln("processor identifier not found for delete run")
 						response.Error = thread.InternalError
+						t.connectionsMux.RUnlock()
 						return
 					}
 

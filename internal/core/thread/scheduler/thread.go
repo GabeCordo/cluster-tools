@@ -30,7 +30,7 @@ func (t *Thread) Start() {
 
 	// LISTENER THREADS
 
-	thread.SetupListener(t.C20, t.C21, &t.accepting, &t.wg, thread.Scheduler, t.Handle)
+	thread.SetupListener(t.C20, t.C21, &t.accepting, &t.wg, thread.Scheduler, t.HandleRequest)
 
 	// RESPONSE THREADS
 
@@ -96,7 +96,11 @@ func (t *Thread) Start() {
 	}()
 }
 
-func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+
+	response.Type = request.Type
+	response.Action = request.Action
+	response.Nonce = request.Nonce
 
 	switch request.Action {
 	case thread.GetAction:

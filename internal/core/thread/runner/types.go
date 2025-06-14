@@ -7,7 +7,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 type Config struct {
@@ -31,10 +30,7 @@ type Thread struct {
 		C17 chan thread.Request // runner sends requests to the messenger
 	}
 
-	responseTable struct {
-		database *multithreaded.ResponseTable
-		socket   *multithreaded.ResponseTable
-	}
+	requestStore map[uint32]thread.Request
 
 	config *Config
 	Logger *logging.Logger
@@ -94,8 +90,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 		return nil, errors.New("expected type 'chan RunnerResponse' in index 7")
 	}
 
-	t.responseTable.database = multithreaded.NewResponseTable()
-	t.responseTable.socket = multithreaded.NewResponseTable()
+	t.requestStore = make(map[uint32]thread.Request)
 
 	t.registry = registry
 

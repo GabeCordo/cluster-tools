@@ -2,14 +2,13 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
+
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/multithreaded"
-	"math/rand"
 )
 
-func (t *Thread) getRun(r *thread.Request) ([]*run.Run, error) {
+func (t *Thread) asyncGetRunFromRunner(r *thread.Request) {
 
 	// processor -> all runner ids on the processor
 	//	-	id
@@ -27,56 +26,58 @@ func (t *Thread) getRun(r *thread.Request) ([]*run.Run, error) {
 		Action:      thread.GetAction,
 		Type:        thread.RunRecord,
 		Identifiers: r.Identifiers,
+		Source:      thread.Processor,
 		Nonce:       r.Nonce,
 	}
 	t.C13 <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(t.RunnerResponseTable, request.Nonce,
-		t.config.Timeout)
-
-	if didTimeout {
-		return nil, multithreaded.NoResponseReceived
-	}
-
-	response := (rsp).(thread.Response)
-
-	return (response.Data).([]*run.Run), nil
 }
 
-func (t *Thread) createRun(r *thread.Request) (uint64, error) {
+func (t *Thread) asyncGetPipelineFromDatabase(r *thread.Request) {
 
-	mandatory := thread.Mandatory{
-		Pipe:          t.C11,
-		ResponseTable: t.DatabaseResponseTable,
-		Timeout:       t.config.Timeout,
+	databaseRequest := thread.Request{
+		Action:      thread.GetAction,
+		Type:        thread.PipelineRecord,
+		Identifiers: r.Identifiers,
+		Source:      thread.Processor,
+		Nonce:       r.Nonce,
 	}
-	pipelineDescription, found := thread.GetPipelineFromDatabase(mandatory, r.Identifiers.Namespace, r.Identifiers.Pipeline)
-	if !found {
-		return 0, errors.New("pipeline not found")
+	t.C11 <- databaseRequest
+}
+
+func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor.Processor, error) {
+
+	pp, ok := r.Data.([]pipeline.Pipeline)
+	if !ok {
+		return nil, errors.New("received invalid response from database")
 	}
+
+	if len(pp) < 1 {
+		return nil, errors.New("unknown pipeline")
+	}
+	p := pp[0]
 
 	processors := make(map[string]*processor.Processor)
 
 	// validate that each functions module exists
-	for _, function := range pipelineDescription.Functions {
+	for _, function := range p.Functions {
 
 		// we need to pick out a processor we want to assign the work to
 		moduleInstance, found := t.processorTable.GetModule(function.Module)
 		if !found {
-			return 0, processor.ModuleDoesNotExist
+			return nil, processor.ModuleDoesNotExist
 		}
 
 		if !moduleInstance.IsMounted() {
-			return 0, processor.ModuleNotMounted
+			return nil, processor.ModuleNotMounted
 		}
 
 		functionInstance, found := moduleInstance.GetFunction(function.Identifier)
 		if !found {
-			return 0, processor.FunctionDoesNotExist
+			return nil, processor.FunctionDoesNotExist
 		}
 
 		if !functionInstance.IsMounted() {
-			return 0, processor.FunctionNotMounted
+			return nil, processor.FunctionNotMounted
 		}
 
 		for _, p := range functionInstance.Processors {
@@ -84,23 +85,9 @@ func (t *Thread) createRun(r *thread.Request) (uint64, error) {
 		}
 	}
 
-	// TODO: remove?
-	//if (r.Source == thread.HttpClient) && functionInstance.IsStream() {
-	//	return 0, processor.CanNotProvisionStreamCluster
-	//}
-
-	request := thread.Request{
-		Action:      thread.CreateAction,
-		Type:        thread.RunRecord,
-		Identifiers: r.Identifiers, // will contain the module, cluster
-		Caller:      thread.User,
-		Data:        r.Data, // will contain the metadata map[string]string
-		Nonce:       rand.Uint32(),
-	}
-
 	// if there are no viable processors, stop
 	if len(processors) == 0 {
-		return 0, errors.New("no processors are available to support the pipeline")
+		return nil, errors.New("no processors are available to support the pipeline")
 	}
 
 	// select one of the processors
@@ -113,12 +100,27 @@ func (t *Thread) createRun(r *thread.Request) (uint64, error) {
 			selectedProcessor = p
 		}
 	}
+
 	// unlikely
 	if selectedProcessor == nil {
-		return 0, errors.New("no processors are available to support the pipeline")
+		return nil, errors.New("no processors are available to support the pipeline")
 	}
 	selectedProcessor.NumOfRuns++
-	request.Identifiers.Processor = selectedProcessor.Id
+	return selectedProcessor, nil
+}
+
+func (t *Thread) asyncSendCreateRunToRunner(processor *processor.Processor, r *thread.Request) {
+
+	request := thread.Request{
+		Action:      thread.CreateAction,
+		Type:        thread.RunRecord,
+		Identifiers: r.Identifiers, // will contain the module, cluster
+		Caller:      thread.User,
+		Data:        r.Data, // will contain the metadata map[string]string
+		Source:      thread.Processor,
+		Nonce:       r.Nonce,
+	}
+	request.Identifiers.Processor = processor.Id
 
 	// send the request to the scheduler t
 	// the scheduler t will:
@@ -126,80 +128,52 @@ func (t *Thread) createRun(r *thread.Request) (uint64, error) {
 	//	2. set the log record to the initial state
 	//  3. send a provision request to the processor endpoint
 	t.C13 <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(t.RunnerResponseTable, request.Nonce,
-		t.config.Timeout)
-
-	if didTimeout {
-		return 0, multithreaded.NoResponseReceived
-	}
-
-	response := (rsp).(thread.Response)
-	return (response.Data).(uint64), response.Error
 }
 
-func (t *Thread) updateRun(r *thread.Request) error {
+func (t *Thread) syncUpdateProcessorAfterRunStarted(r *thread.Response) (uint64, error) {
+
+	// TODO : support errors returned by classes
+	return (r.Data).(uint64), nil
+}
+
+func (t *Thread) asyncSendUpdateToRunner(r *thread.Request) {
 
 	request := thread.Request{
 		Action:      thread.UpdateAction,
 		Type:        thread.RunRecord,
 		Identifiers: r.Identifiers,
 		Data:        r.Data,
-		Nonce:       rand.Uint32(),
+		Source:      thread.Processor,
+		Nonce:       r.Nonce,
 	}
 	t.C13 <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(t.RunnerResponseTable, request.Nonce,
-		t.config.Timeout)
-
-	if didTimeout {
-		// TODO : replace with real error
-		return errors.New("runner doesn't exist")
-	}
-
-	response := (rsp).(thread.Response)
-	return response.Error
 }
 
-func (t *Thread) logRun(r *thread.Request) error {
+func (t *Thread) asyncSendLogToRunner(r *thread.Request) {
 
 	request := thread.Request{
 		Action:      thread.LogAction,
 		Type:        thread.RunRecord,
 		Identifiers: r.Identifiers,
 		Data:        r.Data,
-		Nonce:       rand.Uint32(),
+		Source:      thread.Processor,
+		Nonce:       r.Nonce,
 	}
 	t.C13 <- request
-
-	rsp, didTimeout := multithreaded.SendAndWait(t.RunnerResponseTable, request.Nonce,
-		t.config.Timeout)
-
-	if didTimeout {
-		return multithreaded.NoResponseReceived
-	}
-
-	response := (rsp).(thread.Response)
-	return response.Error
 }
 
-func (t *Thread) stopRun(r *thread.Request) error {
+func (t *Thread) asyncTellRunnerToStopRun(r *thread.Request) {
 
 	request := thread.Request{
 		Action:      thread.DeleteAction,
 		Type:        thread.RunRecord,
 		Identifiers: r.Identifiers,
-		Nonce:       rand.Uint32(),
+		Source:      thread.Processor,
+		Nonce:       r.Nonce,
 	}
 	t.C13 <- request
+}
 
-	rsp, didTimeout := multithreaded.SendAndWait(t.RunnerResponseTable, request.Nonce,
-		t.config.Timeout)
-
-	if didTimeout {
-		return multithreaded.NoResponseReceived
-	}
-
-	response := (rsp).(thread.Response)
-	return response.Error
+func (t *Thread) syncCheckIfRunStopped(r *thread.Response) error {
+	return nil
 }

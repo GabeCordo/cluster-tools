@@ -2,11 +2,13 @@ package runner
 
 import (
 	"errors"
+	"strconv"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"strconv"
 )
 
 func (t *Thread) Setup() {
@@ -15,30 +17,61 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	// INCOMING REQUESTS
+	var iReq thread.Request
+	var iRsp thread.Response
+	var oRsp thread.Response
 
-	thread.SetupListener(t.channels.C13, t.channels.C14, &t.accepting, &t.wg, thread.Runner, t.Handle)
-
-	// INCOMING RESPONSES
-
-	go func() {
-		// response coming from database thread
-		for response := range t.channels.C16 {
-			// if this doesn't spawn its own thread we will be left waiting
-			t.responseTable.database.Write(response.Nonce, response)
+	for {
+		select {
+		case iReq = <-t.channels.C13:
+			{
+				t.handleRequest(&iReq, &oRsp)
+			}
+		case iRsp = <-t.channels.C10:
+			{
+				var ok bool
+				iReq, ok = t.requestStore[iRsp.Nonce]
+				if ok {
+					t.handleResponse(&iReq, &iRsp, &oRsp)
+				}
+			}
+		case iRsp = <-t.channels.C16:
+			{
+				var ok bool
+				iReq, ok = t.requestStore[iRsp.Nonce]
+				if ok {
+					t.handleResponse(&iReq, &iRsp, &oRsp)
+				}
+			}
+		case <-t.Interrupt:
+			{
+				// Terminate the thread
+				break
+			}
 		}
-	}()
-
-	go func() {
-		// response coming from database thread
-		for response := range t.channels.C10 {
-			// if this doesn't spawn its own thread we will be left waiting
-			t.responseTable.socket.Write(response.Nonce, response)
-		}
-	}()
+	}
 }
 
-func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (t *Thread) sendResponse(request *thread.Request, response *thread.Response) {
+
+	switch request.Source {
+	case thread.Processor:
+		{
+			t.channels.C14 <- *response // todo: pass pointer
+		}
+	default:
+		{
+			// NOP
+		}
+	}
+}
+
+func (t *Thread) handleRequest(request *thread.Request, response *thread.Response) {
+
+	response.Source = thread.Runner
+	response.Action = request.Action
+	response.Type = request.Type
+	response.Nonce = request.Nonce
 
 	switch request.Action {
 	case thread.GetAction:
@@ -51,7 +84,7 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 						Pipeline:   request.Identifiers.Pipeline,
 						Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10),
 					}
-					response.Data, response.Error = t.getSupervisor(f)
+					response.Data, response.Error = t.syncGetSupervisor(f)
 				}
 			default:
 				{
@@ -65,13 +98,15 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					metadata, success := (request.Data).(map[string]string)
-					if !success {
-						response.Error = errors.New("RunnerCreate expected a map[string]string data type")
+					// the callee triggering the run sends a pipeline identifier
+					// the runner shall look-up the pipeline record to send to the processor
+					_, ok := (request.Data).(map[string]string)
+					if ok {
+						t.requestStore[request.Nonce] = *request
+						t.asyncGetPipelineFromDatabase(request)
 					} else {
-						response.Data, response.Error = t.createRun(
-							request.Identifiers.Processor, request.Identifiers.Namespace,
-							request.Identifiers.Pipeline, metadata)
+						response.Error = errors.New("RunnerCreate expected a map[string]string data type")
+						t.sendResponse(request, response)
 					}
 				}
 			default:
@@ -86,8 +121,18 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					s := (request.Data).(*run.Run)
-					response.Error = t.updateRun(s)
+					var r *run.Run
+					r, response.Error = t.syncUpdateRun(request)
+					if response.Error == nil {
+						status := r.GetStatus()
+						if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
+							t.Logger.Printf("run completed %d\n", r.GetId())
+							t.requestStore[request.Nonce] = *request
+							t.asyncCreateStatisticRecordInDatabase(request, r)
+						}
+					} else {
+						t.sendResponse(request, response)
+					}
 				}
 			default:
 				{
@@ -116,7 +161,12 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					response.Error = t.stopRun(request.Identifiers.Supervisor)
+					response.Error = t.asyncStopRun(request.Identifiers.Supervisor)
+					if response.Error != nil {
+						t.sendResponse(request, response)
+					} else {
+						t.requestStore[request.Nonce] = *request
+					}
 				}
 			default:
 				{
@@ -133,6 +183,117 @@ func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
 	}
 
 	response.Success = response.Error == nil
+}
+
+func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Response, oResponse *thread.Response) {
+	switch iResponse.Source {
+	case thread.Database:
+		{
+			switch iResponse.Action {
+			case thread.GetAction:
+				{
+					switch iResponse.Type {
+					case thread.PipelineRecord:
+						{
+							var id uint64 = 0
+							var cfg pipeline.Pipeline
+							id, cfg, oResponse.Error = t.syncCreateNewRunRecord(iRequest, iResponse)
+							if oResponse.Error == nil {
+								t.asyncSendRunToSocket(iRequest, id, &cfg)
+							} else {
+								delete(t.requestStore, iRequest.Nonce)
+								t.sendResponse(iRequest, oResponse)
+							}
+						}
+					default:
+						{
+							// NOP
+						}
+					}
+				}
+			case thread.CreateAction:
+				{
+					switch iResponse.Type {
+					case thread.StatisticRecord:
+						{
+							if iResponse.Error == nil {
+								t.asyncCloseMessengerForRun(iRequest)
+							} else {
+								oResponse.Error = iResponse.Error
+								delete(t.requestStore, iRequest.Nonce)
+								t.sendResponse(iRequest, oResponse)
+							}
+						}
+					default:
+						{
+							// NOP
+						}
+					}
+				}
+			default:
+				{
+					// NOP
+				}
+			}
+		}
+	case thread.Socket:
+		{
+			switch iResponse.Action {
+			case thread.CreateAction:
+				{
+					switch iResponse.Type {
+					case thread.RunRecord:
+						{
+							oResponse.Error = t.syncUpdateRunAfterFirstResponseFromSocket(iRequest, iResponse)
+							oResponse.Data = iResponse.Data
+							delete(t.requestStore, iRequest.Nonce)
+							t.sendResponse(iRequest, oResponse)
+						}
+					default:
+						{
+							// NOP
+						}
+					}
+				}
+			case thread.DeleteAction:
+				{
+					switch iResponse.Type {
+					case thread.RunRecord:
+						{
+							oResponse.Error = iResponse.Error
+							delete(t.requestStore, iRequest.Nonce)
+							t.sendResponse(iRequest, oResponse)
+						}
+					default:
+						{
+							// NOP
+						}
+					}
+				}
+			default:
+				{
+					// NOP
+				}
+			}
+		}
+	case thread.Messenger:
+		switch iResponse.Type {
+		case thread.RunRecord:
+			{
+				oResponse.Error = iResponse.Error
+				delete(t.requestStore, iRequest.Nonce)
+				t.sendResponse(iRequest, oResponse)
+			}
+		default:
+			{
+				// NOP
+			}
+		}
+	default:
+		{
+			// NOP
+		}
+	}
 }
 
 func (t *Thread) Teardown() {

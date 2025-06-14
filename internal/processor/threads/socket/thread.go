@@ -16,6 +16,31 @@ import (
 	"github.com/GabeCordo/Flock/internal/processor/threads"
 )
 
+func (thread *Thread) attemptConnectionToCore(host string) (connection net.Conn, err error) {
+
+	for i := 0; i < MaxNumberOfRetries; i++ {
+
+		if thread.flags.useTLS {
+			config := &tls.Config{RootCAs: thread.tls.pool}
+			connection, err = tls.Dial("tcp", host, config)
+		} else {
+			thread.logger.Warnln("connecting on a non-encrypted channel!")
+			connection, err = net.Dial("tcp", host)
+		}
+
+		if err != nil {
+			thread.logger.Warnf("failed to connect to gateway (retry: %d)\n", i)
+		} else {
+			thread.logger.Println("connected to gateway")
+			break
+		}
+
+		time.Sleep(MaxWaitBeforeRetry)
+	}
+
+	return connection, err
+}
+
 func (thread *Thread) Setup() {
 
 	certificatePath := os.Getenv("CTOOLS_TLS_CERT")
@@ -49,38 +74,19 @@ func (thread *Thread) Setup() {
 	// CONNECTION TO GATEWAY
 
 	var gatewayHost string
-
 	envGatewayHost := os.Getenv("CTOOLS_GATEWAY_HOST")
+
 	if envGatewayHost == "" {
 		gatewayHost = *thread.Config.Core
 	} else {
 		gatewayHost = envGatewayHost
 	}
 
-	var connection net.Conn
-	var err error
-
-	for i := 0; i < MaxNumberOfRetries; i++ {
-
-		if thread.flags.useTLS {
-			config := &tls.Config{RootCAs: thread.tls.pool}
-			connection, err = tls.Dial("tcp", gatewayHost, config)
-		} else {
-			connection, err = net.Dial("tcp", gatewayHost)
-		}
-
-		if err != nil {
-			thread.logger.Warnf("failed to connect to gateway (retry: %d)\n", i)
-		} else {
-			thread.logger.Println("connected to gateway")
-			break
-		}
-
-		time.Sleep(MaxWaitBeforeRetry)
+	if connection, err := thread.attemptConnectionToCore(gatewayHost); err == nil {
+		thread.connection = connection
+	} else {
+		panic(err)
 	}
-
-	// todo : is this the best practice?
-	thread.connection = connection
 }
 
 func (thread *Thread) Start() {
@@ -115,26 +121,58 @@ func (thread *Thread) Start() {
 
 	data := &common.Request{}
 
+	// Loop
 	for {
-		err := decoder.Decode(data)
-		if err != nil {
-			thread.logger.Alertln("gateway sent EOF closing the socket connection")
-			break
+
+		// Loop: listen to incoming messages from the core.
+		for {
+			err := decoder.Decode(data)
+			if err != nil {
+				thread.logger.Alertln("gateway sent EOF closing the socket connection")
+				break
+			}
+			thread.ProcessSocketRequest(data)
 		}
-		thread.ProcessSocketRequest(data)
+
+		// TODO: we are violating DRY here, this is a quick hack
+		for {
+			var host string
+			envHost := os.Getenv("CTOOLS_GATEWAY_HOST")
+
+			if envHost == "" {
+				host = *thread.Config.Core
+			} else {
+				host = envHost
+			}
+
+			// Condition: connection to the core has dropped, attempt to connect
+			if connection, err := thread.attemptConnectionToCore(host); err == nil {
+				thread.connection = connection
+				decoder = json.NewDecoder(thread.connection)
+				break
+			} else {
+				// Edge-Case: the processor was unable to re-establish connection to the core.
+			}
+		}
 	}
 
 	err := thread.connection.Close()
 	if err != nil {
 		fmt.Print(err)
 	}
+	thread.connection = nil
 	thread.channels.Interrupt <- threads.Shutdown
 }
 
 func (thread *Thread) ProcessRequest(request *threads.SocketRequest) {
 
+	// Edge Case: it is possible that the core drops while the processor is alive
+	// Behaviour: the processor shall ignore requests received on its socket until the connection
+	// 			  is re-established to the core.
+	// TODO : could we buffer messages until the core comes online?
 	if thread.connection == nil {
-		thread.logger.Alertln("cannot process request because connection is nil")
+		// Since the socket does not return a response, we cannot do
+		// anything until this is enhanced.
 		return
 	}
 
@@ -177,8 +215,12 @@ func (thread *Thread) ProcessRequest(request *threads.SocketRequest) {
 			err := encoder.Encode(req) // todo : fix
 			if err != nil {
 				fmt.Println(err)
-				thread.logger.Warnln("failed to add module over socket")
+				thread.logger.Warnln("failed to update run over socket")
 			}
+		}
+	case threads.SocketLogAdd:
+		{
+
 		}
 	default:
 		{

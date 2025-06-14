@@ -55,8 +55,9 @@ type Thread struct {
 
 	accepting bool
 
-	wg    sync.WaitGroup
-	mutex sync.RWMutex
+	wg             sync.WaitGroup
+	connectionsMux sync.RWMutex
+	mutex          sync.RWMutex
 }
 
 func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {

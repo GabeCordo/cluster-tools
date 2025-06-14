@@ -81,6 +81,8 @@ type Request struct {
 }
 
 type Response struct {
+	Action  RequestAction
+	Type    RequestType
 	Success bool
 	Error   error
 	Data    any
@@ -142,7 +144,6 @@ const (
 type Thread interface {
 	Setup()
 	Start()
-	Handle(request *Request, response *Response)
 	Teardown()
 }
 

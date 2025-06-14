@@ -1,12 +1,13 @@
 package database
 
 import (
+	"log"
+	"time"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"log"
-	"time"
 )
 
 func (t *Thread) Setup() {
@@ -41,13 +42,13 @@ func (t *Thread) Start() {
 
 	// LISTEN FOR INCOMING REQUESTS
 
-	thread.SetupListener(t.C1, t.C2, &t.accepting, &t.wg, thread.Database, t.Handle)
+	thread.SetupListener(t.C1, t.C2, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	thread.SetupListener(t.C11, t.C12, &t.accepting, &t.wg, thread.Database, t.Handle)
+	thread.SetupListener(t.C11, t.C12, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	thread.SetupListener(t.C15, t.C16, &t.accepting, &t.wg, thread.Database, t.Handle)
+	thread.SetupListener(t.C15, t.C16, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	thread.SetupListener(t.C26, t.C27, &t.accepting, &t.wg, thread.Database, t.Handle)
+	thread.SetupListener(t.C26, t.C27, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
 	// LISTEN FOR INCOMING RESPONSES
 
@@ -74,7 +75,12 @@ func (t *Thread) Request(module thread.Module, request any) (success bool) {
 	return success
 }
 
-func (t *Thread) Handle(request *thread.Request, response *thread.Response) {
+func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+
+	response.Source = thread.Database
+	response.Action = request.Action
+	response.Type = request.Type
+	response.Nonce = request.Nonce
 
 	switch request.Action {
 	case thread.CreateAction:

@@ -3,15 +3,16 @@ package processor
 import (
 	"errors"
 	"fmt"
+
 	"github.com/GabeCordo/Flock/internal/core/processor"
 )
 
-func (t *Thread) getModules() []processor.ModuleData {
+func (t *Thread) syncGetModules() []processor.ModuleData {
 
 	return t.processorTable.RegisteredModules()
 }
 
-func (t *Thread) addModule(processorId uint64, cfg *processor.ModuleConfig) error {
+func (t *Thread) syncAddModule(processorId uint64, cfg *processor.ModuleConfig) error {
 
 	if !cfg.Verify() {
 		return errors.New("module pipeline is not valid")
@@ -64,12 +65,12 @@ func (t *Thread) addModule(processorId uint64, cfg *processor.ModuleConfig) erro
 	return nil
 }
 
-func (t *Thread) deleteModule(processorName uint64, moduleName string) error {
+func (t *Thread) syncDeleteModule(processorName uint64, moduleName string) error {
 
 	return t.processorTable.RemoveModule(processorName, moduleName)
 }
 
-func (t *Thread) mountModule(name string) error {
+func (t *Thread) syncMountModule(name string) error {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
@@ -83,7 +84,7 @@ func (t *Thread) mountModule(name string) error {
 	return nil
 }
 
-func (t *Thread) unmountModule(name string) error {
+func (t *Thread) syncUnMountModule(name string) error {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
