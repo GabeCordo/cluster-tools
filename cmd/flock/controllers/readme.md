@@ -8,16 +8,16 @@ will be called.
 ## existing controllers
 
 ### doctor
-Verify the required temporary files have been created and the general config used by PipelineOps is valid.
+Verify the required temporary files have been created and the general config used by flock is valid.
 
 ### init
-Create the required temporary files and general config used by PipelineOps.
+Create the required temporary files and general config used by flock.
 
 ### logs
-View a list of logs created by the PipelineOps process that exist in the local file system. 
+View a list of logs created by the flock process that exist in the local file system. 
 
 ### repl
-Invoke an interactive shell to monitor the state of the PipelineOps process.
+Invoke an interactive shell to monitor the state of the flock process.
 
 ### schedule
 Create a new execution schedule for a module/cluster pair. 
@@ -26,4 +26,4 @@ Create a new execution schedule for a module/cluster pair.
 Invoke the POPS process.
 
 ### statistics
-View a list of statistics created by the PipelineOps process that exist in the local file system.
+View a list of statistics created by the flock process that exist in the local file system.

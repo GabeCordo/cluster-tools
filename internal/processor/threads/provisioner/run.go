@@ -59,7 +59,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		// as data flows through the channels between functions.
 		//
 		// idea:
-		// every 1s send an update of the statistics to the PipelineOps gateway so the operator
+		// every 1s send an update of the statistics to the flock gateway so the operator
 		// or developer can track the progress of the pipeline instance in real-time
 		//
 		// important note:

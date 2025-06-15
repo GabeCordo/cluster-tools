@@ -25,7 +25,7 @@ RUN ./pipeline-gateway doctor
 FROM gcr.io/distroless/static-debian12
 
 COPY --from=build-env /go/src/cmd/pipeline-gateway/pipeline-gateway /
-COPY --from=build-env /root/.cache/PipelineOps /root/.cache/PipelineOps
+COPY --from=build-env /root/.cache/flock /root/.cache/flock
 
 EXPOSE 8136
 EXPOSE 8137

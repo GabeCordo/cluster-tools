@@ -16,7 +16,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err != nil {
-		fmt.Println("[x] PipelineOps has never been initialized, statistic 'flock init'")
+		fmt.Println("[x] flock has never been initialized, statistic 'flock init'")
 		return commandline.Terminate
 	}
 
@@ -50,16 +50,16 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 		fmt.Printf("[✓] the messenger folder exists (%s)\n", DefaultMessengerFolder)
 	}
 
-	if _, err := os.Stat(DefaultConfigFile); err != nil {
-		fmt.Printf("[x] the global common file is missing (%s)\n", DefaultConfigFile)
+	if _, err := os.Stat(DefaultCoreConfigFile); err != nil {
+		fmt.Printf("[x] the global common file is missing (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] the global common file exists (%s)\n", DefaultConfigFile)
+		fmt.Printf("[✓] the global common file exists (%s)\n", DefaultCoreConfigFile)
 	}
 
-	configFile, err := os.Open(DefaultConfigFile)
+	configFile, err := os.Open(DefaultCoreConfigFile)
 	if err != nil {
-		fmt.Printf("[x] the global common file is missing (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global common file is missing (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 	defer func(configFile *os.File) {
@@ -71,16 +71,16 @@ func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOn
 
 	bytes, err := io.ReadAll(configFile)
 	if err != nil {
-		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
 	c := &core.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
-		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] the global common is healthy (%s)\n", DefaultConfigFile)
+		fmt.Printf("[✓] the global common is healthy (%s)\n", DefaultCoreConfigFile)
 	}
 
 	return commandline.Terminate

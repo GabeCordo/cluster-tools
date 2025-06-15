@@ -1,4 +1,4 @@
-# PipelineOps (POPS) Framework
+# Flock
 
 An open source ingress gateway for monitoring and load balancing requests to distributed data pipelines. 
 
@@ -46,7 +46,7 @@ Test are being migrated from Github Actions to CircleCI. Component tests and Int
 validate the health of the codebase.
 
 Code Coverage improvements are underway to increase confidence in code correctness. We believe maintaining a reasonable level
-of code coverage is a crucial step in convincing individuals to try PipelineOps as an infrastructure solution.
+of code coverage is a crucial step in convincing individuals to try flock as an infrastructure solution.
 
 ### Documentation
 

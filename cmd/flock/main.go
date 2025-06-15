@@ -55,7 +55,7 @@ func main() {
 	schc.SetCategory("utils").SetDescription("schedule jobs on the gateway")
 
 	statc := cli.AddCommand("jobs", controllers.StatsController{})
-	statc.SetCategory("utils").SetDescription("view stats associated with jobs on the pipelineops-gateway")
+	statc.SetCategory("utils").SetDescription("view stats associated with jobs on flock")
 
 	// configuration controllers
 

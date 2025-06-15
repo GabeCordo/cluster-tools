@@ -20,7 +20,7 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 		return commandline.Terminate
 	}
 
-	c, err := core.New(DefaultConfigFile)
+	c, err := core.New(DefaultCoreConfigFile)
 	if err != nil {
 		log.Panic(err.Error())
 	}

@@ -19,23 +19,23 @@ func (controller ReplController) Run(cli *commandline.CommandLine) commandline.T
 	}
 
 	//// excerpt from : https://stackoverflow.com/questions/62000607/how-to-overwrite-file-content-in-golang
-	//configFile, err := os.OpenFile(common.DefaultConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	//configFile, err := os.OpenFile(common.DefaultCoreConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	//if err != nil {
 	//	fmt.Printf("[x] cannot find mango pipeline(%s). Is it possible 'mango init' was never called?\n",
-	//		common.DefaultConfigFile)
+	//		common.DefaultCoreConfigFile)
 	//	return commandline.Terminate
 	//}
 	//defer configFile.Close()
 
-	bytes, err := os.ReadFile(DefaultConfigFile)
+	bytes, err := os.ReadFile(DefaultCoreConfigFile)
 	if err != nil {
-		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
 	c := &core.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
-		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global common is corrupt (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
@@ -47,13 +47,13 @@ func (controller ReplController) Run(cli *commandline.CommandLine) commandline.T
 
 	bytes, err = yaml.Marshal(c)
 	if err != nil {
-		fmt.Printf("[x] failed to modify the pipeline file at %s\n", DefaultConfigFile)
+		fmt.Printf("[x] failed to modify the pipeline file at %s\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
-	err = os.WriteFile(DefaultConfigFile, bytes, 0755)
+	err = os.WriteFile(DefaultCoreConfigFile, bytes, 0755)
 	if err != nil {
-		fmt.Printf("[x] failed to modify the pipeline file at %s\n", DefaultConfigFile)
+		fmt.Printf("[x] failed to modify the pipeline file at %s\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 

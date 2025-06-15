@@ -146,20 +146,20 @@ func (command ConfigCommand) updateField(c *core.Config, fields []string, value 
 
 func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	if _, err := os.Stat(DefaultConfigFile); err != nil {
-		fmt.Println("[x] PipelineOps has never been initialized, statistic 'flock init'")
+	if _, err := os.Stat(DefaultCoreConfigFile); err != nil {
+		fmt.Println("[x] flock has never been initialized, statistic 'flock init'")
 		return commandline.Terminate
 	}
 
-	configFile, err := os.Open(DefaultConfigFile)
+	configFile, err := os.Open(DefaultCoreConfigFile)
 	if err != nil {
-		fmt.Printf("[x] the global pipeline file is missing (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global pipeline file is missing (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
 	bytes, err := io.ReadAll(configFile)
 	if err != nil {
-		fmt.Printf("[x] the global pipeline file is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global pipeline file is corrupt (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
@@ -171,7 +171,7 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 
 	c := &core.Config{}
 	if err := yaml.Unmarshal(bytes, c); err != nil {
-		fmt.Printf("[x] the global pipeline is corrupt (%s)\n", DefaultConfigFile)
+		fmt.Printf("[x] the global pipeline is corrupt (%s)\n", DefaultCoreConfigFile)
 		return commandline.Terminate
 	}
 
@@ -209,7 +209,7 @@ func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.Termi
 			return commandline.Terminate
 		}
 
-		if configFile, err = os.Create(DefaultConfigFile); err != nil {
+		if configFile, err = os.Create(DefaultCoreConfigFile); err != nil {
 			fmt.Printf("[Error] failed to truncate old pipeline file => %s\n", err.Error())
 			return commandline.Terminate
 		}

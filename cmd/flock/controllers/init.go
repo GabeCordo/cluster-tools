@@ -2,21 +2,23 @@ package controllers
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/GabeCordo/Flock/internal/core"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 var (
-	userCacheDir, _         = os.UserCacheDir()
-	DefaultFrameworkFolder  = userCacheDir + "/PipelineOps/"
-	DefaultConfigsFolder    = DefaultFrameworkFolder + "configs/"
-	DefaultConfigFile       = DefaultFrameworkFolder + "global.ct.yml"
-	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
-	DefaultStatisticsFolder = DefaultFrameworkFolder + "statistics/"
-	DefaultSchedulesFolder  = DefaultFrameworkFolder + "schedules/"
-	DefaultMessengerFolder  = DefaultFrameworkFolder + "messenger/"
+	userCacheDir, _            = os.UserCacheDir()
+	DefaultFrameworkFolder     = userCacheDir + "/flock/"
+	DefaultConfigsFolder       = DefaultFrameworkFolder + "configs/"
+	DefaultCoreConfigFile      = DefaultFrameworkFolder + "core.yml"
+	DefaultProcessorConfigFile = DefaultFrameworkFolder + "processor.yml"
+	DefaultLogsFolder          = DefaultFrameworkFolder + "logs/"
+	DefaultStatisticsFolder    = DefaultFrameworkFolder + "statistics/"
+	DefaultSchedulesFolder     = DefaultFrameworkFolder + "schedules/"
+	DefaultMessengerFolder     = DefaultFrameworkFolder + "messenger/"
 )
 
 type InitCommand struct {
@@ -53,11 +55,11 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Processor.MaxRetry = 10
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err == nil {
-		fmt.Println("PipelineOps has already been initialized")
+		fmt.Println("flock has already been initialized")
 		return commandline.Terminate
 	}
 
-	fmt.Println("PipelineOps has not been initialized")
+	fmt.Println("flock has not been initialized")
 
 	if err := os.Mkdir(DefaultFrameworkFolder, 0700); err != nil {
 		fmt.Printf("[x] failed to create %s directory %s\n", DefaultFrameworkFolder, err.Error())
@@ -101,9 +103,9 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 		fmt.Printf("[✓] created configs folder %s\n", DefaultConfigsFolder)
 	}
 
-	dst, err := os.Create(DefaultConfigFile)
+	dst, err := os.Create(DefaultCoreConfigFile)
 	if err != nil {
-		fmt.Printf("[x] failed to create %s %s\n", DefaultConfigFile, err.Error())
+		fmt.Printf("[x] failed to create %s %s\n", DefaultCoreConfigFile, err.Error())
 		return commandline.Terminate
 	}
 
@@ -119,7 +121,7 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 		fmt.Printf("[x] failed to write bytes of default common to file %s\n", err.Error())
 		return commandline.Terminate
 	} else {
-		fmt.Printf("[✓] created default common %s\n", DefaultConfigFile)
+		fmt.Printf("[✓] created default common %s\n", DefaultCoreConfigFile)
 	}
 
 	return commandline.Terminate
