@@ -33,7 +33,6 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 	// 		 that the caller is told that the request successfully reached this server.
 	if thread.NumOfActiveSupervisors() >= MaxNumOfSupervisors {
 		thread.requestBacklog = append(thread.requestBacklog, *request)
-		thread.requestWg.Done()
 		return nil
 	} else {
 		thread.IncrementActiveSupervisors()
@@ -47,7 +46,6 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 
 	if err != nil {
 		thread.logger.Printf("%s[%s]%s Failed to create runner %s\n", logging.Red, request.Pipeline.Identifier, logging.Reset, err)
-		thread.requestWg.Done()
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package messenger
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/GabeCordo/Flock/internal/core/message"
@@ -84,7 +85,11 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
 
 func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 
-	th.logger.Printf("closing log for %s/%s\n", request.Identifiers.Module, request.Identifiers.Function)
+	th.logger.Printf("[%s][%s][%d] closing log\n",
+		request.Identifiers.Module,
+		request.Identifiers.Function,
+		request.Identifiers.Supervisor,
+	)
 	err := th.messenger.Flush(
 		message.Source{
 			Module:     request.Identifiers.Module,
@@ -93,8 +98,12 @@ func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 		},
 		nil,
 	)
-	if err != nil {
-		fmt.Print(err)
+	// Concept: An error can indicate a module, pipeline, or runner was not found in the messenger.
+	//			This happens when a run (on a processor) never sends a log to the core.
+	//
+	// Action: Only log other types of errors encountered.
+	if errors.Is(err, message.LogSaveFailedError) {
+		th.logger.Printf("closing log failed %s\n", err.Error())
 	}
 }
 

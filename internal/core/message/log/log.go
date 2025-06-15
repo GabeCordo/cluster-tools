@@ -139,11 +139,15 @@ func (logger *Logger) Message(source message.Source, record any) error {
 
 func (logger *Logger) Flush(source message.Source, destination any) error {
 
+	if !logger.enabled.logging {
+		return message.LoggingDisabledError
+	}
+
 	logger.mutex.RLock()
 
 	moduleInstance, moduleFound := logger.modules[source.Module]
 	if !moduleFound {
-		return errors.New("module not found")
+		return message.ModuleNotFoundError
 	}
 
 	logger.mutex.RUnlock()
@@ -151,7 +155,7 @@ func (logger *Logger) Flush(source message.Source, destination any) error {
 
 	clusterInstance, clusterFound := moduleInstance.clusters[source.Cluster]
 	if !clusterFound {
-		return errors.New("cluster not found")
+		return message.ClusterNotFoundError
 	}
 
 	moduleInstance.mutex.RUnlock()
@@ -161,17 +165,13 @@ func (logger *Logger) Flush(source message.Source, destination any) error {
 	logs, logsFound := clusterInstance.supervisors[source.Identifier]
 
 	if !logsFound {
-		return errors.New("runner not found")
+		return message.RunnerNotFoundError
 	}
 
 	endpoint := fmt.Sprintf("%s_%s_%d", source.Module, source.Cluster, source.Identifier)
 
-	if !logger.enabled.logging {
-		return errors.New("cannot log when logging is temp. disabled")
-	}
-
 	if _, err := os.Stat(logger.directory); err != nil {
-		return errors.New("warning: cannot save logs to file, the save directory doesn't exist")
+		return message.LogSaveFailedError
 	}
 
 	currTime := time.Now()

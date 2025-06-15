@@ -2,8 +2,9 @@ package log
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/message"
 	"strings"
+
+	"github.com/GabeCordo/Flock/internal/core/message"
 )
 
 type File struct {

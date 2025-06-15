@@ -1,5 +1,7 @@
 package message
 
+import "errors"
+
 type Priority string
 
 const (
@@ -43,3 +45,13 @@ type Messenger interface {
 	Message(source Source, record any) error
 	Flush(source Source, destination any) error
 }
+
+var ModuleNotFoundError = errors.New("module not found")
+
+var ClusterNotFoundError = errors.New("cluster not found")
+
+var RunnerNotFoundError = errors.New("runner not found")
+
+var LoggingDisabledError = errors.New("logging is currently disabled")
+
+var LogSaveFailedError = errors.New("warning: cannot save logs to file, the save directory doesn't exist")

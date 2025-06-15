@@ -95,7 +95,12 @@ func (t *Thread) asyncSendRunToSocket(request *thread.Request, id uint64, cfg *p
 
 func (t *Thread) syncUpdateRunAfterFirstResponseFromSocket(request *thread.Request, response *thread.Response) error {
 
-	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10)})
+	id, ok := (response.Data).(uint64)
+	if !ok {
+		return errors.New("the socket did not return a supervisor id")
+	}
+
+	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(id, 10)})
 	if len(results) != 1 {
 		return errors.New("could not find supervisor")
 	}
