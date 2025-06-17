@@ -1,15 +1,18 @@
 package threads
 
 import (
-	"math/rand"
-
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	pipelineComponent "github.com/GabeCordo/Flock/internal/processor/provision/pipeline"
-	"github.com/GabeCordo/toolchain/multithreaded"
+	"github.com/GabeCordo/Flock/internal/nonce"
 )
 
-func RunProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	namespace string, supervisor uint64, cfg *pipeline.Pipeline, meta map[string]string, timeout float64) error {
+type ProvisionerMandatory struct {
+	Pipe          chan<- ProvisionerRequest
+	ResponseTable *nonce.ResponseTable
+	NoncePool     *nonce.Pool
+	Timeout       float64
+}
+
+func RunStart(mandatory ProvisionerMandatory, namespace string, supervisor uint64, cfg *pipeline.Pipeline, meta map[string]string) error {
 
 	// there is a possibility the user never passed an args value to the HTTP endpoint,
 	// so we need to replace it with and empty array
@@ -22,58 +25,33 @@ func RunProvision(pipe chan<- ProvisionerRequest, responseTable *multithreaded.R
 		Supervisor: supervisor,
 		Pipeline:   cfg,
 		Metadata:   meta,
-		Nonce:      rand.Uint32(),
+		Nonce:      mandatory.NoncePool.Next(),
 	}
-	pipe <- provisionerThreadRequest
+	mandatory.Pipe <- provisionerThreadRequest
 
-	data, didTimeout := multithreaded.SendAndWait(responseTable, provisionerThreadRequest.Nonce, timeout)
+	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, provisionerThreadRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return multithreaded.NoResponseReceived
+		return nonce.NoResponseReceived
 	}
 
 	provisionerResponse := (data).(ProvisionerResponse)
 	return provisionerResponse.Error
 }
 
-func RunStop(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	run uint64, timeout float64) error {
+func RunStop(mandatory ProvisionerMandatory, run uint64) error {
 
 	request := ProvisionerRequest{
 		Action:     ProvisionerRunStop,
 		Supervisor: run,
-		Nonce:      rand.Uint32(),
+		Nonce:      mandatory.NoncePool.Next(),
 	}
-	pipe <- request
+	mandatory.Pipe <- request
 
-	response, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
+	response, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return multithreaded.NoResponseReceived
+		return nonce.NoResponseReceived
 	}
 
 	provisionerResponse := response.(ProvisionerResponse)
 	return provisionerResponse.Error
-}
-
-func ShutdownCore(pipe chan<- InterruptEvent) {
-	pipe <- Shutdown
-}
-
-func GetProvisionerStatistics(pipe chan<- ProvisionerRequest, responseTable *multithreaded.ResponseTable,
-	timeout float64) ([]*pipelineComponent.Pipeline, error) {
-
-	request := ProvisionerRequest{
-		Action: ProvisionerStatisticsGet,
-		Nonce:  rand.Uint32(),
-	}
-	pipe <- request
-
-	data, didTimeout := multithreaded.SendAndWait(responseTable, request.Nonce, timeout)
-	if didTimeout {
-		return nil, multithreaded.NoResponseReceived
-	}
-
-	rsp := (data).(ProvisionerResponse)
-
-	collectedStatistics := (rsp.Data).([]*pipelineComponent.Pipeline)
-	return collectedStatistics, nil
 }

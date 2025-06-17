@@ -2,12 +2,17 @@ package provisioner
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/nonce"
 	"github.com/GabeCordo/Flock/internal/processor/provision"
 	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
-	"sync"
 )
+
+const nonceMin = 1000000
+const nonceMax = 2000000
 
 const MaxNumOfSupervisors = 1
 
@@ -35,6 +40,8 @@ type Thread struct {
 	requestBacklog         []threads.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
 	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
 	backlogMutex           sync.RWMutex
+
+	noncePool *nonce.Pool
 
 	accepting bool
 	runWg     sync.WaitGroup // wait group on the number of active runs
@@ -76,6 +83,8 @@ func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provi
 
 	instance.requestBacklog = make([]threads.ProvisionerRequest, 0)
 	instance.numOfActiveSupervisors = 0
+
+	instance.noncePool = nonce.New(nonceMin, nonceMax)
 
 	instance.logger.SetColour(logging.Orange)
 

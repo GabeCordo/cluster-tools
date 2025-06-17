@@ -38,7 +38,7 @@ type Thread struct {
 
 	logger *logging.Logger
 
-	noncePool nonce.Pool
+	noncePool *nonce.Pool
 
 	processorResponseTable *nonce.ResponseTable
 	databaseResponseTable  *nonce.ResponseTable

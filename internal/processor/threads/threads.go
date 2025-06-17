@@ -2,6 +2,7 @@ package threads
 
 import (
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
+	"github.com/GabeCordo/Flock/internal/nonce"
 )
 
 type InterruptEvent uint8
@@ -41,14 +42,14 @@ type ProvisionerRequest struct {
 	Pipeline   *pipeline.Pipeline
 	Metadata   map[string]string
 	Path       string
-	Nonce      uint32
+	Nonce      nonce.Nonce
 }
 
 type ProvisionerResponse struct {
 	Success bool
 	Error   error
 	Data    any
-	Nonce   uint32
+	Nonce   nonce.Nonce
 }
 
 type SocketAction uint8
@@ -62,5 +63,5 @@ const (
 type SocketRequest struct {
 	Action SocketAction
 	Data   any
-	Nonce  uint32
+	Nonce  nonce.Nonce
 }

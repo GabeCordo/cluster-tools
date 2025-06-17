@@ -35,7 +35,7 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 		thread.Mandatory{
 			Pipe:          t.C5,
 			ResponseTable: t.ProcessorResponseTable,
-			NoncePool:     &t.noncePool,
+			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
 		},
 	)
@@ -74,7 +74,7 @@ func (t *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
 		thread.Mandatory{
 			Pipe:          t.C5,
 			ResponseTable: t.ProcessorResponseTable,
-			NoncePool:     &t.noncePool,
+			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
 		},
 	)
@@ -113,7 +113,7 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 	mandatory := thread.Mandatory{
 		Pipe:          t.C5,
 		ResponseTable: t.ProcessorResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	}
 
@@ -170,7 +170,7 @@ func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 		thread.Mandatory{
 			Pipe:          t.C5,
 			ResponseTable: t.ProcessorResponseTable,
-			NoncePool:     &t.noncePool,
+			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
 		},
 		moduleName[0],
@@ -212,7 +212,7 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 	mandatory := thread.Mandatory{
 		Pipe:          t.C5,
 		ResponseTable: t.ProcessorResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	}
 
@@ -294,7 +294,7 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 	mandatory := thread.Mandatory{
 		Pipe:          t.C5,
 		ResponseTable: t.ProcessorResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	}
 	filter := database.Filter{
@@ -333,7 +333,7 @@ func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 		thread.Mandatory{
 			Pipe:          t.C5,
 			ResponseTable: t.ProcessorResponseTable,
-			NoncePool:     &t.noncePool,
+			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
 		},
 		request.Namespace,
@@ -377,7 +377,7 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 		thread.Mandatory{
 			Pipe:          t.C5,
 			ResponseTable: t.ProcessorResponseTable,
-			NoncePool:     &t.noncePool,
+			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
 		},
 		runId,
@@ -408,7 +408,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 	mandatory := thread.Mandatory{
 		Pipe:          t.C1,
 		ResponseTable: t.DatabaseResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	}
 
@@ -472,7 +472,7 @@ func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 	mandatory := thread.Mandatory{
 		Pipe:          t.C1,
 		ResponseTable: t.DatabaseResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	}
 
@@ -611,7 +611,7 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 	response.Data, err = thread.GetJobs(thread.Mandatory{
 		Pipe:          t.C20,
 		ResponseTable: t.SchedulerResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	}, filter)
 
@@ -645,7 +645,7 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 	err = thread.CreateJob(thread.Mandatory{
 		Pipe:          t.C20,
 		ResponseTable: t.SchedulerResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout},
 		&j)
 	if err != nil {
@@ -702,7 +702,7 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 	err = thread.DeleteJob(thread.Mandatory{
 		Pipe:          t.C20,
 		ResponseTable: t.SchedulerResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout}, filter)
 
 	response.Success = err == nil
@@ -738,7 +738,7 @@ func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 	response.Data, err = thread.JobQueue(thread.Mandatory{
 		Pipe:          t.C20,
 		ResponseTable: t.SchedulerResponseTable,
-		NoncePool:     &t.noncePool,
+		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
 	})
 

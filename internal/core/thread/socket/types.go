@@ -37,7 +37,7 @@ type Thread struct {
 		c10 chan<- thread.Response // socket_thread is sending rsp to the runner_thread
 	}
 
-	noncePool nonce.Pool
+	noncePool *nonce.Pool
 
 	responseTables struct {
 		processor *nonce.ResponseTable

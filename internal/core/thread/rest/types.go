@@ -41,7 +41,7 @@ type Thread struct {
 	C22 chan<- thread.Request  // Core is sending requests to the Messenger
 	C23 <-chan thread.Response // Core is receiving responses from the Messenger
 
-	noncePool nonce.Pool
+	noncePool *nonce.Pool
 
 	ProcessorResponseTable *nonce.ResponseTable
 	DatabaseResponseTable  *nonce.ResponseTable
