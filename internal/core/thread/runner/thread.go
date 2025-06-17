@@ -7,7 +7,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/core/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -146,8 +145,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					l := (request.Data).(*log.Log)
-					response.Error = t.logRun(l)
+					response.Error = t.asyncLogRun(request)
 				}
 			default:
 				{
@@ -161,7 +159,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					response.Error = t.asyncStopRun(request.Identifiers.Supervisor)
+					response.Error = t.asyncStopRun(request)
 					if response.Error != nil {
 						t.sendResponse(request, response)
 					} else {

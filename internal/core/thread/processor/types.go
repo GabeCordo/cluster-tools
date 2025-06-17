@@ -6,6 +6,7 @@ import (
 
 	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -38,7 +39,7 @@ type Thread struct {
 	C18 <-chan thread.Request  // Processor rec req from the scheduler thread
 	C19 chan<- thread.Response // Processor sending rsp to the scheduler thread
 
-	requestStore map[uint32]thread.Request
+	requestStore map[nonce.Nonce]thread.Request
 
 	processorTable *processor.Table
 
@@ -122,7 +123,7 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}
 
-	t.requestStore = make(map[uint32]thread.Request)
+	t.requestStore = make(map[nonce.Nonce]thread.Request)
 
 	return t, nil
 }

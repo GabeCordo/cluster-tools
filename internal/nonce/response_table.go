@@ -1,0 +1,52 @@
+package nonce
+
+import (
+	"errors"
+	"sync"
+	"time"
+)
+
+var NoResponseReceived = errors.New("no response recieved from the channel")
+
+type ResponseTable struct {
+	responses map[Nonce]any
+
+	mutex sync.RWMutex
+}
+
+func NewResponseTable() *ResponseTable {
+	table := new(ResponseTable)
+	table.responses = make(map[Nonce]any)
+	return table
+}
+
+func (responseTable *ResponseTable) Write(nonce Nonce, response any) {
+	responseTable.mutex.Lock()
+	defer responseTable.mutex.Unlock()
+
+	responseTable.responses[nonce] = response
+}
+
+func (responseTable *ResponseTable) Lookup(nonce Nonce) (response any, found bool) {
+	responseTable.mutex.RLock()
+	defer responseTable.mutex.RUnlock()
+
+	if response, found := responseTable.responses[nonce]; found {
+		return response, found
+	} else {
+		return nil, found
+	}
+}
+
+func SendAndWait(table *ResponseTable, nonce Nonce, timeout float64) (data any, timedOut bool) {
+	timestamp2 := time.Now()
+	for {
+		if time.Now().Sub(timestamp2).Seconds() > timeout {
+			return nil, true
+		}
+
+		if responseEntry, found := table.Lookup(nonce); found {
+			return responseEntry, false
+		}
+	}
+}

@@ -50,16 +50,6 @@ func (t *Thread) Start() {
 
 	thread.SetupListener(t.C26, t.C27, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	// LISTEN FOR INCOMING RESPONSES
-
-	go func() {
-		for response := range t.C4 {
-			if !t.accepting {
-				break
-			}
-			t.ProcessIncomingResponse(&response)
-		}
-	}()
 }
 
 func (t *Thread) Request(module thread.Module, request any) (success bool) {
@@ -235,8 +225,4 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 	default:
 		t.logger.Warn(thread.UnknownRequest.Error())
 	}
-}
-
-func (t *Thread) ProcessIncomingResponse(response *thread.Response) {
-	t.messengerResponseTable.Write(response.Nonce, response)
 }
