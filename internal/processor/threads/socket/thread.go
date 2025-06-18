@@ -21,7 +21,10 @@ func (thread *Thread) attemptConnectionToCore(host string) (connection net.Conn,
 	for i := 0; i < MaxNumberOfRetries; i++ {
 
 		if thread.flags.useTLS {
-			config := &tls.Config{RootCAs: thread.tls.pool}
+			config := &tls.Config{
+				RootCAs:    thread.tls.pool,
+				MinVersion: tls.VersionTLS12,
+			}
 			connection, err = tls.Dial("tcp", host, config)
 		} else {
 			thread.logger.Warnln("connecting on a non-encrypted channel!")

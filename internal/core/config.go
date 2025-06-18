@@ -19,6 +19,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const defaultFilePerm = 0600
+
 type Config struct {
 	Name               string  `yaml:"name"`
 	Version            float64 `yaml:"version"`
@@ -157,7 +159,7 @@ func (config *Config) Store() bool {
 		return false
 	}
 
-	err = os.WriteFile(config.Paths.Root, jsonRepOfConfig, 0666)
+	err = os.WriteFile(config.Paths.Root, jsonRepOfConfig, defaultFilePerm)
 	if err != nil {
 		return false
 	}

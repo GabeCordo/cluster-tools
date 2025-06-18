@@ -12,6 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const defaultFilePerm = 0600
+
 type LocalJobDatabase struct {
 	jobs  []Job
 	mutex sync.RWMutex
@@ -88,7 +90,7 @@ func (database *LocalJobDatabase) Save(path string) error {
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(path, 0750)
+	err = os.MkdirAll(path, defaultFilePerm)
 	if err != nil {
 		return err
 	}
@@ -113,7 +115,7 @@ func (database *LocalJobDatabase) Save(path string) error {
 			output := fmt.Sprintf("failed to turn jobs into dump file %s", err.Error())
 			return errors.New(output)
 		}
-		if err = os.WriteFile(filePath, b, 0750); err != nil {
+		if err = os.WriteFile(filePath, b, defaultFilePerm); err != nil {
 			output := fmt.Sprintf("failed to write dump to file %s", err.Error())
 			return errors.New(output)
 		}

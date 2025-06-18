@@ -20,7 +20,7 @@ const (
 )
 
 func RandInteger(min int, max int) int {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano())) // #nosec G404 -- Rand does not need to be cryptographically secure
 	return min + r.Intn(max-min)
 }
 

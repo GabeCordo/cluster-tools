@@ -2,13 +2,16 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/commandline"
-	"gopkg.in/yaml.v3"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/GabeCordo/Flock/internal/core/database/job"
+	"github.com/GabeCordo/commandline"
+	"gopkg.in/yaml.v3"
 )
+
+const defaultFilePerm = 0600
 
 type ScheduleController struct {
 }
@@ -103,7 +106,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 			return commandline.Terminate
 		}
 
-		err = os.WriteFile(filePath, b, 0750)
+		err = os.WriteFile(filePath, b, defaultFilePerm)
 		if err != nil {
 			fmt.Println(err)
 			return commandline.Terminate
@@ -135,7 +138,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 				return commandline.Terminate
 			}
 
-			err = os.WriteFile(filePath, b, 0750)
+			err = os.WriteFile(filePath, b, defaultFilePerm)
 
 			fmt.Println("[-] updated static scheduler successfully")
 		}

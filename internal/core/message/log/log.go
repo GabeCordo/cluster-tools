@@ -188,7 +188,10 @@ func (logger *Logger) Flush(source message.Source, destination any) error {
 
 	for _, l := range logs {
 		cleanedLog := strings.ReplaceAll(l, "\n", "")
-		file.WriteString(cleanedLog + "\n")
+		_, err = file.WriteString(cleanedLog + "\n")
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return nil

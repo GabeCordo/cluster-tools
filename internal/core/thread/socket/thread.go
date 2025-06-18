@@ -22,7 +22,7 @@ func (t *Thread) Setup() {
 	if certificatePath == "" {
 		t.Logger.Warnln("CTOOLS_TLS_CERT environment variable not set")
 	}
-
+	
 	keyPath := os.Getenv("CTOOLS_TLS_KEY")
 	if keyPath == "" {
 		t.Logger.Warnln("CTOOLS_TLS_KEY environment variable not set")
@@ -44,7 +44,10 @@ func (t *Thread) Setup() {
 		if err != nil {
 			panic(err)
 		}
-		t.tls.config = &tls.Config{Certificates: []tls.Certificate{cert}}
+		t.tls.config = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		}
 	}
 }
 

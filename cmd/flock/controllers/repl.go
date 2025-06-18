@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/GabeCordo/Flock/internal/core"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 type ReplController struct {
@@ -51,7 +52,7 @@ func (controller ReplController) Run(cli *commandline.CommandLine) commandline.T
 		return commandline.Terminate
 	}
 
-	err = os.WriteFile(DefaultCoreConfigFile, bytes, 0755)
+	err = os.WriteFile(DefaultCoreConfigFile, bytes, defaultFilePerm)
 	if err != nil {
 		fmt.Printf("[x] failed to modify the pipeline file at %s\n", DefaultCoreConfigFile)
 		return commandline.Terminate

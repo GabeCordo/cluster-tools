@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+const defaultFilePerm = 0600
+
 type Config struct {
 	Namespace string `json:"namespace"`
 	Core      string `json:"core"`
@@ -14,25 +16,25 @@ type Config struct {
 var (
 	userCacheDir, _        = os.UserCacheDir()
 	DefaultFrameworkFolder = userCacheDir + "/flock/"
-	CToolsFolder           = DefaultFrameworkFolder + "/tools/"
-	CToolsConfig           = CToolsFolder + "config.json"
+	ToolsFolder            = DefaultFrameworkFolder + "/tools/"
+	ToolsConfig            = ToolsFolder + "config.json"
 )
 
 func createConfig(config *Config) error {
 
 	if _, err := os.Stat(userCacheDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(DefaultFrameworkFolder, 0755); err != nil {
+		if err = os.MkdirAll(DefaultFrameworkFolder, defaultFilePerm); err != nil {
 			return err
 		}
 	}
 
-	if _, err := os.Stat(CToolsFolder); os.IsNotExist(err) {
-		if err = os.MkdirAll(CToolsFolder, 0755); err != nil {
+	if _, err := os.Stat(ToolsFolder); os.IsNotExist(err) {
+		if err = os.MkdirAll(ToolsFolder, defaultFilePerm); err != nil {
 			return err
 		}
 	}
 
-	f, err := os.OpenFile(CToolsConfig, os.O_RDWR|os.O_CREATE, 0755)
+	f, err := os.OpenFile(ToolsConfig, os.O_RDWR|os.O_CREATE, defaultFilePerm)
 	if err != nil {
 		return err
 	}
@@ -51,12 +53,12 @@ func createConfig(config *Config) error {
 
 func updateConfig(config *Config) error {
 
-	err := os.Truncate(CToolsConfig, 0)
+	err := os.Truncate(ToolsConfig, 0)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(CToolsConfig, os.O_RDWR, 0755)
+	f, err := os.OpenFile(ToolsConfig, os.O_RDWR, defaultFilePerm)
 	if err != nil {
 		return err
 	}
@@ -72,7 +74,7 @@ func updateConfig(config *Config) error {
 
 func getConfig(config *Config) error {
 
-	f, err := os.Open(CToolsConfig)
+	f, err := os.Open(ToolsConfig)
 	if err != nil {
 		panic(err)
 	}
