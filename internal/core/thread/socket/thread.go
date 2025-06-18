@@ -8,10 +8,10 @@ import (
 	"net"
 	"os"
 
-	common "github.com/GabeCordo/Flock/internal"
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	common "github.com/GabeCordo/Flock/internal/shared/async"
 )
 
 func (t *Thread) Setup() {
@@ -22,7 +22,7 @@ func (t *Thread) Setup() {
 	if certificatePath == "" {
 		t.Logger.Warnln("CTOOLS_TLS_CERT environment variable not set")
 	}
-	
+
 	keyPath := os.Getenv("CTOOLS_TLS_KEY")
 	if keyPath == "" {
 		t.Logger.Warnln("CTOOLS_TLS_KEY environment variable not set")
@@ -118,7 +118,7 @@ func (t *Thread) Start() {
 				Timeout:       t.config.Timeout,
 			}
 
-			cfg := &processor.Config{Identifier: id, RemoteAddr: c.RemoteAddr().String()}
+			cfg := &processor2.Config{Identifier: id, RemoteAddr: c.RemoteAddr().String()}
 			success, err := thread.AddProcessor(mandatory, cfg)
 			if !success {
 				t.Logger.Alertln("failed to register a new processor on the processor thread")
@@ -186,7 +186,7 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 						return
 					}
 
-					config := new(processor.ModuleConfig)
+					config := new(processor2.ModuleConfig)
 					err = json.Unmarshal(b, config)
 					if err != nil {
 						t.Logger.Warnln("received invalid data for Create Module")

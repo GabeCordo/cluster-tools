@@ -1,10 +1,11 @@
 package run
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"strconv"
 	"testing"
+
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 )
 
 var (

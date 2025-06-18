@@ -3,7 +3,7 @@ package cache
 import (
 	"testing"
 
-	"github.com/GabeCordo/Flock/internal/core/cache/local"
+	"github.com/GabeCordo/Flock/internal/core/component/cache/local"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 )

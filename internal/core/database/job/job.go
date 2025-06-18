@@ -2,8 +2,9 @@ package job
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"time"
+
+	"github.com/GabeCordo/Flock/internal/core/database"
 )
 
 // Dump

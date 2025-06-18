@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/GabeCordo/Flock/internal/core/message"
-	"github.com/GabeCordo/Flock/internal/core/message/log"
+	"github.com/GabeCordo/Flock/internal/core/component/message"
+	"github.com/GabeCordo/Flock/internal/core/component/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 

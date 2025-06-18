@@ -4,10 +4,10 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/nonce"
+	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -38,10 +38,10 @@ type Thread struct {
 
 	logger *logging.Logger
 
-	noncePool *nonce.Pool
+	noncePool *nonce2.Pool
 
-	processorResponseTable *nonce.ResponseTable
-	databaseResponseTable  *nonce.ResponseTable
+	processorResponseTable *nonce2.ResponseTable
+	databaseResponseTable  *nonce2.ResponseTable
 
 	jobDatabase database.Database
 
@@ -100,10 +100,10 @@ func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
 
-	t.noncePool = nonce.New(nonceMin, nonceMax)
+	t.noncePool = nonce2.New(nonceMin, nonceMax)
 
-	t.processorResponseTable = nonce.NewResponseTable()
-	t.databaseResponseTable = nonce.NewResponseTable()
+	t.processorResponseTable = nonce2.NewResponseTable()
+	t.databaseResponseTable = nonce2.NewResponseTable()
 
 	t.jobDatabase = jD
 

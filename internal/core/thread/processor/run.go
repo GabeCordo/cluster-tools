@@ -3,8 +3,8 @@ package processor
 import (
 	"errors"
 
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	"github.com/GabeCordo/Flock/internal/core/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -44,7 +44,7 @@ func (t *Thread) asyncGetPipelineFromDatabase(r *thread.Request) {
 	t.C11 <- databaseRequest
 }
 
-func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor.Processor, error) {
+func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor2.Processor, error) {
 
 	pp, ok := r.Data.([]pipeline.Pipeline)
 	if !ok {
@@ -56,7 +56,7 @@ func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor.Proc
 	}
 	p := pp[0]
 
-	processors := make(map[string]*processor.Processor)
+	processors := make(map[string]*processor2.Processor)
 
 	// validate that each functions module exists
 	for _, function := range p.Functions {
@@ -64,20 +64,20 @@ func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor.Proc
 		// we need to pick out a processor we want to assign the work to
 		moduleInstance, found := t.processorTable.GetModule(function.Module)
 		if !found {
-			return nil, processor.ModuleDoesNotExist
+			return nil, processor2.ModuleDoesNotExist
 		}
 
 		if !moduleInstance.IsMounted() {
-			return nil, processor.ModuleNotMounted
+			return nil, processor2.ModuleNotMounted
 		}
 
 		functionInstance, found := moduleInstance.GetFunction(function.Identifier)
 		if !found {
-			return nil, processor.FunctionDoesNotExist
+			return nil, processor2.FunctionDoesNotExist
 		}
 
 		if !functionInstance.IsMounted() {
-			return nil, processor.FunctionNotMounted
+			return nil, processor2.FunctionNotMounted
 		}
 
 		for _, p := range functionInstance.Processors {
@@ -91,7 +91,7 @@ func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor.Proc
 	}
 
 	// select one of the processors
-	var selectedProcessor *processor.Processor = nil
+	var selectedProcessor *processor2.Processor = nil
 	for _, p := range processors {
 
 		if selectedProcessor == nil {
@@ -109,7 +109,7 @@ func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor.Proc
 	return selectedProcessor, nil
 }
 
-func (t *Thread) asyncSendCreateRunToRunner(processor *processor.Processor, r *thread.Request) {
+func (t *Thread) asyncSendCreateRunToRunner(processor *processor2.Processor, r *thread.Request) {
 
 	request := thread.Request{
 		Action:      thread.CreateAction,

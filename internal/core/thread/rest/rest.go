@@ -2,9 +2,10 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"github.com/GabeCordo/Flock/internal/core/processor"
 	"net/http"
+
+	"github.com/GabeCordo/Flock/internal/core/component/processor"
+	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 )
 
 type Request struct {

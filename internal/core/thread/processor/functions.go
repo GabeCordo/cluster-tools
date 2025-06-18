@@ -2,10 +2,11 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/processor"
+
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 )
 
-func (t *Thread) syncGetFunctions(name string) ([]processor.FunctionData, error) {
+func (t *Thread) syncGetFunctions(name string) ([]processor2.FunctionData, error) {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
@@ -20,12 +21,12 @@ func (t *Thread) syncMountFunction(moduleName, clusterName string) error {
 
 	moduleInstance, found := t.processorTable.GetModule(moduleName)
 	if !found {
-		return processor.ModuleDoesNotExist
+		return processor2.ModuleDoesNotExist
 	}
 
 	clusterInstance, found := moduleInstance.GetFunction(clusterName)
 	if !found {
-		return processor.FunctionDoesNotExist
+		return processor2.FunctionDoesNotExist
 	}
 
 	clusterInstance.Mount()
@@ -39,12 +40,12 @@ func (t *Thread) syncUnMountFunction(moduleName, clusterName string) error {
 
 	moduleInstance, found := t.processorTable.GetModule(moduleName)
 	if !found {
-		return processor.ModuleDoesNotExist
+		return processor2.ModuleDoesNotExist
 	}
 
 	clusterInstance, found := moduleInstance.GetFunction(clusterName)
 	if !found {
-		return processor.FunctionDoesNotExist
+		return processor2.FunctionDoesNotExist
 	}
 
 	clusterInstance.Unmount()

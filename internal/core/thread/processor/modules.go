@@ -4,15 +4,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/GabeCordo/Flock/internal/core/processor"
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 )
 
-func (t *Thread) syncGetModules() []processor.ModuleData {
+func (t *Thread) syncGetModules() []processor2.ModuleData {
 
 	return t.processorTable.RegisteredModules()
 }
 
-func (t *Thread) syncAddModule(processorId uint64, cfg *processor.ModuleConfig) error {
+func (t *Thread) syncAddModule(processorId uint64, cfg *processor2.ModuleConfig) error {
 
 	if !cfg.Verify() {
 		return errors.New("module pipeline is not valid")
@@ -74,7 +74,7 @@ func (t *Thread) syncMountModule(name string) error {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
-		return processor.ModuleDoesNotExist
+		return processor2.ModuleDoesNotExist
 	}
 
 	instance.Mount()
@@ -88,7 +88,7 @@ func (t *Thread) syncUnMountModule(name string) error {
 
 	instance, found := t.processorTable.GetModule(name)
 	if !found {
-		return processor.ModuleDoesNotExist
+		return processor2.ModuleDoesNotExist
 	}
 
 	instance.Unmount()

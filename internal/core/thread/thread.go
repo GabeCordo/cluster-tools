@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/nonce"
+	"github.com/GabeCordo/Flock/internal/shared/nonce"
 )
 
 var InternalError = errors.New("there was an internal error in the system")

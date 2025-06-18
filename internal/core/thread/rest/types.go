@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/nonce"
+	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -41,13 +41,13 @@ type Thread struct {
 	C22 chan<- thread.Request  // Core is sending requests to the Messenger
 	C23 <-chan thread.Response // Core is receiving responses from the Messenger
 
-	noncePool *nonce.Pool
+	noncePool *nonce2.Pool
 
-	ProcessorResponseTable *nonce.ResponseTable
-	DatabaseResponseTable  *nonce.ResponseTable
-	SchedulerResponseTable *nonce.ResponseTable
-	MessengerResponseTable *nonce.ResponseTable
-	CacheResponseTable     *nonce.ResponseTable
+	ProcessorResponseTable *nonce2.ResponseTable
+	DatabaseResponseTable  *nonce2.ResponseTable
+	SchedulerResponseTable *nonce2.ResponseTable
+	MessengerResponseTable *nonce2.ResponseTable
+	CacheResponseTable     *nonce2.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
@@ -109,12 +109,12 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 8")
 	}
 
-	t.noncePool = nonce.New(nonceMin, nonceMax)
-	t.ProcessorResponseTable = nonce.NewResponseTable()
-	t.DatabaseResponseTable = nonce.NewResponseTable()
-	t.SchedulerResponseTable = nonce.NewResponseTable()
-	t.MessengerResponseTable = nonce.NewResponseTable()
-	t.CacheResponseTable = nonce.NewResponseTable()
+	t.noncePool = nonce2.New(nonceMin, nonceMax)
+	t.ProcessorResponseTable = nonce2.NewResponseTable()
+	t.DatabaseResponseTable = nonce2.NewResponseTable()
+	t.SchedulerResponseTable = nonce2.NewResponseTable()
+	t.MessengerResponseTable = nonce2.NewResponseTable()
+	t.CacheResponseTable = nonce2.NewResponseTable()
 
 	t.server = new(http.Server)
 

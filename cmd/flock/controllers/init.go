@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/GabeCordo/Flock/internal/core"
-	"github.com/GabeCordo/Flock/internal/terminal"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
 )

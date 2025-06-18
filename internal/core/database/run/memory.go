@@ -2,10 +2,11 @@ package run
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"strconv"
 	"sync"
+
+	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 )
 
 type LocalDatabase struct {

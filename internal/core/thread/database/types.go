@@ -2,11 +2,12 @@ package database
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
-	"sync"
 )
 
 var StoreTypeMismatch = errors.New("the received type and desired database type do not match")

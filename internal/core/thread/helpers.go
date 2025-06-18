@@ -4,21 +4,21 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/GabeCordo/Flock/internal/core/component/message/log"
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"github.com/GabeCordo/Flock/internal/core/message/log"
-	"github.com/GabeCordo/Flock/internal/core/processor"
-	"github.com/GabeCordo/Flock/internal/nonce"
+	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 type Mandatory struct {
 	Pipe          chan<- Request
-	ResponseTable *nonce.ResponseTable
-	NoncePool     *nonce.Pool
+	ResponseTable *nonce2.ResponseTable
+	NoncePool     *nonce2.Pool
 	Timeout       float64
 }
 
@@ -35,7 +35,7 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 	}
 	mandatory.Pipe <- databaseRequest
 
-	data, didTimeout := nonce.SendAndWait(
+	data, didTimeout := nonce2.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return pipeline.Pipeline{}, false
@@ -61,7 +61,7 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 	}
 	mandatory.Pipe <- databaseRequest
 
-	data, didTimeout := nonce.SendAndWait(
+	data, didTimeout := nonce2.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return nil, false
@@ -89,7 +89,7 @@ func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeli
 	}
 	mandatory.Pipe <- databaseRequest
 
-	data, didTimeout := nonce.SendAndWait(
+	data, didTimeout := nonce2.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return multithreaded.NoResponseReceived
@@ -118,7 +118,7 @@ func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipe
 	}
 	mandatory.Pipe <- databaseRequest
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false
 	}
@@ -140,7 +140,7 @@ func DeletePipelineInDatabase(mandatory Mandatory, namespaceName, pipelineName s
 	}
 	mandatory.Pipe <- databaseRequest
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false
 	}
@@ -149,7 +149,7 @@ func DeletePipelineInDatabase(mandatory Mandatory, namespaceName, pipelineName s
 	return databaseResponse.Success
 }
 
-func GetProcessors(mandatory Mandatory) ([]*processor.Processor, bool) {
+func GetProcessors(mandatory Mandatory) ([]*processor2.Processor, bool) {
 
 	request := Request{
 		Action: GetAction,
@@ -159,7 +159,7 @@ func GetProcessors(mandatory Mandatory) ([]*processor.Processor, bool) {
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return nil, false
 	}
@@ -167,13 +167,13 @@ func GetProcessors(mandatory Mandatory) ([]*processor.Processor, bool) {
 	response := (data).(Response)
 
 	if response.Success {
-		return (response.Data).([]*processor.Processor), true
+		return (response.Data).([]*processor2.Processor), true
 	} else {
 		return nil, false
 	}
 }
 
-func AddProcessor(mandatory Mandatory, cfg *processor.Config) (bool, error) {
+func AddProcessor(mandatory Mandatory, cfg *processor2.Config) (bool, error) {
 
 	request := Request{
 		Action: CreateAction,
@@ -184,7 +184,7 @@ func AddProcessor(mandatory Mandatory, cfg *processor.Config) (bool, error) {
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false, errors.New("did not receive a response from the processor thread")
 	}
@@ -193,7 +193,7 @@ func AddProcessor(mandatory Mandatory, cfg *processor.Config) (bool, error) {
 	return response.Success, response.Error
 }
 
-func DeleteProcessor(mandatory Mandatory, cfg *processor.Config) error {
+func DeleteProcessor(mandatory Mandatory, cfg *processor2.Config) error {
 
 	request := Request{
 		Action: DeleteAction,
@@ -204,9 +204,9 @@ func DeleteProcessor(mandatory Mandatory, cfg *processor.Config) error {
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nonce.NoResponseReceived
+		return nonce2.NoResponseReceived
 	}
 
 	response := (data).(Response)
@@ -224,7 +224,7 @@ func MountFunction(mandatory Mandatory, moduleName, functionName string) (succes
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false
 	}
@@ -244,7 +244,7 @@ func UnmountFunction(mandatory Mandatory, moduleName, functionName string) (succ
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false
 	}
@@ -253,7 +253,7 @@ func UnmountFunction(mandatory Mandatory, moduleName, functionName string) (succ
 	return provisionerResponse.Success
 }
 
-func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor.FunctionData, success bool) {
+func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor2.FunctionData, success bool) {
 
 	request := Request{
 		Action:      GetAction,
@@ -264,7 +264,7 @@ func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor.
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return nil, false
 	}
@@ -275,7 +275,7 @@ func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor.
 		return nil, false
 	}
 
-	return (provisionerResponse.Data).([]processor.FunctionData), true
+	return (provisionerResponse.Data).([]processor2.FunctionData), true
 }
 
 func CreateRun(mandatory Mandatory,
@@ -290,10 +290,10 @@ func CreateRun(mandatory Mandatory,
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 
 	if didTimeout {
-		return 0, nonce.NoResponseReceived
+		return 0, nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -321,9 +321,9 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nil, nonce.NoResponseReceived
+		return nil, nonce2.NoResponseReceived
 	}
 
 	response := (data).(Response)
@@ -357,9 +357,9 @@ func StopRun(mandatory Mandatory, id uint64) error {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nonce.NoResponseReceived
+		return nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -379,7 +379,7 @@ func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (en
 	}
 	mandatory.Pipe <- databaseRequest
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return nil, false
 	}
@@ -398,7 +398,7 @@ func ShutdownCore(pipe chan<- InterruptEvent) error {
 	return nil
 }
 
-func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleData) {
+func GetModules(mandatory Mandatory) (success bool, modules []processor2.ModuleData) {
 
 	request := Request{
 		Action: GetAction,
@@ -408,7 +408,7 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleDa
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false, nil
 	}
@@ -419,10 +419,10 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleDa
 		return false, nil
 	}
 
-	return true, (provisionerResponse.Data).([]processor.ModuleData)
+	return true, (provisionerResponse.Data).([]processor2.ModuleData)
 }
 
-func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *processor.ModuleConfig) {
+func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *processor2.ModuleConfig) {
 
 	request := Request{
 		Action:      CreateAction,
@@ -446,7 +446,7 @@ func MountModule(mandatory Mandatory, moduleName string) (bool, error) {
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false, errors.New("did not receive a response from the processor thread")
 	}
@@ -467,7 +467,7 @@ func UnmountModule(mandatory Mandatory, moduleName string) (bool, error) {
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
 		return false, errors.New("did not receive a response from the processor thread")
 	}
@@ -488,10 +488,10 @@ func DeleteModule(mandatory Mandatory, processorId uint64, moduleName string) (b
 	}
 	mandatory.Pipe <- request
 
-	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 
 	if didTimeout {
-		return false, nonce.NoResponseReceived
+		return false, nonce2.NoResponseReceived
 	}
 
 	response := (data).(Response)
@@ -511,7 +511,7 @@ func FetchFromCache(mandatory Mandatory, key string) (value any, found bool) {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 
 	if didTimeout {
 		return nil, false
@@ -535,7 +535,7 @@ func StoreInCache(mandatory Mandatory, data any, expiry float64) (identifier str
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 
 	if didTimeout {
 		success = false
@@ -562,7 +562,7 @@ func SwapInCache(mandatory Mandatory, key string, data any) (success bool) {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 
 	if didTimeout {
 		return false
@@ -588,9 +588,9 @@ func Log(mandatory Mandatory, log *log.Log) error {
 
 	//HOTFIX : too long to response to the log request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nonce.NoResponseReceived
+		return nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -608,9 +608,9 @@ func GetJobs(mandatory Mandatory, filter *database.Filter) ([]job.Job, error) {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nil, nonce.NoResponseReceived
+		return nil, nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -628,9 +628,9 @@ func CreateJob(mandatory Mandatory, job *job.Job) error {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nonce.NoResponseReceived
+		return nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -647,9 +647,9 @@ func DeleteJob(mandatory Mandatory, filter *database.Filter) error {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nonce.NoResponseReceived
+		return nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -665,9 +665,9 @@ func JobQueue(mandatory Mandatory) ([]job.Job, error) {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nil, nonce.NoResponseReceived
+		return nil, nonce2.NoResponseReceived
 	}
 
 	response := (rsp).(Response)
@@ -683,9 +683,9 @@ func GetSubscribers(mandatory Mandatory) ([]string, error) {
 	}
 	mandatory.Pipe <- request
 
-	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	rsp, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return nil, nonce.NoResponseReceived
+		return nil, nonce2.NoResponseReceived
 	}
 
 	response, ok := (rsp).(Response)

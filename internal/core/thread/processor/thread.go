@@ -3,7 +3,7 @@ package processor
 import (
 	"errors"
 
-	"github.com/GabeCordo/Flock/internal/core/processor"
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -109,13 +109,13 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.ProcessorRecord:
 				{
-					cfg := (request.Data).(processor.Config)
+					cfg := (request.Data).(processor2.Config)
 					response.Error = t.synchAddProcessor(&cfg)
 					t.sendResponse(request, response)
 				}
 			case thread.ModuleRecord:
 				{
-					cfg := (request.Data).(processor.ModuleConfig)
+					cfg := (request.Data).(processor2.ModuleConfig)
 					response.Error = t.syncAddModule(request.Identifiers.Processor, &cfg)
 					t.sendResponse(request, response)
 				}
@@ -136,7 +136,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.ProcessorRecord:
 				{
-					cfg := (request.Data).(processor.Config)
+					cfg := (request.Data).(processor2.Config)
 					response.Error = t.syncDeleteProcessor(&cfg)
 					t.sendResponse(request, response)
 				}
@@ -250,7 +250,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 							return
 						}
 
-						var p *processor.Processor
+						var p *processor2.Processor
 						p, oResponse.Error = t.syncFindCandidateProcessor(iResponse)
 						if oResponse.Error == nil {
 							t.requestStore[iRequest.Nonce] = *iRequest

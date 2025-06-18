@@ -1,7 +1,7 @@
 package processor
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/core/component/processor"
 )
 
 func (t *Thread) syncGetProcessors() []*processor.Processor {

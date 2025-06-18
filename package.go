@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/processor/config"
-	provisionerCmp "github.com/GabeCordo/Flock/internal/processor/provision"
-	"github.com/GabeCordo/Flock/internal/processor/threads"
-	"github.com/GabeCordo/Flock/internal/processor/threads/provisioner"
-	"github.com/GabeCordo/Flock/internal/processor/threads/socket"
+	"github.com/GabeCordo/Flock/internal/processor"
+	provisionerCmp "github.com/GabeCordo/Flock/internal/processor/component/provision"
+	"github.com/GabeCordo/Flock/internal/processor/thread"
+	"github.com/GabeCordo/Flock/internal/processor/thread/provisioner"
+	"github.com/GabeCordo/Flock/internal/processor/thread/socket"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -82,15 +82,15 @@ type Processor struct {
 	}
 
 	channels struct {
-		interrupt chan threads.InterruptEvent
-		c0        chan threads.SocketRequest
-		c1        chan threads.ProvisionerRequest
-		c2        chan threads.ProvisionerResponse
+		interrupt chan thread.InterruptEvent
+		c0        chan thread.SocketRequest
+		c1        chan thread.ProvisionerRequest
+		c2        chan thread.ProvisionerResponse
 	}
 
 	provisioner *provisionerCmp.Provisioner
 
-	config *config.Config
+	config *processor.Config
 	logger *logging.Logger
 
 	modules map[string]*Module
@@ -110,30 +110,30 @@ func New() (*Processor, error) {
 
 	// the executable is in the same folder as the config file
 	fp := filepath.Join(workingDir, "processor.toml")
-	instance.config, err = config.Load(fp)
+	instance.config, err = processor.Load(fp)
 
 	// the executable is in the /bin or /cmd folder
 	fp = filepath.Join(workingDir, "..", "processor.toml")
 	if err != nil {
-		instance.config, err = config.Load(fp)
+		instance.config, err = processor.Load(fp)
 	}
 
 	// the executable is in the /cmd/binary-name folder
 	fp = filepath.Join(workingDir, "..", "..", "processor.toml")
 	if err != nil {
-		instance.config, err = config.Load(fp)
+		instance.config, err = processor.Load(fp)
 	}
 
 	if err != nil {
-		instance.config = config.NewConfig("debug")
+		instance.config = processor.NewConfig("debug")
 	}
 
 	instance.config.Processor.StandaloneMode = true
 
-	instance.channels.interrupt = make(chan threads.InterruptEvent, 1)
-	instance.channels.c0 = make(chan threads.SocketRequest, 10)
-	instance.channels.c1 = make(chan threads.ProvisionerRequest, 10)
-	instance.channels.c2 = make(chan threads.ProvisionerResponse, 10)
+	instance.channels.interrupt = make(chan thread.InterruptEvent, 1)
+	instance.channels.c0 = make(chan thread.SocketRequest, 10)
+	instance.channels.c1 = make(chan thread.ProvisionerRequest, 10)
+	instance.channels.c2 = make(chan thread.ProvisionerResponse, 10)
 
 	socketConfig := &socket.Config{}
 	instance.config.FillSocketConfig(socketConfig)
@@ -240,10 +240,10 @@ func (p *Processor) Runtime() {
 	select {
 	case <-sigs:
 		fmt.Println("system sent SIGTERM or SIGINT signal")
-		p.channels.interrupt <- threads.Panic
+		p.channels.interrupt <- thread.Panic
 	case interrupt := <-p.channels.interrupt:
 		switch interrupt {
-		case threads.Panic:
+		case thread.Panic:
 			p.logger.Printf("[IO] %s\n", " encountered panic")
 		default: // shutdown
 			p.logger.Printf("[IO] %s\n", " shutting down")

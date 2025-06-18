@@ -2,10 +2,11 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/cache"
+	"sync"
+
+	"github.com/GabeCordo/Flock/internal/core/component/cache"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/logging"
-	"sync"
 )
 
 type Config struct {

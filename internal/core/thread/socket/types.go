@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/nonce"
+	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -37,11 +37,11 @@ type Thread struct {
 		c10 chan<- thread.Response // socket_thread is sending rsp to the runner_thread
 	}
 
-	noncePool *nonce.Pool
+	noncePool *nonce2.Pool
 
 	responseTables struct {
-		processor *nonce.ResponseTable
-		runner    *nonce.ResponseTable
+		processor *nonce2.ResponseTable
+		runner    *nonce2.ResponseTable
 	}
 
 	flags struct {
@@ -108,10 +108,10 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 
 	t.connections = make(map[uint64]net.Conn)
 
-	t.noncePool = nonce.New(nonceMin, nonceMax)
+	t.noncePool = nonce2.New(nonceMin, nonceMax)
 
-	t.responseTables.processor = nonce.NewResponseTable()
-	t.responseTables.runner = nonce.NewResponseTable()
+	t.responseTables.processor = nonce2.NewResponseTable()
+	t.responseTables.runner = nonce2.NewResponseTable()
 
 	return t, nil
 }

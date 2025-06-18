@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/GabeCordo/Flock/internal/core/component/processor"
+	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/Flock/internal/core/processor"
-	scheduler "github.com/GabeCordo/Flock/internal/core/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/toolchain/multithreaded"
 )
@@ -15,7 +15,7 @@ import (
 func (t *Thread) Setup() {
 
 	var err error
-	if t.Scheduler, err = scheduler.New(t.jobDatabase); err != nil {
+	if t.Scheduler, err = job2.New(t.jobDatabase); err != nil {
 		panic(err)
 	}
 
@@ -50,10 +50,10 @@ func (t *Thread) Start() {
 
 	// SCHEDULER THREADS
 
-	go scheduler.Watch(t.Scheduler)
+	go job2.Watch(t.Scheduler)
 
 	go func() {
-		err := scheduler.Loop(t.Scheduler, func(jb job.Job) error {
+		err := job2.Loop(t.Scheduler, func(jb job.Job) error {
 
 			// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
 			mandatory := thread.Mandatory{
