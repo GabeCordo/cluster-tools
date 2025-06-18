@@ -59,6 +59,7 @@ func (t *Thread) Start() {
 			mandatory := thread.Mandatory{
 				Pipe:          t.C18,
 				ResponseTable: t.processorResponseTable,
+				NoncePool:     t.noncePool,
 				Timeout:       t.config.Timeout,
 			}
 			_, err := thread.CreateRun(mandatory, jb.Namespace, jb.Pipeline, jb.Metadata)
