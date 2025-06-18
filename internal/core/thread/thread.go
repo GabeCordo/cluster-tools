@@ -3,6 +3,8 @@ package thread
 import (
 	"errors"
 	"sync"
+
+	"github.com/GabeCordo/Flock/internal/nonce"
 )
 
 var InternalError = errors.New("there was an internal error in the system")
@@ -77,7 +79,7 @@ type Request struct {
 	Data        any
 	Source      Module
 	Caller      RequestCaller
-	Nonce       uint32
+	Nonce       nonce.Nonce
 }
 
 type Response struct {
@@ -87,7 +89,7 @@ type Response struct {
 	Error   error
 	Data    any
 	Source  Module
-	Nonce   uint32
+	Nonce   nonce.Nonce
 }
 
 type ProcessorResponseData struct {

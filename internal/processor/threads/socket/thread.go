@@ -250,8 +250,14 @@ func (thread *Thread) ProcessSocketRequest(request *common.Request) {
 						return
 					}
 
-					err = threads.RunProvision(thread.channels.C1, thread.ProvisionerResponseTable,
-						runRequest.Namespace, runRequest.Id, runRequest.Config, runRequest.Metadata, *thread.Config.Timeout)
+					mandatory := threads.ProvisionerMandatory{
+						Pipe:          thread.channels.C1,
+						ResponseTable: thread.ProvisionerResponseTable,
+						NoncePool:     thread.noncePool,
+						Timeout:       *thread.Config.Timeout,
+					}
+					err = threads.RunStart(mandatory,
+						runRequest.Namespace, runRequest.Id, runRequest.Config, runRequest.Metadata)
 					if err != nil {
 						thread.logger.Warnln("failed to send run provision to provisioner")
 					}
@@ -273,8 +279,13 @@ func (thread *Thread) ProcessSocketRequest(request *common.Request) {
 						return
 					}
 
-					err := threads.RunStop(thread.channels.C1, thread.ProvisionerResponseTable,
-						uint64(id), *thread.Config.Timeout)
+					mandatory := threads.ProvisionerMandatory{
+						Pipe:          thread.channels.C1,
+						ResponseTable: thread.ProvisionerResponseTable,
+						NoncePool:     thread.noncePool,
+						Timeout:       *thread.Config.Timeout,
+					}
+					err := threads.RunStop(mandatory, uint64(id))
 					if err != nil {
 						thread.logger.Warnln("failed to stop ongoing run")
 					}

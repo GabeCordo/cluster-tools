@@ -111,6 +111,7 @@ func (t *Thread) Start() {
 			mandatory := thread.Mandatory{
 				Pipe:          t.channels.c7,
 				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
 				Timeout:       t.config.Timeout,
 			}
 
@@ -192,6 +193,7 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 					mandatory := thread.Mandatory{
 						Pipe:          t.channels.c7,
 						ResponseTable: t.responseTables.processor,
+						NoncePool:     t.noncePool,
 						Timeout:       t.config.Timeout,
 					}
 
@@ -231,6 +233,7 @@ func (t *Thread) HandleSocketRequest(processorId uint64, request *common.Request
 					mandatory := thread.Mandatory{
 						Pipe:          t.channels.c7,
 						ResponseTable: t.responseTables.processor,
+						NoncePool:     t.noncePool,
 						Timeout:       t.config.Timeout,
 					}
 

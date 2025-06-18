@@ -3,7 +3,6 @@ package provisioner
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/GabeCordo/Flock/internal/processor/threads"
@@ -47,7 +46,7 @@ func (thread *Thread) registerModulesToCore() error {
 		thread.C0 <- threads.SocketRequest{
 			Action: threads.SocketModuleAdd,
 			Data:   cfg,
-			Nonce:  rand.Uint32(),
+			Nonce:  thread.noncePool.Next(),
 		}
 
 	}

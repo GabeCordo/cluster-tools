@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/GabeCordo/Flock/internal/core/processor"
+	"github.com/GabeCordo/Flock/internal/nonce"
 	"github.com/GabeCordo/Flock/internal/processor/threads"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 // Frontend Thread
+
+const nonceMin = 0
+const nonceMax = 1000000
 
 const (
 	MaxNumberOfRetries int = 100
@@ -48,7 +51,8 @@ type Thread struct {
 		useTLS bool
 	}
 
-	ProvisionerResponseTable *multithreaded.ResponseTable
+	noncePool                *nonce.Pool
+	ProvisionerResponseTable *nonce.ResponseTable
 
 	tls struct {
 		pool *x509.CertPool
@@ -101,7 +105,8 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 	}
 	thread.Config = cfg
 
-	thread.ProvisionerResponseTable = multithreaded.NewResponseTable()
+	thread.noncePool = nonce.New(nonceMin, nonceMax)
+	thread.ProvisionerResponseTable = nonce.NewResponseTable()
 
 	thread.logger.SetColour(logging.Green)
 

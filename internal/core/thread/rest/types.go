@@ -3,12 +3,16 @@ package rest
 import (
 	"context"
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
 	"net/http"
 	"sync"
+
+	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/nonce"
+	"github.com/GabeCordo/toolchain/logging"
 )
+
+const nonceMin = 0
+const nonceMax = 262114
 
 // Frontend Thread
 
@@ -37,11 +41,13 @@ type Thread struct {
 	C22 chan<- thread.Request  // Core is sending requests to the Messenger
 	C23 <-chan thread.Response // Core is receiving responses from the Messenger
 
-	ProcessorResponseTable *multithreaded.ResponseTable
-	DatabaseResponseTable  *multithreaded.ResponseTable
-	SchedulerResponseTable *multithreaded.ResponseTable
-	MessengerResponseTable *multithreaded.ResponseTable
-	CacheResponseTable     *multithreaded.ResponseTable
+	noncePool *nonce.Pool
+
+	ProcessorResponseTable *nonce.ResponseTable
+	DatabaseResponseTable  *nonce.ResponseTable
+	SchedulerResponseTable *nonce.ResponseTable
+	MessengerResponseTable *nonce.ResponseTable
+	CacheResponseTable     *nonce.ResponseTable
 
 	server    *http.Server
 	mux       *http.ServeMux
@@ -103,11 +109,12 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 8")
 	}
 
-	t.ProcessorResponseTable = multithreaded.NewResponseTable()
-	t.DatabaseResponseTable = multithreaded.NewResponseTable()
-	t.SchedulerResponseTable = multithreaded.NewResponseTable()
-	t.MessengerResponseTable = multithreaded.NewResponseTable()
-	t.CacheResponseTable = multithreaded.NewResponseTable()
+	t.noncePool = nonce.New(nonceMin, nonceMax)
+	t.ProcessorResponseTable = nonce.NewResponseTable()
+	t.DatabaseResponseTable = nonce.NewResponseTable()
+	t.SchedulerResponseTable = nonce.NewResponseTable()
+	t.MessengerResponseTable = nonce.NewResponseTable()
+	t.CacheResponseTable = nonce.NewResponseTable()
 
 	t.server = new(http.Server)
 

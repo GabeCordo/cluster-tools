@@ -2,13 +2,17 @@ package scheduler
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/nonce"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
-	"sync"
 )
+
+const nonceMin = 262114
+const nonceMax = 524228 // (base) 262114 + 262114 (offset)
 
 type Config struct {
 	Debug           bool
@@ -34,8 +38,10 @@ type Thread struct {
 
 	logger *logging.Logger
 
-	processorResponseTable *multithreaded.ResponseTable
-	databaseResponseTable  *multithreaded.ResponseTable
+	noncePool *nonce.Pool
+
+	processorResponseTable *nonce.ResponseTable
+	databaseResponseTable  *nonce.ResponseTable
 
 	jobDatabase database.Database
 
@@ -94,8 +100,10 @@ func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
 
-	t.processorResponseTable = multithreaded.NewResponseTable()
-	t.databaseResponseTable = multithreaded.NewResponseTable()
+	t.noncePool = nonce.New(nonceMin, nonceMax)
+
+	t.processorResponseTable = nonce.NewResponseTable()
+	t.databaseResponseTable = nonce.NewResponseTable()
 
 	t.jobDatabase = jD
 

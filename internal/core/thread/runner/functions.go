@@ -2,7 +2,6 @@ package runner
 
 import (
 	"errors"
-	"math/rand"
 	"strconv"
 
 	"github.com/GabeCordo/Flock/internal/core/database"
@@ -172,7 +171,12 @@ func (t *Thread) asyncCloseMessengerForRun(request *thread.Request) {
 	t.channels.C17 <- msgrRequest
 }
 
-func (t *Thread) logRun(l *log.Log) error {
+func (t *Thread) asyncLogRun(request *thread.Request) error {
+
+	l, ok := (request.Data).(*log.Log)
+	if !ok {
+		return errors.New("expected a *log.Log type in the Data field")
+	}
 
 	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(l.Id, 10)})
 
@@ -196,7 +200,7 @@ func (t *Thread) logRun(l *log.Log) error {
 		logType = thread.DefaultLogRecord
 	}
 
-	request := thread.Request{
+	messengerRequest := thread.Request{
 		Action: thread.LogAction,
 		Type:   logType,
 		Identifiers: thread.RequestIdentifiers{
@@ -205,16 +209,16 @@ func (t *Thread) logRun(l *log.Log) error {
 			Supervisor: instance.GetId(),
 		},
 		Data:  l.Message,
-		Nonce: rand.Uint32(),
+		Nonce: request.Nonce,
 	}
-	t.channels.C17 <- request
+	t.channels.C17 <- messengerRequest
 
 	return nil
 }
 
-func (t *Thread) asyncStopRun(id uint64) error {
+func (t *Thread) asyncStopRun(request *thread.Request) error {
 
-	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(id, 10)})
+	results := t.registry.Get(database.Filter{Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10)})
 	if len(results) != 1 {
 		return errors.New("no run found with the provided id")
 	}
@@ -222,16 +226,16 @@ func (t *Thread) asyncStopRun(id uint64) error {
 	r := (results[0]).(*run.Run)
 	r.Status = run.Cancelled
 
-	request := thread.Request{
+	socketRequest := thread.Request{
 		Action: thread.DeleteAction,
 		Type:   thread.RunRecord,
 		Identifiers: thread.RequestIdentifiers{
-			Supervisor: id,
+			Supervisor: request.Identifiers.Supervisor,
 			Processor:  r.Processor,
 		},
-		Nonce: rand.Uint32(),
+		Nonce: request.Nonce,
 	}
+	t.channels.C9 <- socketRequest
 
-	t.channels.C9 <- request
 	return nil
 }

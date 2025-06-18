@@ -2,7 +2,6 @@ package provisioner
 
 import (
 	"errors"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -87,7 +86,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 				thread.C0 <- threads.SocketRequest{
 					Action: threads.SocketRunUpdate,
 					Data:   r,
-					Nonce:  rand.Uint32(),
+					Nonce:  thread.noncePool.Next(),
 				}
 
 				m.Unlock()
@@ -114,7 +113,7 @@ func (thread *Thread) provisionRun(request *threads.ProvisionerRequest) error {
 		thread.C0 <- threads.SocketRequest{
 			Action: threads.SocketRunUpdate,
 			Data:   r,
-			Nonce:  rand.Uint32(),
+			Nonce:  thread.noncePool.Next(),
 		}
 
 		m.Unlock()

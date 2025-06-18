@@ -7,9 +7,12 @@ import (
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/nonce"
 	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
+
+const nonceMin = 524228
+const nonceMax = 786342 // (base) 524228 + 262114 (offset)
 
 type Config struct {
 	Debug bool
@@ -34,9 +37,11 @@ type Thread struct {
 		c10 chan<- thread.Response // socket_thread is sending rsp to the runner_thread
 	}
 
+	noncePool *nonce.Pool
+
 	responseTables struct {
-		processor *multithreaded.ResponseTable
-		runner    *multithreaded.ResponseTable
+		processor *nonce.ResponseTable
+		runner    *nonce.ResponseTable
 	}
 
 	flags struct {
@@ -103,8 +108,10 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 
 	t.connections = make(map[uint64]net.Conn)
 
-	t.responseTables.processor = multithreaded.NewResponseTable()
-	t.responseTables.runner = multithreaded.NewResponseTable()
+	t.noncePool = nonce.New(nonceMin, nonceMax)
+
+	t.responseTables.processor = nonce.NewResponseTable()
+	t.responseTables.runner = nonce.NewResponseTable()
 
 	return t, nil
 }
