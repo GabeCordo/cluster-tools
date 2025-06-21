@@ -54,6 +54,7 @@ func (database *LocalJobDatabase) Load(path string) error {
 			return nil
 		}
 
+		path = filepath.Clean(path)
 		b, err := os.ReadFile(path)
 		if err != nil {
 			return err

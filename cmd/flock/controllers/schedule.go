@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -83,6 +84,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 		return commandline.Terminate
 	} else if err == nil {
 		fmt.Println("[-] scheduler file exists ... pulling data")
+		filePath = filepath.Clean(filePath)
 		if b, err := os.ReadFile(filePath); err == nil {
 			if err = yaml.Unmarshal(b, dump); err != nil {
 				fmt.Println(err)

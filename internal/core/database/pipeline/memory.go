@@ -30,6 +30,8 @@ func NewLocalPipelineDatabase() *LocalPipelineDatabase {
 
 func (db *LocalPipelineDatabase) Save(path string) error {
 
+	path = filepath.Clean(path)
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("path doesn't exist or isn't a directory")
 	}
@@ -74,6 +76,7 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 		for identifier, config := range configs {
 			configBytes, _ := json.Marshal(config)
 			configPath := modulePath + "/" + identifier + ".json"
+			configPath = filepath.Clean(configPath)
 			f, _ := os.Create(configPath)
 			_, err := f.Write(configBytes)
 			if err != nil {
@@ -128,6 +131,7 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 		}
 		moduleIdentifier := tmp[len(tmp)-2]
 
+		curPath = filepath.Clean(curPath)
 		f, err := os.Open(curPath)
 		if err != nil {
 			return err

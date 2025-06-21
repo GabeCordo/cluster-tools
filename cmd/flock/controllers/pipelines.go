@@ -68,6 +68,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	// pull all the pipline files from the paths we have collected
 	for _, pipelinePath := range pipelinePaths {
 
+		pipelinePath = filepath.Clean(pipelinePath)
 		f, err := os.Open(pipelinePath)
 		if err != nil {
 			fmt.Println(err)

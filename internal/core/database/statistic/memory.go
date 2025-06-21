@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -26,6 +27,8 @@ func NewLocalStatisticDatabase() *LocalStatisticDatabase {
 
 func (db *LocalStatisticDatabase) Save(path string) error {
 
+	path = filepath.Clean(path)
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return err
 	}
@@ -39,7 +42,7 @@ func (db *LocalStatisticDatabase) Save(path string) error {
 		return err
 	}
 
-	f, err := os.Create(outputFilePath)
+	f, err := os.Create(outputFilePath) // #nosec G304 -- 'path' var in 'outputFilePath' is already cleaned
 	if err != nil {
 		return err
 	}

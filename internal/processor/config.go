@@ -2,6 +2,7 @@ package processor
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/GabeCordo/Flock/internal/processor/thread/provisioner"
@@ -42,6 +43,7 @@ type Config struct {
 
 func Load(path string) (*Config, error) {
 
+	path = filepath.Clean(path)
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err

@@ -34,7 +34,7 @@ func createConfig(config *Config) error {
 		}
 	}
 
-	f, err := os.OpenFile(ToolsConfig, os.O_RDWR|os.O_CREATE, defaultFilePerm)
+	f, err := os.OpenFile(ToolsConfig, os.O_RDWR|os.O_CREATE, defaultFilePerm) // #nosec G304 -- Constant is not user controlled
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func updateConfig(config *Config) error {
 		return err
 	}
 
-	f, err := os.OpenFile(ToolsConfig, os.O_RDWR, defaultFilePerm)
+	f, err := os.OpenFile(ToolsConfig, os.O_RDWR, defaultFilePerm) // #nosec G304 -- Constant is not user controlled
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func updateConfig(config *Config) error {
 
 func getConfig(config *Config) error {
 
-	f, err := os.Open(ToolsConfig)
+	f, err := os.Open(ToolsConfig) // #nosec G304 -- Constant is not user controlled
 	if err != nil {
 		panic(err)
 	}

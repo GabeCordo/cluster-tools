@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
@@ -60,6 +61,9 @@ func (t *Thread) Setup() {
 	} else {
 		t.flags.useTLS = true
 	}
+
+	// clean the file path provided to the program in CTOOLS_TLS_CERT
+	certificatePath = filepath.Clean(certificatePath)
 
 	if t.flags.useTLS {
 		cert, err := os.ReadFile(certificatePath)

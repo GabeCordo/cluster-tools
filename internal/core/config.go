@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/thread/cache"
@@ -139,6 +140,7 @@ func (config *Config) ToYAML(path string) error {
 		return err
 	}
 
+	path = filepath.Clean(path)
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -240,6 +242,7 @@ func YAMLToETLConfig(config *Config, path string) error {
 		return err
 	}
 
+	path = filepath.Clean(path)
 	f, err := os.Open(path)
 	if err != nil {
 		return err

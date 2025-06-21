@@ -117,7 +117,7 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 			terminal.Green, terminal.Reset, DefaultConfigsFolder)
 	}
 
-	dst, err := os.Create(DefaultCoreConfigFile)
+	dst, err := os.Create(DefaultCoreConfigFile) // #nosec G304 -- Constant is not user controlled
 	if err != nil {
 		fmt.Printf("[%sx%s] failed to create %s %s\n",
 			terminal.Red, terminal.Reset, DefaultCoreConfigFile, err.Error())

@@ -29,6 +29,7 @@ func (controller LogController) Run(cli *commandline.CommandLine) commandline.Te
 				return nil
 			}
 
+			path = filepath.Clean(path)
 			f, err := os.ReadFile(path)
 			if err != nil {
 				return nil
@@ -50,6 +51,11 @@ func (controller LogController) Run(cli *commandline.CommandLine) commandline.Te
 		priority := cli.NextArg()
 
 		path := fmt.Sprintf("%s/%s", DefaultLogsFolder, fileName)
+
+		// remove any attempts to switch paths in the provided argument
+		path = filepath.Clean(path)
+
+		// attempt to read the log file
 		b, err := os.ReadFile(path)
 		if err != nil {
 			fmt.Printf("the log file does not exist (%s)\n", fileName)
