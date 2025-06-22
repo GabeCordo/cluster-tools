@@ -13,29 +13,34 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	var iReq thread.Request
-	var oRsp thread.Response
+	var iReq *thread.Request
+	var oRsp *thread.Response
 
 	for {
+		oRsp = new(thread.Response)
+		if oRsp == nil {
+			panic("failed to allocate thread.Response")
+		}
+
 		select {
 		case iReq = <-t.C5:
 			{
-				t.handleRequest(&iReq, &oRsp)
+				t.handleRequest(iReq, oRsp)
 			}
 		case iReq = <-t.C7:
 			{
-				t.handleRequest(&iReq, &oRsp)
+				t.handleRequest(iReq, oRsp)
 			}
 		case iReq = <-t.C18:
 			{
-				t.handleRequest(&iReq, &oRsp)
+				t.handleRequest(iReq, oRsp)
 			}
 		case iRsp := <-t.C12:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iRsp.Nonce]
 				if ok {
-					t.handleResponse(&iReq, &iRsp, &oRsp)
+					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
 		case iRsp := <-t.C14:
@@ -43,7 +48,7 @@ func (t *Thread) Start() {
 				var ok bool
 				iReq, ok = t.requestStore[iReq.Nonce]
 				if ok {
-					t.handleResponse(&iReq, &iRsp, &oRsp)
+					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
 		case <-t.Interrupt:
@@ -52,21 +57,24 @@ func (t *Thread) Start() {
 				break
 			}
 		}
+
+		oRsp = nil
 	}
 }
 
 func (t *Thread) sendResponse(request *thread.Request, response *thread.Response) {
 
 	response.Nonce = request.Nonce
+	response.Source = thread.Processor
 	response.Success = response.Error == nil
 
 	switch request.Source {
 	case thread.HttpClient:
-		t.C6 <- *response // TODO: send ptr
+		t.C6 <- response
 	case thread.Socket:
-		t.C8 <- *response // TODO: send ptr
+		t.C8 <- response
 	case thread.Scheduler:
-		t.C19 <- *response // TODO: send ptr
+		t.C19 <- response
 	default:
 		// NOP
 	}
@@ -95,7 +103,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = *request
+					t.requestStore[request.Nonce] = request
 					t.asyncGetRunFromRunner(request)
 				}
 			default:
@@ -110,7 +118,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			case thread.ProcessorRecord:
 				{
 					cfg := (request.Data).(processor2.Config)
-					response.Error = t.synchAddProcessor(&cfg)
+					response.Error = t.syncAddProcessor(&cfg)
 					t.sendResponse(request, response)
 				}
 			case thread.ModuleRecord:
@@ -122,7 +130,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			case thread.RunRecord:
 				{
 					// fetch the pipeline from the database is async
-					t.requestStore[request.Nonce] = *request
+					t.requestStore[request.Nonce] = request
 					t.asyncGetPipelineFromDatabase(request)
 				}
 			default:
@@ -147,7 +155,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = *request
+					t.requestStore[request.Nonce] = request
 					t.asyncTellRunnerToStopRun(request)
 				}
 			default:
@@ -161,7 +169,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = *request
+					t.requestStore[request.Nonce] = request
 					t.asyncSendUpdateToRunner(request)
 				}
 			default:
@@ -213,7 +221,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = *request
+					t.requestStore[request.Nonce] = request
 					t.asyncSendLogToRunner(request)
 				}
 			default:
@@ -253,7 +261,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 						var p *processor2.Processor
 						p, oResponse.Error = t.syncFindCandidateProcessor(iResponse)
 						if oResponse.Error == nil {
-							t.requestStore[iRequest.Nonce] = *iRequest
+							t.requestStore[iRequest.Nonce] = iRequest
 							t.asyncSendCreateRunToRunner(p, iRequest)
 						} else {
 							delete(t.requestStore, iRequest.Nonce)

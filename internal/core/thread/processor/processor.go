@@ -9,7 +9,7 @@ func (t *Thread) syncGetProcessors() []*processor.Processor {
 	return t.processorTable.GetProcessors()
 }
 
-func (t *Thread) synchAddProcessor(config *processor.Config) error {
+func (t *Thread) syncAddProcessor(config *processor.Config) error {
 
 	_, err := t.processorTable.AddProcessor(config)
 	if err == nil {

@@ -22,25 +22,33 @@ func (t *Thread) asyncGetRunFromRunner(r *thread.Request) {
 	// id -> the entire record of the runner
 	//	-	full information
 
-	request := thread.Request{
-		Action:      thread.GetAction,
-		Type:        thread.RunRecord,
-		Identifiers: r.Identifiers,
-		Source:      thread.Processor,
-		Nonce:       r.Nonce,
+	request := new(thread.Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
 	}
+
+	request.Action = thread.GetAction
+	request.Type = thread.RunRecord
+	request.Identifiers = r.Identifiers
+	request.Source = thread.Processor
+	request.Nonce = r.Nonce
+
 	t.C13 <- request
 }
 
 func (t *Thread) asyncGetPipelineFromDatabase(r *thread.Request) {
 
-	databaseRequest := thread.Request{
-		Action:      thread.GetAction,
-		Type:        thread.PipelineRecord,
-		Identifiers: r.Identifiers,
-		Source:      thread.Processor,
-		Nonce:       r.Nonce,
+	databaseRequest := new(thread.Request)
+	if databaseRequest == nil {
+		panic("failed to allocate thread.Request")
 	}
+
+	databaseRequest.Action = thread.GetAction
+	databaseRequest.Type = thread.PipelineRecord
+	databaseRequest.Identifiers = r.Identifiers
+	databaseRequest.Source = thread.Processor
+	databaseRequest.Nonce = r.Nonce
+
 	t.C11 <- databaseRequest
 }
 
@@ -111,16 +119,19 @@ func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor2.Pro
 
 func (t *Thread) asyncSendCreateRunToRunner(processor *processor2.Processor, r *thread.Request) {
 
-	request := thread.Request{
-		Action:      thread.CreateAction,
-		Type:        thread.RunRecord,
-		Identifiers: r.Identifiers, // will contain the module, cluster
-		Caller:      thread.User,
-		Data:        r.Data, // will contain the metadata map[string]string
-		Source:      thread.Processor,
-		Nonce:       r.Nonce,
+	request := new(thread.Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
 	}
+
+	request.Action = thread.CreateAction
+	request.Type = thread.RunRecord
+	request.Identifiers = r.Identifiers // will contain the module, cluster
 	request.Identifiers.Processor = processor.Id
+	request.Caller = thread.User
+	request.Data = r.Data // will contain the metadata map[string]string
+	request.Source = thread.Processor
+	request.Nonce = r.Nonce
 
 	// send the request to the scheduler t
 	// the scheduler t will:
@@ -138,39 +149,48 @@ func (t *Thread) syncUpdateProcessorAfterRunStarted(r *thread.Response) (uint64,
 
 func (t *Thread) asyncSendUpdateToRunner(r *thread.Request) {
 
-	request := thread.Request{
-		Action:      thread.UpdateAction,
-		Type:        thread.RunRecord,
-		Identifiers: r.Identifiers,
-		Data:        r.Data,
-		Source:      thread.Processor,
-		Nonce:       r.Nonce,
+	request := new(thread.Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
 	}
+
+	request.Action = thread.UpdateAction
+	request.Type = thread.RunRecord
+	request.Identifiers = r.Identifiers
+	request.Data = r.Data
+	request.Source = thread.Processor
+	request.Nonce = r.Nonce
+
 	t.C13 <- request
 }
 
 func (t *Thread) asyncSendLogToRunner(r *thread.Request) {
 
-	request := thread.Request{
-		Action:      thread.LogAction,
-		Type:        thread.RunRecord,
-		Identifiers: r.Identifiers,
-		Data:        r.Data,
-		Source:      thread.Processor,
-		Nonce:       r.Nonce,
+	request := new(thread.Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
 	}
+
+	request.Action = thread.LogAction
+	request.Type = thread.RunRecord
+	request.Identifiers = r.Identifiers
+	request.Data = r.Data
+	request.Source = thread.Processor
+	request.Nonce = r.Nonce
+
 	t.C13 <- request
 }
 
 func (t *Thread) asyncTellRunnerToStopRun(r *thread.Request) {
 
-	request := thread.Request{
-		Action:      thread.DeleteAction,
-		Type:        thread.RunRecord,
-		Identifiers: r.Identifiers,
-		Source:      thread.Processor,
-		Nonce:       r.Nonce,
-	}
+	request := new(thread.Request)
+
+	request.Action = thread.DeleteAction
+	request.Type = thread.RunRecord
+	request.Identifiers = r.Identifiers
+	request.Source = thread.Processor
+	request.Nonce = r.Nonce
+
 	t.C13 <- request
 }
 

@@ -29,11 +29,6 @@ func (t *Thread) Start() {
 	}()
 }
 
-func (t *Thread) Respond(response *thread.Response) {
-
-	t.C10 <- *response
-}
-
 func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
 
 	switch request.Action {

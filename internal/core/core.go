@@ -31,33 +31,33 @@ type Core struct {
 	DatabaseThread  *database.Thread
 	SchedulerThread *scheduler.Thread
 
-	C1        chan thread.Request        // DatabaseRequest
-	C2        chan thread.Response       // DatabaseResponse
-	C3        chan thread.Request        // MessengerRequest
-	C4        chan thread.Response       // MessengerResponse
-	C5        chan thread.Request        // ProcessorRequest
-	C6        chan thread.Response       // ProcessorResponse
-	C7        chan thread.Request        // ProcessorRequest
-	C8        chan thread.Response       // ProcessorResponse
-	C9        chan thread.Request        // CacheRequest
-	C10       chan thread.Response       // CacheResponse
-	C11       chan thread.Request        // DatabaseRequest
-	C12       chan thread.Response       // DatabaseResponse
-	C13       chan thread.Request        // SupervisorRequest
-	C14       chan thread.Response       // SupervisorResponse
-	C15       chan thread.Request        // DatabaseRequest
-	C16       chan thread.Response       // DatabaseResponse
-	C17       chan thread.Request        // MessengerRequest
-	C18       chan thread.Request        // ProcessorRequest
-	C19       chan thread.Response       // ProcessorResponse
-	C20       chan thread.Request        // SchedulerRequest
-	C21       chan thread.Response       // SchedulerResponse
-	C22       chan thread.Request        // MessengerRequest
-	C23       chan thread.Response       // MessengerResponse
-	C24       chan thread.Request        // CacheRequest
-	C25       chan thread.Response       // CacheResponse
-	C26       chan thread.Request        // CacheRequest
-	C27       chan thread.Response       // CacheResponse
+	C1        chan *thread.Request       // DatabaseRequest
+	C2        chan *thread.Response      // DatabaseResponse
+	C3        chan *thread.Request       // MessengerRequest
+	C4        chan *thread.Response      // MessengerResponse
+	C5        chan *thread.Request       // ProcessorRequest
+	C6        chan *thread.Response      // ProcessorResponse
+	C7        chan *thread.Request       // ProcessorRequest
+	C8        chan *thread.Response      // ProcessorResponse
+	C9        chan *thread.Request       // CacheRequest
+	C10       chan *thread.Response      // CacheResponse
+	C11       chan *thread.Request       // DatabaseRequest
+	C12       chan *thread.Response      // DatabaseResponse
+	C13       chan *thread.Request       // SupervisorRequest
+	C14       chan *thread.Response      // SupervisorResponse
+	C15       chan *thread.Request       // DatabaseRequest
+	C16       chan *thread.Response      // DatabaseResponse
+	C17       chan *thread.Request       // MessengerRequest
+	C18       chan *thread.Request       // ProcessorRequest
+	C19       chan *thread.Response      // ProcessorResponse
+	C20       chan *thread.Request       // SchedulerRequest
+	C21       chan *thread.Response      // SchedulerResponse
+	C22       chan *thread.Request       // MessengerRequest
+	C23       chan *thread.Response      // MessengerResponse
+	C24       chan *thread.Request       // CacheRequest
+	C25       chan *thread.Response      // CacheResponse
+	C26       chan *thread.Request       // CacheRequest
+	C27       chan *thread.Response      // CacheResponse
 	interrupt chan thread.InterruptEvent // InterruptEvent
 
 	config *Config
@@ -68,33 +68,33 @@ func New(configPath string) (*Core, error) {
 	core := new(Core)
 
 	core.interrupt = make(chan thread.InterruptEvent, 10)
-	core.C1 = make(chan thread.Request, 10)
-	core.C2 = make(chan thread.Response, 10)
-	core.C3 = make(chan thread.Request, 10)
-	core.C4 = make(chan thread.Response, 10)
-	core.C5 = make(chan thread.Request, 10)
-	core.C6 = make(chan thread.Response, 10)
-	core.C7 = make(chan thread.Request, 10)
-	core.C8 = make(chan thread.Response, 10)
-	core.C9 = make(chan thread.Request, 10)
-	core.C10 = make(chan thread.Response, 10)
-	core.C11 = make(chan thread.Request, 10)
-	core.C12 = make(chan thread.Response, 10)
-	core.C13 = make(chan thread.Request, 10)
-	core.C14 = make(chan thread.Response, 10)
-	core.C15 = make(chan thread.Request, 10)
-	core.C16 = make(chan thread.Response, 10)
-	core.C17 = make(chan thread.Request, 10)
-	core.C18 = make(chan thread.Request, 10)
-	core.C19 = make(chan thread.Response, 10)
-	core.C20 = make(chan thread.Request, 10)
-	core.C21 = make(chan thread.Response, 10)
-	core.C22 = make(chan thread.Request, 10)
-	core.C23 = make(chan thread.Response, 10)
-	core.C24 = make(chan thread.Request, 10)  // free for use
-	core.C25 = make(chan thread.Response, 10) // free for use
-	core.C26 = make(chan thread.Request, 10)
-	core.C27 = make(chan thread.Response, 10)
+	core.C1 = make(chan *thread.Request, 10)
+	core.C2 = make(chan *thread.Response, 10)
+	core.C3 = make(chan *thread.Request, 10)
+	core.C4 = make(chan *thread.Response, 10)
+	core.C5 = make(chan *thread.Request, 10)
+	core.C6 = make(chan *thread.Response, 10)
+	core.C7 = make(chan *thread.Request, 10)
+	core.C8 = make(chan *thread.Response, 10)
+	core.C9 = make(chan *thread.Request, 10)
+	core.C10 = make(chan *thread.Response, 10)
+	core.C11 = make(chan *thread.Request, 10)
+	core.C12 = make(chan *thread.Response, 10)
+	core.C13 = make(chan *thread.Request, 10)
+	core.C14 = make(chan *thread.Response, 10)
+	core.C15 = make(chan *thread.Request, 10)
+	core.C16 = make(chan *thread.Response, 10)
+	core.C17 = make(chan *thread.Request, 10)
+	core.C18 = make(chan *thread.Request, 10)
+	core.C19 = make(chan *thread.Response, 10)
+	core.C20 = make(chan *thread.Request, 10)
+	core.C21 = make(chan *thread.Response, 10)
+	core.C22 = make(chan *thread.Request, 10)
+	core.C23 = make(chan *thread.Response, 10)
+	core.C24 = make(chan *thread.Request, 10)  // free for use
+	core.C25 = make(chan *thread.Response, 10) // free for use
+	core.C26 = make(chan *thread.Request, 10)
+	core.C27 = make(chan *thread.Response, 10)
 
 	/* load the cfg in for the first time */
 	core.config = GetConfigInstance(configPath)

@@ -31,10 +31,10 @@ type Thread struct {
 	Interrupt chan<- thread.InterruptEvent
 
 	channels struct {
-		c7  chan<- thread.Request  // socket_thread is sending req to the processor_thread
-		c8  <-chan thread.Response // socket_thread is rec rsp from the processor_thread
-		c9  <-chan thread.Request  // runner_thread is sending req to the socket_thread
-		c10 chan<- thread.Response // socket_thread is sending rsp to the runner_thread
+		c7  chan<- *thread.Request  // socket_thread is sending req to the processor_thread
+		c8  <-chan *thread.Response // socket_thread is rec rsp from the processor_thread
+		c9  <-chan *thread.Request  // runner_thread is sending req to the socket_thread
+		c10 chan<- *thread.Response // socket_thread is sending rsp to the runner_thread
 	}
 
 	noncePool *nonce2.Pool
@@ -86,22 +86,22 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
 
-	t.channels.c7, ok = (channels[1]).(chan thread.Request)
+	t.channels.c7, ok = (channels[1]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	t.channels.c8, ok = (channels[2]).(chan thread.Response)
+	t.channels.c8, ok = (channels[2]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	t.channels.c9, ok = (channels[3]).(chan thread.Request)
+	t.channels.c9, ok = (channels[3]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	t.channels.c10, ok = (channels[4]).(chan thread.Response)
+	t.channels.c10, ok = (channels[4]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}

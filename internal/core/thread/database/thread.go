@@ -58,7 +58,10 @@ func (t *Thread) Request(module thread.Module, request any) (success bool) {
 
 	switch module {
 	case thread.Messenger:
-		t.C3 <- *(request).(*thread.Request)
+		req, ok := (request).(*thread.Request)
+		if ok {
+			t.C3 <- req
+		}
 	default:
 		success = false
 	}

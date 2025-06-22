@@ -16,11 +16,11 @@ type Config struct {
 type Thread struct {
 	Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C9  <-chan thread.Request  // cache receiving requests from the rest processor
-	C10 chan<- thread.Response // cache sending responses to the rest processor
+	C9  <-chan *thread.Request  // cache receiving requests from the rest processor
+	C10 chan<- *thread.Response // cache sending responses to the rest processor
 
-	C24 <-chan thread.Request  // cache receiving requests from the rest rest
-	C25 chan<- thread.Response // cache sending responses to the rest rest
+	C24 <-chan *thread.Request  // cache receiving requests from the rest rest
+	C25 chan<- *thread.Response // cache sending responses to the rest rest
 
 	config *Config
 	logger *logging.Logger
@@ -44,19 +44,19 @@ func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	t.C9, ok = (channels[1]).(chan thread.Request)
+	t.C9, ok = (channels[1]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheRequest' in index 1")
 	}
-	t.C10, ok = (channels[2]).(chan thread.Response)
+	t.C10, ok = (channels[2]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheResponse' in index 2")
 	}
-	t.C24, ok = (channels[3]).(chan thread.Request)
+	t.C24, ok = (channels[3]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheRequest' in index 3")
 	}
-	t.C25, ok = (channels[4]).(chan thread.Response)
+	t.C25, ok = (channels[4]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheResponse' in index 4")
 	}

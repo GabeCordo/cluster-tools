@@ -141,7 +141,7 @@ type Thread interface {
 	Teardown()
 }
 
-func SetupListener(in <-chan Request, out chan<- Response, accepting *bool, wg *sync.WaitGroup, module Module, f func(request *Request, response *Response)) {
+func SetupListener(in <-chan *Request, out chan<- *Response, accepting *bool, wg *sync.WaitGroup, module Module, f func(request *Request, response *Response)) {
 
 	go func() {
 		for request := range in {
@@ -150,8 +150,17 @@ func SetupListener(in <-chan Request, out chan<- Response, accepting *bool, wg *
 			}
 			wg.Add(1)
 
-			response := Response{Source: module, Nonce: request.Nonce, Success: false, Error: nil}
-			f(&request, &response)
+			response := new(Response)
+			if response == nil {
+				panic("could not allocated memory for Response")
+			}
+
+			response.Source = module
+			response.Nonce = request.Nonce
+			response.Success = false
+			response.Error = nil
+
+			f(request, response)
 
 			if out != nil {
 				out <- response
