@@ -1,19 +1,20 @@
 package cache
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/thread"
 	"testing"
+
+	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func TestThread_IncomingSaveRequest(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 	th := GenerateTestCacheThread(in, out)
 	th.Setup()
 	go th.Start()
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action: thread.CreateAction,
 		Data:   thread.CacheRequestData{Identifier: "test", Data: "blob"},
 		Nonce:  1,
@@ -30,8 +31,8 @@ func TestThread_IncomingSaveRequest(t *testing.T) {
 func TestThread_IncomingLoadRequest(t *testing.T) {
 
 	// preliminary requirement to pull saved data
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 	th := GenerateTestCacheThread(in, out)
 	th.Setup()
 	go th.Start()
@@ -39,7 +40,7 @@ func TestThread_IncomingLoadRequest(t *testing.T) {
 	identifier := "test"
 	value := "blob"
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action: thread.CreateAction,
 		Data:   thread.CacheRequestData{Identifier: identifier, Data: value},
 		Nonce:  1,
@@ -56,7 +57,7 @@ func TestThread_IncomingLoadRequest(t *testing.T) {
 	cacheResponseData := (response.Data).(thread.CacheResponseData)
 
 	// checking the saved data
-	request2 := thread.Request{
+	request2 := &thread.Request{
 		Action: thread.GetAction,
 		Data:   thread.CacheRequestData{Identifier: cacheResponseData.Identifier},
 		Nonce:  1,
@@ -81,15 +82,15 @@ func TestThread_IncomingLoadRequest(t *testing.T) {
 func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 
 	// preliminary requirement to pull saved data
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 	th := GenerateTestCacheThread(in, out)
 	th.Setup()
 	go th.Start()
 
 	value := "blob"
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action: thread.CreateAction,
 		Data:   thread.CacheRequestData{Identifier: "test", Data: value},
 		Nonce:  1,
@@ -106,7 +107,7 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 	cacheResponseData := (response.Data).(thread.CacheResponseData)
 
 	// checking the saved data
-	request2 := thread.Request{
+	request2 := &thread.Request{
 		Action: thread.GetAction,
 		Data:   thread.CacheRequestData{Identifier: cacheResponseData.Identifier},
 		Nonce:  2,
@@ -130,7 +131,7 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 	value2 := "boop"
 
 	// swap the value of the data
-	request3 := thread.Request{
+	request3 := &thread.Request{
 		Action: thread.CreateAction,
 		Data:   thread.CacheRequestData{Identifier: cacheResponseData.Identifier, Data: value2},
 		Nonce:  3,
@@ -151,7 +152,7 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 		return
 	}
 
-	request4 := thread.Request{
+	request4 := &thread.Request{
 		Action: thread.GetAction,
 		Data:   thread.CacheRequestData{Identifier: cacheResponseData.Identifier},
 		Nonce:  4,

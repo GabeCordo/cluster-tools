@@ -8,7 +8,7 @@ import (
 	"github.com/GabeCordo/toolchain/logging"
 )
 
-func GenerateTestCacheThread(in chan thread.Request, out chan thread.Response) *Thread {
+func GenerateTestCacheThread(in chan *thread.Request, out chan *thread.Response) *Thread {
 
 	var logger *logging.Logger
 	if l, err := logging.NewLogger("cache"); err != nil {
@@ -34,8 +34,8 @@ func TestNewNilArguments(t *testing.T) {
 
 func TestNew(t *testing.T) {
 
-	c1 := make(chan thread.Request, 1)
-	c2 := make(chan thread.Response, 1)
+	c1 := make(chan *thread.Request, 1)
+	c2 := make(chan *thread.Response, 1)
 
 	if th := GenerateTestCacheThread(c1, c2); th == nil {
 		t.Error("expected success when creating cache thread")
