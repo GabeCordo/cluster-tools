@@ -33,7 +33,7 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
 	processors, success := thread.GetProcessors(
 		thread.Mandatory{
-			Pipe:          t.C5,
+			Pipe:          t.channels.c5,
 			ResponseTable: t.ProcessorResponseTable,
 			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
@@ -72,7 +72,7 @@ func (t *Thread) getModuleCallback(w http.ResponseWriter, r *http.Request) {
 
 	success, modules := thread.GetModules(
 		thread.Mandatory{
-			Pipe:          t.C5,
+			Pipe:          t.channels.c5,
 			ResponseTable: t.ProcessorResponseTable,
 			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
@@ -111,7 +111,7 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 	var success = false
 
 	mandatory := thread.Mandatory{
-		Pipe:          t.C5,
+		Pipe:          t.channels.c5,
 		ResponseTable: t.ProcessorResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
@@ -168,7 +168,7 @@ func (t *Thread) getFunctionCallback(w http.ResponseWriter, r *http.Request) {
 
 	clusterList, success := thread.GetFunctions(
 		thread.Mandatory{
-			Pipe:          t.C5,
+			Pipe:          t.channels.c5,
 			ResponseTable: t.ProcessorResponseTable,
 			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
@@ -210,7 +210,7 @@ func (t *Thread) putFunctionCallback(w http.ResponseWriter, r *http.Request) {
 	response := Response{}
 
 	mandatory := thread.Mandatory{
-		Pipe:          t.C5,
+		Pipe:          t.channels.c5,
 		ResponseTable: t.ProcessorResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
@@ -292,7 +292,7 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 	response := &Response{Success: true}
 
 	mandatory := thread.Mandatory{
-		Pipe:          t.C5,
+		Pipe:          t.channels.c5,
 		ResponseTable: t.ProcessorResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
@@ -331,7 +331,7 @@ func (t *Thread) postRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	if runId, err := thread.CreateRun(
 		thread.Mandatory{
-			Pipe:          t.C5,
+			Pipe:          t.channels.c5,
 			ResponseTable: t.ProcessorResponseTable,
 			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
@@ -375,7 +375,7 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 
 	err = thread.StopRun(
 		thread.Mandatory{
-			Pipe:          t.C5,
+			Pipe:          t.channels.c5,
 			ResponseTable: t.ProcessorResponseTable,
 			NoncePool:     t.noncePool,
 			Timeout:       t.config.Timeout,
@@ -406,7 +406,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mandatory := thread.Mandatory{
-		Pipe:          t.C1,
+		Pipe:          t.channels.c1,
 		ResponseTable: t.DatabaseResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
@@ -470,7 +470,7 @@ func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
 	mandatory := thread.Mandatory{
-		Pipe:          t.C1,
+		Pipe:          t.channels.c1,
 		ResponseTable: t.DatabaseResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
@@ -547,7 +547,7 @@ func (t *Thread) postDebugCallback(w http.ResponseWriter, r *http.Request) {
 	response := Response{Success: true}
 
 	if request.Action == "shutdown" {
-		err = thread.ShutdownCore(t.Interrupt)
+		err = thread.ShutdownCore(t.channels.interrupt)
 		if err != nil {
 			response.Description = err.Error()
 		}
@@ -609,7 +609,7 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{}
 	response.Data, err = thread.GetJobs(thread.Mandatory{
-		Pipe:          t.C20,
+		Pipe:          t.channels.c20,
 		ResponseTable: t.SchedulerResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,
@@ -643,7 +643,7 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{}
 	err = thread.CreateJob(thread.Mandatory{
-		Pipe:          t.C20,
+		Pipe:          t.channels.c20,
 		ResponseTable: t.SchedulerResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout},
@@ -700,7 +700,7 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{}
 	err = thread.DeleteJob(thread.Mandatory{
-		Pipe:          t.C20,
+		Pipe:          t.channels.c20,
 		ResponseTable: t.SchedulerResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout}, filter)
@@ -736,7 +736,7 @@ func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	response.Data, err = thread.JobQueue(thread.Mandatory{
-		Pipe:          t.C20,
+		Pipe:          t.channels.c20,
 		ResponseTable: t.SchedulerResponseTable,
 		NoncePool:     t.noncePool,
 		Timeout:       t.config.Timeout,

@@ -21,22 +21,24 @@ type Config struct {
 }
 
 type Thread struct {
-	Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
+	channels struct {
+		interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C1 <-chan thread.Request  // Database is receiving thread from the http_thread
-	C2 chan<- thread.Response // Database is sending responses to the http_thread
+		c1 <-chan *thread.Request  // Database is receiving thread from the http_thread
+		c2 chan<- *thread.Response // Database is sending responses to the http_thread
 
-	C3 chan<- thread.Request  // Database is sending thread to the Messenger
-	C4 <-chan thread.Response // Database is receiving responses from the Messenger
+		c3 chan<- *thread.Request  // Database is sending thread to the Messenger
+		c4 <-chan *thread.Response // Database is receiving responses from the Messenger
 
-	C11 <-chan thread.Request  // Database is receiving req from the processor_thread
-	C12 chan<- thread.Response // Database is sending rsp to the processor_thread
+		c11 <-chan *thread.Request  // Database is receiving req from the processor_thread
+		c12 chan<- *thread.Response // Database is sending rsp to the processor_thread
 
-	C15 <-chan thread.Request  // Database is receiving req from the supervisor_thread
-	C16 chan<- thread.Response // Database is sending rsp from the supervisor_thread
+		c15 <-chan *thread.Request  // Database is receiving req from the supervisor_thread
+		c16 chan<- *thread.Response // Database is sending rsp from the supervisor_thread
 
-	C26 <-chan thread.Request  // Database is receiving req from the scheduler_thread
-	C27 chan<- thread.Response // Database is sending rsp to the scheduler_thread
+		c26 <-chan *thread.Request  // Database is receiving req from the scheduler_thread
+		c27 chan<- *thread.Response // Database is sending rsp to the scheduler_thread
+	}
 
 	messengerResponseTable *multithreaded.ResponseTable
 
@@ -67,47 +69,47 @@ func New(cfg *Config, logger *logging.Logger,
 	t.pipelineDatabase = c
 	t.jobDatabase = j
 
-	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
+	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	t.C1, ok = (channels[1]).(chan thread.Request)
+	t.channels.c1, ok = (channels[1]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 1")
 	}
-	t.C2, ok = (channels[2]).(chan thread.Response)
+	t.channels.c2, ok = (channels[2]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 2")
 	}
-	t.C3, ok = (channels[3]).(chan thread.Request)
+	t.channels.c3, ok = (channels[3]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 3")
 	}
-	t.C4, ok = (channels[4]).(chan thread.Response)
+	t.channels.c4, ok = (channels[4]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 4")
 	}
-	t.C11, ok = (channels[5]).(chan thread.Request)
+	t.channels.c11, ok = (channels[5]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 5")
 	}
-	t.C12, ok = (channels[6]).(chan thread.Response)
+	t.channels.c12, ok = (channels[6]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
-	t.C15, ok = (channels[7]).(chan thread.Request)
+	t.channels.c15, ok = (channels[7]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 7")
 	}
-	t.C16, ok = (channels[8]).(chan thread.Response)
+	t.channels.c16, ok = (channels[8]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 8")
 	}
-	t.C26, ok = (channels[9]).(chan thread.Request)
+	t.channels.c26, ok = (channels[9]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 9")
 	}
-	t.C27, ok = (channels[10]).(chan thread.Response)
+	t.channels.c27, ok = (channels[10]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 10")
 	}

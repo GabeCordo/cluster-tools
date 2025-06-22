@@ -11,11 +11,11 @@ import (
 	"github.com/GabeCordo/toolchain/logging"
 )
 
-func generateDatabaseThread(in chan thread.Request, out chan thread.Response) *Thread {
+func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) *Thread {
 
 	irc := make(chan thread.InterruptEvent, 1)
-	Min := make(chan thread.Request, 1)
-	Mout := make(chan thread.Response, 1)
+	Min := make(chan *thread.Request, 1)
+	Mout := make(chan *thread.Response, 1)
 
 	sD := statistic.NewLocalStatisticDatabase()
 	cD := pipeline.NewLocalPipelineDatabase()
@@ -32,8 +32,8 @@ func generateDatabaseThread(in chan thread.Request, out chan thread.Response) *T
 
 func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -41,7 +41,7 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 
 	clusterConfig := pipeline.Pipeline{}
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action: thread.CreateAction,
 		Type:   thread.PipelineRecord,
 		Data:   clusterConfig,
@@ -58,14 +58,14 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 
 func TestThread_DatabaseStore_ClusterConfig2(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
 	go th.Start()
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action: thread.CreateAction,
 		Type:   thread.PipelineRecord,
 		Nonce:  1,
@@ -85,8 +85,8 @@ func TestThread_DatabaseStore_ClusterConfig2(t *testing.T) {
 
 func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -100,7 +100,7 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 		Data:   clusterStatistic,
 		Nonce:  1,
 	}
-	in <- request
+	in <- &request
 
 	response := <-out
 
@@ -111,8 +111,8 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 
 func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -120,7 +120,7 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
 	clusterStatistic := &statistic.Statistics{}
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action: thread.CreateAction,
 		Type:   thread.PipelineRecord,
 		Data:   clusterStatistic,
@@ -141,8 +141,8 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 
 func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -153,7 +153,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	n := "test_namespace"
 	p := "test_pipeline"
 
-	in <- thread.Request{
+	in <- &thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.PipelineRecord,
 		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
@@ -162,7 +162,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	}
 	<-out
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.PipelineRecord,
 		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
@@ -194,8 +194,8 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 
 func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -209,7 +209,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	n := "test_namespace"
 	p := "test_pipeline"
 
-	in <- thread.Request{
+	in <- &thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.StatisticRecord,
 		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
@@ -218,7 +218,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	}
 	<-out
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.StatisticRecord,
 		Identifiers: thread.RequestIdentifiers{Namespace: n, Pipeline: p},
@@ -253,8 +253,8 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 	// TODO - fix
 	t.Skip("test case is failing and requires fixes")
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -264,7 +264,7 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 	c := "test_cluster"
 	clusterConfig := pipeline.Pipeline{Identifier: c}
 
-	in <- thread.Request{
+	in <- &thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.PipelineRecord,
 		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
@@ -273,14 +273,14 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 	}
 	<-out
 
-	in <- thread.Request{
+	in <- &thread.Request{
 		Action:      thread.DeleteAction,
 		Type:        thread.FunctionRecord,
 		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.PipelineRecord,
 		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
@@ -300,8 +300,8 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	// TODO - must be fixed in future
 	t.Skip("test case is failing and requires fixes")
 
-	in := make(chan thread.Request, 1)
-	out := make(chan thread.Response, 1)
+	in := make(chan *thread.Request, 1)
+	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
 	th.accepting = true
@@ -314,7 +314,7 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	clusterStat.Pipes = make([]statistic.PipeStatistic, 2)
 	clusterStat.Functions[2].Provisions = 5
 
-	in <- thread.Request{
+	in <- &thread.Request{
 		Action:      thread.CreateAction,
 		Type:        thread.StatisticRecord,
 		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
@@ -323,14 +323,14 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	}
 	<-out
 
-	in <- thread.Request{
+	in <- &thread.Request{
 		Action:      thread.DeleteAction,
 		Type:        thread.StatisticRecord,
 		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},
 		Nonce:       2,
 	}
 
-	request := thread.Request{
+	request := &thread.Request{
 		Action:      thread.GetAction,
 		Type:        thread.StatisticRecord,
 		Identifiers: thread.RequestIdentifiers{Module: m, Function: c},

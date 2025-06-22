@@ -21,15 +21,17 @@ type Config struct {
 }
 
 type Thread struct {
-	Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
+	channels struct {
+		interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C3 <-chan thread.Request  // Messenger is receiving thread form the Database
-	C4 chan<- thread.Response // Messenger is sending responses to the Database
+		c3 <-chan *thread.Request  // Messenger is receiving thread form the Database
+		c4 chan<- *thread.Response // Messenger is sending responses to the Database
 
-	C17 <-chan thread.Request // Messenger is receiving requests from the provisionerThread
+		c17 <-chan *thread.Request // Messenger is receiving requests from the provisionerThread
 
-	C22 <-chan thread.Request  // Messenger is receiving requests from the HTTP Client
-	C23 chan<- thread.Response // Messenger is sending responses to the HTTP Client
+		c22 <-chan *thread.Request  // Messenger is receiving requests from the HTTP Client
+		c23 chan<- *thread.Response // Messenger is sending responses to the HTTP Client
+	}
 
 	config *Config
 	logger *logging.Logger
@@ -49,27 +51,27 @@ func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, chann
 	}
 	th.config = cfg
 
-	th.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
+	th.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	th.C3, ok = (channels[1]).(chan thread.Request)
+	th.channels.c3, ok = (channels[1]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 1")
 	}
-	th.C4, ok = (channels[2]).(chan thread.Response)
+	th.channels.c4, ok = (channels[2]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 2")
 	}
-	th.C17, ok = (channels[3]).(chan thread.Request)
+	th.channels.c17, ok = (channels[3]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 3")
 	}
-	th.C22, ok = (channels[4]).(chan thread.Request)
+	th.channels.c22, ok = (channels[4]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 4")
 	}
-	th.C23, ok = (channels[5]).(chan thread.Response)
+	th.channels.c23, ok = (channels[5]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 5")
 	}

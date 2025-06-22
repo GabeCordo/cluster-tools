@@ -48,7 +48,7 @@ func (t *Thread) processLoadRequest(request *thread.Request, response *thread.Re
 func (t *Thread) processPingCache(request *thread.Request, response *thread.Response) {
 
 	if t.config.Debug {
-		t.logger.Println("received ping over C9")
+		t.logger.Println("received ping over c9")
 	}
 	response.Success = true
 }

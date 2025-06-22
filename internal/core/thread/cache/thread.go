@@ -12,9 +12,9 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	thread.SetupListener(t.C9, t.C10, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
+	thread.SetupListener(t.channels.c9, t.channels.c10, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
 
-	thread.SetupListener(t.C24, t.C25, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
+	thread.SetupListener(t.channels.c24, t.channels.c25, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
 
 	// RUNTIME
 
@@ -27,11 +27,6 @@ func (t *Thread) Start() {
 			t.cache.Clean()
 		}
 	}()
-}
-
-func (t *Thread) Respond(response *thread.Response) {
-
-	t.C10 <- *response
 }
 
 func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {

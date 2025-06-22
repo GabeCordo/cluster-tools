@@ -16,47 +16,60 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	var iReq thread.Request
-	var iRsp thread.Response
-	var oRsp thread.Response
+	var iReq *thread.Request
+	var iRsp *thread.Response
+	var oRsp *thread.Response
 
 	for {
+		oRsp = new(thread.Response)
+		if oRsp == nil {
+			panic("failed to allocate thread.Response")
+		}
+
 		select {
-		case iReq = <-t.channels.C13:
+		case iReq = <-t.channels.c13:
 			{
-				t.handleRequest(&iReq, &oRsp)
+				t.handleRequest(iReq, oRsp)
 			}
-		case iRsp = <-t.channels.C10:
-			{
-				var ok bool
-				iReq, ok = t.requestStore[iRsp.Nonce]
-				if ok {
-					t.handleResponse(&iReq, &iRsp, &oRsp)
-				}
-			}
-		case iRsp = <-t.channels.C16:
+		case iRsp = <-t.channels.c10:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iRsp.Nonce]
 				if ok {
-					t.handleResponse(&iReq, &iRsp, &oRsp)
+					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
-		case <-t.Interrupt:
+		case iRsp = <-t.channels.c16:
+			{
+				var ok bool
+				iReq, ok = t.requestStore[iRsp.Nonce]
+				if ok {
+					t.handleResponse(iReq, iRsp, oRsp)
+				}
+			}
+		case <-t.channels.interrupt:
 			{
 				// Terminate the thread
 				break
 			}
 		}
+
+		oRsp = nil
 	}
 }
 
 func (t *Thread) sendResponse(request *thread.Request, response *thread.Response) {
 
+	response.Action = request.Action
+	response.Type = request.Type
+	response.Source = thread.Runner
+	response.Nonce = request.Nonce
+	response.Success = response.Error == nil
+
 	switch request.Source {
 	case thread.Processor:
 		{
-			t.channels.C14 <- *response // todo: pass pointer
+			t.channels.c14 <- response
 		}
 	default:
 		{
@@ -101,7 +114,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 					// the runner shall look-up the pipeline record to send to the processor
 					_, ok := (request.Data).(map[string]string)
 					if ok {
-						t.requestStore[request.Nonce] = *request
+						t.requestStore[request.Nonce] = request
 						t.asyncGetPipelineFromDatabase(request)
 					} else {
 						response.Error = errors.New("RunnerCreate expected a map[string]string data type")
@@ -126,7 +139,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 						status := r.GetStatus()
 						if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
 							t.Logger.Printf("run completed %d\n", r.GetId())
-							t.requestStore[request.Nonce] = *request
+							t.requestStore[request.Nonce] = request
 							t.asyncCreateStatisticRecordInDatabase(request, r)
 						}
 					} else {
@@ -163,7 +176,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 					if response.Error != nil {
 						t.sendResponse(request, response)
 					} else {
-						t.requestStore[request.Nonce] = *request
+						t.requestStore[request.Nonce] = request
 					}
 				}
 			default:

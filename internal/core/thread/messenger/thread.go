@@ -17,11 +17,11 @@ func (th *Thread) Start() {
 
 	// LISTEN TO INCOMING REQUESTS
 
-	thread.SetupListener(th.C3, th.C4, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
+	thread.SetupListener(th.channels.c3, th.channels.c4, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
 
-	thread.SetupListener(th.C17, nil, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
+	thread.SetupListener(th.channels.c17, nil, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
 
-	thread.SetupListener(th.C22, th.C23, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
+	thread.SetupListener(th.channels.c22, th.channels.c23, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
 }
 
 func (th *Thread) HandleRequest(request *thread.Request, response *thread.Response) {

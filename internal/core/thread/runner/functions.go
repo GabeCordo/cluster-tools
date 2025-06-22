@@ -29,17 +29,21 @@ func (t *Thread) syncGetSupervisor(filter *database.Filter) ([]*run.Run, error) 
 
 func (t *Thread) asyncGetPipelineFromDatabase(request *thread.Request) {
 
-	databaseRequest := thread.Request{
-		Action: thread.GetAction,
-		Type:   thread.PipelineRecord,
-		Identifiers: thread.RequestIdentifiers{
-			Namespace: request.Identifiers.Namespace,
-			Pipeline:  request.Identifiers.Pipeline,
-		},
-		Source: thread.Runner,
-		Nonce:  request.Nonce,
+	databaseRequest := new(thread.Request)
+	if databaseRequest == nil {
+		panic("failed to allocated thread.Request")
 	}
-	t.channels.C15 <- databaseRequest
+
+	databaseRequest.Action = thread.GetAction
+	databaseRequest.Type = thread.PipelineRecord
+	databaseRequest.Identifiers = thread.RequestIdentifiers{
+		Namespace: request.Identifiers.Namespace,
+		Pipeline:  request.Identifiers.Pipeline,
+	}
+	databaseRequest.Source = thread.Runner
+	databaseRequest.Nonce = request.Nonce
+
+	t.channels.c15 <- databaseRequest
 }
 
 func (t *Thread) syncCreateNewRunRecord(request *thread.Request, response *thread.Response) (uint64, pipeline.Pipeline, error) {
@@ -77,19 +81,22 @@ func (t *Thread) asyncSendRunToSocket(request *thread.Request, id uint64, cfg *p
 		Metadata:  metadata,
 	}
 
-	socketRequest := thread.Request{
-		Action: thread.CreateAction,
-		Type:   thread.RunRecord,
-		Identifiers: thread.RequestIdentifiers{
-			Processor:  request.Identifiers.Processor,
-			Supervisor: id,
-		},
-		Data:   runRequest,
-		Source: thread.Runner,
-		Nonce:  request.Nonce,
+	socketRequest := new(thread.Request)
+	if socketRequest == nil {
+		panic("failed to allocated thread.Request")
 	}
 
-	t.channels.C9 <- socketRequest
+	socketRequest.Action = thread.CreateAction
+	socketRequest.Type = thread.RunRecord
+	socketRequest.Identifiers = thread.RequestIdentifiers{
+		Processor:  request.Identifiers.Processor,
+		Supervisor: id,
+	}
+	socketRequest.Data = runRequest
+	socketRequest.Source = thread.Runner
+	socketRequest.Nonce = request.Nonce
+
+	t.channels.c9 <- socketRequest
 }
 
 func (t *Thread) syncUpdateRunAfterFirstResponseFromSocket(request *thread.Request, response *thread.Response) error {
@@ -142,33 +149,41 @@ func (t *Thread) syncUpdateRun(request *thread.Request) (*run.Run, error) {
 
 func (t *Thread) asyncCreateStatisticRecordInDatabase(request *thread.Request, r *run.Run) {
 
-	req := thread.Request{
-		Action: thread.CreateAction,
-		Type:   thread.StatisticRecord,
-		Identifiers: thread.RequestIdentifiers{
-			Namespace: request.Identifiers.Namespace,
-			Pipeline:  request.Identifiers.Pipeline,
-		},
-		Data:   r.GetStatistic(),
-		Source: thread.Runner,
-		Nonce:  request.Nonce,
+	req := new(thread.Request)
+	if req == nil {
+		panic("failed to allocated thread.Request")
 	}
-	t.channels.C15 <- req
+
+	req.Action = thread.CreateAction
+	req.Type = thread.StatisticRecord
+	req.Identifiers = thread.RequestIdentifiers{
+		Namespace: request.Identifiers.Namespace,
+		Pipeline:  request.Identifiers.Pipeline,
+	}
+	req.Data = r.GetStatistic()
+	req.Source = thread.Runner
+	req.Nonce = request.Nonce
+
+	t.channels.c15 <- req
 }
 
 func (t *Thread) asyncCloseMessengerForRun(request *thread.Request) {
 
-	msgrRequest := thread.Request{
-		Action: thread.CloseAction,
-		Identifiers: thread.RequestIdentifiers{
-			Namespace:  request.Identifiers.Namespace,
-			Pipeline:   request.Identifiers.Pipeline,
-			Supervisor: request.Identifiers.Supervisor,
-		},
-		Source: thread.Runner,
-		Nonce:  request.Nonce,
+	msgrRequest := new(thread.Request)
+	if msgrRequest == nil {
+		panic("failed to allocated thread.Request")
 	}
-	t.channels.C17 <- msgrRequest
+
+	msgrRequest.Action = thread.CloseAction
+	msgrRequest.Identifiers = thread.RequestIdentifiers{
+		Namespace:  request.Identifiers.Namespace,
+		Pipeline:   request.Identifiers.Pipeline,
+		Supervisor: request.Identifiers.Supervisor,
+	}
+	msgrRequest.Source = thread.Runner
+	msgrRequest.Nonce = request.Nonce
+
+	t.channels.c17 <- msgrRequest
 }
 
 func (t *Thread) asyncLogRun(request *thread.Request) error {
@@ -200,18 +215,22 @@ func (t *Thread) asyncLogRun(request *thread.Request) error {
 		logType = thread.DefaultLogRecord
 	}
 
-	messengerRequest := thread.Request{
-		Action: thread.LogAction,
-		Type:   logType,
-		Identifiers: thread.RequestIdentifiers{
-			Namespace:  instance.Namespace,
-			Pipeline:   instance.Pipeline.Identifier,
-			Supervisor: instance.GetId(),
-		},
-		Data:  l.Message,
-		Nonce: request.Nonce,
+	messengerRequest := new(thread.Request)
+	if messengerRequest == nil {
+		panic("failed to allocated thread.Request")
 	}
-	t.channels.C17 <- messengerRequest
+
+	messengerRequest.Action = thread.LogAction
+	messengerRequest.Type = logType
+	messengerRequest.Identifiers = thread.RequestIdentifiers{
+		Namespace:  instance.Namespace,
+		Pipeline:   instance.Pipeline.Identifier,
+		Supervisor: instance.GetId(),
+	}
+	messengerRequest.Data = l.Message
+	messengerRequest.Nonce = request.Nonce
+
+	t.channels.c17 <- messengerRequest
 
 	return nil
 }
@@ -226,16 +245,20 @@ func (t *Thread) asyncStopRun(request *thread.Request) error {
 	r := (results[0]).(*run.Run)
 	r.Status = run.Cancelled
 
-	socketRequest := thread.Request{
-		Action: thread.DeleteAction,
-		Type:   thread.RunRecord,
-		Identifiers: thread.RequestIdentifiers{
-			Supervisor: request.Identifiers.Supervisor,
-			Processor:  r.Processor,
-		},
-		Nonce: request.Nonce,
+	socketRequest := new(thread.Request)
+	if socketRequest == nil {
+		panic("failed to allocated thread.Request")
 	}
-	t.channels.C9 <- socketRequest
+
+	socketRequest.Action = thread.DeleteAction
+	socketRequest.Type = thread.RunRecord
+	socketRequest.Identifiers = thread.RequestIdentifiers{
+		Supervisor: request.Identifiers.Supervisor,
+		Processor:  r.Processor,
+	}
+	socketRequest.Nonce = request.Nonce
+
+	t.channels.c9 <- socketRequest
 
 	return nil
 }

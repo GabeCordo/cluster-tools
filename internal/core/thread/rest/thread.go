@@ -82,14 +82,14 @@ func (t *Thread) Start() {
 	go func(t *Thread) {
 		err := t.server.ListenAndServe()
 		if err != nil {
-			t.Interrupt <- thread.Panic
+			t.channels.interrupt <- thread.Panic
 		}
 	}(t)
 
 	// LISTEN FOR RESPONSES
 
 	go func() {
-		for supervisorResponse := range t.C6 {
+		for supervisorResponse := range t.channels.c6 {
 			if !t.accepting {
 				break
 			}
@@ -98,7 +98,7 @@ func (t *Thread) Start() {
 	}()
 
 	go func() {
-		for databaseResponse := range t.C2 {
+		for databaseResponse := range t.channels.c2 {
 			if !t.accepting {
 				break
 			}
@@ -107,7 +107,7 @@ func (t *Thread) Start() {
 	}()
 
 	go func() {
-		for schedulerResponse := range t.C21 {
+		for schedulerResponse := range t.channels.c21 {
 			if !t.accepting {
 				break
 			}
@@ -116,7 +116,7 @@ func (t *Thread) Start() {
 	}()
 
 	go func() {
-		for messengerResponse := range t.C23 {
+		for messengerResponse := range t.channels.c23 {
 			if !t.accepting {
 				break
 			}
@@ -137,6 +137,6 @@ func (t *Thread) Teardown() {
 
 	err := t.server.Shutdown(ctx)
 	if err != nil {
-		t.Interrupt <- thread.Panic
+		t.channels.interrupt <- thread.Panic
 	}
 }
