@@ -42,13 +42,13 @@ func (t *Thread) Start() {
 
 	// LISTEN FOR INCOMING REQUESTS
 
-	thread.SetupListener(t.C1, t.C2, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
+	thread.SetupListener(t.channels.c1, t.channels.c2, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	thread.SetupListener(t.C11, t.C12, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
+	thread.SetupListener(t.channels.c11, t.channels.c12, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	thread.SetupListener(t.C15, t.C16, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
+	thread.SetupListener(t.channels.c15, t.channels.c16, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
-	thread.SetupListener(t.C26, t.C27, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
+	thread.SetupListener(t.channels.c26, t.channels.c27, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
 
 }
 
@@ -60,7 +60,7 @@ func (t *Thread) Request(module thread.Module, request any) (success bool) {
 	case thread.Messenger:
 		req, ok := (request).(*thread.Request)
 		if ok {
-			t.C3 <- req
+			t.channels.c3 <- req
 		}
 	default:
 		success = false

@@ -30,20 +30,20 @@ func (t *Thread) Start() {
 
 	// LISTENER THREADS
 
-	thread.SetupListener(t.C20, t.C21, &t.accepting, &t.wg, thread.Scheduler, t.HandleRequest)
+	thread.SetupListener(t.channels.c20, t.channels.c21, &t.accepting, &t.wg, thread.Scheduler, t.HandleRequest)
 
 	// RESPONSE THREADS
 
 	go func() {
 		// response coming from the processor thread
-		for response := range t.C19 {
+		for response := range t.channels.c19 {
 			t.processorResponseTable.Write(response.Nonce, response)
 		}
 	}()
 
 	go func() {
 		// response coming from the processor thread
-		for response := range t.C27 {
+		for response := range t.channels.c27 {
 			t.databaseResponseTable.Write(response.Nonce, response)
 		}
 	}()
@@ -57,7 +57,7 @@ func (t *Thread) Start() {
 
 			// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
 			mandatory := thread.Mandatory{
-				Pipe:          t.C18,
+				Pipe:          t.channels.c18,
 				ResponseTable: t.processorResponseTable,
 				NoncePool:     t.noncePool,
 				Timeout:       t.config.Timeout,

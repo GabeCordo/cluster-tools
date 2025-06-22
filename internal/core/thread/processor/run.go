@@ -33,7 +33,7 @@ func (t *Thread) asyncGetRunFromRunner(r *thread.Request) {
 	request.Source = thread.Processor
 	request.Nonce = r.Nonce
 
-	t.C13 <- request
+	t.channels.c13 <- request
 }
 
 func (t *Thread) asyncGetPipelineFromDatabase(r *thread.Request) {
@@ -49,7 +49,7 @@ func (t *Thread) asyncGetPipelineFromDatabase(r *thread.Request) {
 	databaseRequest.Source = thread.Processor
 	databaseRequest.Nonce = r.Nonce
 
-	t.C11 <- databaseRequest
+	t.channels.c11 <- databaseRequest
 }
 
 func (t *Thread) syncFindCandidateProcessor(r *thread.Response) (*processor2.Processor, error) {
@@ -138,7 +138,7 @@ func (t *Thread) asyncSendCreateRunToRunner(processor *processor2.Processor, r *
 	//	1. create a log record of the runner
 	//	2. set the log record to the initial state
 	//  3. send a provision request to the processor endpoint
-	t.C13 <- request
+	t.channels.c13 <- request
 }
 
 func (t *Thread) syncUpdateProcessorAfterRunStarted(r *thread.Response) (uint64, error) {
@@ -161,7 +161,7 @@ func (t *Thread) asyncSendUpdateToRunner(r *thread.Request) {
 	request.Source = thread.Processor
 	request.Nonce = r.Nonce
 
-	t.C13 <- request
+	t.channels.c13 <- request
 }
 
 func (t *Thread) asyncSendLogToRunner(r *thread.Request) {
@@ -178,7 +178,7 @@ func (t *Thread) asyncSendLogToRunner(r *thread.Request) {
 	request.Source = thread.Processor
 	request.Nonce = r.Nonce
 
-	t.C13 <- request
+	t.channels.c13 <- request
 }
 
 func (t *Thread) asyncTellRunnerToStopRun(r *thread.Request) {
@@ -191,7 +191,7 @@ func (t *Thread) asyncTellRunnerToStopRun(r *thread.Request) {
 	request.Source = thread.Processor
 	request.Nonce = r.Nonce
 
-	t.C13 <- request
+	t.channels.c13 <- request
 }
 
 func (t *Thread) syncCheckIfRunStopped(r *thread.Response) error {

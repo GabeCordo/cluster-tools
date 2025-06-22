@@ -27,11 +27,11 @@ func (t *Thread) Start() {
 		}
 
 		select {
-		case iReq = <-t.channels.C13:
+		case iReq = <-t.channels.c13:
 			{
 				t.handleRequest(iReq, oRsp)
 			}
-		case iRsp = <-t.channels.C10:
+		case iRsp = <-t.channels.c10:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iRsp.Nonce]
@@ -39,7 +39,7 @@ func (t *Thread) Start() {
 					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
-		case iRsp = <-t.channels.C16:
+		case iRsp = <-t.channels.c16:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iRsp.Nonce]
@@ -47,7 +47,7 @@ func (t *Thread) Start() {
 					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
-		case <-t.Interrupt:
+		case <-t.channels.interrupt:
 			{
 				// Terminate the thread
 				break
@@ -69,7 +69,7 @@ func (t *Thread) sendResponse(request *thread.Request, response *thread.Response
 	switch request.Source {
 	case thread.Processor:
 		{
-			t.channels.C14 <- response
+			t.channels.c14 <- response
 		}
 	default:
 		{

@@ -28,13 +28,12 @@ type Config struct {
 }
 
 type Thread struct {
-	Interrupt chan<- thread.InterruptEvent
-
 	channels struct {
-		c7  chan<- *thread.Request  // socket_thread is sending req to the processor_thread
-		c8  <-chan *thread.Response // socket_thread is rec rsp from the processor_thread
-		c9  <-chan *thread.Request  // runner_thread is sending req to the socket_thread
-		c10 chan<- *thread.Response // socket_thread is sending rsp to the runner_thread
+		interrupt chan<- thread.InterruptEvent
+		c7        chan<- *thread.Request  // socket_thread is sending req to the processor_thread
+		c8        <-chan *thread.Response // socket_thread is rec rsp from the processor_thread
+		c9        <-chan *thread.Request  // runner_thread is sending req to the socket_thread
+		c10       chan<- *thread.Response // socket_thread is sending rsp to the runner_thread
 	}
 
 	noncePool *nonce2.Pool
@@ -81,7 +80,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 
 	var ok = false
 
-	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
+	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}

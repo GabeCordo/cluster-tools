@@ -27,7 +27,7 @@ func (t *Thread) syncAddModule(processorId uint64, cfg *processor2.ModuleConfig)
 	// -> send the pipeline for storage in the database t
 	//for _, export := range cfg.Exports {
 	//	if export.Pipeline.Mode == pipeline.Stream {
-	//		t.C13 <- thread.Request{
+	//		t.c13 <- thread.Request{
 	//			Action: thread.CreateAction,
 	//			Type:   thread.SupervisorRecord,
 	//			Identifiers: thread.RequestIdentifiers{
@@ -43,7 +43,7 @@ func (t *Thread) syncAddModule(processorId uint64, cfg *processor2.ModuleConfig)
 	//	}
 
 	// TODO : we are removing configs from processor
-	//mandatory := thread.Mandatory{t.C11, t.DatabaseResponseTable, t.pipeline.Timeout}
+	//mandatory := thread.Mandatory{t.c11, t.DatabaseResponseTable, t.pipeline.Timeout}
 	//err := thread.StoreConfigInDatabase(mandatory, cfg.Name, export.ToClusterConfig())
 	//if err == nil {
 	//	t.Logger.Printf("stored new default pipeline for cluster %s in database\n", export.Function)

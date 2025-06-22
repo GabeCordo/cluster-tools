@@ -220,7 +220,7 @@ func New(configPath string) (*Core, error) {
 	//cacheInstance := cache_cmp.NewCache(1000)
 	//
 	//core.CacheThread, err = cache.New(cacheConfig, cacheLogger, cacheInstance,
-	//	core.interrupt, core.C9, core.C10, core.C24, core.C25)
+	//	core.interrupt, core.c9, core.c10, core.c24, core.c25)
 	//if err != nil {
 	//	return nil, err
 	//}

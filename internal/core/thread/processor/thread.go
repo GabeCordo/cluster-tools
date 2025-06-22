@@ -14,6 +14,7 @@ func (t *Thread) Setup() {
 func (t *Thread) Start() {
 
 	var iReq *thread.Request
+	var iRsp *thread.Response
 	var oRsp *thread.Response
 
 	for {
@@ -23,19 +24,19 @@ func (t *Thread) Start() {
 		}
 
 		select {
-		case iReq = <-t.C5:
+		case iReq = <-t.channels.c5:
 			{
 				t.handleRequest(iReq, oRsp)
 			}
-		case iReq = <-t.C7:
+		case iReq = <-t.channels.c7:
 			{
 				t.handleRequest(iReq, oRsp)
 			}
-		case iReq = <-t.C18:
+		case iReq = <-t.channels.c18:
 			{
 				t.handleRequest(iReq, oRsp)
 			}
-		case iRsp := <-t.C12:
+		case iRsp = <-t.channels.c12:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iRsp.Nonce]
@@ -43,7 +44,7 @@ func (t *Thread) Start() {
 					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
-		case iRsp := <-t.C14:
+		case iRsp = <-t.channels.c14:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iReq.Nonce]
@@ -51,7 +52,7 @@ func (t *Thread) Start() {
 					t.handleResponse(iReq, iRsp, oRsp)
 				}
 			}
-		case <-t.Interrupt:
+		case <-t.channels.interrupt:
 			{
 				// terminate the thread from processing further
 				break
@@ -70,11 +71,11 @@ func (t *Thread) sendResponse(request *thread.Request, response *thread.Response
 
 	switch request.Source {
 	case thread.HttpClient:
-		t.C6 <- response
+		t.channels.c6 <- response
 	case thread.Socket:
-		t.C8 <- response
+		t.channels.c8 <- response
 	case thread.Scheduler:
-		t.C19 <- response
+		t.channels.c19 <- response
 	default:
 		// NOP
 	}

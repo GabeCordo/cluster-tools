@@ -43,7 +43,7 @@ func (t *Thread) asyncGetPipelineFromDatabase(request *thread.Request) {
 	databaseRequest.Source = thread.Runner
 	databaseRequest.Nonce = request.Nonce
 
-	t.channels.C15 <- databaseRequest
+	t.channels.c15 <- databaseRequest
 }
 
 func (t *Thread) syncCreateNewRunRecord(request *thread.Request, response *thread.Response) (uint64, pipeline.Pipeline, error) {
@@ -96,7 +96,7 @@ func (t *Thread) asyncSendRunToSocket(request *thread.Request, id uint64, cfg *p
 	socketRequest.Source = thread.Runner
 	socketRequest.Nonce = request.Nonce
 
-	t.channels.C9 <- socketRequest
+	t.channels.c9 <- socketRequest
 }
 
 func (t *Thread) syncUpdateRunAfterFirstResponseFromSocket(request *thread.Request, response *thread.Response) error {
@@ -164,7 +164,7 @@ func (t *Thread) asyncCreateStatisticRecordInDatabase(request *thread.Request, r
 	req.Source = thread.Runner
 	req.Nonce = request.Nonce
 
-	t.channels.C15 <- req
+	t.channels.c15 <- req
 }
 
 func (t *Thread) asyncCloseMessengerForRun(request *thread.Request) {
@@ -183,7 +183,7 @@ func (t *Thread) asyncCloseMessengerForRun(request *thread.Request) {
 	msgrRequest.Source = thread.Runner
 	msgrRequest.Nonce = request.Nonce
 
-	t.channels.C17 <- msgrRequest
+	t.channels.c17 <- msgrRequest
 }
 
 func (t *Thread) asyncLogRun(request *thread.Request) error {
@@ -230,7 +230,7 @@ func (t *Thread) asyncLogRun(request *thread.Request) error {
 	messengerRequest.Data = l.Message
 	messengerRequest.Nonce = request.Nonce
 
-	t.channels.C17 <- messengerRequest
+	t.channels.c17 <- messengerRequest
 
 	return nil
 }
@@ -258,7 +258,7 @@ func (t *Thread) asyncStopRun(request *thread.Request) error {
 	}
 	socketRequest.Nonce = request.Nonce
 
-	t.channels.C9 <- socketRequest
+	t.channels.c9 <- socketRequest
 
 	return nil
 }

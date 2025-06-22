@@ -22,22 +22,24 @@ type Config struct {
 }
 
 type Thread struct {
-	Interrupt <-chan thread.InterruptEvent
+	channels struct {
+		interrupt <-chan thread.InterruptEvent
 
-	C5 <-chan *thread.Request  // Processor rec req from the rest thread
-	C6 chan<- *thread.Response // Processor sending rsp to the rest thread
+		c5 <-chan *thread.Request  // Processor rec req from the rest thread
+		c6 chan<- *thread.Response // Processor sending rsp to the rest thread
 
-	C7 <-chan *thread.Request  // Processor rec req from the processor thread
-	C8 chan<- *thread.Response // Processor sending rsp to the processor thread
+		c7 <-chan *thread.Request  // Processor rec req from the processor thread
+		c8 chan<- *thread.Response // Processor sending rsp to the processor thread
 
-	C11 chan<- *thread.Request  // Processor sending req to the database thread
-	C12 <-chan *thread.Response // Processor rec rsp from the database thread
+		c11 chan<- *thread.Request  // Processor sending req to the database thread
+		c12 <-chan *thread.Response // Processor rec rsp from the database thread
 
-	C13 chan<- *thread.Request  // Processor thread sending req to the runner thread
-	C14 <-chan *thread.Response // Processor thread rec rsp from the runner thread
+		c13 chan<- *thread.Request  // Processor thread sending req to the runner thread
+		c14 <-chan *thread.Response // Processor thread rec rsp from the runner thread
 
-	C18 <-chan *thread.Request  // Processor rec req from the scheduler thread
-	C19 chan<- *thread.Response // Processor sending rsp to the scheduler thread
+		c18 <-chan *thread.Request  // Processor rec req from the scheduler thread
+		c19 chan<- *thread.Response // Processor sending rsp to the scheduler thread
+	}
 
 	requestStore map[nonce.Nonce]*thread.Request
 
@@ -68,57 +70,57 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 
 	var ok = false
 
-	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
+	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
 
-	t.C5, ok = (channels[1]).(chan *thread.Request)
+	t.channels.c5, ok = (channels[1]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 1")
 	}
 
-	t.C6, ok = (channels[2]).(chan *thread.Response)
+	t.channels.c6, ok = (channels[2]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
 
-	t.C7, ok = (channels[3]).(chan *thread.Request)
+	t.channels.c7, ok = (channels[3]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 3")
 	}
 
-	t.C8, ok = (channels[4]).(chan *thread.Response)
+	t.channels.c8, ok = (channels[4]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 4")
 	}
 
-	t.C11, ok = (channels[5]).(chan *thread.Request)
+	t.channels.c11, ok = (channels[5]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 5")
 	}
 
-	t.C12, ok = (channels[6]).(chan *thread.Response)
+	t.channels.c12, ok = (channels[6]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
 
-	t.C13, ok = (channels[7]).(chan *thread.Request)
+	t.channels.c13, ok = (channels[7]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorRequest' in index 7")
 	}
 
-	t.C14, ok = (channels[8]).(chan *thread.Response)
+	t.channels.c14, ok = (channels[8]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorResponse' in index 8")
 	}
 
-	t.C18, ok = (channels[9]).(chan *thread.Request)
+	t.channels.c18, ok = (channels[9]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorRequest' in index 9")
 	}
 
-	t.C19, ok = (channels[10]).(chan *thread.Response)
+	t.channels.c19, ok = (channels[10]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}

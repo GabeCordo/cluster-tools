@@ -16,19 +16,19 @@ type Config struct {
 }
 
 type Thread struct {
-	Interrupt chan thread.InterruptEvent
-
 	channels struct {
-		C13 chan *thread.Request  // runner receives requests from the processor
-		C14 chan *thread.Response // runner sends responses to the processor
+		interrupt chan thread.InterruptEvent
 
-		C15 chan *thread.Request  //runner sends requests to the database
-		C16 chan *thread.Response // runner receives responses from the database
+		c13 chan *thread.Request  // runner receives requests from the processor
+		c14 chan *thread.Response // runner sends responses to the processor
 
-		C9  chan *thread.Request  // runner sends requests to the tls-socket
-		C10 chan *thread.Response // runner receives responses from the tls-socket
+		c15 chan *thread.Request  //runner sends requests to the database
+		c16 chan *thread.Response // runner receives responses from the database
 
-		C17 chan *thread.Request // runner sends requests to the messenger
+		c9  chan *thread.Request  // runner sends requests to the tls-socket
+		c10 chan *thread.Response // runner receives responses from the tls-socket
+
+		c17 chan *thread.Request // runner sends requests to the messenger
 	}
 
 	requestStore map[nonce.Nonce]*thread.Request
@@ -58,35 +58,35 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 
 	var ok = false
 
-	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
+	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	t.channels.C13, ok = (channels[1]).(chan *thread.Request)
+	t.channels.c13, ok = (channels[1]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorRequest' in index 1")
 	}
-	t.channels.C14, ok = (channels[2]).(chan *thread.Response)
+	t.channels.c14, ok = (channels[2]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan SupervisorResponse' in index 2")
 	}
-	t.channels.C15, ok = (channels[3]).(chan *thread.Request)
+	t.channels.c15, ok = (channels[3]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseRequest' in index 3")
 	}
-	t.channels.C16, ok = (channels[4]).(chan *thread.Response)
+	t.channels.c16, ok = (channels[4]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 4")
 	}
-	t.channels.C17, ok = (channels[5]).(chan *thread.Request)
+	t.channels.c17, ok = (channels[5]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerRequest' in index 5")
 	}
-	t.channels.C9, ok = (channels[6]).(chan *thread.Request)
+	t.channels.c9, ok = (channels[6]).(chan *thread.Request)
 	if !ok {
 		return nil, errors.New("expected type 'chan RunnerRequest' in index 6")
 	}
-	t.channels.C10, ok = (channels[7]).(chan *thread.Response)
+	t.channels.c10, ok = (channels[7]).(chan *thread.Response)
 	if !ok {
 		return nil, errors.New("expected type 'chan RunnerResponse' in index 7")
 	}
