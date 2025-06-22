@@ -12,9 +12,7 @@ type Config struct {
 type Status string
 
 const (
-	Active   Status = "active"
-	Suspect         = "suspect"
-	Inactive        = "inactive"
+	Active Status = "active"
 )
 
 type Processor struct {

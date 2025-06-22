@@ -17,7 +17,6 @@ type ConfigCommand struct {
 }
 
 var FailedParsing = errors.New("failed to parse pipeline field")
-var BadValue = errors.New("the field/value does not match")
 
 func (command ConfigCommand) configParser(c *core.Config, fields []string) (any, error) {
 

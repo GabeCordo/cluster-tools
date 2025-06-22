@@ -162,13 +162,6 @@ func (t *Thread) Start() {
 			}
 		}
 	}
-
-	err := t.connection.Close()
-	if err != nil {
-		fmt.Print(err)
-	}
-	t.connection = nil
-	t.channels.Interrupt <- thread.Shutdown
 }
 
 func (t *Thread) ProcessRequest(request *thread.SocketRequest) {
@@ -207,7 +200,7 @@ func (t *Thread) ProcessRequest(request *thread.SocketRequest) {
 		}
 	case thread.SocketRunUpdate:
 		{
-			r, ok := request.Data.(run.Run)
+			r, ok := request.Data.(*run.Run)
 			if !ok {
 				t.logger.Warnln("received run update with invalid data")
 			}

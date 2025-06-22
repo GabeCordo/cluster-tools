@@ -477,28 +477,6 @@ func UnmountModule(mandatory Mandatory, moduleName string) (bool, error) {
 	return response.Success, response.Error
 }
 
-func DeleteModule(mandatory Mandatory, processorId uint64, moduleName string) (bool, error) {
-
-	request := Request{
-		Action:      DeleteAction,
-		Type:        ModuleRecord,
-		Source:      Socket,
-		Identifiers: RequestIdentifiers{Processor: processorId, Module: moduleName},
-		Nonce:       mandatory.NoncePool.Next(),
-	}
-	mandatory.Pipe <- request
-
-	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
-
-	if didTimeout {
-		return false, nonce2.NoResponseReceived
-	}
-
-	response := (data).(Response)
-
-	return response.Success, response.Error
-}
-
 func FetchFromCache(mandatory Mandatory, key string) (value any, found bool) {
 
 	request := Request{

@@ -20,23 +20,14 @@ type ProvisionerAction uint8
 
 const (
 	ProvisionerModuleGet ProvisionerAction = iota
-	ProvisionerRunGet
 	ProvisionerRunCreate
 	ProvisionerRunStop
 	ProvisionerStatisticsGet
 	ProvisionerRegisterModules
 )
 
-type ProvisionerSource string
-
-const (
-	Core ProvisionerSource = "core"
-	User                   = "user"
-)
-
 type ProvisionerRequest struct {
 	Action     ProvisionerAction
-	Source     ProvisionerSource
 	Namespace  string
 	Supervisor uint64
 	Pipeline   *pipeline.Pipeline

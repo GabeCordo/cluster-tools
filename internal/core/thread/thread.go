@@ -13,15 +13,12 @@ var BadRequestType = errors.New("the request type does not match what was expect
 
 var BadResponseType = errors.New("the response type does not match what was expected for this chan")
 
-var IllegalRequest = errors.New("the source is not permitted to send requests over this channel")
-
 var UnknownRequest = errors.New("the request action is unknown to this thread")
 
 type RequestCaller uint8
 
 const (
 	User RequestCaller = iota
-	System
 )
 
 type RequestAction uint16
@@ -35,9 +32,7 @@ const (
 	LogAction
 	MountAction
 	UnMountAction
-	WipeAction
 	CloseAction
-	ToggleAction
 )
 
 type RequestType uint16
@@ -57,9 +52,6 @@ const (
 	WarningLogRecord
 	FatalLogRecord
 	SubscriberRecord
-	ContactRecord
-	EmailRecord
-	SubscriptionRecord
 )
 
 type RequestIdentifiers struct {
@@ -167,10 +159,4 @@ func SetupListener(in <-chan Request, out chan<- Response, accepting *bool, wg *
 			wg.Done()
 		}
 	}()
-}
-
-func Send(request *Request, to chan Request, from Module) {
-
-	request.Source = from
-	to <- *request
 }

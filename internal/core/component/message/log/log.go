@@ -184,7 +184,12 @@ func (logger *Logger) Flush(source message.Source, destination any) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(file)
 
 	for _, l := range logs {
 		cleanedLog := strings.ReplaceAll(l, "\n", "")

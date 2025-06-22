@@ -26,12 +26,6 @@ type Job struct {
 	running          bool
 }
 
-// IsJobRunning
-// returns if a job is currently marked as running.
-func IsJobRunning(job *Job) bool {
-	return job.running
-}
-
 // IsTimeToRun
 // Returns true if a job is ready to statistic based on the current time the function is called.
 // If the minute interval for the job is 2, we will statistic the job every minute that is divisible

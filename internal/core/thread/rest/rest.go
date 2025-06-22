@@ -1,9 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
-	"net/http"
-
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 )
@@ -64,11 +61,4 @@ type Response struct {
 	Success     bool   `json:"success"`
 	Description string `json:"description"`
 	Data        any    `json:"data"`
-}
-
-func GetRequest(r *http.Request) (request *Request, err error) {
-	request = &Request{}
-	err = json.NewDecoder(r.Body).Decode(request)
-
-	return request, err
 }

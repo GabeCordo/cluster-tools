@@ -280,7 +280,7 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 
 					var connection net.Conn
 					if c, found := t.connections[request.Identifiers.Processor]; !found {
-						t.Logger.Warnf("no processor exists with the identifier %s\n", request.Identifiers.Processor)
+						t.Logger.Warnf("no processor exists with the identifier %d\n", request.Identifiers.Processor)
 						t.mutex.RUnlock()
 						response.Error = thread.BadRequestType
 						t.mutex.RUnlock()

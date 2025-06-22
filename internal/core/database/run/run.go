@@ -17,7 +17,6 @@ const (
 	Completed         = "completed"
 	Terminated        = "terminated" // this is legacy
 	Cancelled         = "cancelled"
-	Unknown           = "unknown"
 )
 
 func FromString(s string) Status {
@@ -42,11 +41,10 @@ func FromString(s string) Status {
 type Event string
 
 const (
-	Create   Event = "create"
-	Start          = "start"
-	Cancel         = "cancel"
-	Error          = "error"
-	Complete       = "complete"
+	Start    = "start"
+	Cancel   = "cancel"
+	Error    = "error"
+	Complete = "complete"
 )
 
 type Request struct {

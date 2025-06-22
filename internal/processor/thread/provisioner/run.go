@@ -77,11 +77,14 @@ func (t *Thread) provisionRun(request *thread.ProvisionerRequest) error {
 					break
 				}
 
-				r := run.Run{
-					Id:         supervisorInstance.Id,
-					Status:     run.Active,
-					Statistics: supervisorInstance.Pipeline.Stats,
+				r := new(run.Run)
+				if r == nil {
+					panic("failed to allocate memory for run.Run")
 				}
+
+				r.Id = supervisorInstance.Id
+				r.Status = run.Active
+				r.Statistics = supervisorInstance.Pipeline.Stats
 
 				t.C0 <- thread.SocketRequest{
 					Action: thread.SocketRunUpdate,
@@ -104,11 +107,14 @@ func (t *Thread) provisionRun(request *thread.ProvisionerRequest) error {
 
 		status := string(supervisorInstance.State)
 
-		r := run.Run{
-			Id:         supervisorInstance.Id,
-			Status:     run.FromString(status), // TODO: provision.RunStatus(supervisorInstance.State)
-			Statistics: supervisorInstance.Pipeline.Stats,
+		r := new(run.Run)
+		if r == nil {
+			panic("failed to allocate memory for run.Run")
 		}
+
+		r.Id = supervisorInstance.Id
+		r.Status = run.FromString(status)
+		r.Statistics = supervisorInstance.Pipeline.Stats
 
 		t.C0 <- thread.SocketRequest{
 			Action: thread.SocketRunUpdate,

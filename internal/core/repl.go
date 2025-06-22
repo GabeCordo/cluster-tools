@@ -3,17 +3,11 @@ package core
 import (
 	"bufio"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/thread"
 	"os"
 	"strings"
-)
 
-func banner() {
-	fmt.Println()
-	fmt.Println("the interactive shell is an experimental feature that is still being worked on. " +
-		"there may be some issues or missing features that are under development.")
-	fmt.Println()
-}
+	"github.com/GabeCordo/Flock/internal/core/thread"
+)
 
 func (core *Core) repl() {
 	reader := bufio.NewReader(os.Stdin)

@@ -11,15 +11,14 @@ import (
 )
 
 var (
-	userCacheDir, _            = os.UserCacheDir()
-	DefaultFrameworkFolder     = userCacheDir + "/flock/"
-	DefaultConfigsFolder       = DefaultFrameworkFolder + "configs/"
-	DefaultCoreConfigFile      = DefaultFrameworkFolder + "core.yml"
-	DefaultProcessorConfigFile = DefaultFrameworkFolder + "processor.yml"
-	DefaultLogsFolder          = DefaultFrameworkFolder + "logs/"
-	DefaultStatisticsFolder    = DefaultFrameworkFolder + "statistics/"
-	DefaultSchedulesFolder     = DefaultFrameworkFolder + "schedules/"
-	DefaultMessengerFolder     = DefaultFrameworkFolder + "messenger/"
+	userCacheDir, _         = os.UserCacheDir()
+	DefaultFrameworkFolder  = userCacheDir + "/flock/"
+	DefaultConfigsFolder    = DefaultFrameworkFolder + "configs/"
+	DefaultCoreConfigFile   = DefaultFrameworkFolder + "core.yml"
+	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
+	DefaultStatisticsFolder = DefaultFrameworkFolder + "statistics/"
+	DefaultSchedulesFolder  = DefaultFrameworkFolder + "schedules/"
+	DefaultMessengerFolder  = DefaultFrameworkFolder + "messenger/"
 )
 
 type InitCommand struct {

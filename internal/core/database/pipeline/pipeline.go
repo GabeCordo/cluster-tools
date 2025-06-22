@@ -1,34 +1,5 @@
 package pipeline
 
-type Segment int8
-
-const (
-	Extract   Segment = 0
-	Transform         = 1
-	Load              = 2
-)
-
-type OnCrash string
-
-const (
-	Restart   OnCrash = "Restart"
-	DoNothing         = "DoNothing"
-)
-
-type OnLoad string
-
-const (
-	CompleteAndPush OnLoad = "CompleteAndPush"
-	WaitAndPush            = "WaitAndPush"
-)
-
-type RunMode string
-
-const (
-	Batch  RunMode = "Batch"
-	Stream         = "Stream"
-)
-
 type Function struct {
 	Module     string `json:"module"`
 	Identifier string `json:"id" yaml:"id"`
@@ -46,7 +17,6 @@ type Pipe struct {
 
 type Pipeline struct {
 	Identifier string     `json:"id" yaml:"id"`
-	OnCrash    OnCrash    `json:"on_crash,omitempty" yaml:"on_crash,omitempty"`
 	Functions  []Function `json:"functions" yaml:"functions"`
 	Pipes      []Pipe     `json:"pipes" yaml:"pipes"`
 	OnStartup  string     `json:"on_startup" yaml:"on_startup,omitempty"`

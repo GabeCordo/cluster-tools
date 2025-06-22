@@ -54,11 +54,7 @@ const (
 	Error
 	Suspend
 	TearedDown
-	StartReport
-	EndReport
 )
-
-const MaximumRoutinesPerSupervisor = 2000
 
 type Instance struct {
 	Id uint64 `json:"id"`
@@ -704,6 +700,8 @@ func (status Status) ToString() string {
 		return "Failed"
 	case Terminated:
 		return "Terminated"
+	case Unknown:
+		return "Unknown"
 	default:
 		return "None"
 	}

@@ -84,10 +84,6 @@ type Config struct {
 	} `yaml:"paths"`
 }
 
-const (
-	DefaultFilePermissions os.FileMode = 0755 // TODO : should this be here?
-)
-
 func NewConfig(name string) *Config {
 	config := new(Config)
 

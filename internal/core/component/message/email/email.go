@@ -92,11 +92,5 @@ func (messenger *Messenger) Message(source message.Source, record any) error {
 
 func (messenger *Messenger) Flush(source message.Source, destination any) error {
 
-	//emailSuccess := true
-	//if messenger.enabled.smtp {
-	//	if receivers, found := messenger.smtp.Receivers[endpoint]; found {
-	//		emailSuccess = SendEmail(endpoint, messenger.smtp.Credentials, receivers, messenger.smtp.Endpoint)
-	//	}
-	//}
 	panic("not implemented")
 }

@@ -24,7 +24,7 @@ func RandInteger(min int, max int) int {
 	return min + r.Intn(max-min)
 }
 
-func GenerateRandomString(seed int) string {
+func GenerateRandomString() string {
 	buffer := new(bytes.Buffer)
 	for i := 0; i < maxGeneratedStringLength; i++ {
 		char := RandInteger(lowerASCIIBound, upperASCIIBound)
@@ -59,7 +59,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 
 	var identifier string
 	for {
-		identifier = GenerateRandomString(DefaultCacheRecordIdentifierSize)
+		identifier = GenerateRandomString()
 
 		// in the odd case the cache identifier already exists, try again until we find a unique id
 		// Note: this should not hit as records (should) consistently be deleted
