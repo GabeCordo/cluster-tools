@@ -15,6 +15,10 @@ var BadResponseType = errors.New("the response type does not match what was expe
 
 var UnknownRequest = errors.New("the request action is unknown to this thread")
 
+var NotImplemented = errors.New("thread functions has not been implemented")
+
+var FailedToSendResponse = errors.New("could not send a response")
+
 type RequestCaller uint8
 
 const (
@@ -138,7 +142,33 @@ const (
 type Thread interface {
 	Setup()
 	Start()
+	HandleRequest(*Request) *Response
 	Teardown()
+}
+
+func NewRequest(source Module) *Request {
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocated thread.Request struct")
+	}
+	request.Source = source
+	return request
+}
+
+func NewResponse(source Module) *Response {
+	response := new(Response)
+	if response == nil {
+		panic("failed to allocated thread.Response struct")
+	}
+	response.Source = source
+	return response
+}
+
+func CopyMetadata(request *Request, response *Response) {
+
+	response.Action = request.Action
+	response.Type = request.Type
+	response.Nonce = request.Nonce
 }
 
 func SetupListener(in <-chan *Request, out chan<- *Response, accepting *bool, wg *sync.WaitGroup, module Module, f func(request *Request, response *Response)) {

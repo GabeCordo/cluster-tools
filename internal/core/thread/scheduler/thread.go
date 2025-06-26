@@ -1,15 +1,10 @@
 package scheduler
 
 import (
-	"errors"
-	"fmt"
-
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 func (t *Thread) Setup() {
@@ -28,80 +23,41 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	// LISTENER THREADS
+	go t.watch()
+	go t.loop()
 
-	thread.SetupListener(t.channels.c20, t.channels.c21, &t.accepting, &t.wg, thread.Scheduler, t.HandleRequest)
+	var iReq *thread.Request
+	var iRsp *thread.Response
+	var oRsp *thread.Response
 
-	// RESPONSE THREADS
+	for {
 
-	go func() {
-		// response coming from the processor thread
-		for response := range t.channels.c19 {
-			t.processorResponseTable.Write(response.Nonce, response)
+		select {
+		case iReq = <-t.channels.c20:
+			{
+				oRsp = t.HandleRequest(iReq)
+				if oRsp != nil {
+					t.channels.c21 <- oRsp
+				}
+			}
+		case iRsp = <-t.channels.c19:
+			{
+				// response coming from the processor thread
+				t.processorResponseTable.Write(iRsp.Nonce, iRsp)
+			}
+		case iRsp = <-t.channels.c27:
+			{
+				// response coming from the database thread
+				t.databaseResponseTable.Write(iRsp.Nonce, iRsp)
+			}
 		}
-	}()
-
-	go func() {
-		// response coming from the processor thread
-		for response := range t.channels.c27 {
-			t.databaseResponseTable.Write(response.Nonce, response)
-		}
-	}()
-
-	// SCHEDULER THREADS
-
-	go job2.Watch(t.Scheduler)
-
-	go func() {
-		err := job2.Loop(t.Scheduler, func(jb job.Job) error {
-
-			// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
-			mandatory := thread.Mandatory{
-				Pipe:          t.channels.c18,
-				ResponseTable: t.processorResponseTable,
-				NoncePool:     t.noncePool,
-				Timeout:       t.config.Timeout,
-			}
-			_, err := thread.CreateRun(mandatory, jb.Namespace, jb.Pipeline, jb.Metadata)
-
-			e := ""
-			if err != nil {
-
-				e = fmt.Sprintf("but encountered an error, %s", err.Error())
-			}
-
-			if (err != nil) && t.config.Debug {
-				t.logger.Printf("scheduled cluster is ready: %s (%s,%s) %s\n", jb.Identifier, jb.Namespace, jb.Pipeline, e)
-				t.logger.Printf("%d clusters are waiting to be provisioned\n", t.Scheduler.ItemsInQueue())
-			}
-
-			// if err is not nil, the Scheduler will stop running, so output to console
-			// if debug is enabled so the operator is aware of the runtime change
-			if (errors.Is(err, processor.CanNotProvisionStreamCluster) || (errors.Is(err, multithreaded.NoResponseReceived))) && t.config.Debug {
-				t.logger.Printf("the Scheduler stopped after encountering %s\n", err.Error())
-			}
-
-			// I only care about errors that might indicate a compromised state of the thread, the others
-			// like Namespace/Function's not existing really makes no sense to crash the Scheduler as someone
-			// likely put in the job for a future module/cluster pair they want to attach to mango
-			if errors.Is(err, processor.CanNotProvisionStreamCluster) || errors.Is(err, multithreaded.NoResponseReceived) ||
-				errors.Is(err, processor.ModuleDoesNotExist) || errors.Is(err, processor.FunctionDoesNotExist) {
-				return err
-			} else {
-				return nil
-			}
-		})
-		if err != nil {
-			fmt.Print(err)
-		}
-	}()
+	}
 }
 
-func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Response) {
 
-	response.Type = request.Type
-	response.Action = request.Action
-	response.Nonce = request.Nonce
+	response = thread.NewResponse(thread.Scheduler)
+	thread.CopyMetadata(request, response)
 
 	switch request.Action {
 	case thread.GetAction:
@@ -123,7 +79,8 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					t.logger.Warn(thread.UnknownRequest.Error())
+					response.Success = false
+					response.Error = thread.UnknownRequest
 				}
 			}
 		}
@@ -151,9 +108,12 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 		}
 	default:
 		{
-			t.logger.Warn(thread.UnknownRequest.Error())
+			response.Success = false
+			response.Error = thread.UnknownRequest
 		}
 	}
+
+	return response
 }
 
 func (t *Thread) Teardown() {
