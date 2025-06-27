@@ -10,7 +10,7 @@ import (
 )
 
 func (t *Thread) Setup() {
-	t.accepting = true
+
 }
 
 func (t *Thread) Start() {
@@ -20,7 +20,6 @@ func (t *Thread) Start() {
 	var oRsp *thread.Response
 
 	for {
-
 		select {
 		case iReq = <-t.channels.c13:
 			{
@@ -46,8 +45,12 @@ func (t *Thread) Start() {
 					t.handleResponse(iReq, iRsp)
 				}
 			}
+		case <-t.channels.close:
+			{
+				// shutting down the runner thread
+				break
+			}
 		}
-
 		oRsp = nil
 	}
 }
@@ -319,6 +322,9 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 }
 
 func (t *Thread) Teardown() {
-	t.accepting = false
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
+
 	t.wg.Wait() // don't tear down until all the requests have been processed
 }

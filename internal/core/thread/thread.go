@@ -2,8 +2,6 @@ package thread
 
 import (
 	"errors"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
 )
 
@@ -169,33 +167,4 @@ func CopyMetadata(request *Request, response *Response) {
 	response.Action = request.Action
 	response.Type = request.Type
 	response.Nonce = request.Nonce
-}
-
-func SetupListener(in <-chan *Request, out chan<- *Response, accepting *bool, wg *sync.WaitGroup, module Module, f func(request *Request, response *Response)) {
-
-	go func() {
-		for request := range in {
-			if !(*accepting) {
-				break
-			}
-			wg.Add(1)
-
-			response := new(Response)
-			if response == nil {
-				panic("could not allocated memory for Response")
-			}
-
-			response.Source = module
-			response.Nonce = request.Nonce
-			response.Success = false
-			response.Error = nil
-
-			f(request, response)
-
-			if out != nil {
-				out <- response
-			}
-			wg.Done()
-		}
-	}()
 }

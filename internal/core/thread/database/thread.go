@@ -11,7 +11,6 @@ import (
 )
 
 func (t *Thread) Setup() {
-	t.accepting = true
 
 	if err := t.pipelineDatabase.Load(t.config.ConfigsFolder); err != nil {
 		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
@@ -24,56 +23,58 @@ func (t *Thread) Setup() {
 	t.pipelineDatabase.Print()
 }
 
-func (t *Thread) Teardown() {
-	t.accepting = false
-
-	if err := t.pipelineDatabase.Save(t.config.ConfigsFolder); err != nil {
-		log.Printf("failed to save configs created during runtime %s\n", err.Error())
-	}
-
-	if err := t.statisticDatabase.Save(t.config.StatisticsFolder); err != nil {
-		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
-	}
-
-	t.wg.Wait()
-}
-
 func (t *Thread) Start() {
 
-	// LISTEN FOR INCOMING REQUESTS
+	var iReq *thread.Request
+	var oRsp *thread.Response
 
-	thread.SetupListener(t.channels.c1, t.channels.c2, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
-
-	thread.SetupListener(t.channels.c11, t.channels.c12, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
-
-	thread.SetupListener(t.channels.c15, t.channels.c16, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
-
-	thread.SetupListener(t.channels.c26, t.channels.c27, &t.accepting, &t.wg, thread.Database, t.HandleRequest)
-
-}
-
-func (t *Thread) Request(module thread.Module, request any) (success bool) {
-
-	success = true
-
-	switch module {
-	case thread.Messenger:
-		req, ok := (request).(*thread.Request)
-		if ok {
-			t.channels.c3 <- req
+	for {
+		select {
+		case iReq = <-t.channels.c1:
+			{
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c2 <- oRsp
+				}
+			}
+		case iReq = <-t.channels.c11:
+			{
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c12 <- oRsp
+				}
+			}
+		case iReq = <-t.channels.c15:
+			{
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c16 <- oRsp
+				}
+			}
+		case iReq = <-t.channels.c26:
+			{
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c27 <- oRsp
+				}
+			}
+		case <-t.channels.close:
+			{
+				// shutting down the database thread
+				break
+			}
 		}
-	default:
-		success = false
+		oRsp = nil
 	}
-	return success
 }
 
-func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
 
-	response.Source = thread.Database
-	response.Action = request.Action
-	response.Type = request.Type
-	response.Nonce = request.Nonce
+	response = thread.NewResponse(thread.Database)
 
 	switch request.Action {
 	case thread.CreateAction:
@@ -125,7 +126,7 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					t.logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.UnknownRequest
 				}
 			}
 		}
@@ -164,7 +165,7 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					t.logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.UnknownRequest
 				}
 			}
 		}
@@ -198,7 +199,7 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					t.logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.UnknownRequest
 				}
 			}
 		}
@@ -221,11 +222,32 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					t.logger.Warn(thread.UnknownRequest.Error())
+					response.Error = thread.UnknownRequest
 				}
 			}
 		}
 	default:
-		t.logger.Warn(thread.UnknownRequest.Error())
+		{
+			response.Error = thread.UnknownRequest
+		}
 	}
+
+	response.Success = response.Error == nil
+	return response
+}
+
+func (t *Thread) Teardown() {
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
+
+	if err := t.pipelineDatabase.Save(t.config.ConfigsFolder); err != nil {
+		log.Printf("failed to save configs created during runtime %s\n", err.Error())
+	}
+
+	if err := t.statisticDatabase.Save(t.config.StatisticsFolder); err != nil {
+		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
+	}
+
+	t.wg.Wait()
 }

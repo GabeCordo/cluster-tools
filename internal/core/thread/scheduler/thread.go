@@ -17,8 +17,6 @@ func (t *Thread) Setup() {
 	if err = t.Scheduler.Jobs.Load(t.config.SchedulesFolder); err != nil {
 		panic(err)
 	}
-
-	t.accepting = true
 }
 
 func (t *Thread) Start() {
@@ -31,7 +29,6 @@ func (t *Thread) Start() {
 	var oRsp *thread.Response
 
 	for {
-
 		select {
 		case iReq = <-t.channels.c20:
 			{
@@ -50,7 +47,13 @@ func (t *Thread) Start() {
 				// response coming from the database thread
 				t.databaseResponseTable.Write(iRsp.Nonce, iRsp)
 			}
+		case <-t.channels.close:
+			{
+				// shutting down the scheduler thread
+				break
+			}
 		}
+		oRsp = nil
 	}
 }
 
@@ -118,7 +121,8 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 
 func (t *Thread) Teardown() {
 
-	t.accepting = false
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
 
 	// do not complete teardown until all requests have been completed
 	t.wg.Wait()

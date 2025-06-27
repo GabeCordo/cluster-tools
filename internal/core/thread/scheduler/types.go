@@ -32,6 +32,8 @@ type Thread struct {
 
 		c26 chan<- *thread.Request  // Scheduler sends request to database_thread
 		c27 <-chan *thread.Response // Scheduler receives response from database_thread
+
+		close chan thread.InterruptEvent
 	}
 
 	wg sync.WaitGroup
@@ -48,8 +50,6 @@ type Thread struct {
 	jobDatabase database.Database
 
 	Scheduler *job.Scheduler
-
-	accepting bool
 }
 
 func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...any) (*Thread, error) {

@@ -29,6 +29,8 @@ type Thread struct {
 		c10 chan *thread.Response // runner receives responses from the tls-socket
 
 		c17 chan *thread.Request // runner sends requests to the messenger
+
+		close chan thread.InterruptEvent
 	}
 
 	requestStore map[nonce.Nonce]*thread.Request
@@ -38,8 +40,7 @@ type Thread struct {
 
 	registry database.Database
 
-	accepting bool
-	wg        sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, channels ...any) (*Thread, error) {

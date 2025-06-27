@@ -20,8 +20,10 @@ type Thread struct {
 		c9  <-chan *thread.Request  // cache receiving requests from the rest processor
 		c10 chan<- *thread.Response // cache sending responses to the rest processor
 
-		c24 <-chan *thread.Request  // cache receiving requests from the rest rest
+		c24 <-chan *thread.Request  // cache receiving requests from the rest thread
 		c25 chan<- *thread.Response // cache sending responses to the rest rest
+
+		close chan thread.InterruptEvent
 	}
 
 	config *Config
@@ -29,8 +31,7 @@ type Thread struct {
 
 	cache cache.Cache
 
-	accepting bool
-	wg        sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any) (*Thread, error) {
