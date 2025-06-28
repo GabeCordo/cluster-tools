@@ -103,6 +103,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.connections = make(map[uint64]net.Conn)
 

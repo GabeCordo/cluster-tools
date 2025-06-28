@@ -91,6 +91,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 	if !ok {
 		return nil, errors.New("expected type 'chan RunnerResponse' in index 7")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.requestStore = make(map[nonce.Nonce]*thread.Request)
 

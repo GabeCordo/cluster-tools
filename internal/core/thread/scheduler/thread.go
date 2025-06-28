@@ -121,11 +121,11 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 
 func (t *Thread) Teardown() {
 
-	// send a notification to the Start() goroutine to terminate
-	t.channels.close <- thread.Shutdown
-
 	// do not complete teardown until all requests have been completed
 	t.wg.Wait()
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
 
 	if db, ok := (t.Scheduler.Jobs).(database.Database); ok {
 

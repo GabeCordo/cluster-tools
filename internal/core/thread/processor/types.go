@@ -126,6 +126,8 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}
 
+	t.channels.close = make(chan thread.InterruptEvent)
+
 	t.requestStore = make(map[nonce.Nonce]*thread.Request)
 
 	return t, nil

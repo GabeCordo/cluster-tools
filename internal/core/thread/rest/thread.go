@@ -119,9 +119,6 @@ func (t *Thread) Start() {
 
 func (t *Thread) Teardown() {
 
-	// send a notification to the Start() goroutine to terminate
-	t.channels.close <- thread.Shutdown
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		// extra handling here
@@ -132,4 +129,7 @@ func (t *Thread) Teardown() {
 	if err != nil {
 		t.channels.interrupt <- thread.Panic
 	}
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
 }

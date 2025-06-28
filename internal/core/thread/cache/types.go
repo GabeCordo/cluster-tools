@@ -63,6 +63,7 @@ func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any
 	if !ok {
 		return nil, errors.New("expected type 'chan CacheResponse' in index 4")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")

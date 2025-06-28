@@ -114,6 +114,7 @@ func New(cfg *Config, logger *logging.Logger,
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 10")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.messengerResponseTable = multithreaded.NewResponseTable()
 

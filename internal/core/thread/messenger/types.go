@@ -76,6 +76,7 @@ func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, chann
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 5")
 	}
+	th.channels.close = make(chan thread.InterruptEvent)
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")

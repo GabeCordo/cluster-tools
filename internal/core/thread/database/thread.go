@@ -238,6 +238,8 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 
 func (t *Thread) Teardown() {
 
+	t.wg.Wait()
+
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 
@@ -248,6 +250,4 @@ func (t *Thread) Teardown() {
 	if err := t.statisticDatabase.Save(t.config.StatisticsFolder); err != nil {
 		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
 	}
-
-	t.wg.Wait()
 }

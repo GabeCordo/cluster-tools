@@ -102,6 +102,8 @@ func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 6")
 	}
 
+	t.channels.close = make(chan thread.InterruptEvent)
+
 	t.noncePool = nonce2.New(nonceMin, nonceMax)
 
 	t.processorResponseTable = nonce2.NewResponseTable()

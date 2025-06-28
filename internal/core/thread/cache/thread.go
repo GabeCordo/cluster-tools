@@ -81,8 +81,8 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 
 func (t *Thread) Teardown() {
 
+	t.wg.Wait()
+
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
-
-	t.wg.Wait()
 }

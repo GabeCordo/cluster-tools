@@ -138,8 +138,8 @@ func (th *Thread) ProcessCloseLogRequest(request *thread.Request) error {
 
 func (th *Thread) Teardown() {
 
+	th.wg.Wait()
+
 	// send a notification to the Start() goroutine to terminate
 	th.channels.close <- thread.Shutdown
-
-	th.wg.Wait()
 }

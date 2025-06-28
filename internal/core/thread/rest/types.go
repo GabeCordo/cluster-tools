@@ -111,6 +111,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 8")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.noncePool = nonce2.New(nonceMin, nonceMax)
 	t.ProcessorResponseTable = nonce2.NewResponseTable()

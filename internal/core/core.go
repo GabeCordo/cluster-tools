@@ -341,14 +341,14 @@ func (core *Core) Run() {
 	// ---
 	// an interrupt can be sent by any thread that has access to the channel if an
 	// error or end-state has been reached by the application
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
-	case <-sigs:
-		core.interrupt <- thread.Panic
-	case interrupt := <-core.interrupt:
-		switch interrupt {
+	case <-sig:
+		core.interrupt <- thread.Shutdown
+	case i := <-core.interrupt:
+		switch i {
 		case thread.Panic:
 			core.logger.Printf("[IO] %s\n", " encountered panic")
 		default: // shutdown
