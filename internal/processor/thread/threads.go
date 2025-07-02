@@ -36,11 +36,28 @@ type ProvisionerRequest struct {
 	Nonce      nonce.Nonce
 }
 
+func NewProvisionerRequest() *ProvisionerRequest {
+	r := new(ProvisionerRequest)
+	if r == nil {
+		panic("failed to allocate ProvisionerRequest")
+	}
+	return r
+}
+
 type ProvisionerResponse struct {
 	Success bool
 	Error   error
 	Data    any
 	Nonce   nonce.Nonce
+}
+
+func NewProvisionerResponse(req *ProvisionerRequest) *ProvisionerResponse {
+	rsp := new(ProvisionerResponse)
+	if rsp == nil {
+		panic("failed to allocate ProvisionerResponse")
+	}
+	rsp.Nonce = req.Nonce
+	return rsp
 }
 
 type SocketAction uint8
@@ -55,4 +72,12 @@ type SocketRequest struct {
 	Action SocketAction
 	Data   any
 	Nonce  nonce.Nonce
+}
+
+func NewSocketRequest() *SocketRequest {
+	r := new(SocketRequest)
+	if r == nil {
+		panic("failed to allocate SocketRequest")
+	}
+	return r
 }

@@ -31,7 +31,7 @@ func (t *Thread) provisionRun(request *thread.ProvisionerRequest) error {
 	// note: we can tell the core pre-maturely that the runner was provisioned so
 	// 		 that the caller is told that the request successfully reached this server.
 	if t.NumOfActiveSupervisors() >= MaxNumOfSupervisors {
-		t.requestBacklog = append(t.requestBacklog, *request)
+		t.requestBacklog = append(t.requestBacklog, request)
 		return nil
 	} else {
 		t.IncrementActiveSupervisors()
@@ -86,11 +86,8 @@ func (t *Thread) provisionRun(request *thread.ProvisionerRequest) error {
 				r.Status = run.Active
 				r.Statistics = supervisorInstance.Pipeline.Stats
 
-				t.C0 <- thread.SocketRequest{
-					Action: thread.SocketRunUpdate,
-					Data:   r,
-					Nonce:  t.noncePool.Next(),
-				}
+				mandatory := thread.SocketMandatory{Pipe: t.channels.C0, NoncePool: t.noncePool}
+				thread.AsyncRunUpdate(mandatory, r)
 
 				m.Unlock()
 
@@ -116,11 +113,8 @@ func (t *Thread) provisionRun(request *thread.ProvisionerRequest) error {
 		r.Status = run.FromString(status)
 		r.Statistics = supervisorInstance.Pipeline.Stats
 
-		t.C0 <- thread.SocketRequest{
-			Action: thread.SocketRunUpdate,
-			Data:   r,
-			Nonce:  t.noncePool.Next(),
-		}
+		mandatory := thread.SocketMandatory{Pipe: t.channels.C0, NoncePool: t.noncePool}
+		thread.AsyncRunUpdate(mandatory, r)
 
 		m.Unlock()
 

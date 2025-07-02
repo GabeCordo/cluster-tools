@@ -42,9 +42,10 @@ type Thread struct {
 
 	channels struct {
 		Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
-		C0        <-chan thread.SocketRequest
-		C1        chan<- thread.ProvisionerRequest  // Core is sending thread to the Database
-		C2        <-chan thread.ProvisionerResponse // Core is receiving responses from the Database
+		C0        <-chan *thread.SocketRequest
+		C1        chan<- *thread.ProvisionerRequest  // Core is sending thread to the Database
+		C2        <-chan *thread.ProvisionerResponse // Core is receiving responses from the Database
+		close     chan thread.InterruptEvent
 	}
 
 	flags struct {
@@ -64,10 +65,9 @@ type Thread struct {
 
 	requestWg sync.WaitGroup
 
-	accepting bool
-	counter   uint32
-	mutex     sync.RWMutex
-	wg        sync.WaitGroup
+	counter uint32
+	mutex   sync.RWMutex
+	wg      sync.WaitGroup
 }
 
 func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*Thread, error) {
@@ -79,20 +79,20 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	t.channels.C0, ok = (channels[1]).(chan thread.SocketRequest)
+	t.channels.C0, ok = (channels[1]).(chan *thread.SocketRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan SocketRequest' in index 1")
 	}
-	t.channels.C1, ok = (channels[2]).(chan thread.ProvisionerRequest)
+	t.channels.C1, ok = (channels[2]).(chan *thread.ProvisionerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 1")
 	}
-	t.channels.C2, ok = (channels[3]).(chan thread.ProvisionerResponse)
+	t.channels.C2, ok = (channels[3]).(chan *thread.ProvisionerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 2")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
-	t.accepting = true
 	t.counter = 0
 
 	if logger == nil {
@@ -106,7 +106,6 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 	t.Config = cfg
 
 	t.noncePool = nonce2.New(nonceMin, nonceMax)
-	t.ProvisionerResponseTable = nonce2.NewResponseTable()
 
 	t.logger.SetColour(logging.Green)
 
