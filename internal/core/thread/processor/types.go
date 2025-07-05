@@ -39,6 +39,8 @@ type Thread struct {
 
 		c18 <-chan *thread.Request  // Processor rec req from the scheduler thread
 		c19 chan<- *thread.Response // Processor sending rsp to the scheduler thread
+
+		close chan thread.InterruptEvent
 	}
 
 	requestStore map[nonce.Nonce]*thread.Request
@@ -48,8 +50,7 @@ type Thread struct {
 	config *Config
 	Logger *logging.Logger
 
-	accepting bool
-	wg        sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels ...any) (*Thread, error) {
@@ -124,6 +125,8 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 10")
 	}
+
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.requestStore = make(map[nonce.Nonce]*thread.Request)
 

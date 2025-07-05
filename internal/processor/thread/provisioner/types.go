@@ -27,23 +27,26 @@ type Config struct {
 type Thread struct {
 	Config *Config
 
-	Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
+	channels struct {
+		Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
-	C0 chan thread.SocketRequest
-	C1 chan thread.ProvisionerRequest    // Runtime is receiving thread from the http_thread
-	C2 chan<- thread.ProvisionerResponse // Runtime is sending responses to the http_thread
+		C0 chan *thread.SocketRequest
+		C1 chan *thread.ProvisionerRequest    // Runtime is receiving thread from the http_thread
+		C2 chan<- *thread.ProvisionerResponse // Runtime is sending responses to the http_thread
+
+		close chan thread.InterruptEvent
+	}
 
 	logger *logging.Logger
 
 	provisioner *provision.Provisioner
 
-	requestBacklog         []thread.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
-	numOfActiveSupervisors int                         // tracks the number of supervisors running in the system at a time
+	requestBacklog         []*thread.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
+	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
 	backlogMutex           sync.RWMutex
 
 	noncePool *nonce.Pool
 
-	accepting bool
 	runWg     sync.WaitGroup // wait group on the number of active runs
 	requestWg sync.WaitGroup // wait group on the number of processed async messages
 }
@@ -52,22 +55,23 @@ func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provi
 	t := new(Thread)
 	var ok bool
 
-	t.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
+	t.channels.Interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {
 		return nil, errors.New("expected type 'chan InterruptEvent' in index 0")
 	}
-	t.C0, ok = (channels[1]).(chan thread.SocketRequest)
+	t.channels.C0, ok = (channels[1]).(chan *thread.SocketRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan SocketRequest' in index 1")
 	}
-	t.C1, ok = (channels[2]).(chan thread.ProvisionerRequest)
+	t.channels.C1, ok = (channels[2]).(chan *thread.ProvisionerRequest)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerRequest' in index 2")
 	}
-	t.C2, ok = (channels[3]).(chan thread.ProvisionerResponse)
+	t.channels.C2, ok = (channels[3]).(chan *thread.ProvisionerResponse)
 	if !ok {
 		return nil, errors.New("expected type 'chan ProvisionerResponse' in index 3")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")
@@ -81,7 +85,7 @@ func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provi
 
 	t.provisioner = provisioner
 
-	t.requestBacklog = make([]thread.ProvisionerRequest, 0)
+	t.requestBacklog = make([]*thread.ProvisionerRequest, 0)
 	t.numOfActiveSupervisors = 0
 
 	t.noncePool = nonce.New(nonceMin, nonceMax)

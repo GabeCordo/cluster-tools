@@ -31,6 +31,8 @@ type Thread struct {
 
 		c22 <-chan *thread.Request  // Messenger is receiving requests from the HTTP Client
 		c23 chan<- *thread.Response // Messenger is sending responses to the HTTP Client
+
+		close chan thread.InterruptEvent
 	}
 
 	config *Config
@@ -38,8 +40,7 @@ type Thread struct {
 
 	messenger message.Messenger
 
-	accepting bool
-	wg        sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, channels ...interface{}) (*Thread, error) {
@@ -75,6 +76,7 @@ func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, chann
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 5")
 	}
+	th.channels.close = make(chan thread.InterruptEvent)
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")

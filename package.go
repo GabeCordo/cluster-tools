@@ -83,9 +83,9 @@ type Processor struct {
 
 	channels struct {
 		interrupt chan thread.InterruptEvent
-		c0        chan thread.SocketRequest
-		c1        chan thread.ProvisionerRequest
-		c2        chan thread.ProvisionerResponse
+		c0        chan *thread.SocketRequest
+		c1        chan *thread.ProvisionerRequest
+		c2        chan *thread.ProvisionerResponse
 	}
 
 	provisioner *provisionerCmp.Provisioner
@@ -131,9 +131,9 @@ func New() (*Processor, error) {
 	instance.config.Processor.StandaloneMode = true
 
 	instance.channels.interrupt = make(chan thread.InterruptEvent, 1)
-	instance.channels.c0 = make(chan thread.SocketRequest, 10)
-	instance.channels.c1 = make(chan thread.ProvisionerRequest, 10)
-	instance.channels.c2 = make(chan thread.ProvisionerResponse, 10)
+	instance.channels.c0 = make(chan *thread.SocketRequest, 10)
+	instance.channels.c1 = make(chan *thread.ProvisionerRequest, 10)
+	instance.channels.c2 = make(chan *thread.ProvisionerResponse, 10)
 
 	socketConfig := &socket.Config{}
 	instance.config.FillSocketConfig(socketConfig)

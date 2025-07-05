@@ -2,33 +2,55 @@ package messenger
 
 import (
 	"errors"
-	"fmt"
-
 	"github.com/GabeCordo/Flock/internal/core/component/message"
 	"github.com/GabeCordo/Flock/internal/core/component/message/log"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (th *Thread) Setup() {
-	th.accepting = true
+
 }
 
 func (th *Thread) Start() {
 
-	// LISTEN TO INCOMING REQUESTS
+	var iReq *thread.Request
+	var oRsp *thread.Response
 
-	thread.SetupListener(th.channels.c3, th.channels.c4, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
-
-	thread.SetupListener(th.channels.c17, nil, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
-
-	thread.SetupListener(th.channels.c22, th.channels.c23, &th.accepting, &th.wg, thread.Messenger, th.HandleRequest)
+	for {
+		select {
+		case iReq = <-th.channels.c3:
+			{
+				oRsp = th.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					th.channels.c4 <- oRsp
+				}
+			}
+		case iReq = <-th.channels.c22:
+			{
+				oRsp = th.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					th.channels.c23 <- oRsp
+				}
+			}
+		case iReq = <-th.channels.c17:
+			{
+				_ = th.handleRequest(iReq)
+			}
+		case <-th.channels.close:
+			{
+				// shutting down the messenger thread
+				break
+			}
+		}
+		oRsp = nil
+	}
 }
 
-func (th *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+func (th *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
 
-	response.Type = request.Type
-	response.Action = request.Action
-	response.Nonce = request.Nonce
+	var err error
 
 	switch request.Action {
 	case thread.GetAction:
@@ -36,26 +58,32 @@ func (th *Thread) HandleRequest(request *thread.Request, response *thread.Respon
 			switch request.Type {
 			case thread.SmtpRecord:
 				{
-					th.logger.Warn("SMTP record get called BUT is not implemented!")
+					// SMTP record get called BUT is not implemented
+					err = thread.NotImplemented
 				}
 			default:
 				{
-					response.Error = thread.BadRequestType
+					err = thread.BadRequestType
 				}
 			}
 		}
 	case thread.CloseAction:
 		{
-			th.ProcessCloseLogRequest(request)
+			err = th.ProcessCloseLogRequest(request)
 		}
 	default:
 		{
-			th.ProcessConsoleRequest(request)
+			err = th.ProcessConsoleRequest(request)
 		}
 	}
+
+	response = thread.NewResponse(thread.Messenger)
+	response.Error = err
+	response.Success = err == nil
+	return response
 }
 
-func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
+func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {
 	var priority message.Priority
 
 	switch request.Type {
@@ -78,12 +106,10 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) {
 			Message:  (request.Data).(string),
 		},
 	)
-	if err != nil {
-		fmt.Print(err)
-	}
+	return err
 }
 
-func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
+func (th *Thread) ProcessCloseLogRequest(request *thread.Request) error {
 
 	th.logger.Printf("[%s][%s][%d] closing log\n",
 		request.Identifiers.Module,
@@ -98,6 +124,7 @@ func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 		},
 		nil,
 	)
+
 	// Concept: An error can indicate a module, pipeline, or runner was not found in the messenger.
 	//			This happens when a run (on a processor) never sends a log to the core.
 	//
@@ -105,10 +132,14 @@ func (th *Thread) ProcessCloseLogRequest(request *thread.Request) {
 	if errors.Is(err, message.LogSaveFailedError) {
 		th.logger.Printf("closing log failed %s\n", err.Error())
 	}
+
+	return err
 }
 
 func (th *Thread) Teardown() {
-	th.accepting = false
 
 	th.wg.Wait()
+
+	// send a notification to the Start() goroutine to terminate
+	th.channels.close <- thread.Shutdown
 }

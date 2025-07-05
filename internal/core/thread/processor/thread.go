@@ -1,14 +1,12 @@
 package processor
 
 import (
-	"errors"
-
 	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
-	t.accepting = true
+
 }
 
 func (t *Thread) Start() {
@@ -18,30 +16,37 @@ func (t *Thread) Start() {
 	var oRsp *thread.Response
 
 	for {
-		oRsp = new(thread.Response)
-		if oRsp == nil {
-			panic("failed to allocate thread.Response")
-		}
-
 		select {
 		case iReq = <-t.channels.c5:
 			{
-				t.handleRequest(iReq, oRsp)
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c6 <- oRsp
+				}
 			}
 		case iReq = <-t.channels.c7:
 			{
-				t.handleRequest(iReq, oRsp)
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c8 <- oRsp
+				}
 			}
 		case iReq = <-t.channels.c18:
 			{
-				t.handleRequest(iReq, oRsp)
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					thread.CopyMetadata(iReq, oRsp)
+					t.channels.c19 <- oRsp
+				}
 			}
 		case iRsp = <-t.channels.c12:
 			{
 				var ok bool
 				iReq, ok = t.requestStore[iRsp.Nonce]
 				if ok {
-					t.handleResponse(iReq, iRsp, oRsp)
+					t.handleResponse(iReq, iRsp)
 				}
 			}
 		case iRsp = <-t.channels.c14:
@@ -49,16 +54,15 @@ func (t *Thread) Start() {
 				var ok bool
 				iReq, ok = t.requestStore[iReq.Nonce]
 				if ok {
-					t.handleResponse(iReq, iRsp, oRsp)
+					t.handleResponse(iReq, iRsp)
 				}
 			}
-		case <-t.channels.interrupt:
+		case <-t.channels.close:
 			{
-				// terminate the thread from processing further
+				// shutting down the processor thread
 				break
 			}
 		}
-
 		oRsp = nil
 	}
 }
@@ -81,7 +85,9 @@ func (t *Thread) sendResponse(request *thread.Request, response *thread.Response
 	}
 }
 
-func (t *Thread) handleRequest(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
+
+	var err error
 
 	switch request.Action {
 	case thread.GetAction:
@@ -89,18 +95,18 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.ProcessorRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Data = t.syncGetProcessors()
-					t.sendResponse(request, response)
 				}
 			case thread.ModuleRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Data = t.syncGetModules()
-					t.sendResponse(request, response)
 				}
 			case thread.FunctionRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Data, response.Error = t.syncGetFunctions(request.Identifiers.Module)
-					t.sendResponse(request, response)
 				}
 			case thread.RunRecord:
 				{
@@ -109,7 +115,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
@@ -119,14 +125,14 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			case thread.ProcessorRecord:
 				{
 					cfg := (request.Data).(processor2.Config)
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncAddProcessor(&cfg)
-					t.sendResponse(request, response)
 				}
 			case thread.ModuleRecord:
 				{
 					cfg := (request.Data).(processor2.ModuleConfig)
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncAddModule(request.Identifiers.Processor, &cfg)
-					t.sendResponse(request, response)
 				}
 			case thread.RunRecord:
 				{
@@ -136,7 +142,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
@@ -146,13 +152,13 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			case thread.ProcessorRecord:
 				{
 					cfg := (request.Data).(processor2.Config)
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncDeleteProcessor(&cfg)
-					t.sendResponse(request, response)
 				}
 			case thread.ModuleRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncDeleteModule(request.Identifiers.Processor, request.Identifiers.Module)
-					t.sendResponse(request, response)
 				}
 			case thread.RunRecord:
 				{
@@ -161,7 +167,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
@@ -175,7 +181,7 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
@@ -184,17 +190,17 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.ModuleRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncMountModule(request.Identifiers.Module)
-					t.sendResponse(request, response)
 				}
 			case thread.FunctionRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncMountFunction(request.Identifiers.Module, request.Identifiers.Function)
-					t.sendResponse(request, response)
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
@@ -203,17 +209,17 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 			switch request.Type {
 			case thread.ModuleRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncUnMountModule(request.Identifiers.Module)
-					t.sendResponse(request, response)
 				}
 			case thread.FunctionRecord:
 				{
+					response = thread.NewResponse(thread.Processor)
 					response.Error = t.syncUnMountFunction(request.Identifiers.Module, request.Identifiers.Function)
-					t.sendResponse(request, response)
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
@@ -227,22 +233,30 @@ func (t *Thread) handleRequest(request *thread.Request, response *thread.Respons
 				}
 			default:
 				{
-					response.Error = thread.UnknownRequest
+					err = thread.UnknownRequest
 				}
 			}
 		}
 	default:
 		{
-			response.Error = thread.UnknownRequest
+			err = thread.UnknownRequest
 		}
 	}
 
-	if errors.Is(response.Error, thread.UnknownRequest) {
-		t.sendResponse(request, response)
+	if err != nil {
+		response = thread.NewResponse(thread.Runner)
+		response.Error = err
 	}
+
+	// legacy support
+	if response != nil {
+		response.Success = response.Error == nil
+	}
+
+	return response
 }
 
-func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Response, oResponse *thread.Response) {
+func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Response) {
 
 	switch iResponse.Source {
 	case thread.Database:
@@ -254,12 +268,14 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					{
 						if iResponse.Error != nil {
 							delete(t.requestStore, iRequest.Nonce)
+							oResponse := thread.NewResponse(thread.Processor)
 							oResponse.Error = iResponse.Error
 							t.sendResponse(iRequest, oResponse)
 							return
 						}
 
 						var p *processor2.Processor
+						oResponse := thread.NewResponse(thread.Processor)
 						p, oResponse.Error = t.syncFindCandidateProcessor(iResponse)
 						if oResponse.Error == nil {
 							t.requestStore[iRequest.Nonce] = iRequest
@@ -289,6 +305,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					case thread.RunRecord:
 						{
 							delete(t.requestStore, iRequest.Nonce)
+							oResponse := thread.NewResponse(thread.Processor)
 							if iResponse.Error != nil {
 								oResponse.Error = iResponse.Error
 							} else {
@@ -307,6 +324,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 				case thread.RunRecord:
 					{
 						delete(t.requestStore, iRequest.Nonce)
+						oResponse := thread.NewResponse(thread.Processor)
 						t.sendResponse(iRequest, oResponse)
 					}
 				default:
@@ -320,6 +338,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					case thread.RunRecord:
 						{
 							delete(t.requestStore, iRequest.Nonce)
+							oResponse := thread.NewResponse(thread.Processor)
 							oResponse.Error = t.syncCheckIfRunStopped(iResponse)
 							t.sendResponse(iRequest, oResponse)
 						}
@@ -335,6 +354,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					case thread.RunRecord:
 						{
 							delete(t.requestStore, iRequest.Nonce)
+							oResponse := thread.NewResponse(thread.Processor)
 							t.sendResponse(iRequest, oResponse)
 						}
 					default:
@@ -349,6 +369,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					case thread.RunRecord:
 						{
 							delete(t.requestStore, iRequest.Nonce)
+							oResponse := thread.NewResponse(thread.Processor)
 							t.sendResponse(iRequest, oResponse)
 						}
 					default:
@@ -371,6 +392,9 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 }
 
 func (t *Thread) Teardown() {
-	t.accepting = false
+
 	t.wg.Wait()
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
 }

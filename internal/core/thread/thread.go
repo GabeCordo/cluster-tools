@@ -2,8 +2,6 @@ package thread
 
 import (
 	"errors"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
 )
 
@@ -14,6 +12,10 @@ var BadRequestType = errors.New("the request type does not match what was expect
 var BadResponseType = errors.New("the response type does not match what was expected for this chan")
 
 var UnknownRequest = errors.New("the request action is unknown to this thread")
+
+var NotImplemented = errors.New("thread functions has not been implemented")
+
+var FailedToSendResponse = errors.New("could not send a response")
 
 type RequestCaller uint8
 
@@ -138,34 +140,31 @@ const (
 type Thread interface {
 	Setup()
 	Start()
+	HandleRequest(*Request) *Response
 	Teardown()
 }
 
-func SetupListener(in <-chan *Request, out chan<- *Response, accepting *bool, wg *sync.WaitGroup, module Module, f func(request *Request, response *Response)) {
+func NewRequest(source Module) *Request {
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocated thread.Request struct")
+	}
+	request.Source = source
+	return request
+}
 
-	go func() {
-		for request := range in {
-			if !(*accepting) {
-				break
-			}
-			wg.Add(1)
+func NewResponse(source Module) *Response {
+	response := new(Response)
+	if response == nil {
+		panic("failed to allocated thread.Response struct")
+	}
+	response.Source = source
+	return response
+}
 
-			response := new(Response)
-			if response == nil {
-				panic("could not allocated memory for Response")
-			}
+func CopyMetadata(request *Request, response *Response) {
 
-			response.Source = module
-			response.Nonce = request.Nonce
-			response.Success = false
-			response.Error = nil
-
-			f(request, response)
-
-			if out != nil {
-				out <- response
-			}
-			wg.Done()
-		}
-	}()
+	response.Action = request.Action
+	response.Type = request.Type
+	response.Nonce = request.Nonce
 }

@@ -86,43 +86,33 @@ func (t *Thread) Start() {
 		}
 	}(t)
 
-	// LISTEN FOR RESPONSES
+	var iRsp *thread.Response
 
-	go func() {
-		for supervisorResponse := range t.channels.c6 {
-			if !t.accepting {
+	for {
+		select {
+		case iRsp = <-t.channels.c6:
+			{
+				t.ProcessorResponseTable.Write(iRsp.Nonce, iRsp)
+			}
+		case iRsp = <-t.channels.c2:
+			{
+				t.DatabaseResponseTable.Write(iRsp.Nonce, iRsp)
+			}
+		case iRsp = <-t.channels.c21:
+			{
+				t.SchedulerResponseTable.Write(iRsp.Nonce, iRsp)
+			}
+		case iRsp = <-t.channels.c23:
+			{
+				t.MessengerResponseTable.Write(iRsp.Nonce, iRsp)
+			}
+		case <-t.channels.close:
+			{
+				// shutting down the rest thread
 				break
 			}
-			t.ProcessorResponseTable.Write(supervisorResponse.Nonce, supervisorResponse)
 		}
-	}()
-
-	go func() {
-		for databaseResponse := range t.channels.c2 {
-			if !t.accepting {
-				break
-			}
-			t.DatabaseResponseTable.Write(databaseResponse.Nonce, databaseResponse)
-		}
-	}()
-
-	go func() {
-		for schedulerResponse := range t.channels.c21 {
-			if !t.accepting {
-				break
-			}
-			t.SchedulerResponseTable.Write(schedulerResponse.Nonce, schedulerResponse)
-		}
-	}()
-
-	go func() {
-		for messengerResponse := range t.channels.c23 {
-			if !t.accepting {
-				break
-			}
-			t.MessengerResponseTable.Write(messengerResponse.Nonce, messengerResponse)
-		}
-	}()
+	}
 
 	t.wg.Wait()
 }
@@ -139,4 +129,7 @@ func (t *Thread) Teardown() {
 	if err != nil {
 		t.channels.interrupt <- thread.Panic
 	}
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
 }

@@ -38,6 +38,8 @@ type Thread struct {
 
 		c26 <-chan *thread.Request  // Database is receiving req from the scheduler_thread
 		c27 chan<- *thread.Response // Database is sending rsp to the scheduler_thread
+
+		close chan thread.InterruptEvent
 	}
 
 	messengerResponseTable *multithreaded.ResponseTable
@@ -49,8 +51,7 @@ type Thread struct {
 	config *Config
 	logger *logging.Logger
 
-	accepting bool
-	wg        sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func New(cfg *Config, logger *logging.Logger,
@@ -113,6 +114,7 @@ func New(cfg *Config, logger *logging.Logger,
 	if !ok {
 		return nil, errors.New("expected type 'chan DatabaseResponse' in index 10")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.messengerResponseTable = multithreaded.NewResponseTable()
 

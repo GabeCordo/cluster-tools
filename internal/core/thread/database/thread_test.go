@@ -36,7 +36,6 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	clusterConfig := pipeline.Pipeline{}
@@ -62,7 +61,6 @@ func TestThread_DatabaseStore_ClusterConfig2(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	request := &thread.Request{
@@ -89,7 +87,6 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	clusterStatistic := &statistic.Statistics{}
@@ -115,7 +112,6 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	clusterStatistic := &statistic.Statistics{}
@@ -145,7 +141,6 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	pipelineRecord := pipeline.Pipeline{Identifier: "test_pipeline"}
@@ -198,7 +193,6 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	stat := &statistic.Statistics{}
@@ -257,7 +251,6 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	m := "test_module"
@@ -304,7 +297,6 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 	out := make(chan *thread.Response, 1)
 
 	th := generateDatabaseThread(in, out)
-	th.accepting = true
 	go th.Start()
 
 	m := "test_module"

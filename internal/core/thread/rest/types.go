@@ -41,6 +41,8 @@ type Thread struct {
 
 		c22 chan<- *thread.Request  // Core is sending requests to the Messenger
 		c23 <-chan *thread.Response // Core is receiving responses from the Messenger
+
+		close chan thread.InterruptEvent
 	}
 
 	noncePool *nonce2.Pool
@@ -58,10 +60,9 @@ type Thread struct {
 	config *Config
 	logger *logging.Logger
 
-	accepting bool
-	counter   uint32
-	mutex     sync.Mutex
-	wg        sync.WaitGroup
+	counter uint32
+	mutex   sync.Mutex
+	wg      sync.WaitGroup
 }
 
 func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
@@ -110,6 +111,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	if !ok {
 		return nil, errors.New("expected type 'chan MessengerResponse' in index 8")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.noncePool = nonce2.New(nonceMin, nonceMax)
 	t.ProcessorResponseTable = nonce2.NewResponseTable()
@@ -120,7 +122,6 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 
 	t.server = new(http.Server)
 
-	t.accepting = true
 	t.counter = 0
 
 	if logger == nil {

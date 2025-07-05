@@ -14,41 +14,55 @@ func (t *Thread) Setup() {
 	if err != nil {
 		fmt.Print(err)
 	}
-	t.accepting = true
 }
 
 func (t *Thread) Start() {
 
-	// INCOMING REQUESTS
-
-	go func() {
-		for request := range t.C1 {
-			if !t.accepting {
-				break
-			}
-			t.requestWg.Add(1)
-			t.processRequest(&request)
-			t.requestWg.Done()
-		}
-	}()
-
-	// CLEARING THE PROVISIONER BACKLOG
-
 	go t.backlog()
+
+	var iReq *thread.ProvisionerRequest
+	var oRsp *thread.ProvisionerResponse
+	stop := false
+
+	for {
+		select {
+		case iReq = <-t.channels.C1:
+			{
+				t.requestWg.Add(1)
+				oRsp = t.processRequest(iReq)
+				if oRsp != nil {
+					t.channels.C2 <- oRsp
+				}
+				t.requestWg.Done()
+			}
+		case <-t.channels.close:
+			{
+				stop = true
+			}
+		}
+
+		oRsp = nil
+
+		if stop {
+			break
+		}
+	}
 }
 
 func (t *Thread) registerModulesToCore() error {
+
+	var req *thread.SocketRequest
 
 	// logging enhancements
 	for _, moduleInst := range t.provisioner.GetModules() {
 		cfg := moduleInst.ToConfig()
 
-		t.C0 <- thread.SocketRequest{
-			Action: thread.SocketModuleAdd,
-			Data:   cfg,
-			Nonce:  t.noncePool.Next(),
-		}
+		req = thread.NewSocketRequest()
+		req.Action = thread.SocketModuleAdd
+		req.Data = cfg
+		req.Nonce = t.noncePool.Next()
 
+		t.channels.C0 <- req
 	}
 
 	return nil
@@ -60,7 +74,7 @@ func (t *Thread) backlog() {
 
 		if (t.NumOfActiveSupervisors() < MaxNumOfSupervisors) && (len(t.requestBacklog) > 0) {
 			request := t.requestBacklog[0]
-			t.C1 <- request
+			t.channels.C1 <- request
 			t.requestBacklog = t.requestBacklog[1:]
 		}
 
@@ -68,14 +82,9 @@ func (t *Thread) backlog() {
 	}
 }
 
-func (t *Thread) respond(response *thread.ProvisionerResponse) {
+func (t *Thread) processRequest(request *thread.ProvisionerRequest) (response *thread.ProvisionerResponse) {
 
-	t.C2 <- *response
-}
-
-func (t *Thread) processRequest(request *thread.ProvisionerRequest) {
-
-	response := &thread.ProvisionerResponse{Error: nil, Nonce: request.Nonce}
+	response = thread.NewProvisionerResponse(request)
 
 	switch request.Action {
 	case thread.ProvisionerModuleGet:
@@ -105,7 +114,7 @@ func (t *Thread) processRequest(request *thread.ProvisionerRequest) {
 	}
 
 	response.Success = response.Error == nil
-	t.respond(response)
+	return response
 }
 
 func (t *Thread) NumOfActiveSupervisors() int {
@@ -130,7 +139,6 @@ func (t *Thread) DecrementActiveSupervisors() {
 }
 
 func (t *Thread) Teardown() {
-	t.accepting = false
 
 	for _, s := range t.provisioner.GetSupervisors() {
 

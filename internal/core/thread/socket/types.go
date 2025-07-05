@@ -34,6 +34,7 @@ type Thread struct {
 		c8        <-chan *thread.Response // socket_thread is rec rsp from the processor_thread
 		c9        <-chan *thread.Request  // runner_thread is sending req to the socket_thread
 		c10       chan<- *thread.Response // socket_thread is sending rsp to the runner_thread
+		close     chan thread.InterruptEvent
 	}
 
 	noncePool *nonce2.Pool
@@ -56,8 +57,6 @@ type Thread struct {
 
 	config *Config
 	Logger *logging.Logger
-
-	accepting bool
 
 	wg             sync.WaitGroup
 	connectionsMux sync.RWMutex
@@ -104,6 +103,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	if !ok {
 		return nil, errors.New("expected type 'chan ProcessorResponse' in index 2")
 	}
+	t.channels.close = make(chan thread.InterruptEvent)
 
 	t.connections = make(map[uint64]net.Conn)
 

@@ -4,15 +4,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/processor/thread"
 	common "github.com/GabeCordo/Flock/internal/shared/async"
 )
@@ -98,31 +95,37 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	// INCOMING REQUESTS
+	go t.listenOnSocket()
 
-	go func() {
-		for request := range t.channels.C0 {
-			if !t.accepting {
-				break
+	var iReq *thread.SocketRequest
+	var iRsp *thread.ProvisionerResponse
+	stop := false
+
+	for {
+		select {
+		case iReq = <-t.channels.C0:
+			{
+				t.requestWg.Add(1)
+				t.handleRequest(iReq)
+				t.requestWg.Done()
 			}
-			t.requestWg.Add(1)
-			t.ProcessRequest(&request)
-			t.requestWg.Done()
-		}
-	}()
-
-	// RESPONSE THREADS
-
-	go func() {
-		for response := range t.channels.C2 {
-			if !t.accepting {
-				break
+		case iRsp = <-t.channels.C2:
+			{
+				t.handleResponse(iRsp)
 			}
-			t.ProvisionerResponseTable.Write(response.Nonce, response)
+		case <-t.channels.close:
+			{
+				stop = true
+			}
 		}
-	}()
 
-	// LISTEN TO GATEWAY
+		if stop {
+			break
+		}
+	}
+}
+
+func (t *Thread) listenOnSocket() {
 
 	decoder := json.NewDecoder(t.connection)
 
@@ -138,7 +141,7 @@ func (t *Thread) Start() {
 				t.logger.Alertln("gateway sent EOF closing the socket connection")
 				break
 			}
-			t.ProcessSocketRequest(data)
+			t.handleSocketRequest(data)
 		}
 
 		// TODO: we are violating DRY here, this is a quick hack
@@ -164,7 +167,7 @@ func (t *Thread) Start() {
 	}
 }
 
-func (t *Thread) ProcessRequest(request *thread.SocketRequest) {
+func (t *Thread) handleRequest(request *thread.SocketRequest) {
 
 	// Edge Case: it is possible that the core drops while the processor is alive
 	// Behaviour: the processor shall ignore requests received on its socket until the connection
@@ -179,48 +182,15 @@ func (t *Thread) ProcessRequest(request *thread.SocketRequest) {
 	switch request.Action {
 	case thread.SocketModuleAdd:
 		{
-			module, ok := request.Data.(processor.ModuleConfig)
-			if !ok {
-				t.logger.Warnln("received module add with invalid data")
-				return
-			}
-
-			req := &common.Request{
-				Action: common.Create,
-				Record: common.Module,
-				Data:   module,
-			}
-
-			encoder := json.NewEncoder(t.connection)
-			err := encoder.Encode(req)
-			if err != nil {
-				fmt.Println(err)
-				t.logger.Warnln("failed to add module over socket")
-			}
+			t.handleSocketModuleAdd(request)
 		}
 	case thread.SocketRunUpdate:
 		{
-			r, ok := request.Data.(*run.Run)
-			if !ok {
-				t.logger.Warnln("received run update with invalid data")
-			}
-
-			req := &common.Request{
-				Action: common.Update,
-				Record: common.Run,
-				Data:   r,
-			}
-
-			encoder := json.NewEncoder(t.connection)
-			err := encoder.Encode(req) // todo : fix
-			if err != nil {
-				fmt.Println(err)
-				t.logger.Warnln("failed to update run over socket")
-			}
+			t.handleSocketRunUpdate(request)
 		}
 	case thread.SocketLogAdd:
 		{
-
+			t.logger.Warnln("socket log add not implemented")
 		}
 	default:
 		{
@@ -229,7 +199,19 @@ func (t *Thread) ProcessRequest(request *thread.SocketRequest) {
 	}
 }
 
-func (t *Thread) ProcessSocketRequest(request *common.Request) {
+func (t *Thread) handleResponse(response *thread.ProvisionerResponse) {
+
+	if response == nil {
+		t.logger.Warnln("received nil response")
+		return
+	}
+
+	if response.Error != nil {
+		t.logger.Warnf("received error from provisioner %s\n", response.Error)
+	}
+}
+
+func (t *Thread) handleSocketRequest(request *common.Request) {
 
 	switch request.Action {
 	case common.Create:
@@ -237,30 +219,7 @@ func (t *Thread) ProcessSocketRequest(request *common.Request) {
 			switch request.Record {
 			case common.Run:
 				{
-					b, err := json.Marshal(request.Data)
-					if err != nil {
-						t.logger.Warnln("failed to marshal the received data")
-						return
-					}
-
-					runRequest := new(run.Request)
-					err = json.Unmarshal(b, runRequest)
-					if err != nil {
-						t.logger.Warnln("received invalid data for update run")
-						return
-					}
-
-					mandatory := thread.ProvisionerMandatory{
-						Pipe:          t.channels.C1,
-						ResponseTable: t.ProvisionerResponseTable,
-						NoncePool:     t.noncePool,
-						Timeout:       *t.Config.Timeout,
-					}
-					err = thread.RunStart(mandatory,
-						runRequest.Namespace, runRequest.Id, runRequest.Config, runRequest.Metadata)
-					if err != nil {
-						t.logger.Warnln("failed to send run provision to provisioner")
-					}
+					t.handleSocketRunCreate(request)
 				}
 			default:
 				{
@@ -273,22 +232,7 @@ func (t *Thread) ProcessSocketRequest(request *common.Request) {
 			switch request.Record {
 			case common.Run:
 				{
-					id, ok := request.Data.(float64)
-					if !ok {
-						t.logger.Warnln("run delete received value other than uint64")
-						return
-					}
-
-					mandatory := thread.ProvisionerMandatory{
-						Pipe:          t.channels.C1,
-						ResponseTable: t.ProvisionerResponseTable,
-						NoncePool:     t.noncePool,
-						Timeout:       *t.Config.Timeout,
-					}
-					err := thread.RunStop(mandatory, uint64(id))
-					if err != nil {
-						t.logger.Warnln("failed to stop ongoing run")
-					}
+					t.handleSocketRunDelete(request)
 				}
 			default:
 				{
@@ -305,13 +249,13 @@ func (t *Thread) ProcessSocketRequest(request *common.Request) {
 
 func (t *Thread) Teardown() {
 
-	if t.connection == nil {
-		return
+	if t.connection != nil {
+		// close the socket connection with the core
+		err := t.connection.Close()
+		if err != nil {
+			t.logger.Warnf("%s\n", err.Error())
+		}
 	}
 
-	err := t.connection.Close()
-	if err != nil {
-		fmt.Print(err)
-	}
 	t.requestWg.Wait()
 }

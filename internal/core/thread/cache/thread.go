@@ -1,35 +1,61 @@
 package cache
 
 import (
-	"time"
-
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"time"
 )
 
 func (t *Thread) Setup() {
-	t.accepting = true
+
 }
 
 func (t *Thread) Start() {
 
-	thread.SetupListener(t.channels.c9, t.channels.c10, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
+	running := true
 
-	thread.SetupListener(t.channels.c24, t.channels.c25, &t.accepting, &t.wg, thread.Cache, t.HandleRequest)
-
-	// RUNTIME
-
-	go func() {
+	go func(running *bool) {
 		// cleaning the t of expired records
-		for t.accepting {
+		for *running {
 			time.Sleep(1 * time.Minute)
 			// every minute, attempt to clean the t by removing any records that
 			// may have expired since we last checked
 			t.cache.Clean()
 		}
-	}()
+	}(&running)
+
+	var iReq *thread.Request
+	var oRsp *thread.Response
+
+	for {
+		select {
+		case iReq = <-t.channels.c9:
+			{
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					t.channels.c10 <- oRsp
+				}
+			}
+		case iReq = <-t.channels.c24:
+			{
+				oRsp = t.handleRequest(iReq)
+				if oRsp != nil {
+					t.channels.c25 <- oRsp
+				}
+			}
+		case <-t.channels.close:
+			{
+				// shutting down the cache thread
+				running = false
+				break
+			}
+		}
+		oRsp = nil
+	}
 }
 
-func (t *Thread) HandleRequest(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
+
+	response = thread.NewResponse(thread.Messenger)
 
 	switch request.Action {
 	case thread.CreateAction:
@@ -46,12 +72,17 @@ func (t *Thread) HandleRequest(request *thread.Request, response *thread.Respons
 		}
 	default:
 		{
-			t.logger.Warn(thread.UnknownRequest.Error())
+			response.Error = thread.UnknownRequest
 		}
 	}
+
+	return response
 }
 
 func (t *Thread) Teardown() {
-	t.accepting = false
+
 	t.wg.Wait()
+
+	// send a notification to the Start() goroutine to terminate
+	t.channels.close <- thread.Shutdown
 }
