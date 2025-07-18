@@ -2,6 +2,7 @@ package runner
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/use_cases/runner"
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/database"
@@ -38,7 +39,7 @@ type Thread struct {
 	config *Config
 	Logger *logging.Logger
 
-	registry database.Database
+	useCases runner.UseCases
 
 	wg sync.WaitGroup
 }
@@ -95,7 +96,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 
 	t.requestStore = make(map[nonce.Nonce]*thread.Request)
 
-	t.registry = registry
+	t.useCases = runner.UseCases{RunDatabase: registry}
 
 	return t, nil
 }

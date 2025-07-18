@@ -479,7 +479,7 @@ func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 
 		moduleName, moduleNameFound := urlMapping["module"]
-		clusterName, clusterNameFound := urlMapping["cluster"]
+		clusterName, clusterNameFound := urlMapping["pipeline"]
 
 		if moduleNameFound && clusterNameFound {
 			statistics, found := thread.FindStatistics(mandatory, moduleName[0], clusterName[0])

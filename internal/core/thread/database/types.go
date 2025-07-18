@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/database"
@@ -42,11 +43,9 @@ type Thread struct {
 		close chan thread.InterruptEvent
 	}
 
-	messengerResponseTable *multithreaded.ResponseTable
+	useCases database2.UseCases
 
-	statisticDatabase database.Database
-	pipelineDatabase  database.Database
-	jobDatabase       database.Database
+	messengerResponseTable *multithreaded.ResponseTable
 
 	config *Config
 	logger *logging.Logger
@@ -66,9 +65,11 @@ func New(cfg *Config, logger *logging.Logger,
 	}
 	t.config = cfg
 
-	t.statisticDatabase = s
-	t.pipelineDatabase = c
-	t.jobDatabase = j
+	t.useCases = database2.UseCases{
+		StatisticDatabase: s,
+		PipelineDatabase:  c,
+		JobDatabase:       j,
+	}
 
 	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {

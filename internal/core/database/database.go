@@ -53,6 +53,8 @@ func (interval Interval) ToString() string {
 	return sb.String()
 }
 
+const Empty = ""
+
 type Filter struct {
 	Namespace  string
 	Pipeline   string

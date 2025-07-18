@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	processor2 "github.com/GabeCordo/Flock/internal/core/use_cases/processor"
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
@@ -45,7 +46,7 @@ type Thread struct {
 
 	requestStore map[nonce.Nonce]*thread.Request
 
-	processorTable *processor.Table
+	useCases processor2.UseCases
 
 	config *Config
 	Logger *logging.Logger
@@ -67,7 +68,10 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 		return nil, errors.New("logger cannot be nil")
 	}
 
-	t.processorTable = table
+	t.useCases = processor2.UseCases{
+		ProcessorTable: table,
+		Logger:         logger,
+	}
 
 	var ok = false
 

@@ -19,7 +19,7 @@ func (t *Thread) Start() {
 			time.Sleep(1 * time.Minute)
 			// every minute, attempt to clean the t by removing any records that
 			// may have expired since we last checked
-			t.cache.Clean()
+			t.useCase.CacheComponent.Clean()
 		}
 	}(&running)
 

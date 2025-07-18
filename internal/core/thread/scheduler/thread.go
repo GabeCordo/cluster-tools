@@ -3,7 +3,6 @@ package scheduler
 import (
 	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -68,17 +67,11 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.JobRecord:
 				{
-					if filter, ok := (request.Data).(database.Filter); ok {
-						response.Data = t.get(filter)
-					} else {
-						response.Success = false
-						response.Error = thread.BadRequestType
-					}
+					t.handleGetJob(request, response)
 				}
 			case thread.QueueRecord:
 				{
-					response.Data = t.queue()
-					response.Success = true
+					t.handleGetQueue(request, response)
 				}
 			default:
 				{
@@ -89,25 +82,11 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 		}
 	case thread.CreateAction:
 		{
-			if jb, ok := (request.Data).(job.Job); ok {
-				response.Error = t.create(&jb)
-				response.Success = response.Error == nil
-				t.logger.Printf("created job:%s\n", jb.Identifier)
-			} else {
-				response.Success = false
-				response.Error = thread.BadRequestType
-			}
+			t.handleCreateJob(request, response)
 		}
 	case thread.DeleteAction:
 		{
-			if filter, ok := (request.Data).(database.Filter); ok {
-				response.Error = t.delete(filter)
-				response.Success = response.Error == nil
-				t.logger.Printf("deleted job:%s\n", filter.Identifier)
-			} else {
-				response.Success = false
-				response.Error = thread.BadResponseType
-			}
+			t.handleDeleteJob(request, response)
 		}
 	default:
 		{

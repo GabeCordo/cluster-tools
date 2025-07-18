@@ -209,7 +209,7 @@ func New(configPath string) (*Core, error) {
 
 	// CACHE LOGICAL THREAD
 
-	//cacheLogger, err := logging.NewLogger(Cache.ToString(), &GetConfigInstance().Debug)
+	//cacheLogger, err := logging.NewLogger(CacheComponent.ToString(), &GetConfigInstance().Debug)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -288,7 +288,7 @@ func (core *Core) Run() {
 	//core.CacheThread.Setup()
 	//go core.CacheThread.Start()
 	//if core.config.Debug {
-	//	core.logger.Println("Cache Thread Started")
+	//	core.logger.Println("CacheComponent Thread Started")
 	//}
 
 	core.RunnerThread.Setup()

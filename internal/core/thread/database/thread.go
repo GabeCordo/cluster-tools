@@ -1,18 +1,13 @@
 package database
 
 import (
-	"log"
-	"time"
-
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"log"
 )
 
 func (t *Thread) Setup() {
 
-	if err := t.pipelineDatabase.Load(t.config.ConfigsFolder); err != nil {
+	if err := t.useCases.PipelineDatabase.Load(t.config.ConfigsFolder); err != nil {
 		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
 			err.Error())
 	}
@@ -20,7 +15,7 @@ func (t *Thread) Setup() {
 	// some configs may have carried over from previous runs
 	// let the operator know these configs are being loaded into the
 	// flock without having to query the database over HTTP
-	t.pipelineDatabase.Print()
+	t.useCases.PipelineDatabase.Print()
 }
 
 func (t *Thread) Start() {
@@ -82,47 +77,11 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					if configData, ok := (request.Data).(pipeline.Pipeline); ok {
-						_, err := t.pipelineDatabase.Create(
-							database.Filter{
-								Namespace: request.Identifiers.Namespace,
-								Pipeline:  request.Identifiers.Pipeline,
-							},
-							&configData,
-						)
-
-						if err == nil {
-							t.pipelineDatabase.Print()
-						}
-
-						response.Success = err == nil
-					} else {
-						response.Success = false
-						response.Error = StoreTypeMismatch
-					}
+					t.handleCreatePipelineRecord(request, response)
 				}
 			case thread.StatisticRecord:
 				{
-					if statisticsData, ok := (request.Data).(*statistic.Statistics); ok {
-						_, err := t.statisticDatabase.Create(
-							database.Filter{
-								Namespace: request.Identifiers.Namespace,
-								Pipeline:  request.Identifiers.Pipeline,
-							},
-							statistic.Wrapper{ // TODO : depreciate or fix elapsed time
-								Timestamp: time.Now(),
-								Stats:     *statisticsData, // copy
-							},
-						)
-
-						if err == nil {
-							t.statisticDatabase.Print()
-						}
-						response.Success = err == nil
-					} else {
-						response.Success = false
-						response.Error = StoreTypeMismatch
-					}
+					t.handleCreateStatisticRecord(request, response)
 				}
 			default:
 				{
@@ -135,33 +94,11 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					results := t.pipelineDatabase.Get(database.Filter{
-						Namespace:  request.Identifiers.Namespace,
-						Identifier: request.Identifiers.Pipeline,
-					})
-
-					configs := make([]pipeline.Pipeline, len(results))
-					for i, result := range results {
-						configs[i] = result.(pipeline.Pipeline)
-					}
-
-					response.Success = len(results) > 0
-					response.Data = configs
+					t.handleGetPipelineRecord(request, response)
 				}
 			case thread.StatisticRecord:
 				{
-					results := t.statisticDatabase.Get(database.Filter{
-						Namespace: request.Identifiers.Namespace,
-						Pipeline:  request.Identifiers.Pipeline,
-					})
-
-					statistics := make([]statistic.Statistics, len(results))
-					for i, result := range results {
-						statistics[i] = result.(statistic.Statistics)
-					}
-
-					response.Success = len(results) > 0
-					response.Data = statistics
+					t.handleGetStatisticRecord(request, response)
 				}
 			default:
 				{
@@ -174,28 +111,11 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					err := t.pipelineDatabase.Delete(database.Filter{
-						Namespace:  request.Identifiers.Namespace,
-						Identifier: request.Identifiers.Pipeline,
-					})
-
-					if db, ok := (t.pipelineDatabase).(database.Database); (err == nil) && ok {
-						db.Print()
-					}
-
-					response.Success = err == nil
+					t.handleDeletePipelineRecord(request, response)
 				}
 			case thread.StatisticRecord:
 				{
-					err := t.statisticDatabase.Delete(database.Filter{
-						Namespace: request.Identifiers.Namespace,
-					})
-
-					if db, ok := (t.statisticDatabase).(database.Database); (err == nil) && ok {
-						db.Print()
-					}
-
-					response.Success = err == nil
+					t.handleDeleteStatisticRecord(request, response)
 				}
 			default:
 				{
@@ -208,17 +128,7 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.PipelineRecord:
 				{
-					cfg := (request.Data).(pipeline.Pipeline)
-					err := t.pipelineDatabase.Replace(database.Filter{
-						Namespace: request.Identifiers.Namespace,
-						Pipeline:  request.Identifiers.Pipeline,
-					}, &cfg)
-
-					if db, ok := (t.pipelineDatabase).(database.Database); (err == nil) && ok {
-						db.Print()
-					}
-
-					response.Success = err == nil
+					t.handleUpdatePipelineRecord(request, response)
 				}
 			default:
 				{
@@ -243,11 +153,11 @@ func (t *Thread) Teardown() {
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 
-	if err := t.pipelineDatabase.Save(t.config.ConfigsFolder); err != nil {
+	if err := t.useCases.PipelineDatabase.Save(t.config.ConfigsFolder); err != nil {
 		log.Printf("failed to save configs created during runtime %s\n", err.Error())
 	}
 
-	if err := t.statisticDatabase.Save(t.config.StatisticsFolder); err != nil {
+	if err := t.useCases.StatisticDatabase.Save(t.config.StatisticsFolder); err != nil {
 		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
 	}
 }

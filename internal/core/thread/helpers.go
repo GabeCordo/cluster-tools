@@ -682,3 +682,238 @@ func GetSubscribers(mandatory Mandatory) ([]string, error) {
 
 	return subscribers, response.Error
 }
+
+func AsyncGetRun(pipe chan<- *Request, n nonce2.Nonce, namespace, pipeline string, supervisor uint64) {
+
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
+	}
+
+	request.Action = GetAction
+	request.Type = RunRecord
+	request.Identifiers = RequestIdentifiers{
+		Namespace:  namespace,
+		Pipeline:   pipeline,
+		Supervisor: supervisor,
+	}
+	request.Source = Processor
+	request.Nonce = n
+
+	pipe <- request
+}
+
+func AsyncGetPipeline(pipe chan<- *Request, n nonce2.Nonce, namespace, pipeline string) {
+
+	databaseRequest := new(Request)
+	if databaseRequest == nil {
+		panic("failed to allocate thread.Request")
+	}
+
+	databaseRequest.Action = GetAction
+	databaseRequest.Type = PipelineRecord
+	databaseRequest.Identifiers = RequestIdentifiers{
+		Namespace: namespace,
+		Pipeline:  pipeline,
+	}
+	databaseRequest.Source = Processor
+	databaseRequest.Nonce = n
+	pipe <- databaseRequest
+}
+
+func AsyncCreateRun(pipe chan<- *Request, n nonce2.Nonce, module, pipeline string, processor uint64, metadata map[string]string) {
+
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
+	}
+
+	request.Action = CreateAction
+	request.Type = RunRecord
+	request.Identifiers = RequestIdentifiers{
+		Module:   module,
+		Pipeline: pipeline,
+	} // will contain the module, cluster
+	request.Identifiers.Processor = processor
+	request.Caller = User
+	request.Data = metadata // will contain the metadata map[string]string
+	request.Source = Processor
+	request.Nonce = n
+
+	// send the request to the scheduler t
+	// the scheduler t will:
+	//	1. create a log record of the runner
+	//	2. set the log record to the initial state
+	//  3. send a provision request to the processor endpoint
+	pipe <- request
+}
+
+func AsyncUpdateRunToRunner(pipe chan<- *Request, oldRequest *Request) {
+
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
+	}
+
+	request.Action = UpdateAction
+	request.Type = RunRecord
+	request.Identifiers = oldRequest.Identifiers
+	request.Data = oldRequest.Data
+	request.Source = Processor
+	request.Nonce = oldRequest.Nonce
+
+	pipe <- request
+}
+
+func AsyncLogToRunner(pipe chan<- *Request, oldRequest *Request) {
+
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
+	}
+
+	request.Action = LogAction
+	request.Type = RunRecord
+	request.Identifiers = oldRequest.Identifiers
+	request.Data = oldRequest.Data
+	request.Source = Processor
+	request.Nonce = oldRequest.Nonce
+
+	pipe <- request
+}
+
+func AsyncStopRunToRunner(pipe chan<- *Request, oldRequest *Request) {
+
+	request := new(Request)
+
+	request.Action = DeleteAction
+	request.Type = RunRecord
+	request.Identifiers = oldRequest.Identifiers
+	request.Source = Processor
+	request.Nonce = oldRequest.Nonce
+
+	pipe <- request
+}
+
+func AsyncGetPipelineFromDatabase(pipe chan<- *Request, oldRequest *Request) {
+
+	databaseRequest := NewRequest(Runner)
+
+	databaseRequest.Action = GetAction
+	databaseRequest.Type = PipelineRecord
+	databaseRequest.Identifiers = RequestIdentifiers{
+		Namespace: oldRequest.Identifiers.Namespace,
+		Pipeline:  oldRequest.Identifiers.Pipeline,
+	}
+	databaseRequest.Source = Runner
+	databaseRequest.Nonce = oldRequest.Nonce
+
+	pipe <- databaseRequest
+}
+
+func AsyncSendRunToSocket(pipe chan<- *Request, oldRequest *Request, id uint64, cfg *pipeline.Pipeline, metadata map[string]string) {
+
+	runRequest := run.Request{
+		Id:        id,
+		Namespace: oldRequest.Identifiers.Namespace,
+		Config:    cfg,
+		Metadata:  metadata,
+	}
+
+	socketRequest := NewRequest(Runner)
+
+	socketRequest.Action = CreateAction
+	socketRequest.Type = RunRecord
+	socketRequest.Identifiers = RequestIdentifiers{
+		Processor:  oldRequest.Identifiers.Processor,
+		Supervisor: id,
+	}
+	socketRequest.Data = runRequest
+	socketRequest.Source = Runner
+	socketRequest.Nonce = oldRequest.Nonce
+
+	pipe <- socketRequest
+}
+
+func AsyncCreateStatisticRecordInDatabase(pipe chan<- *Request, oldRequest *Request, r *run.Run) {
+
+	req := NewRequest(Runner)
+
+	req.Action = CreateAction
+	req.Type = StatisticRecord
+	req.Identifiers = RequestIdentifiers{
+		Namespace:  r.Namespace,
+		Pipeline:   r.Pipeline.Identifier,
+		Supervisor: r.Id,
+	}
+	req.Data = r.GetStatistic()
+	req.Source = Runner
+	req.Nonce = oldRequest.Nonce
+
+	pipe <- req
+}
+
+func AsyncCloseMessengerForRun(pipe chan<- *Request, oldRequest *Request) {
+
+	msgrRequest := NewRequest(Runner)
+
+	msgrRequest.Action = CloseAction
+	msgrRequest.Identifiers = RequestIdentifiers{
+		Namespace:  oldRequest.Identifiers.Namespace,
+		Pipeline:   oldRequest.Identifiers.Pipeline,
+		Supervisor: oldRequest.Identifiers.Supervisor,
+	}
+	msgrRequest.Source = Runner
+	msgrRequest.Nonce = oldRequest.Nonce
+
+	pipe <- msgrRequest
+}
+
+func AsyncSendLogToMessenger(pipe chan<- *Request, n nonce2.Nonce,
+	namespace, pipeline string, identifier uint64,
+	t RequestType, message string) {
+
+	messengerRequest := NewRequest(Runner)
+
+	messengerRequest.Action = LogAction
+	messengerRequest.Type = t
+	messengerRequest.Identifiers = RequestIdentifiers{
+		Namespace:  namespace,
+		Pipeline:   pipeline,
+		Supervisor: identifier,
+	}
+	messengerRequest.Data = message
+	messengerRequest.Nonce = n
+
+	pipe <- messengerRequest
+}
+
+func AsyncSendStopToMessenger(pipe chan<- *Request, oldRequest *Request, supervisor, processor uint64) {
+
+	socketRequest := NewRequest(Runner)
+
+	socketRequest.Action = DeleteAction
+	socketRequest.Type = RunRecord
+	socketRequest.Identifiers = RequestIdentifiers{
+		Supervisor: supervisor,
+		Processor:  processor,
+	}
+	socketRequest.Nonce = oldRequest.Nonce
+
+	pipe <- socketRequest
+}
+
+func AsyncDeleteRun(pipe chan<- *Request, oldRequest *Request, supervisor, processor uint64) {
+
+	socketRequest := NewRequest(Runner)
+
+	socketRequest.Action = DeleteAction
+	socketRequest.Type = RunRecord
+	socketRequest.Identifiers = RequestIdentifiers{
+		Supervisor: supervisor,
+		Processor:  processor,
+	}
+	socketRequest.Nonce = oldRequest.Nonce
+
+	pipe <- socketRequest
+}
