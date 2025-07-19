@@ -2,12 +2,7 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/component/cache"
 )
-
-type UseCase struct {
-	CacheComponent cache.Cache
-}
 
 func (uc UseCase) Save(identifier string, data any, expiresIn float64) (newIdentifier string, err error) {
 

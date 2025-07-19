@@ -20,8 +20,19 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	go t.watch()
-	go t.loop()
+	go t.useCases.SchedulerWatch()
+
+	go t.useCases.SchedulerLoop(func(namespaceId, pipelineId string, metadata map[string]string) error {
+		// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
+		mandatory := thread.Mandatory{
+			Pipe:          t.channels.c18,
+			ResponseTable: t.processorResponseTable,
+			NoncePool:     t.noncePool,
+			Timeout:       t.config.Timeout,
+		}
+		_, err := thread.CreateRun(mandatory, namespaceId, pipelineId, metadata)
+		return err
+	})
 
 	var iReq *thread.Request
 	var iRsp *thread.Response

@@ -8,40 +8,48 @@ import (
 
 func (t *Thread) handleGetJob(request *thread.Request, response *thread.Response) {
 
-	if filter, ok := (request.Data).(database.Filter); ok {
-		response.Data = t.get(filter)
-	} else {
+	filter, ok := (request.Data).(database.Filter)
+	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType
+		return
 	}
+
+	jobs := t.useCases.GetJobs(filter)
+	response.Data = jobs
+	response.Success = len(jobs) > 0
 }
 
 func (t *Thread) handleGetQueue(request *thread.Request, response *thread.Response) {
 
-	response.Data = t.queue()
+	response.Data = t.useCases.GetQueue()
 	response.Success = true
 }
 
 func (t *Thread) handleCreateJob(request *thread.Request, response *thread.Response) {
 
-	if jb, ok := (request.Data).(job.Job); ok {
-		response.Error = t.create(&jb)
-		response.Success = response.Error == nil
-		t.logger.Printf("created job:%s\n", jb.Identifier)
-	} else {
+	jb, ok := (request.Data).(job.Job)
+	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType
+		return
 	}
+
+	response.Error = t.useCases.CreateJob(&jb)
+	response.Success = response.Error == nil
+	t.logger.Printf("created job:%s\n", jb.Identifier)
 }
 
 func (t *Thread) handleDeleteJob(request *thread.Request, response *thread.Response) {
 
-	if filter, ok := (request.Data).(database.Filter); ok {
-		response.Error = t.delete(filter)
-		response.Success = response.Error == nil
-		t.logger.Printf("deleted job:%s\n", filter.Identifier)
-	} else {
+	filter, ok := (request.Data).(database.Filter)
+	if !ok {
 		response.Success = false
-		response.Error = thread.BadResponseType
+		response.Error = thread.BadRequestType
+		return
 	}
+
+	response.Error = t.useCases.DeleteJob(filter)
+	response.Success = response.Error == nil
+	t.logger.Printf("deleted job:%s\n", filter.Identifier)
 }

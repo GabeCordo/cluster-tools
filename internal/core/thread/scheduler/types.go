@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
@@ -46,6 +47,8 @@ type Thread struct {
 
 	processorResponseTable *nonce2.ResponseTable
 	databaseResponseTable  *nonce2.ResponseTable
+
+	useCases scheduler.UseCases
 
 	jobDatabase database.Database
 
@@ -108,6 +111,13 @@ func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...
 
 	t.processorResponseTable = nonce2.NewResponseTable()
 	t.databaseResponseTable = nonce2.NewResponseTable()
+
+	var err error
+	if t.Scheduler, err = job.New(t.jobDatabase); err != nil {
+		return nil, err
+	}
+
+	t.useCases = scheduler.UseCases{Scheduler: t.Scheduler, JobsDatabase: jD, Logger: logger}
 
 	t.jobDatabase = jD
 

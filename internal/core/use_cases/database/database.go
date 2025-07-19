@@ -9,12 +9,6 @@ import (
 	"time"
 )
 
-type UseCases struct {
-	PipelineDatabase  database.Database
-	StatisticDatabase database.Database
-	JobDatabase       database.Database
-}
-
 func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Pipeline) (err error) {
 
 	_, err = uc.PipelineDatabase.Create(

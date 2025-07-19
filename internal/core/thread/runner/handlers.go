@@ -14,25 +14,25 @@ import (
 ////					    ~~~ HANDLE REQUESTS ~~~
 //////////////////////////////////////////////////////////////////////////////////////////
 
-func (t *Thread) handleGetRun(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleGetRun(request *thread.Request, response **thread.Response) {
 
 	rr := t.useCases.GetRuns(request.Identifiers.Namespace,
 		request.Identifiers.Pipeline, request.Identifiers.Supervisor)
 
-	response = thread.NewResponse(thread.Runner)
-	response.Success = true
-	response.Data = rr
+	*response = thread.NewResponse(thread.Runner)
+	(*response).Success = true
+	(*response).Data = rr
 }
 
-func (t *Thread) handleCreateRun(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleCreateRun(request *thread.Request, response **thread.Response) {
 
 	// the callee triggering the run sends a pipeline identifier
 	// the runner shall look-up the pipeline record to send to the processor
 	_, ok := (request.Data).(map[string]string)
 	if !ok {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = thread.BadRequestType
-		response.Success = false
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = thread.BadRequestType
+		(*response).Success = false
 		return
 	}
 
@@ -41,30 +41,30 @@ func (t *Thread) handleCreateRun(request *thread.Request, response *thread.Respo
 	thread.AsyncGetPipelineFromDatabase(t.channels.c15, request)
 }
 
-func (t *Thread) handleUpdateRun(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleUpdateRun(request *thread.Request, response **thread.Response) {
 
 	tmp, ok := (request.Data).(*run.Run)
 	if !ok {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = thread.BadRequestType
-		response.Success = false
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = thread.BadRequestType
+		(*response).Success = false
 		return
 	}
 
 	r, err := t.useCases.GetRun(tmp.Id)
 	if err != nil {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = err
-		response.Success = false
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = err
+		(*response).Success = false
 		return
 	}
 
 	r.SetStatus(r.Status)
 	err = r.SetStatistic(r.Statistics)
 	if err != nil {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = err
-		response.Success = false
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = err
+		(*response).Success = false
 		return
 	}
 
@@ -76,15 +76,15 @@ func (t *Thread) handleUpdateRun(request *thread.Request, response *thread.Respo
 	}
 }
 
-func (t *Thread) handleDeleteRun(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleDeleteRun(request *thread.Request, response **thread.Response) {
 
 	rr := t.useCases.GetRuns(database.Empty, database.Empty, request.Identifiers.Supervisor)
 
 	if len(rr) < 1 {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = errors.New("no run found with the provided id")
-		response.Success = false
-		t.sendResponse(request, response)
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = errors.New("no run found with the provided id")
+		(*response).Success = false
+		t.sendResponse(request, *response)
 		return
 	}
 
@@ -95,31 +95,31 @@ func (t *Thread) handleDeleteRun(request *thread.Request, response *thread.Respo
 	thread.AsyncDeleteRun(t.channels.c9, request, request.Identifiers.Supervisor, r.Processor)
 }
 
-func (t *Thread) handleLogRun(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleLogRun(request *thread.Request, response **thread.Response) {
 
 	l, ok := (request.Data).(*log.Log)
 	if !ok {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = errors.New("expected a *log.Log type in the Data field")
-		response.Success = false
-		t.sendResponse(request, response)
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = errors.New("expected a *log.Log type in the Data field")
+		(*response).Success = false
+		t.sendResponse(request, *response)
 		return
 	}
 
 	r, err := t.useCases.GetRun(l.Id)
 	if err != nil {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = err
-		response.Success = false
-		t.sendResponse(request, response)
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = err
+		(*response).Success = false
+		t.sendResponse(request, *response)
 		return
 	}
 
 	if !r.IsRunning() {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = errors.New("cannot log on a runner that is not running")
-		response.Success = false
-		t.sendResponse(request, response)
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = errors.New("cannot log on a runner that is not running")
+		(*response).Success = false
+		t.sendResponse(request, *response)
 		return
 	}
 
@@ -137,14 +137,14 @@ func (t *Thread) handleLogRun(request *thread.Request, response *thread.Response
 		r.Namespace, r.Pipeline.Identifier, r.GetId(), logType, l.Message)
 }
 
-func (t *Thread) handleStopRun(request *thread.Request, response *thread.Response) {
+func (t *Thread) handleStopRun(request *thread.Request, response **thread.Response) {
 
 	r, err := t.useCases.GetRun(request.Identifiers.Supervisor)
 	if err != nil {
-		response = thread.NewResponse(thread.Runner)
-		response.Error = errors.New("expected a *log.Log type in the Data field")
-		response.Success = false
-		t.sendResponse(request, response)
+		*response = thread.NewResponse(thread.Runner)
+		(*response).Error = errors.New("expected a *log.Log type in the Data field")
+		(*response).Success = false
+		t.sendResponse(request, *response)
 		return
 	}
 

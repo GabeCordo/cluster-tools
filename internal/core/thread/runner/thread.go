@@ -83,7 +83,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.handleGetRun(request, response)
+					t.handleGetRun(request, &response)
 				}
 			default:
 				{
@@ -96,7 +96,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.handleCreateRun(request, response)
+					t.handleCreateRun(request, &response)
 				}
 			default:
 				{
@@ -109,7 +109,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.handleUpdateRun(request, response)
+					t.handleUpdateRun(request, &response)
 				}
 			default:
 				{
@@ -122,7 +122,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.handleLogRun(request, response)
+					t.handleLogRun(request, &response)
 				}
 			default:
 				{
@@ -135,7 +135,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.handleDeleteRun(request, response)
+					t.handleDeleteRun(request, &response)
 				}
 			default:
 				{
