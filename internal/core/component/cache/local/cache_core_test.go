@@ -1,6 +1,8 @@
 package local
 
 import (
+	"errors"
+	cache2 "github.com/GabeCordo/Flock/internal/core/component/cache"
 	"testing"
 	"time"
 )
@@ -13,7 +15,7 @@ func TestCache_Save(t *testing.T) {
 		return
 	}
 
-	cache.Save("test")
+	cache.Save(cache2.CreateIdentifier, "test")
 
 	if cache.numOfRecords != 1 {
 		t.Error("cache record counter not working")
@@ -29,7 +31,12 @@ func TestCache_SaveNoExpiryParam(t *testing.T) {
 		return
 	}
 
-	identifier := cache.Save("test")
+	identifier, err := cache.Save(cache2.CreateIdentifier, "test")
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	value, found := cache.records.Load(identifier)
 	if !found {
@@ -57,7 +64,11 @@ func TestCache_SaveExpiryParam(t *testing.T) {
 	}
 
 	expiresInNSec := 4.0
-	identifier := cache.Save("test", expiresInNSec)
+	identifier, err := cache.Save(cache2.CreateIdentifier, "test", expiresInNSec)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	value, found := cache.Get(identifier)
 	if !found {
@@ -81,8 +92,10 @@ func TestCache_SaveMaxRecordsReached(t *testing.T) {
 	}
 	cache.numOfRecords = DefaultMaxAllowedRecords
 
-	if identifier := cache.Save("test"); identifier != "" {
-		t.Error("expected no value to be saved if the max records is reached")
+	_, err := cache.Save(cache2.CreateIdentifier, "test")
+
+	if !errors.Is(err, cache2.TooManyRecords) {
+		t.Error("expected the Cache to throw and error for TooManyRecords")
 	}
 }
 
@@ -97,7 +110,11 @@ func TestCache_Get(t *testing.T) {
 	}
 
 	value := "test"
-	identifier := cache.Save(value)
+	identifier, err := cache.Save(cache2.CreateIdentifier, value)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	if foundValue, found := cache.Get(identifier); !found {
 		t.Error("cache did not return value that exists")
@@ -153,7 +170,11 @@ func TestCache_Remove(t *testing.T) {
 		return
 	}
 
-	identifier := cache.Save("foo")
+	identifier, err := cache.Save(cache2.CreateIdentifier, "foo")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	if cache.numOfRecords != 1 {
 		t.Error("expected the cache to have 1 record saved")

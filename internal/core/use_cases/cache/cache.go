@@ -16,9 +16,9 @@ func (uc UseCase) Save(identifier string, data any, expiresIn float64) (newIdent
 	} else {
 		// what if the user forgets to pass in an expiry time that's now set to 0?
 		if expiresIn == 0 {
-			newIdentifier = uc.CacheComponent.Save(data)
+			newIdentifier, err = uc.CacheComponent.Save(identifier, data)
 		} else {
-			newIdentifier = uc.CacheComponent.Save(data, expiresIn)
+			newIdentifier, err = uc.CacheComponent.Save(identifier, data, expiresIn)
 		}
 	}
 
