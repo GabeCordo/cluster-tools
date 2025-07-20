@@ -74,7 +74,13 @@ func (t *Thread) handleCreateProcessor(request *thread.Request, response **threa
 
 func (t *Thread) handleCreateModule(request *thread.Request, response **thread.Response) {
 
-	cfg := (request.Data).(processor2.ModuleConfig)
+	cfg, ok := (request.Data).(processor2.ModuleConfig)
+	if !ok {
+		(*response).Success = false
+		(*response).Error = thread.BadRequestType
+		return
+	}
+
 	*response = thread.NewResponse(thread.Processor)
 	(*response).Error = t.useCases.AddModule(request.Identifiers.Processor, &cfg)
 	(*response).Success = (*response).Error == nil
@@ -190,13 +196,21 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		return
 	}
 
+	metadata, ok := (iRequest.Data).(map[string]string)
+	if !ok {
+		delete(t.requestStore, iRequest.Nonce)
+		oResponse := thread.NewResponse(thread.Processor)
+		oResponse.Error = thread.BadRequestType
+		t.sendResponse(iRequest, oResponse)
+		return
+	}
+
 	var p *processor2.Processor
 	oResponse := thread.NewResponse(thread.Processor)
 	p, oResponse.Error = t.useCases.FindCandidateProcessor(iResponse)
 	if oResponse.Error == nil {
 		t.requestStore[iRequest.Nonce] = iRequest
-		metadata := (iRequest.Data).(map[string]string) // todo: add safety
-		thread.AsyncCreateRun(t.channels.c13, iRequest.Nonce,
+		thread.AsyncCreateRun(t.channels.c13, iRequest.Nonce, iRequest.Identifiers.Namespace,
 			iRequest.Identifiers.Module, iRequest.Identifiers.Pipeline, p.Id, metadata)
 	} else {
 		delete(t.requestStore, iRequest.Nonce)

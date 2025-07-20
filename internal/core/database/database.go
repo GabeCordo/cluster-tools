@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -52,6 +53,8 @@ func (interval Interval) ToString() string {
 
 	return sb.String()
 }
+
+var NotFound = errors.New("no records found with the received filter")
 
 const Empty = ""
 

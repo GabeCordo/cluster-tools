@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/thread"
@@ -60,7 +61,10 @@ func (t *Thread) handleGetPipelineRecord(request *thread.Request, response *thre
 		return
 	}
 
-	response.Success = len(configs) > 0
+	if len(configs) < 1 {
+		response.Error = database.NotFound
+		response.Success = false
+	}
 	response.Data = configs
 }
 
@@ -73,7 +77,10 @@ func (t *Thread) handleGetStatisticRecord(request *thread.Request, response *thr
 		return
 	}
 
-	response.Success = len(statistics) > 0
+	if len(statistics) < 1 {
+		response.Error = database.NotFound
+		response.Success = false
+	}
 	response.Data = statistics
 }
 

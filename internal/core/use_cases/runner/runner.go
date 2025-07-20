@@ -47,7 +47,7 @@ func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, confi
 		Namespace: namespace,
 		Pipeline:  pipeline,
 	}
-	result, err := uc.RunDatabase.Create(filter, *config)
+	result, err := uc.RunDatabase.Create(filter, config)
 	if err != nil {
 		return 0, err
 	}

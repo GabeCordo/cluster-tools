@@ -41,7 +41,10 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 		return pipeline.Pipeline{}, false
 	}
 
-	databaseResponse := (data).(*Response)
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		return pipeline.Pipeline{}, false
+	}
 
 	if !databaseResponse.Success {
 		return pipeline.Pipeline{}, false
@@ -67,7 +70,10 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 		return nil, false
 	}
 
-	databaseResponse := (data).(*Response)
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		return nil, false
+	}
 
 	if !databaseResponse.Success {
 		return nil, false
@@ -95,7 +101,11 @@ func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeli
 		return multithreaded.NoResponseReceived
 	}
 
-	databaseResponse := (data).(*Response)
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		return errors.New("could not cast to *Response")
+	}
+
 	// TODO : make the database generate the errors
 	if !databaseResponse.Success {
 		return errors.New("could not database pipeline in database")
@@ -120,11 +130,18 @@ func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipe
 
 	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return false
+		success = false
+		return success
 	}
 
-	databaseResponse := (data).(*Response)
-	return databaseResponse.Success
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		success = false
+		return success
+	}
+
+	success = databaseResponse.Success
+	return success
 }
 
 func DeletePipelineInDatabase(mandatory Mandatory, namespaceName, pipelineName string) (success bool) {
@@ -142,11 +159,18 @@ func DeletePipelineInDatabase(mandatory Mandatory, namespaceName, pipelineName s
 
 	data, didTimeout := nonce2.SendAndWait(mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return false
+		success = false
+		return success
 	}
 
-	databaseResponse := (data).(*Response)
-	return databaseResponse.Success
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		success = false
+		return success
+	}
+
+	success = databaseResponse.Success
+	return success
 }
 
 func GetProcessors(mandatory Mandatory) ([]*processor2.Processor, bool) {
@@ -164,13 +188,21 @@ func GetProcessors(mandatory Mandatory) ([]*processor2.Processor, bool) {
 		return nil, false
 	}
 
-	response := (data).(*Response)
-
-	if response.Success {
-		return (response.Data).([]*processor2.Processor), true
-	} else {
+	response, ok := (data).(*Response)
+	if !ok {
 		return nil, false
 	}
+
+	if !response.Success {
+		return nil, false
+	}
+
+	processors, ok := (response.Data).([]*processor2.Processor)
+	if !ok {
+		return nil, false
+	}
+
+	return processors, true
 }
 
 func AddProcessor(mandatory Mandatory, cfg *processor2.Config) (bool, error) {
@@ -189,7 +221,11 @@ func AddProcessor(mandatory Mandatory, cfg *processor2.Config) (bool, error) {
 		return false, errors.New("did not receive a response from the processor thread")
 	}
 
-	response := (data).(*Response)
+	response, ok := (data).(*Response)
+	if !ok {
+		return false, errors.New("could not cast to *Response")
+	}
+
 	return response.Success, response.Error
 }
 
@@ -721,7 +757,7 @@ func AsyncGetPipeline(pipe chan<- *Request, n nonce2.Nonce, namespace, pipeline 
 	pipe <- databaseRequest
 }
 
-func AsyncCreateRun(pipe chan<- *Request, n nonce2.Nonce, module, pipeline string, processor uint64, metadata map[string]string) {
+func AsyncCreateRun(pipe chan<- *Request, n nonce2.Nonce, namespace, module, pipeline string, processor uint64, metadata map[string]string) {
 
 	request := new(Request)
 	if request == nil {
@@ -731,8 +767,9 @@ func AsyncCreateRun(pipe chan<- *Request, n nonce2.Nonce, module, pipeline strin
 	request.Action = CreateAction
 	request.Type = RunRecord
 	request.Identifiers = RequestIdentifiers{
-		Module:   module,
-		Pipeline: pipeline,
+		Namespace: namespace,
+		Module:    module,
+		Pipeline:  pipeline,
 	} // will contain the module, cluster
 	request.Identifiers.Processor = processor
 	request.Caller = User
@@ -826,6 +863,7 @@ func AsyncSendRunToSocket(pipe chan<- *Request, oldRequest *Request, id uint64, 
 	socketRequest.Type = RunRecord
 	socketRequest.Identifiers = RequestIdentifiers{
 		Processor:  oldRequest.Identifiers.Processor,
+		Namespace:  oldRequest.Identifiers.Namespace,
 		Supervisor: id,
 	}
 	socketRequest.Data = runRequest

@@ -59,8 +59,8 @@ func (t *Thread) handleUpdateRun(request *thread.Request, response **thread.Resp
 		return
 	}
 
-	r.SetStatus(r.Status)
-	err = r.SetStatistic(r.Statistics)
+	r.SetStatus(tmp.Status)
+	err = r.SetStatistic(tmp.Statistics)
 	if err != nil {
 		*response = thread.NewResponse(thread.Runner)
 		(*response).Error = err
@@ -70,7 +70,7 @@ func (t *Thread) handleUpdateRun(request *thread.Request, response **thread.Resp
 
 	status := r.GetStatus()
 	if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
-		t.Logger.Printf("run completed %d\n", r.GetId())
+		t.Logger.Printf("[proc: %d -> flock][id: %d] runner has completed\n", r.Processor, r.GetId())
 		t.requestStore[request.Nonce] = request
 		thread.AsyncCreateStatisticRecordInDatabase(t.channels.c15, request, r)
 	}
@@ -194,17 +194,26 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg)
 
 	if err != nil {
-		delete(t.requestStore, iRequest.Nonce)
 		// the runner shall inform the iRequest source that the thread was
 		// unable to provision a new run record
 		oResponse := thread.NewResponse(thread.Runner)
 		oResponse.Error = err
+		delete(t.requestStore, iRequest.Nonce)
 		t.sendResponse(iRequest, oResponse)
-	} else {
-		// send a request to the processor to start a run with the (id, cfg) pair
-		metadata := (iRequest.Data).(map[string]string) // todo: add safety
-		thread.AsyncSendRunToSocket(t.channels.c9, iRequest, id, cfg, metadata)
+		return
 	}
+
+	// send a request to the processor to start a run with the (id, cfg) pair
+	metadata, ok := (iRequest.Data).(map[string]string)
+	if !ok {
+		oResponse := thread.NewResponse(thread.Runner)
+		oResponse.Error = thread.BadRequestType
+		delete(t.requestStore, iRequest.Nonce)
+		t.sendResponse(iRequest, oResponse)
+		return
+	}
+
+	thread.AsyncSendRunToSocket(t.channels.c9, iRequest, id, cfg, metadata)
 }
 
 func (t *Thread) handleDatabaseCreatesStatistic(iRequest *thread.Request, iResponse *thread.Response) {

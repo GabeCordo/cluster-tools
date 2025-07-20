@@ -80,7 +80,10 @@ func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
 	defer cache.m.Unlock()
 
 	if value, found := cache.records.Load(identifier); found {
-		record := (value).(Record)
+		record, ok := (value).(Record)
+		if !ok {
+			return false
+		}
 
 		record.data = data
 		record.created = time.Now()

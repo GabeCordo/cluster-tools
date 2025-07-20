@@ -109,7 +109,8 @@ func (database *LocalJobDatabase) Save(path string) error {
 	// save each module's job into its own file
 	for module, jobs := range moduleSeperatedJobs {
 
-		filePath := fmt.Sprintf("%s/schedule_%s.yml", path, module)
+		fileName := fmt.Sprintf("schedule_%s.yml", module)
+		filePath := filepath.Join(path, fileName)
 		dump := &Dump{Jobs: jobs}
 		b, err := yaml.Marshal(dump)
 		if err != nil {

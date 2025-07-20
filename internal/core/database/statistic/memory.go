@@ -36,7 +36,8 @@ func (db *LocalStatisticDatabase) Save(path string) error {
 	db.mutex.RLock()
 	defer db.mutex.RUnlock()
 
-	outputFilePath := fmt.Sprintf("%s/etl_stats_%s.json", path, time.Now().Format(time.RFC3339))
+	fileName := fmt.Sprintf("flock_stats_%s.json", time.Now().Format(time.RFC3339))
+	outputFilePath := filepath.Join(path, fileName)
 
 	if _, err := os.Stat(outputFilePath); os.IsExist(err) {
 		return err

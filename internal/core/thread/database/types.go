@@ -69,6 +69,7 @@ func New(cfg *Config, logger *logging.Logger,
 		StatisticDatabase: s,
 		PipelineDatabase:  c,
 		JobDatabase:       j,
+		Logger:            logger,
 	}
 
 	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)

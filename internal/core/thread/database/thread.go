@@ -2,20 +2,14 @@ package database
 
 import (
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"log"
 )
 
 func (t *Thread) Setup() {
 
-	if err := t.useCases.PipelineDatabase.Load(t.config.ConfigsFolder); err != nil {
-		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
-			err.Error())
+	err := t.useCases.LoadDatabases(t.config.ConfigsFolder)
+	if err != nil {
+		panic(err)
 	}
-
-	// some configs may have carried over from previous runs
-	// let the operator know these configs are being loaded into the
-	// flock without having to query the database over HTTP
-	t.useCases.PipelineDatabase.Print()
 }
 
 func (t *Thread) Start() {
@@ -153,11 +147,5 @@ func (t *Thread) Teardown() {
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 
-	if err := t.useCases.PipelineDatabase.Save(t.config.ConfigsFolder); err != nil {
-		log.Printf("failed to save configs created during runtime %s\n", err.Error())
-	}
-
-	if err := t.useCases.StatisticDatabase.Save(t.config.StatisticsFolder); err != nil {
-		log.Printf("failed to save statistics created during runtime %s\n", err.Error())
-	}
+	t.useCases.SaveDatabases(t.config.ConfigsFolder, t.config.StatisticsFolder)
 }

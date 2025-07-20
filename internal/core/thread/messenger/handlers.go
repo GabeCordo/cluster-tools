@@ -19,6 +19,11 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {
 		priority = message.Fatal
 	}
 
+	data, ok := (request.Data).(string)
+	if !ok {
+		return errors.New("expected request.Data to be of type string")
+	}
+
 	err := th.messenger.Message(
 		message.Source{
 			Module:     request.Identifiers.Module,
@@ -27,7 +32,7 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {
 		},
 		log.Log{
 			Priority: priority,
-			Message:  (request.Data).(string),
+			Message:  data,
 		},
 	)
 	return err

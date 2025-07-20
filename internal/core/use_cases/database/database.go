@@ -6,6 +6,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"log"
 	"time"
 )
 
@@ -104,4 +105,34 @@ func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelin
 		Pipeline:  pipelineId,
 	}, pipelineData)
 	return err
+}
+
+func (uc UseCases) LoadDatabases(folder string) (err error) {
+
+	if err = uc.PipelineDatabase.Load(folder); err != nil {
+		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
+			err.Error())
+	}
+
+	// some configs may have carried over from previous runs
+	// let the operator know these configs are being loaded into the
+	// flock without having to query the database over HTTP
+	uc.PipelineDatabase.Print()
+
+	return nil
+}
+
+func (uc UseCases) SaveDatabases(pipelineFolder, statisticsFolder string) {
+
+	if err := uc.PipelineDatabase.Save(pipelineFolder); err != nil {
+		uc.Logger.Alertf("failed to save configs created during runtime %s\n", err.Error())
+	} else {
+		uc.Logger.Printf("saved pipelines to %s\n", pipelineFolder)
+	}
+
+	if err := uc.StatisticDatabase.Save(statisticsFolder); err != nil {
+		uc.Logger.Alertf("failed to save statistics created during runtime %s\n", err.Error())
+	} else {
+		uc.Logger.Printf("saved statistics to %s\n", statisticsFolder)
+	}
 }

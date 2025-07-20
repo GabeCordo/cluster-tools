@@ -112,6 +112,8 @@ func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...
 	t.processorResponseTable = nonce2.NewResponseTable()
 	t.databaseResponseTable = nonce2.NewResponseTable()
 
+	t.jobDatabase = jD
+
 	var err error
 	if t.Scheduler, err = job.New(t.jobDatabase); err != nil {
 		return nil, err
