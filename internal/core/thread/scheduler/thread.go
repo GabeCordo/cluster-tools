@@ -1,19 +1,13 @@
 package scheduler
 
 import (
-	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
 
-	var err error
-	if t.Scheduler, err = job2.New(t.jobDatabase); err != nil {
-		panic(err)
-	}
-
-	if err = t.Scheduler.Jobs.Load(t.config.SchedulesFolder); err != nil {
+	err := t.useCases.LoadJobsFromDisk(t.config.SchedulesFolder)
+	if err != nil {
 		panic(err)
 	}
 }
@@ -111,16 +105,8 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 
 func (t *Thread) Teardown() {
 
-	// do not complete teardown until all requests have been completed
-	t.wg.Wait()
-
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 
-	if db, ok := (t.Scheduler.Jobs).(database.Database); ok {
-
-		if err := db.Save(t.config.SchedulesFolder); err != nil {
-			t.logger.Panicln(err.Error())
-		}
-	}
+	t.useCases.SaveJobsToDisk(t.config.SchedulesFolder)
 }

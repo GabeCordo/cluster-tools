@@ -1,6 +1,14 @@
 package core
 
 import (
+	"github.com/GabeCordo/Flock/internal/core/component/net_socket/basic_socket"
+	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
+	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
+	processor2 "github.com/GabeCordo/Flock/internal/core/use_cases/processor"
+	runner2 "github.com/GabeCordo/Flock/internal/core/use_cases/runner"
+	scheduler2 "github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
+	socket2 "github.com/GabeCordo/Flock/internal/core/use_cases/socket"
+	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,6 +28,15 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
 	"github.com/GabeCordo/Flock/internal/core/thread/socket"
 	"github.com/GabeCordo/toolchain/logging"
+)
+
+const (
+	restNonceMin      = 0
+	restNonceMax      = 262114
+	schedulerNonceMin = 262114
+	schedulerNonceMax = 524228 // (base) 262114 + 262114 (offset)
+	socketNonceMin    = 524228
+	socketNonceMax    = 786342 // (base) 524228 + 262114 (offset)
 )
 
 type Core struct {
@@ -109,13 +126,10 @@ func New(configPath string) (*Core, error) {
 	httpConfig := &restApi.Config{}
 	core.config.FillHttpClientConfig(httpConfig)
 
-	core.RestThread, err = restApi.New(httpConfig, restLogger,
-		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23)
-	if err != nil {
-		return nil, err
-	}
+	restNoncePool := nonce2.New(restNonceMin, restNonceMax)
 
-	httpProcessorLogger, err := logging.NewLogger(Socket.ToString(), &GetConfigInstance().Debug)
+	core.RestThread, err = restApi.New(httpConfig, restLogger, restNoncePool,
+		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +139,18 @@ func New(configPath string) (*Core, error) {
 	socketConfig := &socket.Config{}
 	core.config.FillSocketConfig(socketConfig)
 
-	core.SocketThread, err = socket.New(socketConfig, httpProcessorLogger,
+	socketLogger, err := logging.NewLogger(Socket.ToString(), &GetConfigInstance().Debug)
+	if err != nil {
+		return nil, err
+	}
+
+	socketNoncePool := nonce2.New(socketNonceMin, socketNonceMax)
+
+	basicNetSocket := basic_socket.New()
+
+	socketUseCases := socket2.UseCases{Socket: basicNetSocket, Logger: socketLogger}
+
+	core.SocketThread, err = socket.New(socketConfig, socketLogger, socketNoncePool, &socketUseCases,
 		core.interrupt, core.C7, core.C8, core.C9, core.C10)
 	if err != nil {
 		return nil, err
@@ -143,7 +168,12 @@ func New(configPath string) (*Core, error) {
 
 	table := processorCmp.NewTable()
 
-	core.ProcessorThread, err = processor.New(processorConfig, processorLogger, table,
+	processorUseCases := processor2.UseCases{
+		ProcessorTable: table,
+		Logger:         processorLogger,
+	}
+
+	core.ProcessorThread, err = processor.New(processorConfig, processorLogger, processorUseCases,
 		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14, core.C18, core.C19)
 	if err != nil {
 		return nil, err
@@ -161,7 +191,11 @@ func New(configPath string) (*Core, error) {
 
 	registry := supervisorDb.NewLocalDatabase()
 
-	core.RunnerThread, err = runner.NewThread(runnerConfig, runnerLogger, registry,
+	runnerUseCases := runner2.UseCases{
+		RunDatabase: registry,
+	}
+
+	core.RunnerThread, err = runner.NewThread(runnerConfig, runnerLogger, runnerUseCases,
 		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17, core.C9, core.C10)
 	if err != nil {
 		return nil, err
@@ -199,9 +233,14 @@ func New(configPath string) (*Core, error) {
 	statDatabase := statisticDb.NewLocalStatisticDatabase()
 	jobDatabase := job.NewLocalJobDatabase()
 
-	core.DatabaseThread, err = database.New(databaseConfig, databaseLogger,
-		statDatabase, configDatabase, jobDatabase,
-		core.config.Paths.Configs, core.config.Paths.Statistics,
+	databaseUseCases := database2.UseCases{
+		PipelineDatabase:  configDatabase,
+		StatisticDatabase: statDatabase,
+		JobDatabase:       jobDatabase,
+		Logger:            databaseLogger,
+	}
+
+	core.DatabaseThread, err = database.New(databaseConfig, databaseLogger, databaseUseCases,
 		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C11, core.C12, core.C15, core.C16, core.C26, core.C27)
 	if err != nil {
 		return nil, err
@@ -235,7 +274,20 @@ func New(configPath string) (*Core, error) {
 	schedulerConig := &scheduler.Config{}
 	core.config.FillSchedulerConfig(schedulerConig)
 
-	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, jobDatabase,
+	sch, err := job2.New(jobDatabase)
+	if err != nil {
+		return nil, err
+	}
+
+	schedulerUseCases := scheduler2.UseCases{
+		Scheduler:    sch,
+		JobsDatabase: sch.Jobs,
+		Logger:       schedulerLogger,
+	}
+
+	scheduleNoncePool := nonce2.New(schedulerNonceMin, schedulerNonceMax)
+
+	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, schedulerUseCases, scheduleNoncePool,
 		core.interrupt, core.C18, core.C19, core.C20, core.C21, core.C26, core.C27)
 	if err != nil {
 		return nil, err
@@ -307,7 +359,6 @@ func (core *Core) Run() {
 	go core.SchedulerThread.Start()
 	if core.config.Debug {
 		core.logger.Println("Scheduler Thread Starting")
-		core.SchedulerThread.Scheduler.Print()
 	}
 
 	core.SocketThread.Setup()
@@ -370,13 +421,6 @@ func (core *Core) Run() {
 	if core.config.Debug {
 		core.logger.Println("processor shutdown")
 	}
-
-	// THIS WILL TAKE THE LONGEST - clean channels and finish processing
-	//flock.ProvisionerThread.Teardown()
-	//
-	//if common.GetConfigInstance().Debug {
-	//	flock.logger.Println("provisioner shutdown")
-	//}
 
 	core.SchedulerThread.Teardown()
 

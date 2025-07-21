@@ -1,18 +1,12 @@
 package socket
 
 import (
-	"crypto/tls"
 	"errors"
-	"net"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/use_cases/socket"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
-
-const nonceMin = 524228
-const nonceMax = 786342 // (base) 524228 + 262114 (offset)
 
 type Config struct {
 	Debug bool
@@ -28,6 +22,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan<- thread.InterruptEvent
 		c7        chan<- *thread.Request  // socket_thread is sending req to the processor_thread
@@ -36,34 +31,17 @@ type Thread struct {
 		c10       chan<- *thread.Response // socket_thread is sending rsp to the runner_thread
 		close     chan thread.InterruptEvent
 	}
-
+	useCases  *socket.UseCases
+	logger    *logging.Logger
 	noncePool *nonce2.Pool
 
 	responseTables struct {
 		processor *nonce2.ResponseTable
 		runner    *nonce2.ResponseTable
 	}
-
-	flags struct {
-		useTLS bool
-	}
-
-	tls struct {
-		config *tls.Config
-	}
-
-	connections      map[uint64]net.Conn
-	numOfConnections uint64
-
-	config *Config
-	Logger *logging.Logger
-
-	wg             sync.WaitGroup
-	connectionsMux sync.RWMutex
-	mutex          sync.RWMutex
 }
 
-func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger *logging.Logger, noncePool *nonce2.Pool, useCases *socket.UseCases, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	if cfg == nil {
@@ -72,7 +50,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	t.config = cfg
 
 	if logger != nil {
-		t.Logger = logger
+		t.logger = logger
 	} else {
 		return nil, errors.New("expected logger to be a non-nil value")
 	}
@@ -105,9 +83,9 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	}
 	t.channels.close = make(chan thread.InterruptEvent)
 
-	t.connections = make(map[uint64]net.Conn)
+	t.useCases = useCases
 
-	t.noncePool = nonce2.New(nonceMin, nonceMax)
+	t.noncePool = noncePool
 
 	t.responseTables.processor = nonce2.NewResponseTable()
 	t.responseTables.runner = nonce2.NewResponseTable()

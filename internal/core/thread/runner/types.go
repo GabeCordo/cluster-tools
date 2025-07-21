@@ -2,11 +2,8 @@ package runner
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/use_cases/runner"
-	"sync"
-
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/use_cases/runner"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
@@ -17,6 +14,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan thread.InterruptEvent
 
@@ -33,18 +31,12 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
+	useCases     runner.UseCases
+	logger       *logging.Logger
 	requestStore map[nonce.Nonce]*thread.Request
-
-	config *Config
-	Logger *logging.Logger
-
-	useCases runner.UseCases
-
-	wg sync.WaitGroup
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, channels ...any) (*Thread, error) {
+func NewThread(cfg *Config, logger *logging.Logger, useCases runner.UseCases, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	if cfg == nil {
@@ -53,7 +45,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 	t.config = cfg
 
 	if logger != nil {
-		t.Logger = logger
+		t.logger = logger
 	} else {
 		return nil, errors.New("expected logger to be a non-nil value")
 	}
@@ -96,7 +88,7 @@ func NewThread(cfg *Config, logger *logging.Logger, registry database.Database, 
 
 	t.requestStore = make(map[nonce.Nonce]*thread.Request)
 
-	t.useCases = runner.UseCases{RunDatabase: registry}
+	t.useCases = useCases
 
 	return t, nil
 }

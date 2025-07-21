@@ -1,12 +1,14 @@
 package socket
 
 import (
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
+	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
 
-	err := t.setupSocketTlsConfig()
+	err := t.useCases.SetupSocketTlsConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -14,7 +16,53 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	go t.startNetworkSocket()
+	go t.useCases.StartNetworkSocket(t.config.Net.Host, t.config.Net.Port,
+		func(pId uint64, pAddr string) error {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			cfg := processor2.Config{Identifier: pId, RemoteAddr: pAddr}
+			_, err := thread.AddProcessor(mandatory, &cfg)
+			return err
+		},
+		func(pId uint64, pAddr string) error {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			cfg := processor2.Config{Identifier: pId, RemoteAddr: pAddr}
+			err := thread.DeleteProcessor(mandatory, &cfg)
+			return err
+		},
+		func(pId uint64, m *processor2.ModuleConfig) {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			// TODO: needs processor name
+			thread.AsyncAddModule(mandatory, pId, m)
+		},
+		func(r *run.Run) {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			thread.AsyncUpdateRun(mandatory, r)
+		},
+	)
 
 	var iReq *thread.Request
 	var iRsp *thread.Response
@@ -58,7 +106,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 				}
 			default:
 				{
-					t.Logger.Warn(thread.UnknownRequest.Error())
+					t.logger.Warn(thread.UnknownRequest.Error())
 					response.Error = thread.BadRequestType
 				}
 			}
@@ -72,14 +120,14 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 				}
 			default:
 				{
-					t.Logger.Warn(thread.UnknownRequest.Error())
+					t.logger.Warn(thread.UnknownRequest.Error())
 					response.Error = thread.BadRequestType
 				}
 			}
 		}
 	default:
 		{
-			t.Logger.Warn(thread.UnknownRequest.Error())
+			t.logger.Warn(thread.UnknownRequest.Error())
 			response.Error = thread.BadRequestType
 		}
 	}

@@ -70,7 +70,7 @@ func (t *Thread) handleUpdateRun(request *thread.Request, response **thread.Resp
 
 	status := r.GetStatus()
 	if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
-		t.Logger.Printf("[proc: %d -> flock][id: %d] runner has completed\n", r.Processor, r.GetId())
+		t.logger.Printf("[proc: %d -> flock][id: %d] runner has completed\n", r.Processor, r.GetId())
 		t.requestStore[request.Nonce] = request
 		thread.AsyncCreateStatisticRecordInDatabase(t.channels.c15, request, r)
 	}
@@ -252,8 +252,8 @@ func (t *Thread) handleSocketCreatesRun(iRequest *thread.Request, iResponse *thr
 	}
 
 	if iResponse.Error != nil {
-		t.Logger.Print(iResponse.Error.Error())
-		t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "could not connect to the processor and runner is canceled")
+		t.logger.Print(iResponse.Error.Error())
+		t.logger.Printf("[flock -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "could not connect to the processor and runner is canceled")
 		r.Status = run.Cancelled
 
 		oResponse := thread.NewResponse(thread.Runner)
@@ -264,7 +264,7 @@ func (t *Thread) handleSocketCreatesRun(iRequest *thread.Request, iResponse *thr
 		return
 	}
 
-	t.Logger.Printf("[flock -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "connected to processor and runner is active")
+	t.logger.Printf("[flock -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "connected to processor and runner is active")
 	r.Status = run.Active
 
 	oResponse := thread.NewResponse(thread.Runner)

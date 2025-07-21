@@ -46,13 +46,13 @@ func (uc UseCases) AddModule(processorId uint64, cfg *component.ModuleConfig) er
 	//mandatory := thread.Mandatory{t.c11, t.DatabaseResponseTable, t.pipeline.Timeout}
 	//err := thread.StoreConfigInDatabase(mandatory, cfg.Name, export.ToClusterConfig())
 	//if err == nil {
-	//	t.Logger.Printf("stored new default pipeline for cluster %s in database\n", export.Function)
+	//	t.logger.Printf("stored new default pipeline for cluster %s in database\n", export.Function)
 	//} else {
 	//	// the pipeline could have already been stored in a previous module register
 	//	// note: configs are not deleted when the processor is disconnected at the moment
 	//	//		-> the idea is we can re-use them s.t. performance can be improved
 	//	fmt.Println(err)
-	//	t.Logger.Printf("failed to database default pipeline for cluster %s in database\n", export.Function)
+	//	t.logger.Printf("failed to database default pipeline for cluster %s in database\n", export.Function)
 	//}
 	//}
 

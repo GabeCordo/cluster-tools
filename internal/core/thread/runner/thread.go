@@ -249,9 +249,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 }
 
 func (t *Thread) Teardown() {
-
-	// don't tear down until all the requests have been processed
-	t.wg.Wait()
+	
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 }

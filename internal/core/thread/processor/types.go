@@ -2,11 +2,8 @@ package processor
 
 import (
 	"errors"
-	processor2 "github.com/GabeCordo/Flock/internal/core/use_cases/processor"
-	"sync"
-
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	processor2 "github.com/GabeCordo/Flock/internal/core/use_cases/processor"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
@@ -23,6 +20,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt <-chan thread.InterruptEvent
 
@@ -43,18 +41,12 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
+	useCases     processor2.UseCases
+	logger       *logging.Logger
 	requestStore map[nonce.Nonce]*thread.Request
-
-	useCases processor2.UseCases
-
-	config *Config
-	Logger *logging.Logger
-
-	wg sync.WaitGroup
 }
 
-func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger *logging.Logger, useCases processor2.UseCases, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	if cfg == nil {
@@ -63,15 +55,12 @@ func New(cfg *Config, logger *logging.Logger, table *processor.Table, channels .
 	t.config = cfg
 
 	if logger != nil {
-		t.Logger = logger
+		t.logger = logger
 	} else {
 		return nil, errors.New("logger cannot be nil")
 	}
 
-	t.useCases = processor2.UseCases{
-		ProcessorTable: table,
-		Logger:         logger,
-	}
+	t.useCases = useCases
 
 	var ok = false
 

@@ -2,18 +2,11 @@ package scheduler
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
-	"sync"
-
-	"github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
 )
-
-const nonceMin = 262114
-const nonceMax = 524228 // (base) 262114 + 262114 (offset)
 
 type Config struct {
 	Debug           bool
@@ -22,6 +15,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan<- thread.InterruptEvent
 
@@ -36,26 +30,14 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
-	wg sync.WaitGroup
-
-	config *Config
-
-	logger *logging.Logger
-
-	noncePool *nonce2.Pool
-
+	useCases               scheduler.UseCases
+	logger                 *logging.Logger
+	noncePool              *nonce2.Pool
 	processorResponseTable *nonce2.ResponseTable
 	databaseResponseTable  *nonce2.ResponseTable
-
-	useCases scheduler.UseCases
-
-	jobDatabase database.Database
-
-	Scheduler *job.Scheduler
 }
 
-func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger *logging.Logger, useCases scheduler.UseCases, noncePool *nonce2.Pool, channels ...any) (*Thread, error) {
 
 	t := new(Thread)
 	var ok = false
@@ -107,21 +89,12 @@ func New(cfg *Config, logger *logging.Logger, jD database.Database, channels ...
 
 	t.channels.close = make(chan thread.InterruptEvent)
 
-	t.noncePool = nonce2.New(nonceMin, nonceMax)
+	t.noncePool = noncePool
 
 	t.processorResponseTable = nonce2.NewResponseTable()
 	t.databaseResponseTable = nonce2.NewResponseTable()
 
-	t.jobDatabase = jD
-
-	var err error
-	if t.Scheduler, err = job.New(t.jobDatabase); err != nil {
-		return nil, err
-	}
-
-	t.useCases = scheduler.UseCases{Scheduler: t.Scheduler, JobsDatabase: jD, Logger: logger}
-
-	t.jobDatabase = jD
+	t.useCases = useCases
 
 	return t, nil
 }

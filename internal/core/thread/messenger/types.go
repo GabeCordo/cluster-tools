@@ -2,8 +2,6 @@ package messenger
 
 import (
 	"errors"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/core/component/message"
 	"github.com/GabeCordo/Flock/internal/core/component/message/email"
 	"github.com/GabeCordo/Flock/internal/core/thread"
@@ -21,6 +19,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
@@ -34,13 +33,8 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
-	config *Config
-	logger *logging.Logger
-
+	logger    *logging.Logger
 	messenger message.Messenger
-
-	wg sync.WaitGroup
 }
 
 func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, channels ...interface{}) (*Thread, error) {

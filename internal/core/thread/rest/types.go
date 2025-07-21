@@ -3,16 +3,11 @@ package rest
 import (
 	"context"
 	"errors"
-	"net/http"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
+	"net/http"
 )
-
-const nonceMin = 0
-const nonceMax = 262114
 
 // Frontend Thread
 
@@ -27,6 +22,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
@@ -44,28 +40,19 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
-	noncePool *nonce2.Pool
-
+	logger                 *logging.Logger
+	noncePool              *nonce2.Pool
 	ProcessorResponseTable *nonce2.ResponseTable
 	DatabaseResponseTable  *nonce2.ResponseTable
 	SchedulerResponseTable *nonce2.ResponseTable
 	MessengerResponseTable *nonce2.ResponseTable
 	CacheResponseTable     *nonce2.ResponseTable
-
-	server    *http.Server
-	mux       *http.ServeMux
-	cancelCtx context.CancelFunc
-
-	config *Config
-	logger *logging.Logger
-
-	counter uint32
-	mutex   sync.Mutex
-	wg      sync.WaitGroup
+	server                 *http.Server
+	mux                    *http.ServeMux
+	cancelCtx              context.CancelFunc
 }
 
-func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger *logging.Logger, noncePool *nonce2.Pool, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	var ok bool
@@ -113,7 +100,7 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	}
 	t.channels.close = make(chan thread.InterruptEvent)
 
-	t.noncePool = nonce2.New(nonceMin, nonceMax)
+	t.noncePool = noncePool
 	t.ProcessorResponseTable = nonce2.NewResponseTable()
 	t.DatabaseResponseTable = nonce2.NewResponseTable()
 	t.SchedulerResponseTable = nonce2.NewResponseTable()
@@ -121,8 +108,6 @@ func New(cfg *Config, logger *logging.Logger, channels ...any) (*Thread, error) 
 	t.CacheResponseTable = nonce2.NewResponseTable()
 
 	t.server = new(http.Server)
-
-	t.counter = 0
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")
