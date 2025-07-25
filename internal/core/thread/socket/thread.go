@@ -1,17 +1,14 @@
 package socket
 
 import (
-	"encoding/json"
-	"net"
-
+	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	common "github.com/GabeCordo/Flock/internal/shared/async"
 )
 
 func (t *Thread) Setup() {
 
-	err := t.setupSocketTlsConfig()
+	err := t.useCases.SetupSocketTlsConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -19,7 +16,53 @@ func (t *Thread) Setup() {
 
 func (t *Thread) Start() {
 
-	go t.startNetworkSocket()
+	go t.useCases.StartNetworkSocket(t.config.Net.Host, t.config.Net.Port,
+		func(pId uint64, pAddr string) error {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			cfg := processor2.Config{Identifier: pId, RemoteAddr: pAddr}
+			_, err := thread.AddProcessor(mandatory, &cfg)
+			return err
+		},
+		func(pId uint64, pAddr string) error {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			cfg := processor2.Config{Identifier: pId, RemoteAddr: pAddr}
+			err := thread.DeleteProcessor(mandatory, &cfg)
+			return err
+		},
+		func(pId uint64, m *processor2.ModuleConfig) {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			// TODO: needs processor name
+			thread.AsyncAddModule(mandatory, pId, m)
+		},
+		func(r *run.Run) {
+			mandatory := thread.Mandatory{
+				Pipe:          t.channels.c7,
+				ResponseTable: t.responseTables.processor,
+				NoncePool:     t.noncePool,
+				Timeout:       t.config.Timeout,
+			}
+
+			thread.AsyncUpdateRun(mandatory, r)
+		},
+	)
 
 	var iReq *thread.Request
 	var iRsp *thread.Response
@@ -59,54 +102,11 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					if request.Identifiers.Processor == 0 {
-						t.Logger.Warnln("processor identifier missing for create run")
-						response.Error = thread.BadRequestType
-						return response
-					}
-
-					// TODO: any better way to clean this up + stop using strings for lookup
-					t.mutex.RLock()
-					t.connectionsMux.RLock()
-
-					var connection net.Conn
-					if c, found := t.connections[request.Identifiers.Processor]; !found {
-						t.Logger.Warnf("no processor exists with the identifier %d\n", request.Identifiers.Processor)
-						t.mutex.RUnlock()
-						response.Error = thread.BadRequestType
-						t.mutex.RUnlock()
-						t.connectionsMux.RUnlock()
-						return response
-					} else {
-						connection = c
-						t.mutex.RUnlock()
-						t.connectionsMux.RUnlock()
-					}
-
-					runRequest, ok := request.Data.(run.Request)
-					if !ok {
-						t.Logger.Warnln("create run was not given a run.Request type")
-						response.Error = thread.BadRequestType
-						return response
-					}
-
-					encoder := json.NewEncoder(connection)
-
-					r := common.Request{
-						Action: common.Create,
-						Record: common.Run,
-						Data:   runRequest,
-					}
-					err := encoder.Encode(r)
-					if err != nil {
-						t.Logger.Warnln("failed to encode run request")
-						response.Error = thread.InternalError
-					}
-					response.Data = request.Identifiers.Supervisor
+					t.handleCreateRun(request, response)
 				}
 			default:
 				{
-					t.Logger.Warn(thread.UnknownRequest.Error())
+					t.logger.Warn(thread.UnknownRequest.Error())
 					response.Error = thread.BadRequestType
 				}
 			}
@@ -116,51 +116,18 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					if request.Identifiers.Processor == 0 {
-						t.Logger.Warnln("missing processor identifier for delete run")
-						response.Error = thread.InternalError
-					}
-
-					if request.Identifiers.Supervisor == 0 {
-						t.Logger.Warnln("missing run id for delete run")
-						response.Error = thread.InternalError
-					}
-
-					r := common.Request{
-						Action: common.Delete,
-						Record: common.Run,
-						Data:   request.Identifiers.Supervisor,
-					}
-
-					t.connectionsMux.RLock()
-
-					var connection net.Conn
-					if c, found := t.connections[request.Identifiers.Processor]; found {
-						connection = c
-						t.connectionsMux.RUnlock()
-					} else {
-						t.Logger.Warnln("processor identifier not found for delete run")
-						response.Error = thread.InternalError
-						t.connectionsMux.RUnlock()
-						return response
-					}
-
-					encoder := json.NewEncoder(connection)
-					err := encoder.Encode(r)
-					if err != nil {
-						t.Logger.Warnln("failed to encode delete run request")
-					}
+					t.handleDeleteRun(request, response)
 				}
 			default:
 				{
-					t.Logger.Warn(thread.UnknownRequest.Error())
+					t.logger.Warn(thread.UnknownRequest.Error())
 					response.Error = thread.BadRequestType
 				}
 			}
 		}
 	default:
 		{
-			t.Logger.Warn(thread.UnknownRequest.Error())
+			t.logger.Warn(thread.UnknownRequest.Error())
 			response.Error = thread.BadRequestType
 		}
 	}

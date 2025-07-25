@@ -1,11 +1,6 @@
 package runner
 
 import (
-	"strconv"
-
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -85,18 +80,10 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 	switch request.Action {
 	case thread.GetAction:
 		{
-			// Flow: Get Run Record (Step 1)
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					f := &database.Filter{
-						Namespace:  request.Identifiers.Namespace,
-						Pipeline:   request.Identifiers.Pipeline,
-						Identifier: strconv.FormatUint(request.Identifiers.Supervisor, 10),
-					}
-
-					response = thread.NewResponse(thread.Runner)
-					response.Data, response.Error = t.syncGetSupervisor(f)
+					t.handleGetRun(request, &response)
 				}
 			default:
 				{
@@ -106,18 +93,10 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 		}
 	case thread.CreateAction:
 		{
-			// Flow: Create Run
-			//
-			// Step 1 -> Pull the pipeline record from the database.
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					// send a request to the Database thread for the pipeline
-					t.requestStore[request.Nonce] = request
-					err = t.asyncGetPipelineFromDatabase(request)
-					if err != nil {
-						delete(t.requestStore, request.Nonce)
-					}
+					t.handleCreateRun(request, &response)
 				}
 			default:
 				{
@@ -130,17 +109,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					var r *run.Run
-					r, err = t.syncUpdateRun(request)
-
-					if err == nil {
-						status := r.GetStatus()
-						if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
-							t.Logger.Printf("run completed %d\n", r.GetId())
-							t.requestStore[request.Nonce] = request
-							t.asyncCreateStatisticRecordInDatabase(request, r)
-						}
-					}
+					t.handleUpdateRun(request, &response)
 				}
 			default:
 				{
@@ -153,7 +122,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					err = t.asyncLogRun(request)
+					t.handleLogRun(request, &response)
 				}
 			default:
 				{
@@ -166,12 +135,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					err = t.asyncStopRun(request)
-					if err != nil {
-						t.sendResponse(request, response)
-					} else {
-						t.requestStore[request.Nonce] = request
-					}
+					t.handleDeleteRun(request, &response)
 				}
 			default:
 				{
@@ -201,28 +165,10 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 			switch iResponse.Action {
 			case thread.GetAction:
 				{
-					// Flow: Create Run
-					//
-					// Step 2 -> Received a response from the database
 					switch iResponse.Type {
 					case thread.PipelineRecord:
 						{
-							var id uint64 = 0         // set to a value >0 when no err
-							var cfg pipeline.Pipeline // set to a valid value when no err
-							var err error             // indicates we could not create a new record
-
-							id, cfg, err = t.syncCreateNewRunRecord(iRequest, iResponse)
-							if err != nil {
-								delete(t.requestStore, iRequest.Nonce)
-								// the runner shall inform the iRequest source that the thread was
-								// unable to provision a new run record
-								oResponse := thread.NewResponse(thread.Runner)
-								oResponse.Error = err
-								t.sendResponse(iRequest, oResponse)
-							} else {
-								// send a request to the processor to start a run with the (id, cfg) pair
-								t.asyncSendRunToSocket(iRequest, id, &cfg)
-							}
+							t.handleDatabaseReturnsPipeline(iRequest, iResponse)
 						}
 					default:
 						{
@@ -235,16 +181,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.StatisticRecord:
 						{
-							if iResponse.Error == nil {
-
-								t.asyncCloseMessengerForRun(iRequest)
-							} else {
-								// the database failed to create a statistic record for the run
-								oResponse := thread.NewResponse(thread.Runner)
-								oResponse.Error = iResponse.Error
-								delete(t.requestStore, iRequest.Nonce)
-								t.sendResponse(iRequest, oResponse)
-							}
+							t.handleDatabaseReturnsPipeline(iRequest, iResponse)
 						}
 					default:
 						{
@@ -266,11 +203,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.RunRecord:
 						{
-							oResponse := thread.NewResponse(thread.Runner)
-							oResponse.Error = t.syncUpdateRunAfterFirstResponseFromSocket(iRequest, iResponse)
-							oResponse.Data = iResponse.Data
-							delete(t.requestStore, iRequest.Nonce)
-							t.sendResponse(iRequest, oResponse)
+							t.handleSocketCreatesRun(iRequest, iResponse)
 						}
 					default:
 						{
@@ -283,10 +216,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.RunRecord:
 						{
-							oResponse := thread.NewResponse(thread.Runner)
-							oResponse.Error = iResponse.Error
-							delete(t.requestStore, iRequest.Nonce)
-							t.sendResponse(iRequest, oResponse)
+							t.handleSocketDeletesRun(iRequest, iResponse)
 						}
 					default:
 						{
@@ -304,10 +234,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 		switch iResponse.Type {
 		case thread.RunRecord:
 			{
-				oResponse := thread.NewResponse(thread.Runner)
-				oResponse.Error = iResponse.Error
-				delete(t.requestStore, iRequest.Nonce)
-				t.sendResponse(iRequest, oResponse)
+				t.handleMessengerAckLog(iRequest, iResponse)
 			}
 		default:
 			{
@@ -322,9 +249,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 }
 
 func (t *Thread) Teardown() {
-
-	// don't tear down until all the requests have been processed
-	t.wg.Wait()
+	
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 }

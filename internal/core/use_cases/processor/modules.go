@@ -4,21 +4,21 @@ import (
 	"errors"
 	"fmt"
 
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
+	component "github.com/GabeCordo/Flock/internal/core/component/processor"
 )
 
-func (t *Thread) syncGetModules() []processor2.ModuleData {
+func (uc UseCases) GetModules() []component.ModuleData {
 
-	return t.processorTable.RegisteredModules()
+	return uc.ProcessorTable.RegisteredModules()
 }
 
-func (t *Thread) syncAddModule(processorId uint64, cfg *processor2.ModuleConfig) error {
+func (uc UseCases) AddModule(processorId uint64, cfg *component.ModuleConfig) error {
 
 	if !cfg.Verify() {
 		return errors.New("module pipeline is not valid")
 	}
 
-	if err := t.processorTable.AddModule(processorId, cfg); err != nil {
+	if err := uc.ProcessorTable.AddModule(processorId, cfg); err != nil {
 		return err
 	}
 
@@ -46,13 +46,13 @@ func (t *Thread) syncAddModule(processorId uint64, cfg *processor2.ModuleConfig)
 	//mandatory := thread.Mandatory{t.c11, t.DatabaseResponseTable, t.pipeline.Timeout}
 	//err := thread.StoreConfigInDatabase(mandatory, cfg.Name, export.ToClusterConfig())
 	//if err == nil {
-	//	t.Logger.Printf("stored new default pipeline for cluster %s in database\n", export.Function)
+	//	t.logger.Printf("stored new default pipeline for cluster %s in database\n", export.Function)
 	//} else {
 	//	// the pipeline could have already been stored in a previous module register
 	//	// note: configs are not deleted when the processor is disconnected at the moment
 	//	//		-> the idea is we can re-use them s.t. performance can be improved
 	//	fmt.Println(err)
-	//	t.Logger.Printf("failed to database default pipeline for cluster %s in database\n", export.Function)
+	//	t.logger.Printf("failed to database default pipeline for cluster %s in database\n", export.Function)
 	//}
 	//}
 
@@ -60,40 +60,40 @@ func (t *Thread) syncAddModule(processorId uint64, cfg *processor2.ModuleConfig)
 	// ->	when a processor is added it may change what modules/configs/processors are available to use
 	//		and whether they are mounted in the flock currently
 	fmt.Println("UPDATED ==================>")
-	t.processorTable.Print()
+	uc.ProcessorTable.Print()
 
 	return nil
 }
 
-func (t *Thread) syncDeleteModule(processorName uint64, moduleName string) error {
+func (uc UseCases) DeleteModule(processorName uint64, moduleName string) error {
 
-	return t.processorTable.RemoveModule(processorName, moduleName)
+	return uc.ProcessorTable.RemoveModule(processorName, moduleName)
 }
 
-func (t *Thread) syncMountModule(name string) error {
+func (uc UseCases) MountModule(name string) error {
 
-	instance, found := t.processorTable.GetModule(name)
+	instance, found := uc.ProcessorTable.GetModule(name)
 	if !found {
-		return processor2.ModuleDoesNotExist
+		return component.ModuleDoesNotExist
 	}
 
 	instance.Mount()
-	t.Logger.Printf("the module %s was MOUNTED\n", name)
-	t.processorTable.Print()
+	uc.Logger.Printf("the module %s was MOUNTED\n", name)
+	uc.ProcessorTable.Print()
 
 	return nil
 }
 
-func (t *Thread) syncUnMountModule(name string) error {
+func (uc UseCases) UnMountModule(name string) error {
 
-	instance, found := t.processorTable.GetModule(name)
+	instance, found := uc.ProcessorTable.GetModule(name)
 	if !found {
-		return processor2.ModuleDoesNotExist
+		return component.ModuleDoesNotExist
 	}
 
 	instance.Unmount()
-	t.Logger.Printf("the module %s was UNMOUNTED\n", name)
-	t.processorTable.Print()
+	uc.Logger.Printf("the module %s was UNMOUNTED\n", name)
+	uc.ProcessorTable.Print()
 
 	return nil
 }

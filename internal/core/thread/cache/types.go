@@ -2,10 +2,9 @@ package cache
 
 import (
 	"errors"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/core/component/cache"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	cache2 "github.com/GabeCordo/Flock/internal/core/use_cases/cache"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -14,6 +13,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
@@ -25,13 +25,8 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
-	config *Config
-	logger *logging.Logger
-
-	cache cache.Cache
-
-	wg sync.WaitGroup
+	useCase cache2.UseCase
+	logger  *logging.Logger
 }
 
 func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any) (*Thread, error) {
@@ -71,7 +66,9 @@ func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any
 	t.logger = logger
 	t.logger.SetColour(logging.Yellow)
 
-	t.cache = cache
+	t.useCase = cache2.UseCase{
+		CacheComponent: cache,
+	}
 
 	return t, nil
 }

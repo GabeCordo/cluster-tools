@@ -3,6 +3,7 @@ package local
 import (
 	"bytes"
 	"fmt"
+	cache2 "github.com/GabeCordo/Flock/internal/core/component/cache"
 	"log"
 	"math/rand"
 	"time"
@@ -33,7 +34,7 @@ func GenerateRandomString() string {
 	return buffer.String()
 }
 
-func (cache *Cache) Save(data any, expiry ...float64) string {
+func (cache *Cache) Save(identifier string, data any, expiry ...float64) (string, error) {
 	cache.m.Lock()
 	defer cache.m.Unlock()
 
@@ -47,7 +48,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 		// might indicate that they need to increase the ram on their production environment
 		log.Println("(warning) cache miss, increase the maximum number of records allowed.")
 		log.Println("[ increasing the maximum records on low-ram machines will degrade performance, be careful ]")
-		return ""
+		return "", cache2.TooManyRecords
 	}
 
 	var record Record
@@ -57,14 +58,28 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 		record = Record{data, time.Now(), DefaultCacheExpiry}
 	}
 
-	var identifier string
-	for {
-		identifier = GenerateRandomString()
+	isIdentifierProvided := identifier != cache2.CreateIdentifier
 
-		// in the odd case the cache identifier already exists, try again until we find a unique id
-		// Note: this should not hit as records (should) consistently be deleted
-		if _, found := cache.records.Load(identifier); !found {
-			break
+	// the user has the option to choose their own identifier, before we can accept
+	// this value, verify that the identifier does not already exist in the cache.
+	//
+	// when the value already exists in the cache, we should fail.
+	_, found := cache.records.Load(identifier)
+	if isIdentifierProvided && found {
+		// let the user use the Swap function if they wish to override the value in the cache
+		return "", cache2.IdentifierAlreadyExists
+	}
+
+	if !isIdentifierProvided {
+		// generate a unique string until there are no conflicts in the cache.
+		for {
+			identifier = GenerateRandomString()
+
+			// in the odd case the cache identifier already exists, try again until we find a unique id
+			// Note: this should not hit as records (should) consistently be deleted
+			if _, found := cache.records.Load(identifier); !found {
+				break
+			}
 		}
 	}
 
@@ -72,7 +87,7 @@ func (cache *Cache) Save(data any, expiry ...float64) string {
 	// the numOfRecords will be used to track whether the cache reaches its maximum size
 	cache.numOfRecords++
 
-	return identifier
+	return identifier, nil
 }
 
 func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
@@ -80,7 +95,10 @@ func (cache *Cache) Swap(identifier string, data any, expiry ...float64) bool {
 	defer cache.m.Unlock()
 
 	if value, found := cache.records.Load(identifier); found {
-		record := (value).(Record)
+		record, ok := (value).(Record)
+		if !ok {
+			return false
+		}
 
 		record.data = data
 		record.created = time.Now()

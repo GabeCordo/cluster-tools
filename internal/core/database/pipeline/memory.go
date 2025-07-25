@@ -61,30 +61,40 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 	}
 
 	for moduleId, configs := range db.records {
-		modulePath := path + moduleId
+		modulePath := filepath.Join(path, moduleId)
+
 		if _, err := os.Stat(modulePath); err == nil {
 			err = os.RemoveAll(modulePath)
 			if err != nil {
+				log.Println(err)
 				continue
 			}
 		}
+
 		err := os.Mkdir(modulePath, 0700)
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 
 		for identifier, config := range configs {
 			configBytes, _ := json.Marshal(config)
-			configPath := modulePath + "/" + identifier + ".json"
+			fileName := fmt.Sprintf("%s.json", identifier)
+			configPath := filepath.Join(modulePath, fileName)
 			configPath = filepath.Clean(configPath)
-			f, _ := os.Create(configPath)
-			_, err := f.Write(configBytes)
+			f, err := os.Create(configPath)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
+				continue
+			}
+			_, err = f.Write(configBytes)
+			if err != nil {
+				log.Println(err)
+				continue
 			}
 			err = f.Close()
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		}
 	}

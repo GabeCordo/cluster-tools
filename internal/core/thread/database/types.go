@@ -2,10 +2,8 @@ package database
 
 import (
 	"errors"
-	"sync"
-
-	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
 	"github.com/GabeCordo/toolchain/logging"
 	"github.com/GabeCordo/toolchain/multithreaded"
 )
@@ -21,6 +19,7 @@ type Config struct {
 }
 
 type Thread struct {
+	config   *Config
 	channels struct {
 		interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
@@ -41,22 +40,12 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
+	useCases               database2.UseCases
+	logger                 *logging.Logger
 	messengerResponseTable *multithreaded.ResponseTable
-
-	statisticDatabase database.Database
-	pipelineDatabase  database.Database
-	jobDatabase       database.Database
-
-	config *Config
-	logger *logging.Logger
-
-	wg sync.WaitGroup
 }
 
-func New(cfg *Config, logger *logging.Logger,
-	s, c, j database.Database,
-	configPath, statisticPath string, channels ...interface{}) (*Thread, error) {
+func New(cfg *Config, logger *logging.Logger, useCases database2.UseCases, channels ...interface{}) (*Thread, error) {
 
 	t := new(Thread)
 	var ok bool
@@ -66,9 +55,7 @@ func New(cfg *Config, logger *logging.Logger,
 	}
 	t.config = cfg
 
-	t.statisticDatabase = s
-	t.pipelineDatabase = c
-	t.jobDatabase = j
+	t.useCases = useCases
 
 	t.channels.interrupt, ok = (channels[0]).(chan thread.InterruptEvent)
 	if !ok {

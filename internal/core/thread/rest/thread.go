@@ -77,7 +77,6 @@ func (t *Thread) HandleRequest(request *thread.Request) {
 }
 
 func (t *Thread) Start() {
-	t.wg.Add(1)
 
 	go func(t *Thread) {
 		err := t.server.ListenAndServe()
@@ -113,8 +112,6 @@ func (t *Thread) Start() {
 			}
 		}
 	}
-
-	t.wg.Wait()
 }
 
 func (t *Thread) Teardown() {

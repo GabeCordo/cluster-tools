@@ -1,7 +1,6 @@
 package processor
 
 import (
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -95,23 +94,19 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.ProcessorRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Data = t.syncGetProcessors()
+					t.handleGetProcessor(request, &response)
 				}
 			case thread.ModuleRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Data = t.syncGetModules()
+					t.handleGetModule(request, &response)
 				}
 			case thread.FunctionRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Data, response.Error = t.syncGetFunctions(request.Identifiers.Module)
+					t.handleGetFunctions(request, &response)
 				}
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = request
-					t.asyncGetRunFromRunner(request)
+					t.handleGetRun(request, &response)
 				}
 			default:
 				{
@@ -124,21 +119,15 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.ProcessorRecord:
 				{
-					cfg := (request.Data).(processor2.Config)
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncAddProcessor(&cfg)
+					t.handleCreateProcessor(request, &response)
 				}
 			case thread.ModuleRecord:
 				{
-					cfg := (request.Data).(processor2.ModuleConfig)
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncAddModule(request.Identifiers.Processor, &cfg)
+					t.handleCreateModule(request, &response)
 				}
 			case thread.RunRecord:
 				{
-					// fetch the pipeline from the database is async
-					t.requestStore[request.Nonce] = request
-					t.asyncGetPipelineFromDatabase(request)
+					t.handleCreateRun(request, &response)
 				}
 			default:
 				{
@@ -151,19 +140,15 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.ProcessorRecord:
 				{
-					cfg := (request.Data).(processor2.Config)
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncDeleteProcessor(&cfg)
+					t.handleDeleteProcessor(request, &response)
 				}
 			case thread.ModuleRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncDeleteModule(request.Identifiers.Processor, request.Identifiers.Module)
+					t.handleDeleteModule(request, &response)
 				}
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = request
-					t.asyncTellRunnerToStopRun(request)
+					t.handleDeleteRun(request, &response)
 				}
 			default:
 				{
@@ -176,8 +161,7 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = request
-					t.asyncSendUpdateToRunner(request)
+					t.handleUpdateRun(request, &response)
 				}
 			default:
 				{
@@ -190,13 +174,11 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.ModuleRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncMountModule(request.Identifiers.Module)
+					t.handleMountModule(request, &response)
 				}
 			case thread.FunctionRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncMountFunction(request.Identifiers.Module, request.Identifiers.Function)
+					t.handleMountFunction(request, &response)
 				}
 			default:
 				{
@@ -209,13 +191,11 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.ModuleRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncUnMountModule(request.Identifiers.Module)
+					t.handleUnMountModule(request, &response)
 				}
 			case thread.FunctionRecord:
 				{
-					response = thread.NewResponse(thread.Processor)
-					response.Error = t.syncUnMountFunction(request.Identifiers.Module, request.Identifiers.Function)
+					t.handleUnMountFunction(request, &response)
 				}
 			default:
 				{
@@ -228,8 +208,7 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.RunRecord:
 				{
-					t.requestStore[request.Nonce] = request
-					t.asyncSendLogToRunner(request)
+					t.handleLogRun(request, &response)
 				}
 			default:
 				{
@@ -266,24 +245,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 				switch iResponse.Type {
 				case thread.PipelineRecord:
 					{
-						if iResponse.Error != nil {
-							delete(t.requestStore, iRequest.Nonce)
-							oResponse := thread.NewResponse(thread.Processor)
-							oResponse.Error = iResponse.Error
-							t.sendResponse(iRequest, oResponse)
-							return
-						}
-
-						var p *processor2.Processor
-						oResponse := thread.NewResponse(thread.Processor)
-						p, oResponse.Error = t.syncFindCandidateProcessor(iResponse)
-						if oResponse.Error == nil {
-							t.requestStore[iRequest.Nonce] = iRequest
-							t.asyncSendCreateRunToRunner(p, iRequest)
-						} else {
-							delete(t.requestStore, iRequest.Nonce)
-							t.sendResponse(iRequest, oResponse)
-						}
+						t.handleDatabaseReturnsPipeline(iRequest, iResponse)
 					}
 				default:
 					{
@@ -304,14 +266,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.RunRecord:
 						{
-							delete(t.requestStore, iRequest.Nonce)
-							oResponse := thread.NewResponse(thread.Processor)
-							if iResponse.Error != nil {
-								oResponse.Error = iResponse.Error
-							} else {
-								oResponse.Data, oResponse.Error = t.syncUpdateProcessorAfterRunStarted(iResponse)
-							}
-							t.sendResponse(iRequest, oResponse)
+							t.handleRunnerRespondsToCreateRun(iRequest, iResponse)
 						}
 					default:
 						{
@@ -323,9 +278,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 				switch iResponse.Type {
 				case thread.RunRecord:
 					{
-						delete(t.requestStore, iRequest.Nonce)
-						oResponse := thread.NewResponse(thread.Processor)
-						t.sendResponse(iRequest, oResponse)
+						t.handleRunnerRespondsToUpdateRun(iRequest, iResponse)
 					}
 				default:
 					{
@@ -337,10 +290,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.RunRecord:
 						{
-							delete(t.requestStore, iRequest.Nonce)
-							oResponse := thread.NewResponse(thread.Processor)
-							oResponse.Error = t.syncCheckIfRunStopped(iResponse)
-							t.sendResponse(iRequest, oResponse)
+							t.handleRunnerRespondsToDeleteRun(iRequest, iResponse)
 						}
 					default:
 						{
@@ -353,9 +303,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.RunRecord:
 						{
-							delete(t.requestStore, iRequest.Nonce)
-							oResponse := thread.NewResponse(thread.Processor)
-							t.sendResponse(iRequest, oResponse)
+							t.handleRunnerRespondsToLog(iRequest, iResponse)
 						}
 					default:
 						{
@@ -368,9 +316,7 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					switch iResponse.Type {
 					case thread.RunRecord:
 						{
-							delete(t.requestStore, iRequest.Nonce)
-							oResponse := thread.NewResponse(thread.Processor)
-							t.sendResponse(iRequest, oResponse)
+							t.handleRunnerRespondsToGet(iRequest, iResponse)
 						}
 					default:
 						{
@@ -392,8 +338,6 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 }
 
 func (t *Thread) Teardown() {
-
-	t.wg.Wait()
 
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown

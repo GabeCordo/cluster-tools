@@ -54,7 +54,11 @@ func TestThread_IncomingLoadRequest(t *testing.T) {
 		return
 	}
 
-	cacheResponseData := (response.Data).(thread.CacheResponseData)
+	cacheResponseData, ok := (response.Data).(thread.CacheResponseData)
+	if !ok {
+		t.Error("failed to cast response.Data to thread.CacheResponseData")
+		return
+	}
 
 	// checking the saved data
 	request2 := &thread.Request{
@@ -67,7 +71,11 @@ func TestThread_IncomingLoadRequest(t *testing.T) {
 
 	response2 := <-out
 
-	cacheResponseData2 := (response2.Data).(thread.CacheResponseData)
+	cacheResponseData2, ok := (response2.Data).(thread.CacheResponseData)
+	if !ok {
+		t.Error("failed to cast response.Data to thread.CacheResponseData")
+		return
+	}
 
 	if !response2.Success {
 		t.Errorf("no value based on key %s found\n", cacheResponseData2.Identifier)
@@ -104,7 +112,11 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 		return
 	}
 
-	cacheResponseData := (response.Data).(thread.CacheResponseData)
+	cacheResponseData, ok := (response.Data).(thread.CacheResponseData)
+	if !ok {
+		t.Error("failed to cast response.Data to thread.CacheResponseData")
+		return
+	}
 
 	// checking the saved data
 	request2 := &thread.Request{
@@ -116,7 +128,11 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 
 	response2 := <-out
 
-	cacheResponseData2 := (response2.Data).(thread.CacheResponseData)
+	cacheResponseData2, ok := (response2.Data).(thread.CacheResponseData)
+	if !ok {
+		t.Error("failed to cast response.Data to thread.CacheResponseData")
+		return
+	}
 
 	if !response2.Success {
 		t.Errorf("no value based on key %s found\n", cacheResponseData2.Identifier)
@@ -140,7 +156,11 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 
 	response3 := <-out
 
-	cacheResponseData3 := (response3.Data).(thread.CacheResponseData)
+	cacheResponseData3, ok := (response3.Data).(thread.CacheResponseData)
+	if !ok {
+		t.Error("failed to cast response.Data to thread.CacheResponseData")
+		return
+	}
 
 	if !response3.Success {
 		t.Errorf("could not swap value at identifier %s\n", cacheResponseData.Identifier)
@@ -161,7 +181,11 @@ func TestThread_IncomingSaveSwapRequest(t *testing.T) {
 
 	response4 := <-out
 
-	cacheResponseData4 := (response4.Data).(thread.CacheResponseData)
+	cacheResponseData4, ok := (response4.Data).(thread.CacheResponseData)
+	if !ok {
+		t.Error("failed to cast response.Data to thread.CacheResponseData")
+		return
+	}
 
 	if !response4.Success {
 		t.Error("could not load swapped value for verification")

@@ -1,28 +1,32 @@
 package scheduler
 
 import (
-	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {
 
-	var err error
-	if t.Scheduler, err = job2.New(t.jobDatabase); err != nil {
-		panic(err)
-	}
-
-	if err = t.Scheduler.Jobs.Load(t.config.SchedulesFolder); err != nil {
+	err := t.useCases.LoadJobsFromDisk(t.config.SchedulesFolder)
+	if err != nil {
 		panic(err)
 	}
 }
 
 func (t *Thread) Start() {
 
-	go t.watch()
-	go t.loop()
+	go t.useCases.SchedulerWatch()
+
+	go t.useCases.SchedulerLoop(func(namespaceId, pipelineId string, metadata map[string]string) error {
+		// will return have a maximum of Timeout, so worst-case takes thread.pipeline.Timeout
+		mandatory := thread.Mandatory{
+			Pipe:          t.channels.c18,
+			ResponseTable: t.processorResponseTable,
+			NoncePool:     t.noncePool,
+			Timeout:       t.config.Timeout,
+		}
+		_, err := thread.CreateRun(mandatory, namespaceId, pipelineId, metadata)
+		return err
+	})
 
 	var iReq *thread.Request
 	var iRsp *thread.Response
@@ -68,17 +72,11 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 			switch request.Type {
 			case thread.JobRecord:
 				{
-					if filter, ok := (request.Data).(database.Filter); ok {
-						response.Data = t.get(filter)
-					} else {
-						response.Success = false
-						response.Error = thread.BadRequestType
-					}
+					t.handleGetJob(request, response)
 				}
 			case thread.QueueRecord:
 				{
-					response.Data = t.queue()
-					response.Success = true
+					t.handleGetQueue(request, response)
 				}
 			default:
 				{
@@ -89,25 +87,11 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 		}
 	case thread.CreateAction:
 		{
-			if jb, ok := (request.Data).(job.Job); ok {
-				response.Error = t.create(&jb)
-				response.Success = response.Error == nil
-				t.logger.Printf("created job:%s\n", jb.Identifier)
-			} else {
-				response.Success = false
-				response.Error = thread.BadRequestType
-			}
+			t.handleCreateJob(request, response)
 		}
 	case thread.DeleteAction:
 		{
-			if filter, ok := (request.Data).(database.Filter); ok {
-				response.Error = t.delete(filter)
-				response.Success = response.Error == nil
-				t.logger.Printf("deleted job:%s\n", filter.Identifier)
-			} else {
-				response.Success = false
-				response.Error = thread.BadResponseType
-			}
+			t.handleDeleteJob(request, response)
 		}
 	default:
 		{
@@ -121,16 +105,8 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 
 func (t *Thread) Teardown() {
 
-	// do not complete teardown until all requests have been completed
-	t.wg.Wait()
-
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 
-	if db, ok := (t.Scheduler.Jobs).(database.Database); ok {
-
-		if err := db.Save(t.config.SchedulesFolder); err != nil {
-			t.logger.Panicln(err.Error())
-		}
-	}
+	t.useCases.SaveJobsToDisk(t.config.SchedulesFolder)
 }
