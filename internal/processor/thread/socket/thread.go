@@ -159,6 +159,10 @@ func (t *Thread) listenOnSocket() {
 			if connection, err := t.attemptConnectionToCore(host); err == nil {
 				t.connection = connection
 				decoder = json.NewDecoder(t.connection)
+				thread.AsyncRequestModules(thread.ProvisionerMandatory{
+					Pipe:      t.channels.C1,
+					NoncePool: t.noncePool,
+				})
 				break
 			} else {
 				// Edge-Case: the processor was unable to re-establish connection to the core.

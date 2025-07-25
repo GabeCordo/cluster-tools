@@ -41,6 +41,15 @@ func AsyncRunStop(mandatory ProvisionerMandatory, run uint64) {
 	mandatory.Pipe <- request
 }
 
+func AsyncRequestModules(mandatory ProvisionerMandatory) {
+
+	request := NewProvisionerRequest()
+	request.Action = ProvisionerRegisterModules
+	request.Nonce = mandatory.NoncePool.Next()
+
+	mandatory.Pipe <- request
+}
+
 type SocketMandatory struct {
 	Pipe      chan<- *SocketRequest
 	NoncePool *nonce.Pool
