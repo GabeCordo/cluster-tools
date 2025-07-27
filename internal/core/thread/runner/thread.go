@@ -248,8 +248,8 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 	}
 }
 
-func (t *Thread) Teardown() {
-	
+func (t *Thread) TearDown() {
+
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
 }

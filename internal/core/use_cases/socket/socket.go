@@ -2,12 +2,14 @@ package socket
 
 import (
 	"crypto/tls"
-	"net"
+	socket2 "github.com/GabeCordo/Flock/internal/shared/socket"
 	"os"
-
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
 )
+
+func (uc *UseCases) SetupSocketEventHandlers(events socket2.ServerEvents) {
+
+	uc.Socket.SetupEvents(events)
+}
 
 func (uc *UseCases) SetupSocketTlsConfig() error {
 
@@ -32,32 +34,26 @@ func (uc *UseCases) SetupSocketTlsConfig() error {
 		if err != nil {
 			return err
 		}
-		err = uc.Socket.Setup(cert)
+		err = uc.Socket.SetupTLS(cert)
 		if err != nil {
 			return err
 		}
 	} else {
 		uc.Logger.Alertln("the gateway has defaulted to an unencrypted socket! Do NOT use in production!")
-		err := uc.Socket.Setup()
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
 }
 
-func (uc *UseCases) StartNetworkSocket(host string, port int,
-	CreateProcessor func(pId uint64, pAddr string) error,
-	DeleteProcessor func(pId uint64, pAddr string) error,
-	CreateModule func(pId uint64, m *processor2.ModuleConfig),
-	UpdateRun func(r *run.Run)) {
+func (uc *UseCases) StartNetworkSocket(host string, port int) {
 
-	uc.Socket.Start(host, port,
-		CreateProcessor, DeleteProcessor, CreateModule, UpdateRun)
+	err := uc.Socket.Listen(host, port)
+	if err != nil {
+		uc.Logger.Alertln(err.Error())
+	}
 }
 
-func (uc *UseCases) GetProcessor(pId uint64) (connection net.Conn, err error) {
+func (uc *UseCases) SendDataOnSocket(id socket2.ConnectionId, message *socket2.Message) error {
 
-	return uc.Socket.GetConnection(pId)
+	return uc.Socket.Send(id, message)
 }

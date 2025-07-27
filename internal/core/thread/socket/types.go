@@ -5,6 +5,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/Flock/internal/core/use_cases/socket"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
+	socket2 "github.com/GabeCordo/Flock/internal/shared/socket"
 	"github.com/GabeCordo/toolchain/logging"
 )
 
@@ -34,6 +35,8 @@ type Thread struct {
 	useCases  *socket.UseCases
 	logger    *logging.Logger
 	noncePool *nonce2.Pool
+
+	serverSocket socket2.Server
 
 	responseTables struct {
 		processor *nonce2.ResponseTable

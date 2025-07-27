@@ -141,7 +141,7 @@ type Thread interface {
 	Setup()
 	Start()
 	HandleRequest(*Request) *Response
-	Teardown()
+	TearDown()
 }
 
 func NewRequest(source Module) *Request {

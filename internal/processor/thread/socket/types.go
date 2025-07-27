@@ -3,25 +3,18 @@ package socket
 import (
 	"crypto/x509"
 	"errors"
-	"net"
-	"sync"
-	"time"
-
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/processor/thread"
+	"github.com/GabeCordo/Flock/internal/processor/use_cases/socket"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/toolchain/logging"
+	"sync"
 )
 
 // Frontend Thread
 
 const nonceMin = 0
 const nonceMax = 1000000
-
-const (
-	MaxNumberOfRetries int = 100
-	MaxWaitBeforeRetry     = 2 * time.Second
-)
 
 type Config struct {
 	Debug       *bool
@@ -59,8 +52,8 @@ type Thread struct {
 		pool *x509.CertPool
 	}
 
-	connection net.Conn
-
+	useCases *socket.UseCases
+	
 	logger *logging.Logger
 
 	requestWg sync.WaitGroup
@@ -70,7 +63,7 @@ type Thread struct {
 	wg      sync.WaitGroup
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*Thread, error) {
+func NewThread(cfg *Config, logger *logging.Logger, useCases *socket.UseCases, channels ...interface{}) (*Thread, error) {
 	t := new(Thread)
 
 	var ok bool
@@ -106,6 +99,8 @@ func NewThread(cfg *Config, logger *logging.Logger, channels ...interface{}) (*T
 	t.Config = cfg
 
 	t.noncePool = nonce2.New(nonceMin, nonceMax)
+
+	t.useCases = useCases
 
 	t.logger.SetColour(logging.Green)
 

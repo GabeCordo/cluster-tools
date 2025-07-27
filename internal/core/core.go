@@ -1,7 +1,6 @@
 package core
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/component/net_socket/basic_socket"
 	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
 	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
 	processor2 "github.com/GabeCordo/Flock/internal/core/use_cases/processor"
@@ -9,6 +8,7 @@ import (
 	scheduler2 "github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
 	socket2 "github.com/GabeCordo/Flock/internal/core/use_cases/socket"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
+	"github.com/GabeCordo/Flock/internal/shared/socket/json_socket"
 	"os"
 	"os/signal"
 	"syscall"
@@ -146,9 +146,9 @@ func New(configPath string) (*Core, error) {
 
 	socketNoncePool := nonce2.New(socketNonceMin, socketNonceMax)
 
-	basicNetSocket := basic_socket.New()
+	jsonSocket := json_socket.NewServer()
 
-	socketUseCases := socket2.UseCases{Socket: basicNetSocket, Logger: socketLogger}
+	socketUseCases := socket2.UseCases{Socket: jsonSocket, Logger: socketLogger}
 
 	core.SocketThread, err = socket.New(socketConfig, socketLogger, socketNoncePool, &socketUseCases,
 		core.interrupt, core.C7, core.C8, core.C9, core.C10)
@@ -416,13 +416,13 @@ func (core *Core) Run() {
 		core.logger.Println("rest shutdown")
 	}
 
-	core.SocketThread.Teardown()
+	core.SocketThread.TearDown()
 
 	if core.config.Debug {
 		core.logger.Println("processor shutdown")
 	}
 
-	core.SchedulerThread.Teardown()
+	core.SchedulerThread.TearDown()
 
 	if core.config.Debug {
 		core.logger.Println("scheduler shutdown")
@@ -434,14 +434,14 @@ func (core *Core) Run() {
 		core.logger.Println("processor shutdown")
 	}
 
-	core.RunnerThread.Teardown()
+	core.RunnerThread.TearDown()
 
 	if core.config.Debug {
 		core.logger.Println("runner shutdown")
 	}
 
 	// we won't need the cache if the cluster thread is shutdown, the data is useless, shutdown
-	//core.CacheThread.Teardown()
+	//core.CacheThread.TearDown()
 
 	//if core.config.Debug {
 	//	core.logger.Println("cache shutdown")

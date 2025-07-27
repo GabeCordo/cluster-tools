@@ -1,8 +1,6 @@
 package socket
 
 import (
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -12,57 +10,14 @@ func (t *Thread) Setup() {
 	if err != nil {
 		panic(err)
 	}
+
+	events := Events{thread: t}
+	t.useCases.SetupSocketEventHandlers(events)
 }
 
 func (t *Thread) Start() {
 
-	go t.useCases.StartNetworkSocket(t.config.Net.Host, t.config.Net.Port,
-		func(pId uint64, pAddr string) error {
-			mandatory := thread.Mandatory{
-				Pipe:          t.channels.c7,
-				ResponseTable: t.responseTables.processor,
-				NoncePool:     t.noncePool,
-				Timeout:       t.config.Timeout,
-			}
-
-			cfg := processor2.Config{Identifier: pId, RemoteAddr: pAddr}
-			_, err := thread.AddProcessor(mandatory, &cfg)
-			return err
-		},
-		func(pId uint64, pAddr string) error {
-			mandatory := thread.Mandatory{
-				Pipe:          t.channels.c7,
-				ResponseTable: t.responseTables.processor,
-				NoncePool:     t.noncePool,
-				Timeout:       t.config.Timeout,
-			}
-
-			cfg := processor2.Config{Identifier: pId, RemoteAddr: pAddr}
-			err := thread.DeleteProcessor(mandatory, &cfg)
-			return err
-		},
-		func(pId uint64, m *processor2.ModuleConfig) {
-			mandatory := thread.Mandatory{
-				Pipe:          t.channels.c7,
-				ResponseTable: t.responseTables.processor,
-				NoncePool:     t.noncePool,
-				Timeout:       t.config.Timeout,
-			}
-
-			// TODO: needs processor name
-			thread.AsyncAddModule(mandatory, pId, m)
-		},
-		func(r *run.Run) {
-			mandatory := thread.Mandatory{
-				Pipe:          t.channels.c7,
-				ResponseTable: t.responseTables.processor,
-				NoncePool:     t.noncePool,
-				Timeout:       t.config.Timeout,
-			}
-
-			thread.AsyncUpdateRun(mandatory, r)
-		},
-	)
+	go t.useCases.StartNetworkSocket(t.config.Net.Host, t.config.Net.Port)
 
 	var iReq *thread.Request
 	var iRsp *thread.Response
@@ -135,12 +90,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 	return response
 }
 
-func (t *Thread) HandleResponse(iReq *thread.Request, iRsp *thread.Response) (oRsp *thread.Response) {
-
-	panic(thread.NotImplemented)
-}
-
-func (t *Thread) Teardown() {
+func (t *Thread) TearDown() {
 
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown

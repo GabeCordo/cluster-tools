@@ -1,10 +1,9 @@
 package socket
 
 import (
-	"encoding/json"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	common "github.com/GabeCordo/Flock/internal/shared/async"
+	common "github.com/GabeCordo/Flock/internal/shared/socket"
 )
 
 func (t *Thread) handleCreateRun(request *thread.Request, response *thread.Response) {
@@ -15,32 +14,24 @@ func (t *Thread) handleCreateRun(request *thread.Request, response *thread.Respo
 		return
 	}
 
-	conn, err := t.useCases.GetProcessor(request.Identifiers.Processor)
-	if err != nil {
-		t.logger.Warnln(err.Error())
-		response.Error = thread.BadRequestType
-		return
-	}
-
 	runRequest, ok := request.Data.(run.Request)
 	if !ok {
-		t.logger.Warnln("create run was not given a run.Request type")
+		t.logger.Warnln("create run was not given a run.Message type")
 		response.Error = thread.BadRequestType
 		return
 	}
 
-	encoder := json.NewEncoder(conn)
-
-	r := common.Request{
+	message := &common.Message{
 		Action: common.Create,
 		Record: common.Run,
 		Data:   runRequest,
 	}
 
-	err = encoder.Encode(r)
+	err := t.useCases.SendDataOnSocket(common.ConnectionId(request.Identifiers.Processor), message)
 	if err != nil {
-		t.logger.Warnln("failed to encode run request")
-		response.Error = thread.InternalError
+		t.logger.Warnln("failed to create run with the provided processor id")
+		response.Error = thread.BadRequestType
+		return
 	}
 
 	response.Data = request.Identifiers.Supervisor
@@ -60,22 +51,15 @@ func (t *Thread) handleDeleteRun(request *thread.Request, response *thread.Respo
 		return
 	}
 
-	r := common.Request{
+	message := &common.Message{
 		Action: common.Delete,
 		Record: common.Run,
 		Data:   request.Identifiers.Supervisor,
 	}
 
-	conn, err := t.useCases.GetProcessor(request.Identifiers.Processor)
+	err := t.useCases.SendDataOnSocket(common.ConnectionId(request.Identifiers.Processor), message)
 	if err != nil {
 		t.logger.Warnln(err.Error())
 		response.Error = thread.BadRequestType
-		return
-	}
-
-	encoder := json.NewEncoder(conn)
-	err = encoder.Encode(r)
-	if err != nil {
-		t.logger.Warnln("failed to encode delete run request")
 	}
 }

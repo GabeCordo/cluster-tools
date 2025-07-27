@@ -3,6 +3,8 @@ package cluster_tools
 import (
 	"errors"
 	"fmt"
+	socket2 "github.com/GabeCordo/Flock/internal/processor/use_cases/socket"
+	"github.com/GabeCordo/Flock/internal/shared/socket/json_socket"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -137,11 +139,15 @@ func New() (*Processor, error) {
 
 	socketConfig := &socket.Config{}
 	instance.config.FillSocketConfig(socketConfig)
-	httpLogger, err := logging.NewLogger(Socket.ToString(), &instance.config.Processor.Debug)
+	socketLogger, err := logging.NewLogger(Socket.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
-	instance.threads.socket, err = socket.NewThread(socketConfig, httpLogger,
+
+	socketClient := json_socket.NewClient()
+
+	socketUseCases := socket2.UseCases{Sock: socketClient, Logger: socketLogger}
+	instance.threads.socket, err = socket.NewThread(socketConfig, socketLogger, &socketUseCases,
 		instance.channels.interrupt, instance.channels.c0, instance.channels.c1, instance.channels.c2)
 
 	provisionerConfig := &provisioner.Config{}

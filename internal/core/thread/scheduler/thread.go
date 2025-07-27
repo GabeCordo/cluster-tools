@@ -103,7 +103,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 	return response
 }
 
-func (t *Thread) Teardown() {
+func (t *Thread) TearDown() {
 
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown

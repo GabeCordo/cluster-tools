@@ -9,11 +9,7 @@ import (
 )
 
 func (t *Thread) Setup() {
-
-	err := t.registerModulesToCore()
-	if err != nil {
-		fmt.Print(err)
-	}
+	
 }
 
 func (t *Thread) Start() {

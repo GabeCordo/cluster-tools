@@ -5,10 +5,10 @@ import (
 	"github.com/GabeCordo/toolchain/logging"
 )
 
-const privateKeyPathEnvVar = "FLOCK_SERVER_TLS_KEY"
-const certificatePathEnvVar = "FLOCK_SERVER_TLS_CERT"
+const coreHostEnvVar = "FLOCK_CORE_HOST"
+const tlsCertEnvVar = "FLOCK_CLIENT_TLS_CERT"
 
 type UseCases struct {
-	Socket socket.Server
+	Sock   socket.Client
 	Logger *logging.Logger
 }
