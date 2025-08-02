@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 	"net/http"
 )
 
@@ -40,7 +41,7 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-	logger                 *logging.Logger
+	logger                 logging.Logger
 	noncePool              *nonce2.Pool
 	ProcessorResponseTable *nonce2.ResponseTable
 	DatabaseResponseTable  *nonce2.ResponseTable
@@ -52,7 +53,7 @@ type Thread struct {
 	cancelCtx              context.CancelFunc
 }
 
-func New(cfg *Config, logger *logging.Logger, noncePool *nonce2.Pool, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger logging.Logger, noncePool *nonce2.Pool, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	var ok bool
@@ -113,7 +114,7 @@ func New(cfg *Config, logger *logging.Logger, noncePool *nonce2.Pool, channels .
 		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	t.logger = logger
-	t.logger.SetColour(logging.Green)
+	t.logger.SetColour(terminal.Green)
 
 	return t, nil
 }

@@ -5,13 +5,13 @@ import (
 
 	"github.com/GabeCordo/Flock/internal/core/component/cache/local"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging/text_logging"
 )
 
 func GenerateTestCacheThread(in chan *thread.Request, out chan *thread.Response) *Thread {
 
-	var logger *logging.Logger
-	if l, err := logging.NewLogger("cache"); err != nil {
+	var logger *text_logging.TextLogger
+	if l, err := text_logging.New("cache"); err != nil {
 	} else {
 		logger = l
 	}

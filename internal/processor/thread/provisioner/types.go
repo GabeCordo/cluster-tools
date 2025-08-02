@@ -2,19 +2,16 @@ package provisioner
 
 import (
 	"errors"
-	"sync"
-
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/processor/component/provision"
 	"github.com/GabeCordo/Flock/internal/processor/thread"
+	"github.com/GabeCordo/Flock/internal/processor/use_cases/provisioner"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 )
 
 const nonceMin = 1000000
 const nonceMax = 2000000
-
-const MaxNumOfSupervisors = 1
 
 type Config struct {
 	Debug      *bool
@@ -25,8 +22,7 @@ type Config struct {
 }
 
 type Thread struct {
-	Config *Config
-
+	Config   *Config
 	channels struct {
 		Interrupt chan<- thread.InterruptEvent // Upon completion or failure an interrupt can be raised
 
@@ -36,22 +32,12 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-
-	logger *logging.Logger
-
-	provisioner *provision.Provisioner
-
-	requestBacklog         []*thread.ProvisionerRequest // a backlog of provision requests we want to avoid congesting the server
-	numOfActiveSupervisors int                          // tracks the number of supervisors running in the system at a time
-	backlogMutex           sync.RWMutex
-
+	useCases  *provisioner.UseCases
+	logger    logging.Logger
 	noncePool *nonce.Pool
-
-	runWg     sync.WaitGroup // wait group on the number of active runs
-	requestWg sync.WaitGroup // wait group on the number of processed async messages
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provisioner, channels ...interface{}) (*Thread, error) {
+func NewThread(cfg *Config, useCases *provisioner.UseCases, channels ...interface{}) (*Thread, error) {
 	t := new(Thread)
 	var ok bool
 
@@ -73,24 +59,17 @@ func NewThread(cfg *Config, logger *logging.Logger, provisioner *provision.Provi
 	}
 	t.channels.close = make(chan thread.InterruptEvent)
 
-	if logger == nil {
-		return nil, errors.New("expected non nil *utils.logger type")
-	}
-	t.logger = logger
+	t.useCases = useCases
+	t.logger = t.useCases.Logger
 
 	if cfg == nil {
 		return nil, errors.New("expected no nil *modules.pipeline type")
 	}
 	t.Config = cfg
 
-	t.provisioner = provisioner
-
-	t.requestBacklog = make([]*thread.ProvisionerRequest, 0)
-	t.numOfActiveSupervisors = 0
-
 	t.noncePool = nonce.New(nonceMin, nonceMax)
 
-	t.logger.SetColour(logging.Orange)
+	t.logger.SetColour(terminal.Orange)
 
 	return t, nil
 }

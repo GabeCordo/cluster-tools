@@ -133,7 +133,7 @@ func TestRingBuffer_Remove_AddAndRemoveElement(t *testing.T) {
 		return
 	}
 
-	if rb.number != 1 {
+	if rb.size != 1 {
 		t.Error("Add() should have incremented the amount of data in the RingBuffer by 1")
 		return
 	}
@@ -144,7 +144,7 @@ func TestRingBuffer_Remove_AddAndRemoveElement(t *testing.T) {
 		return
 	}
 
-	if rb.number != 0 {
+	if rb.size != 0 {
 		t.Error("Remove() should have decremented the amount of data in the RingBuffer by 1")
 		return
 	}

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/toolchain/logging"
 )
 
 type Config struct {
@@ -31,13 +31,13 @@ type Thread struct {
 		close chan thread.InterruptEvent
 	}
 	useCases               scheduler.UseCases
-	logger                 *logging.Logger
+	logger                 logging.Logger
 	noncePool              *nonce2.Pool
 	processorResponseTable *nonce2.ResponseTable
 	databaseResponseTable  *nonce2.ResponseTable
 }
 
-func New(cfg *Config, logger *logging.Logger, useCases scheduler.UseCases, noncePool *nonce2.Pool, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger logging.Logger, useCases scheduler.UseCases, noncePool *nonce2.Pool, channels ...any) (*Thread, error) {
 
 	t := new(Thread)
 	var ok = false

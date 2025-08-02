@@ -9,7 +9,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging/text_logging"
 )
 
 func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) *Thread {
@@ -22,7 +22,7 @@ func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) 
 	cD := pipeline.NewLocalPipelineDatabase()
 	jD := job.NewLocalJobDatabase()
 
-	logger, _ := logging.NewLogger("database")
+	logger, _ := text_logging.New("database")
 
 	useCases := database2.UseCases{
 		PipelineDatabase:  cD,

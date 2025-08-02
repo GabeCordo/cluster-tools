@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/GabeCordo/Flock/internal/core/component/message"
-	"github.com/GabeCordo/toolchain/files"
 )
 
 var logRegex = regexp.MustCompile(`\[(.+)]\[(.+)](.+)`)
@@ -178,9 +178,10 @@ func (logger *Logger) Flush(source message.Source, destination any) error {
 	currTimeStr := currTime.Format(time.RFC3339Nano)
 	fileName := fmt.Sprintf("%s_%s.log", endpoint, currTimeStr)
 
-	path := files.EmptyPath().Dir(logger.directory).File(fileName)
+	path := filepath.Join(logger.directory, fileName)
+	cleanedPath := filepath.Clean(path)
 
-	file, err := path.Create()
+	file, err := os.Create(cleanedPath)
 	if err != nil {
 		return err
 	}

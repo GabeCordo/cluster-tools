@@ -5,7 +5,8 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/component/cache"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	cache2 "github.com/GabeCordo/Flock/internal/core/use_cases/cache"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 )
 
 type Config struct {
@@ -26,10 +27,10 @@ type Thread struct {
 		close chan thread.InterruptEvent
 	}
 	useCase cache2.UseCase
-	logger  *logging.Logger
+	logger  logging.Logger
 }
 
-func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger logging.Logger, cache cache.Cache, channels ...any) (*Thread, error) {
 	t := new(Thread)
 	var ok bool
 
@@ -64,7 +65,7 @@ func New(cfg *Config, logger *logging.Logger, cache cache.Cache, channels ...any
 		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	t.logger = logger
-	t.logger.SetColour(logging.Yellow)
+	t.logger.SetColour(terminal.Yellow)
 
 	t.useCase = cache2.UseCase{
 		CacheComponent: cache,

@@ -1,6 +1,7 @@
 package thread
 
 import (
+	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
@@ -60,6 +61,15 @@ func AsyncRunUpdate(mandatory SocketMandatory, run *run.Run) {
 	sR := NewSocketRequest()
 	sR.Action = SocketRunUpdate
 	sR.Data = run
+	sR.Nonce = mandatory.NoncePool.Next()
+	mandatory.Pipe <- sR
+}
+
+func AsyncModuleAdd(mandatory SocketMandatory, config *processor.ModuleConfig) {
+
+	sR := NewSocketRequest()
+	sR.Action = SocketModuleAdd
+	sR.Data = *config
 	sR.Nonce = mandatory.NoncePool.Next()
 	mandatory.Pipe <- sR
 }

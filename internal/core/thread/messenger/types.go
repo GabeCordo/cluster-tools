@@ -5,7 +5,8 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/component/message"
 	"github.com/GabeCordo/Flock/internal/core/component/message/email"
 	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 )
 
 type Config struct {
@@ -33,11 +34,11 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-	logger    *logging.Logger
+	logger    logging.Logger
 	messenger message.Messenger
 }
 
-func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, channels ...interface{}) (*Thread, error) {
+func New(cfg *Config, logger logging.Logger, messenger message.Messenger, channels ...interface{}) (*Thread, error) {
 	th := new(Thread)
 	var ok bool
 
@@ -76,7 +77,7 @@ func New(cfg *Config, logger *logging.Logger, messenger message.Messenger, chann
 		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	th.logger = logger
-	th.logger.SetColour(logging.Blue)
+	th.logger.SetColour(terminal.Blue)
 
 	th.messenger = messenger
 
