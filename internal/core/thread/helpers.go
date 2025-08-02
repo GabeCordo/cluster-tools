@@ -12,7 +12,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/toolchain/multithreaded"
 )
 
 type Mandatory struct {
@@ -98,7 +97,7 @@ func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeli
 	data, didTimeout := nonce2.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return multithreaded.NoResponseReceived
+		return nonce2.NoResponseReceived
 	}
 
 	databaseResponse, ok := (data).(*Response)

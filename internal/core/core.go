@@ -7,8 +7,10 @@ import (
 	runner2 "github.com/GabeCordo/Flock/internal/core/use_cases/runner"
 	scheduler2 "github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
 	socket2 "github.com/GabeCordo/Flock/internal/core/use_cases/socket"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	"github.com/GabeCordo/Flock/internal/shared/socket/json_socket"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,7 +29,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/thread/runner"
 	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
 	"github.com/GabeCordo/Flock/internal/core/thread/socket"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging/text_logging"
 )
 
 const (
@@ -78,7 +80,7 @@ type Core struct {
 	interrupt chan thread.InterruptEvent // InterruptEvent
 
 	config *Config
-	logger *logging.Logger
+	logger logging.Logger
 }
 
 func New(configPath string) (*Core, error) {
@@ -118,7 +120,7 @@ func New(configPath string) (*Core, error) {
 
 	// HTTP CLIENT LOGICAL THREAD
 
-	restLogger, err := logging.NewLogger(RestAPI.ToString(), &GetConfigInstance().Debug)
+	restLogger, err := text_logging.New(RestAPI.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +141,7 @@ func New(configPath string) (*Core, error) {
 	socketConfig := &socket.Config{}
 	core.config.FillSocketConfig(socketConfig)
 
-	socketLogger, err := logging.NewLogger(Socket.ToString(), &GetConfigInstance().Debug)
+	socketLogger, err := text_logging.New(Socket.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +160,7 @@ func New(configPath string) (*Core, error) {
 
 	// PROCESSOR LOGICAL THREAD
 
-	processorLogger, err := logging.NewLogger(Processor.ToString(), &GetConfigInstance().Debug)
+	processorLogger, err := text_logging.New(Processor.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +183,7 @@ func New(configPath string) (*Core, error) {
 
 	// SUPERVISOR LOGICAL THREAD
 
-	runnerLogger, err := logging.NewLogger(Runner.ToString(), &GetConfigInstance().Debug)
+	runnerLogger, err := text_logging.New(Runner.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +205,7 @@ func New(configPath string) (*Core, error) {
 
 	// MESSENGER LOGICAL THREAD
 
-	messengerLogger, err := logging.NewLogger(Messenger.ToString(), &GetConfigInstance().Debug)
+	messengerLogger, err := text_logging.New(Messenger.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +223,7 @@ func New(configPath string) (*Core, error) {
 
 	// DATABASE LOGICAL THREAD
 
-	databaseLogger, err := logging.NewLogger(Database.ToString(), &GetConfigInstance().Debug)
+	databaseLogger, err := text_logging.New(Database.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +268,7 @@ func New(configPath string) (*Core, error) {
 
 	// SCHEDULER LOGICAL THREAD
 
-	schedulerLogger, err := logging.NewLogger(Scheduler.ToString(), &GetConfigInstance().Debug)
+	schedulerLogger, err := text_logging.New(Scheduler.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +297,7 @@ func New(configPath string) (*Core, error) {
 
 	// CORE DEFINITIONS
 
-	coreLogger, err := logging.NewLogger(Undefined.ToString(), &GetConfigInstance().Debug)
+	coreLogger, err := text_logging.New(Undefined.ToString(), &GetConfigInstance().Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +314,7 @@ func (core *Core) Run() {
 
 	core.banner()
 
-	core.logger.SetColour(logging.Purple)
+	core.logger.SetColour(terminal.Purple)
 
 	if GetConfigInstance().Debug {
 		core.logger.Println("debug mode ON")
@@ -407,7 +409,7 @@ func (core *Core) Run() {
 		}
 	}
 
-	core.logger.SetColour(logging.Red)
+	core.logger.SetColour(terminal.Red)
 
 	// close the gateway, stop new thread from flooding into the servers
 	core.RestThread.Teardown()

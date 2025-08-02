@@ -4,8 +4,9 @@ import (
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
-	"github.com/GabeCordo/toolchain/logging"
-	"github.com/GabeCordo/toolchain/multithreaded"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
+	"github.com/GabeCordo/Flock/internal/shared/nonce"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 )
 
 var StoreTypeMismatch = errors.New("the received type and desired database type do not match")
@@ -41,11 +42,11 @@ type Thread struct {
 		close chan thread.InterruptEvent
 	}
 	useCases               database2.UseCases
-	logger                 *logging.Logger
-	messengerResponseTable *multithreaded.ResponseTable
+	logger                 logging.Logger
+	messengerResponseTable *nonce.ResponseTable
 }
 
-func New(cfg *Config, logger *logging.Logger, useCases database2.UseCases, channels ...interface{}) (*Thread, error) {
+func New(cfg *Config, logger logging.Logger, useCases database2.UseCases, channels ...interface{}) (*Thread, error) {
 
 	t := new(Thread)
 	var ok bool
@@ -103,13 +104,13 @@ func New(cfg *Config, logger *logging.Logger, useCases database2.UseCases, chann
 	}
 	t.channels.close = make(chan thread.InterruptEvent)
 
-	t.messengerResponseTable = multithreaded.NewResponseTable()
+	t.messengerResponseTable = nonce.NewResponseTable()
 
 	if logger == nil {
 		return nil, errors.New("expected non nil *utils.logger type")
 	}
 	t.logger = logger
-	t.logger.SetColour(logging.Purple)
+	t.logger.SetColour(terminal.Purple)
 
 	return t, nil
 }

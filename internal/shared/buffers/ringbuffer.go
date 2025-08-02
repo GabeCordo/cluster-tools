@@ -22,8 +22,8 @@ var NoData = errors.New("the ring buffer has no data to pop")
 /* -------------------------- **** Types ***** ---------------------------- */
 
 type RingBuffer struct {
-	buffer   []uint64 // data held by the ring buffer.
-	number   uint64
+	buffer   []any // data held by the ring buffer.
+	size     uint64
 	pointers struct {
 		startOfBuffer uint64 // index to the start of the ring buffer.
 		endOfBuffer   uint64 // index to the end of the ring buffer.
@@ -51,8 +51,8 @@ func NewRingBuffer(size uint64) (*RingBuffer, error) {
 
 	ringBuffer := new(RingBuffer)
 
-	ringBuffer.buffer = make([]uint64, size)
-	ringBuffer.number = 0
+	ringBuffer.buffer = make([]any, size)
+	ringBuffer.size = 0
 
 	ringBuffer.pointers.startOfBuffer = 0
 	ringBuffer.pointers.endOfBuffer = size - 1
@@ -70,16 +70,16 @@ func NewRingBuffer(size uint64) (*RingBuffer, error) {
 //
 // Thread Safe: *No*
 // Allocates Memory: *No*
-func (ringBuffer *RingBuffer) Add(value uint64) error {
+func (ringBuffer *RingBuffer) Add(value any) error {
 
 	// does the current write index equal the read index in the buffer?
 	// -> we've run out of room and cannot write to the buffer
-	if (ringBuffer.pointers.startOfData == ringBuffer.pointers.endOfData) && (ringBuffer.number > 0) {
+	if (ringBuffer.pointers.startOfData == ringBuffer.pointers.endOfData) && (ringBuffer.size > 0) {
 		return OutOfRoom
 	}
 
 	ringBuffer.buffer[ringBuffer.pointers.startOfData] = value
-	ringBuffer.number++
+	ringBuffer.size++
 
 	// does the current write index equal the end of the buffer?
 	if ringBuffer.pointers.startOfData == ringBuffer.pointers.endOfBuffer {
@@ -100,9 +100,9 @@ func (ringBuffer *RingBuffer) Add(value uint64) error {
 //
 // Thread Safe: *No*
 // Allocates Memory: *No*
-func (ringBuffer *RingBuffer) Remove() (value uint64, err error) {
+func (ringBuffer *RingBuffer) Remove() (value any, err error) {
 
-	if ringBuffer.number == 0 {
+	if ringBuffer.size == 0 {
 		return 0, NoData
 	}
 
@@ -114,6 +114,10 @@ func (ringBuffer *RingBuffer) Remove() (value uint64, err error) {
 		ringBuffer.pointers.endOfData = ringBuffer.pointers.endOfData + 1
 	}
 
-	ringBuffer.number--
+	ringBuffer.size--
 	return tmp, nil
+}
+
+func (ringBuffer *RingBuffer) Size() uint64 {
+	return ringBuffer.size
 }

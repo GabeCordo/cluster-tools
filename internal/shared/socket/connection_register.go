@@ -67,7 +67,7 @@ func NewConnectionRegister(eF EncoderFactory, dF DecoderFactory) *ConnectionRegi
 	}
 
 	var i uint64
-	for i = 0; i < MaximumNumOfClientsOnServer; i++ {
+	for i = 1; i < MaximumNumOfClientsOnServer+1; i++ {
 		err = handler.clientIdPool.Add(i)
 		if err != nil {
 			panic(err)
@@ -122,9 +122,14 @@ func (handler *ConnectionRegister) RegisterConnection(conn net.Conn) (connection
 
 	// todo : name this better
 	// allocate a new client id
-	id, err := handler.clientIdPool.Remove()
+	value, err := handler.clientIdPool.Remove()
 	if err != nil {
 		return nil, err
+	}
+
+	id, ok := (value).(uint64)
+	if !ok {
+		return nil, errors.New("invalid connection id")
 	}
 
 	handler.connection.number++ // todo: handle what happens when the counter overlaps

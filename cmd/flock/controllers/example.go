@@ -39,10 +39,13 @@ type ExampleController struct {
 
 func (controller ExampleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	p, _ := flock.New()
+	p, err := flock.New()
+	if err != nil {
+		panic(err)
+	}
 
 	m := p.Module("common")
-	err := m.LinkFunction("generator", generator)
+	err = m.LinkFunction("generator", generator)
 	if err != nil {
 		fmt.Print(err)
 	}

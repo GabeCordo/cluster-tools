@@ -7,7 +7,7 @@ import (
 	job2 "github.com/GabeCordo/Flock/internal/core/component/scheduler/job"
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/toolchain/multithreaded"
+	"github.com/GabeCordo/Flock/internal/shared/nonce"
 )
 
 func (uc UseCases) GetJobs(filter database.Filter) []job.Job {
@@ -58,14 +58,14 @@ func (uc UseCases) SchedulerLoop(sendMsg func(namespaceId, pipelineId string, me
 
 		// if err is not nil, the Scheduler will stop running, so output to console
 		// if debug is enabled so the operator is aware of the runtime change
-		if errors.Is(err, processor.CanNotProvisionStreamCluster) || errors.Is(err, multithreaded.NoResponseReceived) {
+		if errors.Is(err, processor.CanNotProvisionStreamCluster) || errors.Is(err, nonce.NoResponseReceived) {
 			uc.Logger.Printf("the Scheduler stopped after encountering %s\n", err.Error())
 		}
 
 		// I only care about errors that might indicate a compromised state of the thread, the others
 		// like Namespace/Function's not existing really makes no sense to crash the Scheduler as someone
 		// likely put in the job for a future module/cluster pair they want to attach to mango
-		if errors.Is(err, processor.CanNotProvisionStreamCluster) || errors.Is(err, multithreaded.NoResponseReceived) ||
+		if errors.Is(err, processor.CanNotProvisionStreamCluster) || errors.Is(err, nonce.NoResponseReceived) ||
 			errors.Is(err, processor.ModuleDoesNotExist) || errors.Is(err, processor.FunctionDoesNotExist) {
 			return err
 		} else {

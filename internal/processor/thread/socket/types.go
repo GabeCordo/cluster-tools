@@ -6,8 +6,9 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/processor/thread"
 	"github.com/GabeCordo/Flock/internal/processor/use_cases/socket"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 	"sync"
 )
 
@@ -53,8 +54,8 @@ type Thread struct {
 	}
 
 	useCases *socket.UseCases
-	
-	logger *logging.Logger
+
+	logger logging.Logger
 
 	requestWg sync.WaitGroup
 
@@ -63,7 +64,7 @@ type Thread struct {
 	wg      sync.WaitGroup
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, useCases *socket.UseCases, channels ...interface{}) (*Thread, error) {
+func NewThread(cfg *Config, logger logging.Logger, useCases *socket.UseCases, channels ...interface{}) (*Thread, error) {
 	t := new(Thread)
 
 	var ok bool
@@ -102,7 +103,7 @@ func NewThread(cfg *Config, logger *logging.Logger, useCases *socket.UseCases, c
 
 	t.useCases = useCases
 
-	t.logger.SetColour(logging.Green)
+	t.logger.SetColour(terminal.Green)
 
 	return t, nil
 }

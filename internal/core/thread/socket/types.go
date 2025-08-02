@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/Flock/internal/core/use_cases/socket"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
 	socket2 "github.com/GabeCordo/Flock/internal/shared/socket"
-	"github.com/GabeCordo/toolchain/logging"
 )
 
 type Config struct {
@@ -33,7 +33,7 @@ type Thread struct {
 		close     chan thread.InterruptEvent
 	}
 	useCases  *socket.UseCases
-	logger    *logging.Logger
+	logger    logging.Logger
 	noncePool *nonce2.Pool
 
 	serverSocket socket2.Server
@@ -44,7 +44,7 @@ type Thread struct {
 	}
 }
 
-func New(cfg *Config, logger *logging.Logger, noncePool *nonce2.Pool, useCases *socket.UseCases, channels ...any) (*Thread, error) {
+func New(cfg *Config, logger logging.Logger, noncePool *nonce2.Pool, useCases *socket.UseCases, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	if cfg == nil {

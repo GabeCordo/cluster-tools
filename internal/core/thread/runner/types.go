@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/Flock/internal/core/use_cases/runner"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/toolchain/logging"
 )
 
 type Config struct {
@@ -32,11 +32,11 @@ type Thread struct {
 		close chan thread.InterruptEvent
 	}
 	useCases     runner.UseCases
-	logger       *logging.Logger
+	logger       logging.Logger
 	requestStore map[nonce.Nonce]*thread.Request
 }
 
-func NewThread(cfg *Config, logger *logging.Logger, useCases runner.UseCases, channels ...any) (*Thread, error) {
+func NewThread(cfg *Config, logger logging.Logger, useCases runner.UseCases, channels ...any) (*Thread, error) {
 	t := new(Thread)
 
 	if cfg == nil {

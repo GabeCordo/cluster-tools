@@ -3,8 +3,11 @@ package cluster_tools
 import (
 	"errors"
 	"fmt"
+	provisioner2 "github.com/GabeCordo/Flock/internal/processor/use_cases/provisioner"
 	socket2 "github.com/GabeCordo/Flock/internal/processor/use_cases/socket"
+	"github.com/GabeCordo/Flock/internal/shared/buffers"
 	"github.com/GabeCordo/Flock/internal/shared/socket/json_socket"
+	"github.com/GabeCordo/Flock/internal/shared/terminal"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -17,7 +20,8 @@ import (
 	"github.com/GabeCordo/Flock/internal/processor/thread"
 	"github.com/GabeCordo/Flock/internal/processor/thread/provisioner"
 	"github.com/GabeCordo/Flock/internal/processor/thread/socket"
-	"github.com/GabeCordo/toolchain/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging"
+	"github.com/GabeCordo/Flock/internal/shared/logging/text_logging"
 )
 
 type Thread uint8
@@ -93,7 +97,7 @@ type Processor struct {
 	provisioner *provisionerCmp.Provisioner
 
 	config *processor.Config
-	logger *logging.Logger
+	logger logging.Logger
 
 	modules map[string]*Module
 	mutex   sync.RWMutex
@@ -139,7 +143,7 @@ func New() (*Processor, error) {
 
 	socketConfig := &socket.Config{}
 	instance.config.FillSocketConfig(socketConfig)
-	socketLogger, err := logging.NewLogger(Socket.ToString(), &instance.config.Processor.Debug)
+	socketLogger, err := text_logging.New(Socket.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -152,20 +156,30 @@ func New() (*Processor, error) {
 
 	provisionerConfig := &provisioner.Config{}
 	instance.config.FillProvisionerConfig(provisionerConfig)
-	provisionerLogger, err := logging.NewLogger(Provisioner.ToString(), &instance.config.Processor.Debug)
+	provisionerLogger, err := text_logging.New(Provisioner.ToString(), &instance.config.Processor.Debug)
+	if err != nil {
+		return nil, err
+	}
+
+	provisionerBuffer, err := buffers.NewRingBuffer(100) // TODO: this should be a constant
 	if err != nil {
 		return nil, err
 	}
 
 	instance.provisioner = provisionerCmp.New()
+	provisionerUseCases := provisioner2.UseCases{
+		Provisioner: instance.provisioner,
+		Logger:      provisionerLogger,
+		Backlog:     provisionerBuffer,
+	}
 
-	instance.threads.provisioner, err = provisioner.NewThread(provisionerConfig, provisionerLogger, instance.provisioner,
+	instance.threads.provisioner, err = provisioner.NewThread(provisionerConfig, &provisionerUseCases,
 		instance.channels.interrupt, instance.channels.c0, instance.channels.c1, instance.channels.c2)
 	if err != nil {
 		return nil, err
 	}
 
-	processorLogger, err := logging.NewLogger(Undefined.ToString(), &instance.config.Processor.Debug)
+	processorLogger, err := text_logging.New(Undefined.ToString(), &instance.config.Processor.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +214,7 @@ func (p *Processor) Module(name string) *Module {
 // Start the processor and wait for SYSINT blocking the calling thread.
 func (p *Processor) Runtime() {
 
-	p.logger.SetColour(logging.Purple)
+	p.logger.SetColour(terminal.Purple)
 
 	startingTimestamp := time.Now()
 
@@ -256,7 +270,7 @@ func (p *Processor) Runtime() {
 		}
 	}
 
-	p.logger.SetColour(logging.Red)
+	p.logger.SetColour(terminal.Red)
 
 	p.threads.provisioner.Teardown()
 	if p.config.Processor.Debug {
