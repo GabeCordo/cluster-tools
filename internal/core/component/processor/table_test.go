@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"github.com/GabeCordo/plover"
 	"testing"
 )
 
@@ -54,7 +55,7 @@ func TestTable_AddModule(t *testing.T) {
 
 	table := NewTable()
 
-	moduleConfig := &ModuleConfig{}
+	moduleConfig := &plover.ModuleIR{}
 	if err := table.AddModule(0, moduleConfig); !errors.Is(err, DoesNotExist) {
 		t.Error("table should throw DoesNotExist for unknown processor")
 	}
@@ -74,8 +75,8 @@ func TestTable_AddModule2(t *testing.T) {
 		return
 	}
 
-	moduleConfig := &ModuleConfig{Name: "foo", Exports: make([]ModuleFunction, 1)}
-	moduleConfig.Exports[0] = ModuleFunction{Name: "bar"}
+	moduleConfig := &plover.ModuleIR{Identifier: "foo", Functions: make([]plover.FunctionIR, 1)}
+	moduleConfig.Functions[0] = plover.FunctionIR{Identifier: "bar"}
 
 	if err := table.AddModule(0, moduleConfig); err != nil {
 		t.Error(err)

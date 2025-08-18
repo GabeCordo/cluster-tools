@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
+	"github.com/GabeCordo/plover"
 	"testing"
 
 	"github.com/GabeCordo/Flock/internal/core/database/job"
@@ -47,7 +48,7 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	clusterConfig := pipeline.Pipeline{}
+	clusterConfig := plover.PipelineIR{}
 
 	request := &thread.Request{
 		Action: thread.CreateAction,
@@ -152,7 +153,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	pipelineRecord := pipeline.Pipeline{Identifier: "test_pipeline"}
+	pipelineRecord := plover.PipelineIR{Identifier: "test_pipeline"}
 
 	n := "test_namespace"
 	p := "test_pipeline"
@@ -180,7 +181,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 		return
 	}
 
-	fetchedPipelines, ok := (response.Data).([]pipeline.Pipeline)
+	fetchedPipelines, ok := (response.Data).([]plover.PipelineIR)
 	if !ok {
 		t.Error("expected fetched record to be of type []cluster.pipeline")
 		return
@@ -264,7 +265,7 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterConfig := pipeline.Pipeline{Identifier: c}
+	clusterConfig := plover.PipelineIR{Identifier: c}
 
 	in <- &thread.Request{
 		Action:      thread.CreateAction,
