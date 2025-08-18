@@ -59,7 +59,7 @@ func (controller StatsController) showFlag(cli *commandline.CommandLine) {
 				sigs <- syscall.SIGTERM
 			}
 
-			numOfGoroutines := 0
+			var numOfGoroutines uint16 = 0
 			for _, f := range run.Statistics.Functions {
 				numOfGoroutines += f.Active
 			}

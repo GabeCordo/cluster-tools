@@ -1,10 +1,10 @@
 package provisioner
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/processor/component/provision"
 	"github.com/GabeCordo/Flock/internal/shared/buffers"
 	"github.com/GabeCordo/Flock/internal/shared/logging"
+	"github.com/GabeCordo/plover"
 	"sync"
 	"sync/atomic"
 )
@@ -16,9 +16,10 @@ type ProvisionRequest struct {
 	Supervisor uint64
 	Metadata   map[string]string
 	Core       string
-	Pipeline   *pipeline.Pipeline
+	Pipeline   *plover.PipelineIR
 }
 type UseCases struct {
+	Repository   *plover.Repository
 	Provisioner  *provision.Provisioner
 	Logger       logging.Logger
 	Backlog      *buffers.RingBuffer

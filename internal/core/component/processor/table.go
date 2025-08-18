@@ -3,6 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/plover"
 	"sync"
 )
 
@@ -125,7 +126,7 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 // AddModule
 // inform the flock that the processor now supports provisioning calls
 // for a module and all its listed functions
-func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
+func (table *Table) AddModule(processorId uint64, config *plover.ModuleIR) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -145,18 +146,18 @@ func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 
 	/* the operator can not assign the same module to a processor endpoint */
 	for _, module := range processorInstance.Modules {
-		if module == config.Name {
+		if module == config.Identifier {
 			return ModuleAlreadyRegistered
 		}
 	}
 
 	/* addFunction the module name to the provisioner for reference */
-	processorInstance.Modules = append(processorInstance.Modules, config.Name)
+	processorInstance.Modules = append(processorInstance.Modules, config.Identifier)
 
 	var moduleInstance *Module
 
 	/* if the module already exists we should try to re-use the existing module allocation */
-	if instance, found := table.modules[config.Name]; found {
+	if instance, found := table.modules[config.Identifier]; found {
 
 		// TODO : support different module versions
 		if instance.data.Version != config.Version {
@@ -171,21 +172,21 @@ func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 
 		moduleInstance = instance
 	} else {
-		moduleInstance = newModule(config.Name, config.Version, config.Contact)
+		moduleInstance = newModule(config.Identifier, config.Version, config.Contact)
 	}
 
-	for _, export := range config.Exports {
+	for _, export := range config.Functions {
 
 		/* does the cluster association already exist in the module? */
 		/* Note: this can be the case if the module already existed */
-		if clusterInstance, found := moduleInstance.GetFunction(export.Name); found {
+		if clusterInstance, found := moduleInstance.GetFunction(export.Identifier); found {
 			clusterInstance.Add(processorInstance)
 			continue
 		}
 
 		/* if the cluster doesn't exist this is the first time we will have the record */
 		moduleInstance.addFunction(&export)
-		clusterInstance, _ := moduleInstance.GetFunction(export.Name)
+		clusterInstance, _ := moduleInstance.GetFunction(export.Identifier)
 
 		/* associate the processor as one of the executors for this cluster */
 		clusterInstance.Add(processorInstance)
@@ -193,7 +194,7 @@ func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 		/* if this is the first time creating this cluster, we should follow the default
 		   mount request outlined by the module pipeline
 		*/
-		if export.StaticMount {
+		if export.Metadata.StaticMount {
 			clusterInstance.Mount()
 		}
 
@@ -205,7 +206,7 @@ func (table *Table) AddModule(processorId uint64, config *ModuleConfig) error {
 	// for now modules will be mounted by default to make docker deployments easier
 	moduleInstance.Mount()
 
-	table.modules[config.Name] = moduleInstance
+	table.modules[config.Identifier] = moduleInstance
 
 	return nil
 }

@@ -3,6 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/plover"
 
 	component "github.com/GabeCordo/Flock/internal/core/component/processor"
 )
@@ -12,9 +13,9 @@ func (uc UseCases) GetModules() []component.ModuleData {
 	return uc.ProcessorTable.RegisteredModules()
 }
 
-func (uc UseCases) AddModule(processorId uint64, cfg *component.ModuleConfig) error {
+func (uc UseCases) AddModule(processorId uint64, cfg *plover.ModuleIR) error {
 
-	if !cfg.Verify() {
+	if ee := plover.VerifyIR(cfg); len(ee) != 0 {
 		return errors.New("module pipeline is not valid")
 	}
 

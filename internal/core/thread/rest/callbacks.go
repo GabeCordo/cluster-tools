@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/plover"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
@@ -391,7 +391,7 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
 
-	request := &pipeline.Pipeline{}
+	request := &plover.PipelineIR{}
 	err := json.NewDecoder(r.Body).Decode(request)
 	if (r.Method != "GET") && (r.Method != "DELETE") && (err != nil) {
 		w.WriteHeader(http.StatusBadRequest)

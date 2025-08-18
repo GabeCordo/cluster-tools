@@ -5,9 +5,9 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/component/message"
 	"github.com/GabeCordo/Flock/internal/core/component/message/log"
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/plover"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ func (t *Thread) handleStopRun(request *thread.Request, response **thread.Respon
 func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iResponse *thread.Response) {
 
 	var id uint64 = 0          // set to a value >0 when no err
-	var cfg *pipeline.Pipeline // set to a valid value when no err
+	var cfg *plover.PipelineIR // set to a valid value when no err
 	var err error              // indicates we could not create a new record
 
 	if !iResponse.Success {
@@ -171,7 +171,7 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		return
 	}
 
-	pipelineConfigs, ok := iResponse.Data.([]pipeline.Pipeline)
+	pipelineConfigs, ok := iResponse.Data.([]plover.PipelineIR)
 	if !ok {
 		oResponse := thread.NewResponse(thread.Runner)
 		oResponse.Error = errors.New("expected response to be []pipeline.Pipeline")

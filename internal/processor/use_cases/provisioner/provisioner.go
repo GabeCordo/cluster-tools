@@ -2,22 +2,20 @@ package provisioner
 
 import (
 	"errors"
-	"fmt"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/processor/component/provision"
-	"github.com/GabeCordo/Flock/internal/processor/component/provision/pipeline"
 	"github.com/GabeCordo/Flock/internal/shared/terminal"
+	"github.com/GabeCordo/plover"
 	"sync"
 	"time"
 )
 
-func (useCases *UseCases) GetStatistics() []*pipeline.Pipeline {
+func (useCases *UseCases) GetStatistics() (statistics []*plover.Statistics) {
 
-	statistics := make([]*pipeline.Pipeline, 0)
+	runs := useCases.Provisioner.GetRuns()
+	statistics = make([]*plover.Statistics, len(runs))
 
-	for _, s := range useCases.Provisioner.GetSupervisors() {
-
-		statistics = append(statistics, s.Pipeline)
+	for _, r := range runs {
+		statistics = append(statistics, r.GetStatistics())
 	}
 
 	return statistics
@@ -42,7 +40,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 	// TODO : cleanup
 	useCases.Logger.Printf("%s[%s]%s Provisioning pipeline in module %s\n", terminal.Green, request.Pipeline.Identifier, terminal.Reset, "foo")
 
-	supervisorInstance, err := useCases.Provisioner.CreateSupervisor(
+	rInstance, err := useCases.Provisioner.CreateRun(
 		request.Namespace, request.Supervisor, request.Metadata, request.Core, request.Pipeline)
 
 	if err != nil {
@@ -50,8 +48,8 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		return err
 	}
 
-	useCases.Logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", terminal.Green, request.Pipeline.Identifier, terminal.Reset, supervisorInstance.Id)
-	go func(supervisorInstance *pipeline.Instance) {
+	useCases.Logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", terminal.Green, request.Pipeline.Identifier, terminal.Reset, rInstance.Id)
+	go func(rInstance plover.Interactable) {
 
 		m := sync.Mutex{} // used for sending updates to the gateway
 
@@ -73,7 +71,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		go func() {
 			for {
 				m.Lock()
-				if !supervisorInstance.IsAlive() {
+				if !rInstance.IsRunning() {
 					// the supervisor is expected to leave the 'alive' state at an
 					// undefined point in its run, this is the exit-case for the background loop
 					break
@@ -84,14 +82,11 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 					panic("failed to allocate memory for run.Run")
 				}
 
-				r.Id = supervisorInstance.Id
+				r.Id = rInstance.Id
 				r.Status = run.Active
-				r.Statistics = supervisorInstance.Pipeline.Stats
+				r.Statistics = rInstance.GetStatistics()
 
 				updateRunEvent(r)
-
-				//mandatory := thread.SocketMandatory{Pipe: t.channels.C0, NoncePool: t.noncePool}
-				//thread.AsyncRunUpdate(mandatory, r)
 
 				m.Unlock()
 
@@ -102,33 +97,36 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		useCases.runWg.Add(1)
 
 		// block until the runner completes
-		supervisorInstance.Start()
+		err = rInstance.Run()
+		if err != nil {
+			useCases.Logger.Warnln(err.Error())
+		}
 
 		m.Lock()
 
-		status := string(supervisorInstance.State)
+		status := string(rInstance.GetStatus())
+
+		rStartTime := time.Now()
 
 		r := new(run.Run)
 		if r == nil {
 			panic("failed to allocate memory for run.Run")
 		}
 
-		r.Id = supervisorInstance.Id
+		r.Id = rInstance.Id
 		r.Status = run.FromString(status)
-		r.Statistics = supervisorInstance.Pipeline.Stats
+		r.Statistics = rInstance.GetStatistics()
 
 		updateRunEvent(r)
-		//mandatory := thread.SocketMandatory{Pipe: t.channels.C0, NoncePool: t.noncePool}
-		//thread.AsyncRunUpdate(mandatory, r)
 
 		m.Unlock()
 
 		// provide the console with output indicating that the cluster has completed
 		// we already provide output when a cluster is provisioned, so it completes the state
-		duration := time.Now().Sub(supervisorInstance.StartTime)
+		duration := time.Now().Sub(rStartTime)
 		useCases.Logger.Printf("%s[%s]%s Pipeline complete, took %dhr %dm %ds %dms %dus\n",
 			terminal.Green,
-			supervisorInstance.Pipeline.Identifier,
+			rInstance.Pipeline,
 			terminal.Reset,
 			int(duration.Hours()),
 			int(duration.Minutes()),
@@ -139,11 +137,11 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 
 		// once a runner has sent its data to the core there is no reason to keep the data
 		// stored in memory without risking it staying unused till the program is terminated
-		deleted, _ := useCases.Provisioner.DeleteSupervisor(supervisorInstance.Id)
+		deleted, _ := useCases.Provisioner.DeleteRun(rInstance.Id)
 		if deleted {
-			useCases.Logger.Printf("deleted runner %d\n", supervisorInstance.Id)
+			useCases.Logger.Printf("deleted runner %d\n", rInstance.Id)
 		} else {
-			useCases.Logger.Warnf("failed to delete runner %d\n", supervisorInstance.Id)
+			useCases.Logger.Warnf("failed to delete runner %d\n", rInstance.Id)
 		}
 
 		// let the modules t decrement the semaphore otherwise we will be stuck in deadlock waiting for
@@ -151,39 +149,30 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		//if !clusterWrapper.IsStream() {
 		useCases.activeRuns.Add(-1)
 		useCases.runWg.Done()
-	}(supervisorInstance)
+	}(rInstance)
 
 	return nil
 }
 
 func (useCases *UseCases) StopRun(supervisor uint64) error {
 
-	instance, found := useCases.Provisioner.GetSupervisor(supervisor)
+	instance, found := useCases.Provisioner.GetRun(supervisor)
 	if !found {
 		return errors.New("no supervisor with that id exists")
 	}
 
-	instance.Teardown()
+	instance.Stop()
 	return nil
 }
 
-func (useCases *UseCases) GetModules() []*provision.Module {
+func (useCases *UseCases) GetModules() []*plover.Module {
 
-	return useCases.Provisioner.GetModules()
+	return useCases.Repository.GetModules()
 }
 
 func (useCases *UseCases) StopAllRuns() {
 
-	for _, s := range useCases.Provisioner.GetSupervisors() {
-
-		if !s.IsAlive() {
-			fmt.Printf("runner is not alive %d %s\n", s.Id, s.State.ToString())
-			continue
-		}
-
-		fmt.Printf("marking runner as teardown %d\n", s.Id)
-		s.Teardown()
-	}
+	useCases.Provisioner.SuspendRuns()
 
 	// wait for all the running pipelines to complete before tearing down
 	//

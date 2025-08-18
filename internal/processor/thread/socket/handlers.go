@@ -1,17 +1,17 @@
 package socket
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/processor/thread"
 	common "github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/GabeCordo/plover"
 )
 
 func (t *Thread) handleSocketModuleAdd(request *thread.SocketRequest) {
 
-	module, ok := request.Data.(processor.ModuleConfig)
+	module, ok := request.Data.(plover.ModuleIR)
 	if !ok {
-		t.logger.Warnln("received module add with invalid data")
+		t.logger.Warnln("received module add with invalid data, expected plover.ModuleIR")
 		return
 	}
 

@@ -4,14 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/GabeCordo/plover"
 	"log"
 	"time"
 )
 
-func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Pipeline) (err error) {
+func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
+	err = plover.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
 		database.Filter{
 			Namespace: namespaceId,
@@ -19,6 +20,7 @@ func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipeline
 		},
 		pipelineData,
 	)
+
 	return err
 }
 
@@ -37,18 +39,18 @@ func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statist
 	return err
 }
 
-func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []pipeline.Pipeline, err error) {
+func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []plover.PipelineIR, err error) {
 
 	results := uc.PipelineDatabase.Get(database.Filter{
 		Namespace:  namespaceId,
 		Identifier: pipelineId,
 	})
 
-	configs := make([]pipeline.Pipeline, len(results))
+	configs := make([]plover.PipelineIR, len(results))
 	ok := true
 
 	for i, result := range results {
-		configs[i], ok = result.(pipeline.Pipeline)
+		configs[i], ok = result.(plover.PipelineIR)
 		if !ok {
 			errStr := fmt.Sprintf("expected type 'pipeline.Pipeline' in index %d", i)
 			err = errors.New(errStr)
@@ -98,7 +100,7 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 	return err
 }
 
-func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Pipeline) (err error) {
+func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
 		Namespace: namespaceId,

@@ -1,11 +1,11 @@
 package run
 
 import (
+	"github.com/GabeCordo/plover"
 	"strconv"
 	"testing"
 
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 )
 
 var (
@@ -25,7 +25,7 @@ func TestRegistry_Create(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &pipeline.Pipeline{} // todo: this is a temp hack
+	cfg := &plover.PipelineIR{} // todo: this is a temp hack
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new runner")
@@ -48,7 +48,7 @@ func TestRegistry_Get(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &pipeline.Pipeline{Identifier: ClusterName}
+	cfg := &plover.PipelineIR{Identifier: ClusterName}
 	id, err := registry.Create(filter, cfg)
 	if err != nil {
 		t.Error("failed to create a new runner")

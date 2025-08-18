@@ -2,10 +2,8 @@ package run
 
 import (
 	"errors"
+	"github.com/GabeCordo/plover"
 	"sync"
-
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 )
 
 type Status string
@@ -50,7 +48,7 @@ const (
 type Request struct {
 	Id        uint64             `json:"id"`
 	Namespace string             `json:"namespace"`
-	Config    *pipeline.Pipeline `json:"config"`
+	Config    *plover.PipelineIR `json:"config"`
 	Metadata  map[string]string  `json:"data"`
 }
 
@@ -61,14 +59,14 @@ type Run struct {
 	Processor uint64 `json:"processor,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 
-	Pipeline pipeline.Pipeline `json:"pipeline,omitempty"`
+	Pipeline plover.PipelineIR `json:"pipeline,omitempty"`
 
-	Statistics *statistic.Statistics `json:"statistics"`
+	Statistics *plover.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func New(runId, processorId uint64, namespaceName string, cfg *pipeline.Pipeline) *Run {
+func New(runId, processorId uint64, namespaceName string, cfg *plover.PipelineIR) *Run {
 	supervisor := new(Run)
 
 	supervisor.Status = Created
@@ -76,7 +74,7 @@ func New(runId, processorId uint64, namespaceName string, cfg *pipeline.Pipeline
 	supervisor.Processor = processorId
 	supervisor.Namespace = namespaceName
 	supervisor.Pipeline = *cfg // copy instance
-	supervisor.Statistics = statistic.NewStatistics(0, 0)
+	supervisor.Statistics = plover.NewStatistics(0, 0)
 
 	return supervisor
 }
@@ -126,15 +124,15 @@ func (supervisor *Run) GetId() uint64 {
 	return supervisor.Id
 }
 
-func (supervisor *Run) GetPipeline() *pipeline.Pipeline {
+func (supervisor *Run) GetPipeline() *plover.PipelineIR {
 	return &supervisor.Pipeline
 }
 
-func (supervisor *Run) GetStatistic() *statistic.Statistics {
+func (supervisor *Run) GetStatistic() *plover.Statistics {
 	return supervisor.Statistics
 }
 
-func (supervisor *Run) SetStatistic(statistic *statistic.Statistics) error {
+func (supervisor *Run) SetStatistic(statistic *plover.Statistics) error {
 	if statistic == nil {
 		return errors.New("statistic is nil")
 	}

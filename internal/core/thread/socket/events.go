@@ -6,6 +6,7 @@ import (
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 	"github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/GabeCordo/plover"
 	"log"
 	"net"
 )
@@ -58,14 +59,14 @@ func (events Events) OnMessageEvent(id socket.ConnectionId, request *socket.Mess
 						return
 					}
 
-					config := new(processor2.ModuleConfig)
+					config := new(plover.ModuleIR)
 					err = json.Unmarshal(b, config)
 					if err != nil {
 						log.Println("received invalid data for Create Module")
 						return
 					}
 
-					log.Printf("received module %s (%s)\n", config.Name, config.Version)
+					log.Printf("received module %s (%s)\n", config.Identifier, config.Version)
 
 					mandatory := thread.Mandatory{
 						Pipe:          events.thread.channels.c7,

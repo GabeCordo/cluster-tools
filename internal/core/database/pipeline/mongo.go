@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"github.com/GabeCordo/plover"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,7 +26,7 @@ func NewMongoConfigDatabase(uri string) (*MongoConfigDatabase, error) {
 	return database, nil
 }
 
-func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline, err error) {
+func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []plover.PipelineIR, err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(filter.Module)
@@ -46,7 +47,7 @@ func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline
 	} else {
 		mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
 
-		config := &Pipeline{}
+		config := &plover.PipelineIR{}
 		err = c.FindOne(context.TODO(), mongoFilter).Decode(&config)
 		if err != nil {
 			return nil, err
@@ -58,7 +59,7 @@ func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []Pipeline
 	return records, nil
 }
 
-func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg Pipeline) (err error) {
+func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg plover.PipelineIR) (err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(moduleIdentifier)
@@ -76,7 +77,7 @@ func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier st
 	return nil
 }
 
-func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg Pipeline) (err error) {
+func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg plover.PipelineIR) (err error) {
 
 	d := database.client.Database("modules")
 	c := d.Collection(moduleIdentifier)

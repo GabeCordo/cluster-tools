@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/plover"
 	"io"
 	"net/http"
 
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 )
 
-func RunPipelineOnProcessor(host string, pl *pipeline.Pipeline) error {
+func RunPipelineOnProcessor(host string, pl *plover.PipelineIR) error {
 
 	body := &struct {
 		Namespace  string            `json:"namespace"`
 		Supervisor uint64            `json:"id"`
-		Config     pipeline.Pipeline `json:"pipeline"`
+		Config     plover.PipelineIR `json:"pipeline"`
 		Metadata   map[string]string `json:"metadata"`
 	}{
 		"default", 0, *pl, make(map[string]string),
@@ -69,7 +69,7 @@ func IsPipelineOnCore(host, namespace, pl string) (bool, error) {
 		return false, nil
 	}
 
-	pipelines := make([]pipeline.Pipeline, 0)
+	pipelines := make([]plover.PipelineIR, 0)
 	err = json.NewDecoder(rsp.Body).Decode(&pipelines)
 	if err != nil {
 		return false, err
@@ -84,7 +84,7 @@ func IsPipelineOnCore(host, namespace, pl string) (bool, error) {
 	return false, nil
 }
 
-func CreatePipelineOnCore(host, namespace string, pl *pipeline.Pipeline) error {
+func CreatePipelineOnCore(host, namespace string, pl *plover.PipelineIR) error {
 
 	url := fmt.Sprintf("%s/pipeline?namespace=%s", host, namespace)
 
@@ -116,7 +116,7 @@ func CreatePipelineOnCore(host, namespace string, pl *pipeline.Pipeline) error {
 	}
 }
 
-func ReplacePipelineOnCore(host, namespace string, pl *pipeline.Pipeline) error {
+func ReplacePipelineOnCore(host, namespace string, pl *plover.PipelineIR) error {
 
 	url := fmt.Sprintf("%s/pipeline?namespace=%s", host, namespace)
 
