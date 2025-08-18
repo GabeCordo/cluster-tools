@@ -1,13 +1,14 @@
 package processor
 
 import (
+	"github.com/GabeCordo/plover"
 	"sync"
 )
 
 type ModuleData struct {
 	Name    string
 	Version string
-	Contact ModuleContact
+	Contact plover.ContactIR
 	Mounted bool
 }
 
@@ -18,7 +19,7 @@ type Module struct {
 	mutex     sync.RWMutex
 }
 
-func newModule(name string, version string, contact ...ModuleContact) *Module {
+func newModule(name string, version string, contact ...plover.ContactIR) *Module {
 	module := new(Module)
 
 	module.data.Name = name
@@ -54,31 +55,16 @@ type ModuleConfig struct {
 	Exports     []ModuleFunction `yaml:"exports" json:"functions"`
 }
 
-func (config ModuleConfig) Verify() bool {
-
-	// ensure that every export identifier is unique
-	exports := make(map[string]bool)
-	for _, export := range config.Exports {
-		if _, found := exports[export.Name]; found {
-			return false
-		} else {
-			exports[export.Name] = true
-		}
-	}
-
-	return true
-}
-
-func (module *Module) addFunction(builder *ModuleFunction) (success bool) {
+func (module *Module) addFunction(builder *plover.FunctionIR) (success bool) {
 
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
 
-	if _, found := module.functions[builder.Name]; found {
+	if _, found := module.functions[builder.Identifier]; found {
 		return false
 	}
 
-	module.functions[builder.Name] = newFunction(builder)
+	module.functions[builder.Identifier] = newFunction(builder)
 	return true
 }
 

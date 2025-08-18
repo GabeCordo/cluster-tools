@@ -3,14 +3,14 @@ package database
 import (
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/plover"
 )
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	configData, ok := (request.Data).(pipeline.Pipeline)
+	configData, ok := (request.Data).(plover.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
@@ -110,7 +110,7 @@ func (t *Thread) handleDeleteStatisticRecord(request *thread.Request, response *
 
 func (t *Thread) handleUpdatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	cfg, ok := (request.Data).(pipeline.Pipeline)
+	cfg, ok := (request.Data).(plover.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType

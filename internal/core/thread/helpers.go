@@ -2,13 +2,13 @@ package thread
 
 import (
 	"errors"
+	"github.com/GabeCordo/plover"
 	"strconv"
 
 	"github.com/GabeCordo/Flock/internal/core/component/message/log"
 	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/database"
 	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
@@ -21,7 +21,7 @@ type Mandatory struct {
 	Timeout       float64
 }
 
-func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf pipeline.Pipeline, found bool) {
+func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf plover.PipelineIR, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -37,21 +37,21 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 	data, didTimeout := nonce2.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return pipeline.Pipeline{}, false
+		return plover.PipelineIR{}, false
 	}
 
 	databaseResponse, ok := (data).(*Response)
 	if !ok {
-		return pipeline.Pipeline{}, false
+		return plover.PipelineIR{}, false
 	}
 
 	if !databaseResponse.Success {
-		return pipeline.Pipeline{}, false
+		return plover.PipelineIR{}, false
 	}
-	return databaseResponse.Data.([]pipeline.Pipeline)[0], true
+	return databaseResponse.Data.([]plover.PipelineIR)[0], true
 }
 
-func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []pipeline.Pipeline, found bool) {
+func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []plover.PipelineIR, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -77,10 +77,10 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 	if !databaseResponse.Success {
 		return nil, false
 	}
-	return databaseResponse.Data.([]pipeline.Pipeline), true
+	return databaseResponse.Data.([]plover.PipelineIR), true
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeline.Pipeline) error {
+func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p plover.PipelineIR) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
@@ -113,7 +113,7 @@ func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeli
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p pipeline.Pipeline) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p plover.PipelineIR) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,
@@ -457,7 +457,7 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor2.ModuleD
 	return true, (provisionerResponse.Data).([]processor2.ModuleData)
 }
 
-func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *processor2.ModuleConfig) {
+func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *plover.ModuleIR) {
 
 	request := new(Request)
 	if request == nil {
@@ -468,7 +468,7 @@ func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *processor2.Mod
 	request.Type = ModuleRecord
 	request.Source = Socket
 	request.Identifiers = RequestIdentifiers{Processor: processorId}
-	request.Data = *cfg
+	request.Data = cfg
 	request.Nonce = mandatory.NoncePool.Next()
 
 	mandatory.Pipe <- request
@@ -847,7 +847,7 @@ func AsyncGetPipelineFromDatabase(pipe chan<- *Request, oldRequest *Request) {
 	pipe <- databaseRequest
 }
 
-func AsyncSendRunToSocket(pipe chan<- *Request, oldRequest *Request, id uint64, cfg *pipeline.Pipeline, metadata map[string]string) {
+func AsyncSendRunToSocket(pipe chan<- *Request, oldRequest *Request, id uint64, cfg *plover.PipelineIR, metadata map[string]string) {
 
 	runRequest := run.Request{
 		Id:        id,

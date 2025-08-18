@@ -52,7 +52,7 @@ func (t *Thread) handleRegisterModulesToCore(request *thread.ProvisionerRequest,
 		NoncePool: t.noncePool,
 	}
 	for _, moduleInst := range t.useCases.GetModules() {
-		cfg := moduleInst.ToConfig()
-		thread.AsyncModuleAdd(mandatory, &cfg)
+		ir := moduleInst.GetIR()
+		thread.AsyncModuleAdd(mandatory, ir)
 	}
 }

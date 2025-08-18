@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/GabeCordo/plover"
 	"sync"
 )
 
@@ -21,10 +22,10 @@ type Function struct {
 	mutex sync.Mutex
 }
 
-func newFunction(builder *ModuleFunction) *Function {
+func newFunction(builder *plover.FunctionIR) *Function {
 	function := new(Function)
 
-	function.data.Name = builder.Name
+	function.data.Name = builder.Identifier
 	function.data.Parameters = make([]string, len(builder.Parameters))
 	copy(function.data.Parameters, builder.Parameters)
 	function.data.Returns = make([]string, len(builder.Returns))

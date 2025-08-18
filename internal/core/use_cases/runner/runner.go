@@ -3,8 +3,8 @@ package runner
 import (
 	"errors"
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
+	"github.com/GabeCordo/plover"
 	"strconv"
 )
 
@@ -40,7 +40,7 @@ func (uc UseCases) GetRun(runId uint64) (*run.Run, error) {
 	return stored, nil
 }
 
-func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *pipeline.Pipeline) (uint64, error) {
+func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *plover.PipelineIR) (uint64, error) {
 
 	filter := database.Filter{
 		Processor: processor,

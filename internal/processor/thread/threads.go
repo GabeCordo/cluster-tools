@@ -1,8 +1,8 @@
 package thread
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
+	"github.com/GabeCordo/plover"
 )
 
 type InterruptEvent uint8
@@ -30,7 +30,7 @@ type ProvisionerRequest struct {
 	Action     ProvisionerAction
 	Namespace  string
 	Supervisor uint64
-	Pipeline   *pipeline.Pipeline
+	Pipeline   *plover.PipelineIR
 	Metadata   map[string]string
 	Path       string
 	Nonce      nonce.Nonce

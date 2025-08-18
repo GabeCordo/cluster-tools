@@ -2,13 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/plover"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/GabeCordo/Flock/cmd/flock/local"
 	"github.com/GabeCordo/Flock/internal/api"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/commandline"
 	"gopkg.in/yaml.v3"
 )
@@ -45,7 +45,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	}
 
 	pipelinePaths := make([]string, 0)
-	pipelines := make([]*pipeline.Pipeline, 0)
+	pipelines := make([]*plover.PipelineIR, 0)
 
 	// if the path provided is a folder, try to grab all the deployment (pipeline) files
 	// inside the folder and register them on the core
@@ -77,7 +77,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 		}
 
 		p := &struct {
-			Pipeline *pipeline.Pipeline `yaml:"pipeline"`
+			Pipeline *plover.PipelineIR `yaml:"pipeline"`
 		}{}
 		if err = yaml.NewDecoder(f).Decode(p); err == nil {
 			pipelines = append(pipelines, p.Pipeline)
@@ -102,7 +102,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	return commandline.Terminate
 }
 
-func (controller PipelineController) addPipelines(pipelines []*pipeline.Pipeline) {
+func (controller PipelineController) addPipelines(pipelines []*plover.PipelineIR) {
 
 	core := local.GetCore()
 	namespace := local.GetNamespace()
@@ -130,7 +130,7 @@ func (controller PipelineController) addPipelines(pipelines []*pipeline.Pipeline
 	}
 }
 
-func (controller PipelineController) deletePipelines(pipelines []*pipeline.Pipeline) {
+func (controller PipelineController) deletePipelines(pipelines []*plover.PipelineIR) {
 
 	core := local.GetCore()
 	namespace := local.GetNamespace()

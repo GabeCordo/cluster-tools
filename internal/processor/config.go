@@ -21,10 +21,9 @@ type RunConfig struct {
 
 type Config struct {
 	Processor struct {
-		Name           string `yaml:"name" toml:"Name"`
-		Debug          bool   `yaml:"debug" toml:"Debug"`
-		StandaloneMode bool   `yaml:"standalone" toml:"Standalone,omitempty"`
-		Pipeline       struct {
+		Name     string `yaml:"name" toml:"Name"`
+		Debug    bool   `yaml:"debug" toml:"Debug"`
+		Pipeline struct {
 			Default string `yaml:"default,omitempty" toml:"Default,omitempty"`
 		} `yaml:"pipeline" toml:"Pipeline"`
 		Run     []RunConfig `yaml:"run" toml:"Runtime"`
@@ -61,7 +60,6 @@ func Load(path string) (*Config, error) {
 func NewConfig(name string) *Config {
 	config := new(Config)
 	config.Processor.Name = name
-	config.Processor.StandaloneMode = true
 	config.Processor.Debug = true
 	config.Core.Host = "0.0.0.0:8137"
 	config.Core.Attempts = 10
@@ -72,7 +70,6 @@ func NewConfig(name string) *Config {
 func (config *Config) FillSocketConfig(to *socket.Config) {
 	to.Debug = &config.Processor.Debug
 	to.Timeout = &config.Processor.Threads.Timeout
-	to.Standalone = &config.Processor.StandaloneMode
 	to.Core = &config.Core.Host
 	to.Tls.Certificate = config.Core.TLS.Certificate
 }
@@ -80,6 +77,5 @@ func (config *Config) FillSocketConfig(to *socket.Config) {
 func (config *Config) FillProvisionerConfig(to *provisioner.Config) {
 	to.Debug = &config.Processor.Debug
 	to.Timeout = &config.Processor.Threads.Timeout
-	to.Standalone = &config.Processor.StandaloneMode
 	to.Core = &config.Core.Host
 }

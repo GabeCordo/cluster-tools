@@ -2,15 +2,15 @@ package processor
 
 import (
 	"errors"
+	"github.com/GabeCordo/plover"
 
 	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/thread"
 )
 
 func (uc UseCases) FindCandidateProcessor(r *thread.Response) (*processor2.Processor, error) {
 
-	pp, ok := r.Data.([]pipeline.Pipeline)
+	pp, ok := r.Data.([]plover.PipelineIR)
 	if !ok {
 		return nil, errors.New("received invalid response from database")
 	}

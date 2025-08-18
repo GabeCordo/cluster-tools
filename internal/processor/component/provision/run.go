@@ -1,9 +1,9 @@
 package provision
 
 import (
+	"github.com/GabeCordo/plover"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/statistic"
 )
 
@@ -35,7 +35,7 @@ type Run struct {
 	Module    string `json:"module,omitempty"`
 	Cluster   string `json:"cluster,omitempty"`
 
-	Config     pipeline.Pipeline     `json:"pipeline,omitempty"`
+	Config     plover.PipelineIR     `json:"pipeline,omitempty"`
 	Statistics *statistic.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex

@@ -2,11 +2,11 @@ package run
 
 import (
 	"errors"
+	"github.com/GabeCordo/plover"
 	"strconv"
 	"sync"
 
 	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 )
 
 type LocalDatabase struct {
@@ -71,7 +71,7 @@ func (database *LocalDatabase) Create(filter database.Filter, record any) (any, 
 	identifier := database.counter
 
 	// todo : hack for now
-	cfg, ok := record.(*pipeline.Pipeline)
+	cfg, ok := record.(*plover.PipelineIR)
 	if !ok {
 		return nil, errors.New("invalid record")
 	}

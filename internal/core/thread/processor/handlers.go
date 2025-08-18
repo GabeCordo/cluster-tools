@@ -3,6 +3,7 @@ package processor
 import (
 	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
 	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/GabeCordo/plover"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -74,15 +75,16 @@ func (t *Thread) handleCreateProcessor(request *thread.Request, response **threa
 
 func (t *Thread) handleCreateModule(request *thread.Request, response **thread.Response) {
 
-	cfg, ok := (request.Data).(processor2.ModuleConfig)
+	*response = thread.NewResponse(thread.Processor)
+
+	cfg, ok := (request.Data).(*plover.ModuleIR)
 	if !ok {
 		(*response).Success = false
 		(*response).Error = thread.BadRequestType
 		return
 	}
 
-	*response = thread.NewResponse(thread.Processor)
-	(*response).Error = t.useCases.AddModule(request.Identifiers.Processor, &cfg)
+	(*response).Error = t.useCases.AddModule(request.Identifiers.Processor, cfg)
 	(*response).Success = (*response).Error == nil
 }
 

@@ -1,12 +1,13 @@
 module github.com/GabeCordo/Flock
 
-go 1.23.0
+go 1.24
 
 toolchain go1.24.1
 
 require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/GabeCordo/commandline v0.3.0
+	github.com/GabeCordo/plover v0.3.2
 	go.mongodb.org/mongo-driver v1.17.4
 	gopkg.in/yaml.v3 v3.0.1
 )

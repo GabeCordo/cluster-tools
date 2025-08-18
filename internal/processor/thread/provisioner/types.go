@@ -14,11 +14,10 @@ const nonceMin = 1000000
 const nonceMax = 2000000
 
 type Config struct {
-	Debug      *bool
-	Timeout    *float64
-	Standalone *bool
-	Core       *string
-	Processor  processor.Config
+	Debug     *bool
+	Timeout   *float64
+	Core      *string
+	Processor processor.Config
 }
 
 type Thread struct {

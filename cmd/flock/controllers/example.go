@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/plover"
 	"time"
 
 	flock "github.com/GabeCordo/Flock"
@@ -39,13 +40,11 @@ type ExampleController struct {
 
 func (controller ExampleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	p, err := flock.New()
-	if err != nil {
-		panic(err)
-	}
+	repository := plover.NewRepository()
 
-	m := p.Module("common")
-	err = m.LinkFunction("generator", generator)
+	m := repository.Module("common")
+	m.Version = "v1.0"
+	err := m.LinkFunction("generator", generator)
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -62,7 +61,8 @@ func (controller ExampleController) Run(cli *commandline.CommandLine) commandlin
 		fmt.Print(err)
 	}
 
-	p.Runtime()
+	processor := flock.New(repository)
+	processor.Connect()
 
 	return commandline.Terminate
 }

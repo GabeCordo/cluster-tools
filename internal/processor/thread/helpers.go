@@ -1,10 +1,9 @@
 package thread
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
 	"github.com/GabeCordo/Flock/internal/core/database/run"
 	"github.com/GabeCordo/Flock/internal/shared/nonce"
+	"github.com/GabeCordo/plover"
 )
 
 type ProvisionerMandatory struct {
@@ -12,7 +11,7 @@ type ProvisionerMandatory struct {
 	NoncePool *nonce.Pool
 }
 
-func AsyncRunStart(mandatory ProvisionerMandatory, namespace string, supervisor uint64, cfg *pipeline.Pipeline, meta map[string]string) {
+func AsyncRunStart(mandatory ProvisionerMandatory, namespace string, supervisor uint64, cfg *plover.PipelineIR, meta map[string]string) {
 
 	// there is a possibility the user never passed an args value to the HTTP endpoint,
 	// so we need to replace it with and empty array
@@ -65,11 +64,11 @@ func AsyncRunUpdate(mandatory SocketMandatory, run *run.Run) {
 	mandatory.Pipe <- sR
 }
 
-func AsyncModuleAdd(mandatory SocketMandatory, config *processor.ModuleConfig) {
+func AsyncModuleAdd(mandatory SocketMandatory, moduleIR *plover.ModuleIR) {
 
 	sR := NewSocketRequest()
 	sR.Action = SocketModuleAdd
-	sR.Data = *config
+	sR.Data = *moduleIR
 	sR.Nonce = mandatory.NoncePool.Next()
 	mandatory.Pipe <- sR
 }
