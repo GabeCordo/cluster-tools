@@ -2,10 +2,10 @@ package scheduler
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/core/use_cases/scheduler"
-	"github.com/GabeCordo/Flock/internal/shared/logging"
-	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/use_cases/scheduler"
+	"github.com/FortifiedCode/flock/internal/shared/logging"
+	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
 )
 
 type Config struct {

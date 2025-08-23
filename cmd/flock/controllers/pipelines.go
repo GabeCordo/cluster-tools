@@ -2,14 +2,14 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/GabeCordo/Flock/cmd/flock/local"
-	"github.com/GabeCordo/Flock/internal/api"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/cmd/flock/local"
+	"github.com/FortifiedCode/flock/internal/api"
 	"gopkg.in/yaml.v3"
 )
 

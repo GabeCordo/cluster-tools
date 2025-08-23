@@ -1,7 +1,7 @@
 package socket
 
 import (
-	"github.com/GabeCordo/Flock/internal/processor/thread"
+	"github.com/FortifiedCode/flock/internal/processor/thread"
 )
 
 func (t *Thread) Setup() {

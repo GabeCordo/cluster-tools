@@ -3,7 +3,7 @@ package json_socket
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/FortifiedCode/flock/internal/shared/socket"
 	"log"
 	"net"
 )

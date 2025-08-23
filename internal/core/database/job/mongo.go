@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

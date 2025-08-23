@@ -3,7 +3,7 @@ package socket
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/shared/buffers"
+	"github.com/FortifiedCode/flock/internal/shared/buffers"
 	"net"
 	"sync"
 )

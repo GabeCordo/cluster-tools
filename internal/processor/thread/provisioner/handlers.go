@@ -2,9 +2,9 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/processor/thread"
-	"github.com/GabeCordo/Flock/internal/processor/use_cases/provisioner"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/processor/thread"
+	"github.com/FortifiedCode/flock/internal/processor/use_cases/provisioner"
 )
 
 func (t *Thread) handleGetModules(request *thread.ProvisionerRequest, response *thread.ProvisionerResponse) {

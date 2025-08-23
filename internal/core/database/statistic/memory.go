@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database"
 )
 
 type LocalStatisticDatabase struct {

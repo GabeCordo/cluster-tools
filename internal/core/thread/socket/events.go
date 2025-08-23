@@ -2,11 +2,11 @@ package socket
 
 import (
 	"encoding/json"
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/shared/socket"
-	"github.com/GabeCordo/plover"
+	processor2 "github.com/FortifiedCode/flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/shared/socket"
+	"github.com/FortifiedCode/plover"
 	"log"
 	"net"
 )

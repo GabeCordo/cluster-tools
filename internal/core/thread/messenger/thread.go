@@ -1,7 +1,7 @@
 package messenger
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 func (th *Thread) Setup() {

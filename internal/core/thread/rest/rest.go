@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 )
 
 type Request struct {

@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 	"time"
 
-	flock "github.com/GabeCordo/Flock"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	flock "github.com/FortifiedCode/flock"
 )
 
 func generator(out chan int) {

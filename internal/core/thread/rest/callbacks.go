@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 // TODO : add comments to the else conditions where the processor may support

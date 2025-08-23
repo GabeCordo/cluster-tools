@@ -2,7 +2,7 @@ package thread
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/shared/nonce"
+	"github.com/FortifiedCode/flock/internal/shared/nonce"
 )
 
 var InternalError = errors.New("there was an internal error in the system")

@@ -2,11 +2,11 @@ package run
 
 import (
 	"errors"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 	"strconv"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database"
 )
 
 type LocalDatabase struct {

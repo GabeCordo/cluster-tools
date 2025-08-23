@@ -2,12 +2,12 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/processor/thread"
-	"github.com/GabeCordo/Flock/internal/processor/use_cases/provisioner"
-	"github.com/GabeCordo/Flock/internal/shared/logging"
-	"github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/Flock/internal/shared/terminal"
+	"github.com/FortifiedCode/flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/processor/thread"
+	"github.com/FortifiedCode/flock/internal/processor/use_cases/provisioner"
+	"github.com/FortifiedCode/flock/internal/shared/logging"
+	"github.com/FortifiedCode/flock/internal/shared/nonce"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 )
 
 const nonceMin = 1000000

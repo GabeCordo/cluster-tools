@@ -2,10 +2,10 @@ package database
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/plover"
 )
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {

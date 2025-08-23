@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 func (core *Core) repl() {

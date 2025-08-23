@@ -2,12 +2,12 @@ package runner
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/component/message"
-	"github.com/GabeCordo/Flock/internal/core/component/message/log"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/component/message"
+	"github.com/FortifiedCode/flock/internal/core/component/message/log"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/plover"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////

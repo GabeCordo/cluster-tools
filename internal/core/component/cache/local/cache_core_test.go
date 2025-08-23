@@ -2,7 +2,7 @@ package local
 
 import (
 	"errors"
-	cache2 "github.com/GabeCordo/Flock/internal/core/component/cache"
+	cache2 "github.com/FortifiedCode/flock/internal/core/component/cache"
 	"testing"
 	"time"
 )

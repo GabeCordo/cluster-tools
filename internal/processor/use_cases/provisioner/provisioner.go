@@ -2,9 +2,9 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/shared/terminal"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
+	"github.com/FortifiedCode/plover"
 	"sync"
 	"time"
 )

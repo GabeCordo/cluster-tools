@@ -3,9 +3,9 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 
-	component "github.com/GabeCordo/Flock/internal/core/component/processor"
+	component "github.com/FortifiedCode/flock/internal/core/component/processor"
 )
 
 func (uc UseCases) GetModules() []component.ModuleData {

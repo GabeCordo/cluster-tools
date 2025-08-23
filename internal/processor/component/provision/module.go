@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/core/component/processor"
 )
 
 type Module struct {

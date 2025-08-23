@@ -3,7 +3,7 @@ package processor
 import (
 	"errors"
 
-	component "github.com/GabeCordo/Flock/internal/core/component/processor"
+	component "github.com/FortifiedCode/flock/internal/core/component/processor"
 )
 
 func (uc UseCases) GetFunctions(name string) ([]component.FunctionData, error) {

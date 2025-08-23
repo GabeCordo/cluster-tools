@@ -1,11 +1,11 @@
 package run
 
 import (
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 	"strconv"
 	"testing"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database"
 )
 
 var (

@@ -2,9 +2,9 @@ package messenger
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/component/message"
-	"github.com/GabeCordo/Flock/internal/core/component/message/log"
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/component/message"
+	"github.com/FortifiedCode/flock/internal/core/component/message/log"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {

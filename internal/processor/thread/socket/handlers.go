@@ -1,10 +1,10 @@
 package socket
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/processor/thread"
-	common "github.com/GabeCordo/Flock/internal/shared/socket"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/processor/thread"
+	common "github.com/FortifiedCode/flock/internal/shared/socket"
+	"github.com/FortifiedCode/plover"
 )
 
 func (t *Thread) handleSocketModuleAdd(request *thread.SocketRequest) {

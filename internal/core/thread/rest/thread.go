@@ -7,7 +7,7 @@ import (
 	"net/http/pprof"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 func (t *Thread) Setup() {

@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/shared/terminal"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 )
 
 func (core *Core) banner() {

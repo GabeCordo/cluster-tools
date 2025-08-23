@@ -2,8 +2,8 @@ package provision
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/shared/buffers"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/shared/buffers"
+	"github.com/FortifiedCode/plover"
 	"sync"
 )
 

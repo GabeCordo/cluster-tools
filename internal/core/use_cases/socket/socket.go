@@ -2,7 +2,7 @@ package socket
 
 import (
 	"crypto/tls"
-	socket2 "github.com/GabeCordo/Flock/internal/shared/socket"
+	socket2 "github.com/FortifiedCode/flock/internal/shared/socket"
 	"os"
 )
 

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"gopkg.in/yaml.v3"
 )
 

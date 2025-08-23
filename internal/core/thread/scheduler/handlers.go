@@ -1,9 +1,9 @@
 package scheduler
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 func (t *Thread) handleGetJob(request *thread.Request, response *thread.Response) {

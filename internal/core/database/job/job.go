@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database"
 )
 
 // Dump

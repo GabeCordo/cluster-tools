@@ -3,9 +3,9 @@ package database
 import (
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/plover"
 	"log"
 	"time"
 )

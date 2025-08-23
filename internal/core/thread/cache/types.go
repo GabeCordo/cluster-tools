@@ -2,11 +2,11 @@ package cache
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/component/cache"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	cache2 "github.com/GabeCordo/Flock/internal/core/use_cases/cache"
-	"github.com/GabeCordo/Flock/internal/shared/logging"
-	"github.com/GabeCordo/Flock/internal/shared/terminal"
+	"github.com/FortifiedCode/flock/internal/core/component/cache"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	cache2 "github.com/FortifiedCode/flock/internal/core/use_cases/cache"
+	"github.com/FortifiedCode/flock/internal/shared/logging"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 )
 
 type Config struct {

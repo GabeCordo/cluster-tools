@@ -1,9 +1,9 @@
 package thread
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/shared/nonce"
+	"github.com/FortifiedCode/plover"
 )
 
 type ProvisionerMandatory struct {

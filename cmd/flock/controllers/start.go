@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/core"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/internal/core"
 	"log"
 	"os"
 )

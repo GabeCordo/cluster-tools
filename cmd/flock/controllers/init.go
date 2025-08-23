@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/GabeCordo/Flock/internal/core"
-	"github.com/GabeCordo/Flock/internal/shared/terminal"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/internal/core"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"gopkg.in/yaml.v3"
 )
 

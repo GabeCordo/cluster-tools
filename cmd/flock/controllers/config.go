@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GabeCordo/Flock/internal/core"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/internal/core"
 	"gopkg.in/yaml.v3"
 )
 

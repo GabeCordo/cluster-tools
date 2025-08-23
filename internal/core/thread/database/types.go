@@ -2,11 +2,11 @@ package database
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
-	"github.com/GabeCordo/Flock/internal/shared/logging"
-	"github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/Flock/internal/shared/terminal"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	database2 "github.com/FortifiedCode/flock/internal/core/use_cases/database"
+	"github.com/FortifiedCode/flock/internal/shared/logging"
+	"github.com/FortifiedCode/flock/internal/shared/nonce"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 )
 
 var StoreTypeMismatch = errors.New("the received type and desired database type do not match")

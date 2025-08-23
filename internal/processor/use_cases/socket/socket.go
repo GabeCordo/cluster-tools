@@ -3,7 +3,7 @@ package socket
 import (
 	"crypto/x509"
 	"errors"
-	"github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/FortifiedCode/flock/internal/shared/socket"
 	"log"
 	"os"
 	"path/filepath"

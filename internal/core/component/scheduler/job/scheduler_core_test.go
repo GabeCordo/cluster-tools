@@ -3,8 +3,8 @@ package job
 import (
 	"testing"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
-	job3 "github.com/GabeCordo/Flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	job3 "github.com/FortifiedCode/flock/internal/core/database/job"
 )
 
 var testInterval = &database.Interval{

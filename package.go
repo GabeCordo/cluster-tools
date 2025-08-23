@@ -1,8 +1,8 @@
-package cluster_tools
+package flock
 
 import (
-	"github.com/GabeCordo/Flock/internal/processor"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/processor"
+	"github.com/FortifiedCode/plover"
 	"os"
 	"path/filepath"
 )

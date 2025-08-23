@@ -1,9 +1,9 @@
 package socket
 
 import (
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	common "github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	common "github.com/FortifiedCode/flock/internal/shared/socket"
 )
 
 func (t *Thread) handleCreateRun(request *thread.Request, response *thread.Response) {

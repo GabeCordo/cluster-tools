@@ -1,8 +1,8 @@
 package thread
 
 import (
-	"github.com/GabeCordo/Flock/internal/shared/nonce"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/shared/nonce"
+	"github.com/FortifiedCode/plover"
 )
 
 type InterruptEvent uint8

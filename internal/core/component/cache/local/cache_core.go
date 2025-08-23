@@ -3,7 +3,7 @@ package local
 import (
 	"bytes"
 	"fmt"
-	cache2 "github.com/GabeCordo/Flock/internal/core/component/cache"
+	cache2 "github.com/FortifiedCode/flock/internal/core/component/cache"
 	"log"
 	"math/rand"
 	"time"

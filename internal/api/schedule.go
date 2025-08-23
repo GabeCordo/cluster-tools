@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/GabeCordo/Flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 )
 
 func GetJobs(host, namespace string) ([]job.Job, error) {

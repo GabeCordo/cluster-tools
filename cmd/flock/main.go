@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/GabeCordo/Flock/cmd/flock/controllers"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/cmd/flock/controllers"
 )
 
 // @title Swagger Example API

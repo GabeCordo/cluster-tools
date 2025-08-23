@@ -1,9 +1,9 @@
 package processor
 
 import (
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/plover"
+	processor2 "github.com/FortifiedCode/flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/plover"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////

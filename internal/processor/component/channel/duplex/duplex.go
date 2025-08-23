@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 )
 
 type BadManagedChannelType struct {

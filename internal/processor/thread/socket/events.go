@@ -2,9 +2,9 @@ package socket
 
 import (
 	"encoding/json"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/Flock/internal/processor/thread"
-	"github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/flock/internal/processor/thread"
+	"github.com/FortifiedCode/flock/internal/shared/socket"
 )
 
 type Events struct {

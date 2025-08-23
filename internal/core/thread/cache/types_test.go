@@ -3,9 +3,9 @@ package cache
 import (
 	"testing"
 
-	"github.com/GabeCordo/Flock/internal/core/component/cache/local"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/shared/logging/text_logging"
+	"github.com/FortifiedCode/flock/internal/core/component/cache/local"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
 )
 
 func GenerateTestCacheThread(in chan *thread.Request, out chan *thread.Response) *Thread {

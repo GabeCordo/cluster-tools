@@ -1,10 +1,10 @@
 package provisioner
 
 import (
-	"github.com/GabeCordo/Flock/internal/processor/component/provision"
-	"github.com/GabeCordo/Flock/internal/shared/buffers"
-	"github.com/GabeCordo/Flock/internal/shared/logging"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/processor/component/provision"
+	"github.com/FortifiedCode/flock/internal/shared/buffers"
+	"github.com/FortifiedCode/flock/internal/shared/logging"
+	"github.com/FortifiedCode/plover"
 	"sync"
 	"sync/atomic"
 )

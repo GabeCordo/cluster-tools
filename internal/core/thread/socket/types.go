@@ -2,11 +2,11 @@ package socket
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/core/use_cases/socket"
-	"github.com/GabeCordo/Flock/internal/shared/logging"
-	nonce2 "github.com/GabeCordo/Flock/internal/shared/nonce"
-	socket2 "github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/core/use_cases/socket"
+	"github.com/FortifiedCode/flock/internal/shared/logging"
+	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
+	socket2 "github.com/FortifiedCode/flock/internal/shared/socket"
 )
 
 type Config struct {

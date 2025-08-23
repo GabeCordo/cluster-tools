@@ -15,7 +15,7 @@ installed with 'go install' otherwise.
 
 ```shell
    # create a log copy of the thread
-   git clone https://github.com/GabeCordo/Flock
+   git clone https://github.com/FortifiedCode/flock
    
    # install the flock binary
    cd /cmd/flock

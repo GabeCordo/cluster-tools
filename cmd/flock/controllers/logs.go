@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/GabeCordo/Flock/internal/core/component/message"
-	"github.com/GabeCordo/Flock/internal/core/component/message/log"
-	"github.com/GabeCordo/commandline"
+	"github.com/FortifiedCode/commandline"
+	"github.com/FortifiedCode/flock/internal/core/component/message"
+	"github.com/FortifiedCode/flock/internal/core/component/message/log"
 )
 
 type LogController struct {

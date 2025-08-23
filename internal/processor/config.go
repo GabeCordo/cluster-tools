@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/GabeCordo/Flock/internal/processor/thread/provisioner"
-	"github.com/GabeCordo/Flock/internal/processor/thread/socket"
+	"github.com/FortifiedCode/flock/internal/processor/thread/provisioner"
+	"github.com/FortifiedCode/flock/internal/processor/thread/socket"
 )
 
 type NetworkConfig struct {

@@ -2,15 +2,15 @@ package database
 
 import (
 	"errors"
-	database2 "github.com/GabeCordo/Flock/internal/core/use_cases/database"
-	"github.com/GabeCordo/plover"
+	database2 "github.com/FortifiedCode/flock/internal/core/use_cases/database"
+	"github.com/FortifiedCode/plover"
 	"testing"
 
-	"github.com/GabeCordo/Flock/internal/core/database/job"
-	"github.com/GabeCordo/Flock/internal/core/database/pipeline"
-	"github.com/GabeCordo/Flock/internal/core/database/statistic"
-	"github.com/GabeCordo/Flock/internal/core/thread"
-	"github.com/GabeCordo/Flock/internal/shared/logging/text_logging"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/flock/internal/core/thread"
+	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
 )
 
 func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) *Thread {

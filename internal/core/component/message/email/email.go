@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/core/component/message"
+	"github.com/FortifiedCode/flock/internal/core/component/message"
 )
 
 var DefaultSmtpEndpoint = SmtpEndpoint{

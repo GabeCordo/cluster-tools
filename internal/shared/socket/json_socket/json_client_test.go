@@ -2,7 +2,7 @@ package json_socket
 
 import (
 	"fmt"
-	"github.com/GabeCordo/Flock/internal/shared/socket"
+	"github.com/FortifiedCode/flock/internal/shared/socket"
 	"net"
 	"sync"
 	"testing"

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database"
 )
 
 type LocalPipelineDatabase struct {

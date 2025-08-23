@@ -2,9 +2,9 @@ package runner
 
 import (
 	"errors"
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/run"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/run"
+	"github.com/FortifiedCode/plover"
 	"strconv"
 )
 

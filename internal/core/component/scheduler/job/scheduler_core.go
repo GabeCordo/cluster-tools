@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/GabeCordo/Flock/internal/core/database"
-	"github.com/GabeCordo/Flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 )
 
 // Watch

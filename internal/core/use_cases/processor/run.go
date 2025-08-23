@@ -2,10 +2,10 @@ package processor
 
 import (
 	"errors"
-	"github.com/GabeCordo/plover"
+	"github.com/FortifiedCode/plover"
 
-	processor2 "github.com/GabeCordo/Flock/internal/core/component/processor"
-	"github.com/GabeCordo/Flock/internal/core/thread"
+	processor2 "github.com/FortifiedCode/flock/internal/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 
 func (uc UseCases) FindCandidateProcessor(r *thread.Response) (*processor2.Processor, error) {

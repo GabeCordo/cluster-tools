@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/GabeCordo/Flock/internal/core/thread/cache"
-	"github.com/GabeCordo/Flock/internal/core/thread/database"
-	"github.com/GabeCordo/Flock/internal/core/thread/messenger"
-	"github.com/GabeCordo/Flock/internal/core/thread/processor"
-	httpClient "github.com/GabeCordo/Flock/internal/core/thread/rest"
-	"github.com/GabeCordo/Flock/internal/core/thread/runner"
-	"github.com/GabeCordo/Flock/internal/core/thread/scheduler"
-	"github.com/GabeCordo/Flock/internal/core/thread/socket"
+	"github.com/FortifiedCode/flock/internal/core/thread/cache"
+	"github.com/FortifiedCode/flock/internal/core/thread/database"
+	"github.com/FortifiedCode/flock/internal/core/thread/messenger"
+	"github.com/FortifiedCode/flock/internal/core/thread/processor"
+	httpClient "github.com/FortifiedCode/flock/internal/core/thread/rest"
+	"github.com/FortifiedCode/flock/internal/core/thread/runner"
+	"github.com/FortifiedCode/flock/internal/core/thread/scheduler"
+	"github.com/FortifiedCode/flock/internal/core/thread/socket"
 	"gopkg.in/yaml.v3"
 )
 

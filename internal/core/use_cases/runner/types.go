@@ -1,6 +1,6 @@
 package runner
 
-import "github.com/GabeCordo/Flock/internal/core/database"
+import "github.com/FortifiedCode/flock/internal/core/database"
 
 type UseCases struct {
 	RunDatabase database.Database

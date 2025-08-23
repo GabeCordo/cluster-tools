@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/GabeCordo/Flock/internal/core/component/message"
+	"github.com/FortifiedCode/flock/internal/core/component/message"
 )
 
 type File struct {
