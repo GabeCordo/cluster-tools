@@ -3,6 +3,7 @@ package job
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/FortifiedCode/flock/internal/core/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,7 +20,10 @@ func NewMongoJobDatabase(uri string) (*MongoDatabase, error) {
 	db := new(MongoDatabase)
 
 	var err error
-	db.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	db.client, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -27,30 +31,9 @@ func NewMongoJobDatabase(uri string) (*MongoDatabase, error) {
 	return db, nil
 }
 
-func (database MongoDatabase) GetAll() (records []Job, err error) {
+func (db MongoDatabase) Get(filter database.Filter) (records []any) {
 
-	d := database.client.Database("flock")
-	c := d.Collection("jobs")
-
-	cursor, err := c.Find(context.TODO(), bson.D{})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = cursor.All(context.TODO(), &records); err != nil {
-		return nil, err
-	}
-
-	return records, nil
-}
-
-func (database MongoDatabase) GetBy(filter *database.Filter) (records []Job, err error) {
-
-	if filter == nil {
-		return records, errors.New("filter can not be nil")
-	}
-
-	d := database.client.Database("flock")
+	d := db.client.Database("flock")
 	c := d.Collection("jobs")
 
 	var mongoFilter bson.D
@@ -67,44 +50,47 @@ func (database MongoDatabase) GetBy(filter *database.Filter) (records []Job, err
 		}
 	} else if filter.UseIdentifier() {
 		mongoFilter = bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
+	} else {
+		mongoFilter = bson.D{}
 	}
 
 	cursor, err := c.Find(context.TODO(), mongoFilter)
 	if err != nil {
-		return nil, err
+		return records
 	}
 
-	if err = cursor.All(context.TODO(), &records); err != nil {
-		return nil, err
+	jobs := make([]*Job, 0)
+	err = cursor.All(context.TODO(), &jobs)
+
+	records = make([]any, len(jobs))
+	for i, job := range jobs {
+		records[i] = job
 	}
 
-	return records, nil
+	return records
 }
 
-func (database MongoDatabase) Create(job *Job) (err error) {
+func (db MongoDatabase) Create(filter database.Filter, record any) (result any, err error) {
 
-	if job == nil {
-		return errors.New("job can not be nil")
+	job, ok := (record).(*Job)
+	if !ok || (job == nil) {
+		return nil, errors.New("job can not be nil")
 	}
 
-	d := database.client.Database("flock")
+	d := db.client.Database("flock")
 	c := d.Collection("jobs")
 
 	_, err = c.InsertOne(context.TODO(), job)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (database MongoDatabase) Delete(filter *database.Filter) (err error) {
+func (db MongoDatabase) Delete(filter database.Filter) (err error) {
 
-	if filter == nil {
-		return errors.New("filter can not be nil")
-	}
-
-	d := database.client.Database("flock")
+	d := db.client.Database("flock")
 	c := d.Collection("jobs")
 
 	var mongoFilter bson.D
@@ -133,4 +119,27 @@ func (database MongoDatabase) Delete(filter *database.Filter) (err error) {
 	}
 
 	return nil
+}
+
+func (db MongoDatabase) Replace(filter database.Filter, record any) (err error) {
+
+	log.Println("not implemented")
+	return err
+}
+
+func (db MongoDatabase) Save(path string) (err error) {
+
+	log.Println("not implemented")
+	return err
+}
+
+func (db MongoDatabase) Load(path string) (err error) {
+
+	log.Println("not implemented")
+	return err
+}
+
+func (db MongoDatabase) Print() {
+
+	log.Println("not implemented")
 }

@@ -367,7 +367,12 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 		return nil, response.Error
 	}
 
-	return (response.Data).([]*run.Run), nil
+	runs, ok := (response.Data).([]*run.Run)
+	if !ok {
+		return nil, errors.New("expected to received []*run.Run")
+	}
+
+	return runs, nil
 }
 
 func AsyncUpdateRun(mandatory Mandatory, data *run.Run) {

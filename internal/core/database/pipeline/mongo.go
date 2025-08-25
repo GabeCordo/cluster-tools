@@ -3,7 +3,9 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"github.com/FortifiedCode/flock/internal/core/database"
 	"github.com/FortifiedCode/plover"
+	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,74 +17,90 @@ type MongoConfigDatabase struct {
 }
 
 func NewMongoConfigDatabase(uri string) (*MongoConfigDatabase, error) {
-	database := new(MongoConfigDatabase)
+	db := new(MongoConfigDatabase)
 
 	var err error
-	database.client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	db.client, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return database, nil
+	return db, nil
 }
 
-func (database MongoConfigDatabase) Get(filter ConfigFilter) (records []plover.PipelineIR, err error) {
+func (db MongoConfigDatabase) Get(filter database.Filter) (records []any) {
 
-	d := database.client.Database("modules")
-	c := d.Collection(filter.Module)
+	records = make([]any, 0)
+
+	d := db.client.Database("modules")
+	c := d.Collection(filter.Namespace)
 
 	// when the identifier is empty we want to return all the configs in the database
-	if filter.Identifier == "" {
-		mongoFilter := bson.D{{}}
-
-		cursor, err := c.Find(context.TODO(), mongoFilter)
-		if err != nil {
-			return nil, err
-		}
-
-		err = cursor.All(context.TODO(), &records)
-		if err != nil {
-			return nil, err
-		}
+	var mongoFilter bson.D
+	if filter.Identifier != "" {
+		mongoFilter = bson.D{{"identifier", filter.Identifier}}
 	} else {
-		mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
-
-		config := &plover.PipelineIR{}
-		err = c.FindOne(context.TODO(), mongoFilter).Decode(&config)
-		if err != nil {
-			return nil, err
-		}
-
-		records = append(records, *config)
+		mongoFilter = bson.D{}
 	}
 
-	return records, nil
+	cursor, err := c.Find(context.TODO(), mongoFilter)
+	if err != nil {
+		return records
+	}
+
+	var stats []plover.PipelineIR
+	err = cursor.All(context.TODO(), &stats)
+	if err != nil {
+		return records
+	}
+
+	for _, stat := range stats {
+		records = append(records, stat)
+	}
+
+	return records
 }
 
-func (database MongoConfigDatabase) Create(moduleIdentifier, configIdentifier string, cfg plover.PipelineIR) (err error) {
+func (db MongoConfigDatabase) Create(filter database.Filter, record any) (r any, err error) {
 
-	d := database.client.Database("modules")
-	c := d.Collection(moduleIdentifier)
+	cfg, ok := (record).(*plover.PipelineIR)
+	if !ok {
+		err = errors.New("expected type *plover.PipelineIR")
+		return nil, err
+	}
 
-	records, err := database.Get(ConfigFilter{Module: moduleIdentifier, Identifier: configIdentifier})
-	if len(records) >= 1 {
-		return errors.New("pipeline with the same identifier already exists in the module")
+	d := db.client.Database("modules")
+	c := d.Collection(filter.Namespace)
+
+	records := db.Get(filter)
+	numOfRecords := len(records)
+	if numOfRecords >= 1 {
+		return nil, errors.New("pipeline with the same identifier already exists in the module")
 	}
 
 	_, err = c.InsertOne(context.TODO(), cfg)
 	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (db MongoConfigDatabase) Replace(filter database.Filter, record any) (err error) {
+
+	cfg, ok := (record).(*plover.PipelineIR)
+	if !ok {
+		err = errors.New("expected type *plover.PipelineIR")
 		return err
 	}
 
-	return nil
-}
+	d := db.client.Database("modules")
+	c := d.Collection(filter.Namespace)
 
-func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier string, cfg plover.PipelineIR) (err error) {
-
-	d := database.client.Database("modules")
-	c := d.Collection(moduleIdentifier)
-
-	mongoFilter := bson.D{{"identifier", bson.D{{"$eq", configIdentifier}}}}
+	mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
 	result, err := c.ReplaceOne(context.TODO(), mongoFilter, cfg)
 	if err != nil {
 		return err
@@ -95,12 +113,12 @@ func (database MongoConfigDatabase) Replace(moduleIdentifier, configIdentifier s
 	return nil
 }
 
-func (database MongoConfigDatabase) Delete(moduleIdentifier, configIdentifier string) (err error) {
+func (db MongoConfigDatabase) Delete(filter database.Filter) (err error) {
 
-	d := database.client.Database("modules")
-	c := d.Collection(moduleIdentifier)
+	d := db.client.Database("modules")
+	c := d.Collection(filter.Namespace)
 
-	mongoFilter := bson.D{{"identifier", bson.D{{"$eq", configIdentifier}}}}
+	mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
 	result, err := c.DeleteOne(context.TODO(), mongoFilter)
 	if err != nil {
 		return err
@@ -111,4 +129,21 @@ func (database MongoConfigDatabase) Delete(moduleIdentifier, configIdentifier st
 	}
 
 	return nil
+}
+
+func (db MongoConfigDatabase) Save(path string) (err error) {
+
+	log.Println("not implemented")
+	return err
+}
+
+func (db MongoConfigDatabase) Load(path string) (err error) {
+
+	log.Println("not implemented")
+	return err
+}
+
+func (db MongoConfigDatabase) Print() {
+
+	log.Println("not implemented")
 }

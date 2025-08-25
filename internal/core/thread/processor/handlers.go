@@ -259,5 +259,8 @@ func (t *Thread) handleRunnerRespondsToGet(iRequest *thread.Request, iResponse *
 
 	delete(t.requestStore, iRequest.Nonce)
 	oResponse := thread.NewResponse(thread.Processor)
+	oResponse.Data = iResponse.Data
+	oResponse.Error = iResponse.Error
+
 	t.sendResponse(iRequest, oResponse)
 }

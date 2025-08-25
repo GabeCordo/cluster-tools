@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	job2 "github.com/FortifiedCode/flock/internal/core/component/scheduler/job"
 	database2 "github.com/FortifiedCode/flock/internal/core/use_cases/database"
 	processor2 "github.com/FortifiedCode/flock/internal/core/use_cases/processor"
@@ -84,6 +85,9 @@ type Core struct {
 }
 
 func New(configPath string) (*Core, error) {
+
+	envVars := ReadEnvironmentVariables()
+
 	core := new(Core)
 
 	core.interrupt = make(chan thread.InterruptEvent, 10)
@@ -231,9 +235,23 @@ func New(configPath string) (*Core, error) {
 	databaseConfig := &database.Config{}
 	core.config.FillDatabaseConfig(databaseConfig)
 
-	configDatabase := configDb.NewLocalPipelineDatabase()
-	statDatabase := statisticDb.NewLocalStatisticDatabase()
-	jobDatabase := job.NewLocalJobDatabase()
+	fmt.Println("connect to config db")
+	configDatabase, err := configDb.NewMongoConfigDatabase(envVars.MongoDbUri)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("connect to stat db")
+	statDatabase, err := statisticDb.NewMongoStatisticsDatabase(envVars.MongoDbUri)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("connect to job db")
+	jobDatabase, err := job.NewMongoJobDatabase(envVars.MongoDbUri)
+	if err != nil {
+		return nil, err
+	}
 
 	databaseUseCases := database2.UseCases{
 		PipelineDatabase:  configDatabase,
@@ -273,8 +291,8 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	schedulerConig := &scheduler.Config{}
-	core.config.FillSchedulerConfig(schedulerConig)
+	schedulerConfig := &scheduler.Config{}
+	core.config.FillSchedulerConfig(schedulerConfig)
 
 	sch, err := job2.New(jobDatabase)
 	if err != nil {
@@ -289,7 +307,7 @@ func New(configPath string) (*Core, error) {
 
 	scheduleNoncePool := nonce2.New(schedulerNonceMin, schedulerNonceMax)
 
-	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, schedulerUseCases, scheduleNoncePool,
+	core.SchedulerThread, err = scheduler.New(schedulerConfig, schedulerLogger, schedulerUseCases, scheduleNoncePool,
 		core.interrupt, core.C18, core.C19, core.C20, core.C21, core.C26, core.C27)
 	if err != nil {
 		return nil, err

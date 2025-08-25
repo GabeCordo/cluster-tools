@@ -15,8 +15,8 @@ func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipeline
 	err = plover.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
 		database.Filter{
-			Namespace: namespaceId,
-			Pipeline:  pipelineId,
+			Namespace:  namespaceId,
+			Identifier: pipelineId,
 		},
 		pipelineData,
 	)
@@ -103,8 +103,8 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
-		Namespace: namespaceId,
-		Pipeline:  pipelineId,
+		Namespace:  namespaceId,
+		Identifier: pipelineId,
 	}, pipelineData)
 	return err
 }
