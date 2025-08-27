@@ -36,14 +36,14 @@ func (db *MongoStatisticsDatabase) Get(filter database.Filter) (records []any) {
 	c := d.Collection("statistics")
 
 	var mongoFilter bson.D
-	if filter.Identifier == "" {
-		mongoFilter = bson.D{{"module", filter.Namespace}}
+	if filter.Namespace == "" {
+		mongoFilter = bson.D{{"namespace", filter.Namespace}}
 	} else {
 		mongoFilter = bson.D{
 			{"$and",
 				bson.A{
-					bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}},
-					bson.D{{"cluster", bson.D{{"$eq", filter.Identifier}}}},
+					bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
+					bson.D{{"pipeline", bson.D{{"$eq", filter.Pipeline}}}},
 				},
 			},
 		}
@@ -54,8 +54,8 @@ func (db *MongoStatisticsDatabase) Get(filter database.Filter) (records []any) {
 		return records
 	}
 
-	stats := make([]Wrapper, 0)
-	err = cursor.Decode(stats)
+	var stats []Wrapper
+	err = cursor.All(context.TODO(), &stats)
 	if err != nil {
 		return records
 	}
@@ -90,7 +90,7 @@ func (db *MongoStatisticsDatabase) Delete(filter database.Filter) (err error) {
 	d := db.client.Database("flock")
 	c := d.Collection("statistics")
 
-	mongoFilter := bson.D{{"module", filter.Namespace}}
+	mongoFilter := bson.D{{"namespace", filter.Namespace}}
 	_, err = c.DeleteMany(context.TODO(), mongoFilter)
 	if err != nil {
 		return err

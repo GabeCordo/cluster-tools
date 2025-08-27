@@ -24,7 +24,7 @@ func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipeline
 	return err
 }
 
-func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statisticData *statistic.Statistics) (err error) {
+func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statisticData *plover.Statistics) (err error) {
 
 	_, err = uc.StatisticDatabase.Create(
 		database.Filter{
@@ -33,6 +33,8 @@ func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statist
 		},
 		statistic.Wrapper{ // TODO : depreciate or fix elapsed time
 			Timestamp: time.Now(),
+			Namespace: namespaceId,
+			Pipeline:  pipelineId,
 			Stats:     *statisticData, // copy TODO: maybe fix this
 		},
 	)
@@ -61,19 +63,23 @@ func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines 
 	return configs, err
 }
 
-func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []statistic.Statistics, err error) {
+func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []plover.Statistics, err error) {
 
 	results := uc.StatisticDatabase.Get(database.Filter{
 		Namespace: namespaceId,
 		Pipeline:  pipelineId,
 	})
 
-	statistics = make([]statistic.Statistics, len(results))
-	ok := true
+	statistics = make([]plover.Statistics, len(results))
+
+	var s statistic.Wrapper
+	var ok bool
 
 	for i, result := range results {
-		statistics[i], ok = result.(statistic.Statistics)
-		if !ok {
+		s, ok = result.(statistic.Wrapper)
+		if ok {
+			statistics[i] = s.Stats
+		} else {
 			errStr := fmt.Sprintf("expected type 'statistic.Statistics' in index %d", i)
 			err = errors.New(errStr)
 			break

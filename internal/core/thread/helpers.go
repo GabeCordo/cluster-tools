@@ -10,7 +10,6 @@ import (
 	"github.com/FortifiedCode/flock/internal/core/database"
 	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"github.com/FortifiedCode/flock/internal/core/database/run"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
 )
 
@@ -406,7 +405,7 @@ func StopRun(mandatory Mandatory, id uint64) error {
 	return response.Error
 }
 
-func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []statistic.Statistics, found bool) {
+func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []plover.Statistics, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -430,7 +429,12 @@ func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (en
 		return nil, false
 	}
 
-	return databaseResponse.Data.([]statistic.Statistics), true
+	statistics, ok := (databaseResponse.Data).([]plover.Statistics)
+	if !ok {
+		return nil, false
+	}
+
+	return statistics, true
 }
 
 func ShutdownCore(pipe chan<- InterruptEvent) error {
@@ -620,7 +624,9 @@ func Log(mandatory Mandatory, log *log.Log) error {
 	//return nil
 }
 
-func GetJobs(mandatory Mandatory, filter *database.Filter) ([]job.Job, error) {
+func GetJobs(mandatory Mandatory, filter *database.Filter) (jobs []*job.Job, err error) {
+
+	jobs = nil
 
 	request := Request{
 		Action: GetAction,
@@ -635,9 +641,19 @@ func GetJobs(mandatory Mandatory, filter *database.Filter) ([]job.Job, error) {
 		return nil, nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		err = nonce2.InvalidResponseReceived
+		return jobs, err
+	}
 
-	return (response.Data).([]job.Job), nil
+	jobs, ok = (response.Data).([]*job.Job)
+	if !ok {
+		err = errors.New("invalid type received")
+		return jobs, err
+	}
+
+	return jobs, err
 }
 
 func CreateJob(mandatory Mandatory, job *job.Job) error {

@@ -3,7 +3,6 @@ package database
 import (
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/plover"
 )
@@ -32,7 +31,7 @@ func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *t
 
 func (t *Thread) handleCreateStatisticRecord(request *thread.Request, response *thread.Response) {
 
-	statisticsData, ok := (request.Data).(*statistic.Statistics)
+	statisticsData, ok := (request.Data).(*plover.Statistics)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch

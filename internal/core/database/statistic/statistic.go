@@ -1,6 +1,7 @@
 package statistic
 
 import (
+	"github.com/FortifiedCode/plover"
 	"time"
 )
 
@@ -51,9 +52,11 @@ func NewStatistics(numOfFunctions, numOfPipes int) *Statistics {
 }
 
 type Wrapper struct {
-	Timestamp time.Time     `json:"timestamp"`
-	Elapsed   time.Duration `json:"elapsed"`
-	Stats     Statistics    `json:"statistics"`
+	Timestamp time.Time         `json:"timestamp"`
+	Namespace string            `json:"namespace"`
+	Pipeline  string            `json:"pipeline"`
+	Elapsed   time.Duration     `json:"elapsed"`
+	Stats     plover.Statistics `json:"statistics"`
 }
 
 type DataTimer struct {
