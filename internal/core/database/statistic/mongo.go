@@ -11,6 +11,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const DatabaseName string = "flock"
+const CollectionName string = "statistics"
+
 type MongoStatisticsDatabase struct {
 	client *mongo.Client
 }
@@ -32,8 +35,8 @@ func NewMongoStatisticsDatabase(uri string) (*MongoStatisticsDatabase, error) {
 
 func (db *MongoStatisticsDatabase) Get(filter database.Filter) (records []any) {
 
-	d := db.client.Database("flock")
-	c := d.Collection("statistics")
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
 	var mongoFilter bson.D
 	if filter.Namespace == "" {
@@ -54,7 +57,7 @@ func (db *MongoStatisticsDatabase) Get(filter database.Filter) (records []any) {
 		return records
 	}
 
-	var stats []Wrapper
+	stats := make([]*Wrapper, 0)
 	err = cursor.All(context.TODO(), &stats)
 	if err != nil {
 		return records
@@ -78,8 +81,8 @@ func (db *MongoStatisticsDatabase) Create(filter database.Filter, record any) (r
 		return result, err
 	}
 
-	d := db.client.Database("flock")
-	c := d.Collection("statistics")
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
 	_, err = c.InsertOne(context.TODO(), statistic)
 	return result, err
@@ -87,8 +90,8 @@ func (db *MongoStatisticsDatabase) Create(filter database.Filter, record any) (r
 
 func (db *MongoStatisticsDatabase) Delete(filter database.Filter) (err error) {
 
-	d := db.client.Database("flock")
-	c := d.Collection("statistics")
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
 	mongoFilter := bson.D{{"namespace", filter.Namespace}}
 	_, err = c.DeleteMany(context.TODO(), mongoFilter)

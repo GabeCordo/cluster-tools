@@ -2,6 +2,7 @@ package thread
 
 import (
 	"errors"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/plover"
 	"strconv"
 
@@ -79,13 +80,13 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 	return databaseResponse.Data.([]plover.PipelineIR), true
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p plover.PipelineIR) error {
+func StorePipelineInDatabase(mandatory Mandatory, p *pipeline.Wrapper) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Namespace: namespaceName,
+			Namespace: p.Namespace,
 			Pipeline:  p.Identifier,
 		},
 		Data:  p,
@@ -112,13 +113,13 @@ func StorePipelineInDatabase(mandatory Mandatory, namespaceName string, p plover
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, namespaceName string, p plover.PipelineIR) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, p *pipeline.Wrapper) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Namespace: namespaceName,
+			Namespace: p.Namespace,
 			Pipeline:  p.Identifier,
 		},
 		Data:  p,
@@ -243,7 +244,11 @@ func DeleteProcessor(mandatory Mandatory, cfg *processor2.Config) error {
 		return nonce2.NoResponseReceived
 	}
 
-	response := (data).(*Response)
+	response, ok := (data).(*Response)
+	if !ok {
+		return nonce2.InvalidResponseReceived
+	}
+
 	return response.Error
 }
 
@@ -263,7 +268,11 @@ func MountFunction(mandatory Mandatory, moduleName, functionName string) (succes
 		return false
 	}
 
-	provisionerResponse := (data).(*Response)
+	provisionerResponse, ok := (data).(*Response)
+	if !ok {
+		return false
+	}
+
 	return provisionerResponse.Success
 }
 
@@ -283,7 +292,11 @@ func UnmountFunction(mandatory Mandatory, moduleName, functionName string) (succ
 		return false
 	}
 
-	provisionerResponse := (data).(*Response)
+	provisionerResponse, ok := (data).(*Response)
+	if !ok {
+		return false
+	}
+
 	return provisionerResponse.Success
 }
 
@@ -303,7 +316,10 @@ func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor2
 		return nil, false
 	}
 
-	provisionerResponse := (data).(*Response)
+	provisionerResponse, ok := (data).(*Response)
+	if !ok {
+		return nil, false
+	}
 
 	if !provisionerResponse.Success {
 		return nil, false
@@ -330,7 +346,10 @@ func CreateRun(mandatory Mandatory,
 		return 0, nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return 0, nonce2.InvalidResponseReceived
+	}
 
 	id, _ := response.Data.(uint64)
 	return id, response.Error
@@ -360,7 +379,10 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 		return nil, nonce2.NoResponseReceived
 	}
 
-	response := (data).(*Response)
+	response, ok := (data).(*Response)
+	if !ok {
+		return nil, nonce2.InvalidResponseReceived
+	}
 
 	if !response.Success {
 		return nil, response.Error
@@ -401,7 +423,11 @@ func StopRun(mandatory Mandatory, id uint64) error {
 		return nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return nonce2.InvalidResponseReceived
+	}
+
 	return response.Error
 }
 
@@ -423,7 +449,10 @@ func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (en
 		return nil, false
 	}
 
-	databaseResponse := (data).(*Response)
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		return nil, false
+	}
 
 	if !databaseResponse.Success {
 		return nil, false
@@ -457,13 +486,17 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor2.ModuleD
 		return false, nil
 	}
 
-	provisionerResponse := (data).(*Response)
+	provisionerResponse, ok := (data).(*Response)
+	if !ok {
+		return false, nil
+	}
 
 	if !provisionerResponse.Success {
 		return false, nil
 	}
 
-	return true, (provisionerResponse.Data).([]processor2.ModuleData)
+	modules, success = (provisionerResponse.Data).([]processor2.ModuleData)
+	return success, modules
 }
 
 func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *plover.ModuleIR) {
@@ -499,7 +532,10 @@ func MountModule(mandatory Mandatory, moduleName string) (bool, error) {
 		return false, errors.New("did not receive a response from the processor thread")
 	}
 
-	response := (data).(*Response)
+	response, ok := (data).(*Response)
+	if !ok {
+		return false, nonce2.InvalidResponseReceived
+	}
 
 	return response.Success, response.Error
 }
@@ -520,7 +556,10 @@ func UnmountModule(mandatory Mandatory, moduleName string) (bool, error) {
 		return false, errors.New("did not receive a response from the processor thread")
 	}
 
-	response := (data).(*Response)
+	response, ok := (data).(*Response)
+	if !ok {
+		return false, nonce2.InvalidResponseReceived
+	}
 
 	return response.Success, response.Error
 }
@@ -543,7 +582,10 @@ func FetchFromCache(mandatory Mandatory, key string) (value any, found bool) {
 		return nil, false
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return nil, false
+	}
 
 	return response.Data, response.Success
 }
@@ -569,7 +611,10 @@ func StoreInCache(mandatory Mandatory, data any, expiry float64) (identifier str
 
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return "", false
+	}
 
 	cacheResponseData := (response.Data).(CacheResponseData)
 
@@ -594,7 +639,11 @@ func SwapInCache(mandatory Mandatory, key string, data any) (success bool) {
 		return false
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return false
+	}
+
 	return response.Success
 }
 
@@ -619,9 +668,12 @@ func Log(mandatory Mandatory, log *log.Log) error {
 		return nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return nonce2.InvalidResponseReceived
+	}
+
 	return response.Error
-	//return nil
 }
 
 func GetJobs(mandatory Mandatory, filter *database.Filter) (jobs []*job.Job, err error) {
@@ -671,7 +723,11 @@ func CreateJob(mandatory Mandatory, job *job.Job) error {
 		return nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return nonce2.InvalidResponseReceived
+	}
+
 	return response.Error
 }
 
@@ -690,7 +746,11 @@ func DeleteJob(mandatory Mandatory, filter *database.Filter) error {
 		return nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return nonce2.InvalidResponseReceived
+	}
+
 	return response.Error
 }
 
@@ -708,8 +768,17 @@ func JobQueue(mandatory Mandatory) ([]job.Job, error) {
 		return nil, nonce2.NoResponseReceived
 	}
 
-	response := (rsp).(*Response)
-	return (response.Data).([]job.Job), response.Error
+	response, ok := (rsp).(*Response)
+	if !ok {
+		return nil, nonce2.InvalidResponseReceived
+	}
+
+	jobs, ok := (response.Data).([]job.Job)
+	if !ok {
+		return nil, nonce2.InvalidResponseReceived
+	}
+
+	return jobs, response.Error
 }
 
 func GetSubscribers(mandatory Mandatory) ([]string, error) {

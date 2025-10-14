@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/plover"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+const DatabaseName string = "flock"
+const CollectionName string = "pipelines"
 
 type MongoConfigDatabase struct {
 	client *mongo.Client
@@ -35,13 +37,22 @@ func (db MongoConfigDatabase) Get(filter database.Filter) (records []any) {
 
 	records = make([]any, 0)
 
-	d := db.client.Database("modules")
-	c := d.Collection(filter.Namespace)
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
 	// when the identifier is empty we want to return all the configs in the database
 	var mongoFilter bson.D
-	if filter.Identifier != "" {
-		mongoFilter = bson.D{{"identifier", filter.Identifier}}
+	if (filter.Namespace != "") && (filter.Identifier != "") {
+		mongoFilter = bson.D{
+			{"$and",
+				bson.A{
+					bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
+					bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}},
+				},
+			},
+		}
+	} else if (filter.Namespace != "") && (filter.Identifier == "") {
+		mongoFilter = bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}}
 	} else {
 		mongoFilter = bson.D{}
 	}
@@ -51,7 +62,7 @@ func (db MongoConfigDatabase) Get(filter database.Filter) (records []any) {
 		return records
 	}
 
-	var stats []plover.PipelineIR
+	stats := make([]*Wrapper, 0)
 	err = cursor.All(context.TODO(), &stats)
 	if err != nil {
 		return records
@@ -66,19 +77,30 @@ func (db MongoConfigDatabase) Get(filter database.Filter) (records []any) {
 
 func (db MongoConfigDatabase) Create(filter database.Filter, record any) (r any, err error) {
 
-	cfg, ok := (record).(*plover.PipelineIR)
-	if !ok {
-		err = errors.New("expected type *plover.PipelineIR")
-		return nil, err
+	if filter.Namespace == "" {
+		err = errors.New("filter.Namespace is required")
+		return r, err
 	}
 
-	d := db.client.Database("modules")
-	c := d.Collection(filter.Namespace)
+	if filter.Identifier == "" {
+		err = errors.New("filter.Identifier is required")
+		return r, err
+	}
+
+	cfg, ok := (record).(*Wrapper)
+	if !ok {
+		err = errors.New("expected type *plover.PipelineIR")
+		return r, err
+	}
+
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
 	records := db.Get(filter)
 	numOfRecords := len(records)
 	if numOfRecords >= 1 {
-		return nil, errors.New("pipeline with the same identifier already exists in the module")
+		err = errors.New("pipeline with the same identifier already exists in the module")
+		return r, err
 	}
 
 	_, err = c.InsertOne(context.TODO(), cfg)
@@ -91,16 +113,34 @@ func (db MongoConfigDatabase) Create(filter database.Filter, record any) (r any,
 
 func (db MongoConfigDatabase) Replace(filter database.Filter, record any) (err error) {
 
-	cfg, ok := (record).(*plover.PipelineIR)
+	if filter.Namespace == "" {
+		err = errors.New("filter.Namespace is required")
+		return err
+	}
+
+	if filter.Identifier == "" {
+		err = errors.New("filter.Identifier is required")
+		return err
+	}
+
+	cfg, ok := (record).(*Wrapper)
 	if !ok {
 		err = errors.New("expected type *plover.PipelineIR")
 		return err
 	}
 
-	d := db.client.Database("modules")
-	c := d.Collection(filter.Namespace)
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
-	mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
+	mongoFilter := bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
+				bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}},
+			},
+		},
+	}
+
 	result, err := c.ReplaceOne(context.TODO(), mongoFilter, cfg)
 	if err != nil {
 		return err
@@ -115,10 +155,28 @@ func (db MongoConfigDatabase) Replace(filter database.Filter, record any) (err e
 
 func (db MongoConfigDatabase) Delete(filter database.Filter) (err error) {
 
-	d := db.client.Database("modules")
-	c := d.Collection(filter.Namespace)
+	if filter.Namespace == "" {
+		err = errors.New("filter.Namespace is required")
+		return err
+	}
 
-	mongoFilter := bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
+	if filter.Identifier == "" {
+		err = errors.New("filter.Identifier is required")
+		return err
+	}
+
+	d := db.client.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
+	mongoFilter := bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
+				bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}},
+			},
+		},
+	}
+
 	result, err := c.DeleteOne(context.TODO(), mongoFilter)
 	if err != nil {
 		return err

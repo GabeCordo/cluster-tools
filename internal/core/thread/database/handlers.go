@@ -3,20 +3,21 @@ package database
 import (
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/plover"
 )
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	configData, ok := (request.Data).(plover.PipelineIR)
+	configData, ok := (request.Data).(*pipeline.Wrapper)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
 		return
 	}
 
-	err := t.useCases.CreatePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, &configData)
+	err := t.useCases.CreatePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, configData)
 	if err != nil {
 		response.Success = false
 		response.Error = errors.New("failed to create pipeline record")
@@ -109,14 +110,14 @@ func (t *Thread) handleDeleteStatisticRecord(request *thread.Request, response *
 
 func (t *Thread) handleUpdatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	cfg, ok := (request.Data).(plover.PipelineIR)
+	cfg, ok := (request.Data).(*pipeline.Wrapper)
 	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType
 		return
 	}
 
-	err := t.useCases.ReplacePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, &cfg)
+	err := t.useCases.ReplacePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, cfg)
 
 	if err == nil {
 		t.useCases.PipelineDatabase.Print()

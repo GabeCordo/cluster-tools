@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/plover"
 	"log"
 	"time"
 )
 
-func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
+func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Wrapper) (err error) {
 
 	err = plover.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
@@ -51,10 +52,13 @@ func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines 
 	configs := make([]plover.PipelineIR, len(results))
 	ok := true
 
+	var w *pipeline.Wrapper
 	for i, result := range results {
-		configs[i], ok = result.(plover.PipelineIR)
-		if !ok {
-			errStr := fmt.Sprintf("expected type 'pipeline.Pipeline' in index %d", i)
+		w, ok = result.(*pipeline.Wrapper)
+		if ok {
+			configs[i] = w.Pipeline // todo: this is a copy instruction, is there a more efficient way?
+		} else {
+			errStr := fmt.Sprintf("expected type '*pipeline.Wrapper' in index %d", i)
 			err = errors.New(errStr)
 			break
 		}
@@ -72,11 +76,11 @@ func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistic
 
 	statistics = make([]plover.Statistics, len(results))
 
-	var s statistic.Wrapper
+	var s *statistic.Wrapper
 	var ok bool
 
 	for i, result := range results {
-		s, ok = result.(statistic.Wrapper)
+		s, ok = result.(*statistic.Wrapper)
 		if ok {
 			statistics[i] = s.Stats
 		} else {
@@ -106,7 +110,7 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 	return err
 }
 
-func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
+func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Wrapper) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
 		Namespace:  namespaceId,

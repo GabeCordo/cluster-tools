@@ -99,7 +99,7 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	clusterStatistic := &statistic.Statistics{}
+	clusterStatistic := &plover.Statistics{}
 
 	request := thread.Request{
 		Action: thread.CreateAction,
@@ -124,7 +124,7 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	clusterStatistic := &statistic.Statistics{}
+	clusterStatistic := &plover.Statistics{}
 
 	request := &thread.Request{
 		Action: thread.CreateAction,
@@ -205,9 +205,9 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	stat := &statistic.Statistics{}
-	stat.Functions = make([]statistic.FunctionStatistic, 3)
-	stat.Pipes = make([]statistic.PipeStatistic, 2)
+	stat := &plover.Statistics{}
+	stat.Functions = make([]plover.FunctionStatistic, 3)
+	stat.Pipes = make([]plover.PipeStatistic, 2)
 	stat.Functions[0].Provisions = 5
 
 	n := "test_namespace"
@@ -236,7 +236,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 		return
 	}
 
-	fetchedClusterStats, ok := (response.Data).([]statistic.Statistics)
+	fetchedClusterStats, ok := (response.Data).([]plover.Statistics)
 	if !ok {
 		t.Error("expected fetched record to be of type []database.Statistic")
 		return
@@ -311,9 +311,9 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterStat := &statistic.Statistics{}
-	clusterStat.Functions = make([]statistic.FunctionStatistic, 3)
-	clusterStat.Pipes = make([]statistic.PipeStatistic, 2)
+	clusterStat := &plover.Statistics{}
+	clusterStat.Functions = make([]plover.FunctionStatistic, 3)
+	clusterStat.Pipes = make([]plover.PipeStatistic, 2)
 	clusterStat.Functions[2].Provisions = 5
 
 	in <- &thread.Request{

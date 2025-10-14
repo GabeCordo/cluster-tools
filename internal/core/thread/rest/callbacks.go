@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/plover"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -389,18 +389,64 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
-	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	if r.Method == "GET" {
+		t.getPipelineCallback(w, r)
+	} else if r.Method == "POST" {
+		t.postPipelineCallback(w, r)
+	} else if r.Method == "PUT" {
+		t.putPipelineCallback(w, r)
+	} else if r.Method == "DELETE" {
+		t.deletePipelineCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 
-	request := &plover.PipelineIR{}
-	err := json.NewDecoder(r.Body).Decode(request)
-	if (r.Method != "GET") && (r.Method != "DELETE") && (err != nil) {
+}
+
+func (t *Thread) getPipelineCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	mapping, foundMapping := urlMapping["namespace"]
+
+	var namespaceId string
+	if foundMapping {
+		namespaceId = mapping[0]
+	} else {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	/* the module always needs to be included */
-	namespaceName, foundNamespaceName := urlMapping["namespace"]
-	if !foundNamespaceName {
+	mapping, foundMapping = urlMapping["pipeline"]
+
+	var pipelineId string
+	if foundMapping {
+		pipelineId = mapping[0]
+	} else {
+		pipelineId = ""
+	}
+
+	mandatory := thread.Mandatory{
+		Pipe:          t.channels.c1,
+		ResponseTable: t.DatabaseResponseTable,
+		NoncePool:     t.noncePool,
+		Timeout:       t.config.Timeout,
+	}
+
+	if cfg, found := thread.GetPipelineFromDatabase(mandatory, namespaceId, pipelineId); found {
+		bytes, _ := json.Marshal(cfg)
+		if _, err := w.Write(bytes); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+func (t *Thread) postPipelineCallback(w http.ResponseWriter, r *http.Request) {
+
+	request := new(pipeline.Wrapper)
+	err := json.NewDecoder(r.Body).Decode(request)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -412,57 +458,66 @@ func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 		Timeout:       t.config.Timeout,
 	}
 
-	if r.Method == "GET" {
+	err = thread.StorePipelineInDatabase(mandatory, request)
+	if err != nil {
+		w.WriteHeader(http.StatusConflict)
+	}
+}
 
-		clusterName, foundClusterName := urlMapping["pipeline"]
+func (t *Thread) putPipelineCallback(w http.ResponseWriter, r *http.Request) {
 
-		if foundClusterName {
-			if cfg, found := thread.GetPipelineFromDatabase(mandatory, namespaceName[0], clusterName[0]); found {
-				bytes, _ := json.Marshal(cfg)
-				if _, err := w.Write(bytes); err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-				}
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		} else {
-			if configs, found := thread.GetPipelinesFromDatabase(mandatory, namespaceName[0]); found {
-				bytes, _ := json.Marshal(configs)
-				if _, err := w.Write(bytes); err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-				}
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		}
-
-	} else if r.Method == "POST" {
-
-		err := thread.StorePipelineInDatabase(mandatory, namespaceName[0], *request)
-		if err != nil {
-			w.WriteHeader(http.StatusConflict)
-		}
-
-	} else if r.Method == "PUT" {
-		isOk := thread.ReplacePipelineInDatabase(mandatory, namespaceName[0], *request)
-		if !isOk {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	} else if r.Method == "DELETE" {
-
-		configName, foundConfigName := urlMapping["pipeline"]
-
-		if foundConfigName {
-			if isOk := thread.DeletePipelineInDatabase(mandatory, namespaceName[0], configName[0]); !isOk {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-	} else {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	request := new(pipeline.Wrapper)
+	err := json.NewDecoder(r.Body).Decode(request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
+	mandatory := thread.Mandatory{
+		Pipe:          t.channels.c1,
+		ResponseTable: t.DatabaseResponseTable,
+		NoncePool:     t.noncePool,
+		Timeout:       t.config.Timeout,
+	}
+
+	isOk := thread.ReplacePipelineInDatabase(mandatory, request)
+	if !isOk {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (t *Thread) deletePipelineCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	mapping, foundMapping := urlMapping["namespace"]
+
+	var namespaceId string
+	if foundMapping {
+		namespaceId = mapping[0]
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	mapping, foundMapping = urlMapping["pipeline"]
+
+	var pipelineId string
+	if foundMapping {
+		pipelineId = mapping[0]
+	} else {
+		pipelineId = ""
+	}
+
+	mandatory := thread.Mandatory{
+		Pipe:          t.channels.c1,
+		ResponseTable: t.DatabaseResponseTable,
+		NoncePool:     t.noncePool,
+		Timeout:       t.config.Timeout,
+	}
+
+	if isOk := thread.DeletePipelineInDatabase(mandatory, namespaceId, pipelineId); !isOk {
+		w.WriteHeader(http.StatusNotFound)
+	}
 }
 
 func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
