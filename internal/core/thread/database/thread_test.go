@@ -48,13 +48,21 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	clusterConfig := plover.PipelineIR{}
+	p := &pipeline.Wrapper{
+		Namespace:  "common",
+		Identifier: "foo",
+		Pipeline:   plover.PipelineIR{},
+	}
 
 	request := &thread.Request{
 		Action: thread.CreateAction,
 		Type:   thread.PipelineRecord,
-		Data:   clusterConfig,
-		Nonce:  1,
+		Identifiers: thread.RequestIdentifiers{
+			Namespace: "common",
+			Pipeline:  "foo",
+		},
+		Data:  p,
+		Nonce: 1,
 	}
 	in <- request
 
@@ -153,10 +161,16 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	pipelineRecord := plover.PipelineIR{Identifier: "test_pipeline"}
-
 	n := "test_namespace"
 	p := "test_pipeline"
+
+	pipelineRecord := &pipeline.Wrapper{
+		Namespace:  n,
+		Identifier: p,
+		Pipeline: plover.PipelineIR{
+			Identifier: p,
+		},
+	}
 
 	in <- &thread.Request{
 		Action:      thread.CreateAction,

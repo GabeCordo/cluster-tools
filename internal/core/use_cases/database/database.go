@@ -13,7 +13,7 @@ import (
 
 func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Wrapper) (err error) {
 
-	err = plover.CleanupIR(pipelineData)
+	err = plover.CleanupIR(&pipelineData.Pipeline)
 	_, err = uc.PipelineDatabase.Create(
 		database.Filter{
 			Namespace:  namespaceId,
@@ -76,13 +76,13 @@ func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistic
 
 	statistics = make([]plover.Statistics, len(results))
 
-	var s *statistic.Wrapper
+	var s plover.Statistics
 	var ok bool
 
 	for i, result := range results {
-		s, ok = result.(*statistic.Wrapper)
+		s, ok = result.(plover.Statistics)
 		if ok {
-			statistics[i] = s.Stats
+			statistics[i] = s
 		} else {
 			errStr := fmt.Sprintf("expected type 'statistic.Statistics' in index %d", i)
 			err = errors.New(errStr)

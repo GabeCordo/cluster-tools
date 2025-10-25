@@ -2,11 +2,10 @@ package duplex
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/plover"
 	"reflect"
 	"sync"
 	"time"
-
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 )
 
 type BadManagedChannelType struct {
@@ -55,7 +54,7 @@ type ManagedChannel struct {
 	Size   int
 	Config ManagedChannelConfig
 
-	Statistics     *statistic.TimingStatistics
+	Statistics     *plover.PipeStatistic
 	TotalProcessed int
 
 	channel chan Wrapper
@@ -73,7 +72,7 @@ type ManagedChannel struct {
 	wg sync.WaitGroup
 }
 
-func New(name string, threshold int, growth float64, stats *statistic.TimingStatistics) *ManagedChannel {
+func New(name string, threshold int, growth float64, stats *plover.PipeStatistic) *ManagedChannel {
 	mc := new(ManagedChannel)
 
 	mc.Name = name
@@ -167,18 +166,18 @@ func (mc *ManagedChannel) DataPopped(timeIntoQueue time.Time) {
 	timeOutOfQueue := time.Now()
 	totalTimeInQueue := timeOutOfQueue.Sub(timeIntoQueue)
 
-	if mc.Statistics.AverageTime != 0 {
-		if totalTimeInQueue > mc.Statistics.MaxTimeBeforePop {
-			mc.Statistics.MaxTimeBeforePop = totalTimeInQueue
-		} else if totalTimeInQueue < mc.Statistics.MinTimeBeforePop {
-			mc.Statistics.MinTimeBeforePop = totalTimeInQueue
+	if mc.Statistics.Timing.AverageTime != 0 {
+		if totalTimeInQueue > mc.Statistics.Timing.MaxTimeBeforePop {
+			mc.Statistics.Timing.MaxTimeBeforePop = totalTimeInQueue
+		} else if totalTimeInQueue < mc.Statistics.Timing.MinTimeBeforePop {
+			mc.Statistics.Timing.MinTimeBeforePop = totalTimeInQueue
 		}
-		mc.Statistics.AverageTime += totalTimeInQueue / 2
+		mc.Statistics.Timing.AverageTime += totalTimeInQueue / 2
 	} else {
-		mc.Statistics.AverageTime = totalTimeInQueue
-		mc.Statistics.MedianTime = 0 // TODO: support
-		mc.Statistics.MaxTimeBeforePop = totalTimeInQueue
-		mc.Statistics.MinTimeBeforePop = totalTimeInQueue
+		mc.Statistics.Timing.AverageTime = totalTimeInQueue
+		mc.Statistics.Timing.MedianTime = 0 // TODO: support
+		mc.Statistics.Timing.MaxTimeBeforePop = totalTimeInQueue
+		mc.Statistics.Timing.MinTimeBeforePop = totalTimeInQueue
 	}
 
 	mc.Size--
