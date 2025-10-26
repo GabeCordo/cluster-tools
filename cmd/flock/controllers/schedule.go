@@ -40,7 +40,10 @@ func (controller ScheduleController) ParseTime(input string) int {
 func (controller ScheduleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	// PARSE THE INCOMING CLI ARGUMENTS
-	jb := job.Job{}
+	jb := new(job.Job)
+	if jb == nil {
+		panic("failed to allocate memory for job.Job")
+	}
 
 	// the Identifier field is required by both the CREATE and DELETE flags
 	jb.Identifier = cli.NextArg()
@@ -99,7 +102,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 	if cli.Flag(commandline.Create) {
 
 		if dump.Jobs == nil {
-			dump.Jobs = make([]job.Job, 0)
+			dump.Jobs = make([]*job.Job, 0)
 		}
 		dump.Jobs = append(dump.Jobs, jb)
 
@@ -118,7 +121,7 @@ func (controller ScheduleController) Run(cli *commandline.CommandLine) commandli
 
 	} else {
 
-		modifiedJobsList := make([]job.Job, 0)
+		modifiedJobsList := make([]*job.Job, 0)
 		for _, j := range dump.Jobs {
 			if j.Identifier != jb.Identifier {
 				modifiedJobsList = append(modifiedJobsList, j)

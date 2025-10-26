@@ -4,11 +4,19 @@ import (
 	"fmt"
 	"github.com/FortifiedCode/commandline"
 	"github.com/FortifiedCode/flock/internal/core"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"log"
 	"os"
 )
 
 type StartCommand struct {
+}
+
+func (sc StartCommand) banner() {
+	fmt.Println("   __ _            _    \n  / _| | ___   ___| | __\n | |_| |/ _ \\ / __| |/ /\n |  _| | (_) | (__|   < \n |_| |_|\\___/ \\___|_|\\_\\")
+	fmt.Println("[+] " + terminal.Purple + "The Distributed Service Framework " + terminal.Reset)
+	fmt.Println("[+]" + terminal.Purple + " by Gabriel Cordovado 2022-25" + terminal.Reset)
+	fmt.Println()
 }
 
 func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
@@ -20,10 +28,18 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 		return commandline.Terminate
 	}
 
+	sc.banner()
+
+	terminal.HorizontalBar()
+	fmt.Println("Setting up dependencies...")
+
 	c, err := core.New(DefaultCoreConfigFile)
 	if err != nil {
 		log.Panic(err.Error())
 	}
+
+	terminal.HorizontalBar()
+	fmt.Println("Launching the threads...")
 
 	c.Run()
 

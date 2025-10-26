@@ -27,7 +27,7 @@ func (uc UseCases) AddModule(processorId uint64, cfg *plover.ModuleIR) error {
 	// this pipeline should be used as the de-facto pipeline unless another is specified by the operator
 	// -> send the pipeline for storage in the database t
 	//for _, export := range cfg.Exports {
-	//	if export.Pipeline.Mode == pipeline.Stream {
+	//	if export.Data.Mode == pipeline.Stream {
 	//		t.c13 <- thread.Request{
 	//			Action: thread.CreateAction,
 	//			Type:   thread.SupervisorRecord,
@@ -35,7 +35,7 @@ func (uc UseCases) AddModule(processorId uint64, cfg *plover.ModuleIR) error {
 	//				Processor: processorName,
 	//				Namespace:    cfg.Name,
 	//				Function:   export.Function,
-	//				Pipeline:    export.Function,
+	//				Data:    export.Function,
 	//			},
 	//			Caller: thread.System,
 	//			Data:   make(map[string]string),

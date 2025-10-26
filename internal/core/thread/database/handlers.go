@@ -10,7 +10,7 @@ import (
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	configData, ok := (request.Data).(*pipeline.Wrapper)
+	configData, ok := (request.Data).(*plover.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
@@ -110,7 +110,7 @@ func (t *Thread) handleDeleteStatisticRecord(request *thread.Request, response *
 
 func (t *Thread) handleUpdatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	cfg, ok := (request.Data).(*pipeline.Wrapper)
+	cfg, ok := (request.Data).(*pipeline.Pipeline)
 	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType

@@ -24,7 +24,8 @@ func NewLocalDatabase() *LocalDatabase {
 	return registry
 }
 
-func (database *LocalDatabase) Get(filter database.Filter) []any {
+// Get returns a list of *plover.PipelineIR records from the run.LocalDatabase.
+func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
 
 	supervisors := make([]any, 0)
 
@@ -33,13 +34,13 @@ func (database *LocalDatabase) Get(filter database.Filter) []any {
 		return supervisors
 	}
 
-	database.mutex.RLock()
-	defer database.mutex.RUnlock()
+	localDatabase.mutex.RLock()
+	defer localDatabase.mutex.RUnlock()
 
 	// if an id is provided we ignore the module and cluster
 	if id != 0 {
 
-		if s, found := database.runs[id]; found {
+		if s, found := localDatabase.runs[id]; found {
 			supervisors = append(supervisors, s)
 		}
 
@@ -49,7 +50,7 @@ func (database *LocalDatabase) Get(filter database.Filter) []any {
 	usePipeline := filter.UsePipeline()
 	useModule := filter.UseNamespace()
 
-	for _, s := range database.runs {
+	for _, s := range localDatabase.runs {
 
 		if usePipeline && (s.Pipeline.Identifier == filter.Pipeline) && (s.Namespace == filter.Namespace) {
 			supervisors = append(supervisors, s)
@@ -63,12 +64,13 @@ func (database *LocalDatabase) Get(filter database.Filter) []any {
 	return supervisors
 }
 
-func (database *LocalDatabase) Create(filter database.Filter, record any) (any, error) {
+// Create adds a *plover.PipelineIR record to the run.LocalDatabase.
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record any) (any, error) {
 
-	database.mutex.Lock()
-	defer database.mutex.Unlock()
+	localDatabase.mutex.Lock()
+	defer localDatabase.mutex.Unlock()
 
-	identifier := database.counter
+	identifier := localDatabase.counter
 
 	// todo : hack for now
 	cfg, ok := record.(*plover.PipelineIR)
@@ -78,34 +80,43 @@ func (database *LocalDatabase) Create(filter database.Filter, record any) (any, 
 
 	// todo: get this out of here, pass the pointer rather than create it here!
 	s := New(identifier, filter.Processor, filter.Namespace, cfg)
-	database.runs[identifier] = s
+	localDatabase.runs[identifier] = s
 
-	database.counter++
+	localDatabase.counter++
 
 	return identifier, nil
 }
 
-func (database *LocalDatabase) Replace(filter database.Filter, record any) error {
+// Replace is not implemented for the run.LocalDatabase struct.
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record any) (err error) {
 
-	panic("not implemented")
+	err = database.NotImplemented
+	return err
 }
 
-func (database *LocalDatabase) Delete(filter database.Filter) error {
+// Delete is not implemented for the run.LocalDatabase struct.
+func (localDatabase *LocalDatabase) Delete(filter database.Filter) (err error) {
 
-	panic("not implemented")
+	err = database.NotImplemented
+	return err
 }
 
-func (database *LocalDatabase) Save(path string) error {
+// Save is not implemented for the run.LocalDatabase struct.
+func (localDatabase *LocalDatabase) Save(path string) (err error) {
 
-	panic("not implemented")
+	err = database.NotImplemented
+	return err
 }
 
-func (database *LocalDatabase) Load(path string) error {
+// Load is not implemented for the run.LocalDatabase struct.
+func (localDatabase *LocalDatabase) Load(path string) (err error) {
 
-	panic("not implemented")
+	err = database.NotImplemented
+	return err
 }
 
-func (database *LocalDatabase) Print() {
+// Print is not implemented for the run.LocalDatabase struct.
+func (localDatabase *LocalDatabase) Print() {
 
-	panic("not implemented")
+	// nop
 }

@@ -14,31 +14,29 @@ import (
 
 const defaultFilePerm = 0600
 
-type LocalJobDatabase struct {
-	jobs  []Job
+type LocalDatabase struct {
+	jobs  []*Job
 	mutex sync.RWMutex
 }
 
-func NewLocalJobDatabase() *LocalJobDatabase {
-	j := new(LocalJobDatabase)
-	j.jobs = make([]Job, 0)
+func NewLocalJobDatabase() *LocalDatabase {
+	j := new(LocalDatabase)
+	j.jobs = make([]*Job, 0)
 	return j
 }
 
-// Initialize
-// Copy the contents of a scheduler dump into the scheduler memory.
-func (database *LocalJobDatabase) Initialize(dump *Dump) error {
+// Initialize copies the contents of a scheduler dump into the scheduler memory.
+func (localDatabase *LocalDatabase) Initialize(dump Dump) error {
 
 	for _, job := range dump.Jobs {
-		database.jobs = append(database.jobs, job)
+		localDatabase.jobs = append(localDatabase.jobs, job)
 	}
 
 	return nil
 }
 
-// Load
-// Loads a set of static jobs defined in a yaml file into runtime.
-func (database *LocalJobDatabase) Load(path string) error {
+// Load moves Job records from disk to the job.LocalDatabase.
+func (localDatabase *LocalDatabase) Load(path string) error {
 
 	// if the path does not exist, or the path does and is not a directory, stop
 	// we are looking for a folder that has yaml files with jobs
@@ -60,12 +58,12 @@ func (database *LocalJobDatabase) Load(path string) error {
 			return err
 		}
 
-		dump := &Dump{}
-		if err = yaml.Unmarshal(b, dump); err != nil {
+		dump := Dump{}
+		if err = yaml.Unmarshal(b, &dump); err != nil {
 			return err
 		}
 
-		if err = database.Initialize(dump); err != nil {
+		if err = localDatabase.Initialize(dump); err != nil {
 			return err
 		}
 
@@ -76,9 +74,8 @@ func (database *LocalJobDatabase) Load(path string) error {
 	return err
 }
 
-// Save
-// Move all jobs in the scheduler into files seperated by their modules.
-func (database *LocalJobDatabase) Save(path string) error {
+// Save moves Job records from job.LocalDatabase to the disk.
+func (localDatabase *LocalDatabase) Save(path string) error {
 
 	if fInfo, err := os.Stat(path); os.IsNotExist(err) || (os.IsExist(err) && !fInfo.IsDir()) {
 		output := fmt.Sprintf("%s is not a valid path to a directory", path)
@@ -96,12 +93,12 @@ func (database *LocalJobDatabase) Save(path string) error {
 		return err
 	}
 
-	moduleSeperatedJobs := make(map[string][]Job)
+	moduleSeperatedJobs := make(map[string][]*Job)
 
 	// order all the jobs by the module they belong to
-	for _, job := range database.jobs {
+	for _, job := range localDatabase.jobs {
 		if _, found := moduleSeperatedJobs[job.Namespace]; !found {
-			moduleSeperatedJobs[job.Namespace] = make([]Job, 0)
+			moduleSeperatedJobs[job.Namespace] = make([]*Job, 0)
 		}
 		moduleSeperatedJobs[job.Namespace] = append(moduleSeperatedJobs[job.Namespace], job)
 	}
@@ -126,15 +123,16 @@ func (database *LocalJobDatabase) Save(path string) error {
 	return nil
 }
 
-func (database *LocalJobDatabase) Get(filter database.Filter) []any {
+// Get retrieves a Job record from the job.LocalDatabase.
+func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
 
 	jobs := make([]any, 0)
 
-	database.mutex.RLock()
-	defer database.mutex.RUnlock()
+	localDatabase.mutex.RLock()
+	defer localDatabase.mutex.RUnlock()
 
 	if filter.IsEmpty() {
-		for _, job := range database.jobs {
+		for _, job := range localDatabase.jobs {
 			jobs = append(jobs, job)
 		}
 		return jobs
@@ -145,7 +143,7 @@ func (database *LocalJobDatabase) Get(filter database.Filter) []any {
 	useCluster := filter.UsePipeline()
 	useInterval := filter.UseInterval()
 
-	for _, job := range database.jobs {
+	for _, job := range localDatabase.jobs {
 
 		moduleMatch := job.Namespace == filter.Namespace
 		clusterMatch := job.Pipeline == filter.Pipeline
@@ -164,7 +162,8 @@ func (database *LocalJobDatabase) Get(filter database.Filter) []any {
 	return jobs
 }
 
-func (database *LocalJobDatabase) Create(filter database.Filter, record any) (any, error) {
+// Create adds a *Job record to the job.LocalDatabase.
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record any) (any, error) {
 
 	job, ok := record.(*Job)
 	if !ok {
@@ -174,11 +173,11 @@ func (database *LocalJobDatabase) Create(filter database.Filter, record any) (an
 	// only create a read lock for the duration we are validating
 	// no other equivalent job exists within the scheduler as to
 	// no interrupt parallel read tasks
-	database.mutex.RLock()
+	localDatabase.mutex.RLock()
 
 	found := false
 
-	for _, jobInstance := range database.jobs {
+	for _, jobInstance := range localDatabase.jobs {
 		if jobInstance.Equals(job) {
 			found = true
 			break
@@ -186,55 +185,60 @@ func (database *LocalJobDatabase) Create(filter database.Filter, record any) (an
 	}
 
 	if found {
-		database.mutex.RUnlock()
+		localDatabase.mutex.RUnlock()
 		return nil, errors.New("identical job already exists")
 	}
 
-	database.mutex.RUnlock()
+	localDatabase.mutex.RUnlock()
 
 	// we need to modify the jobs list, so NOW risk interrupting
 	// other thread attempting to use the job list
-	database.mutex.Lock()
-	defer database.mutex.Unlock()
+	localDatabase.mutex.Lock()
+	defer localDatabase.mutex.Unlock()
 
-	database.jobs = append(database.jobs, *job) // create an owning copy
+	localDatabase.jobs = append(localDatabase.jobs, job)
 	return job.Identifier, nil
 }
 
-func (database *LocalJobDatabase) Delete(filter database.Filter) error {
+// Delete removes a *Job from the job.LocalDatabase.
+func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 
-	database.mutex.Lock()
-	defer database.mutex.Unlock()
+	localDatabase.mutex.Lock()
+	defer localDatabase.mutex.Unlock()
 
 	useId := filter.UseIdentifier()
 	useModule := filter.UseNamespace()
 	useCluster := filter.UsePipeline()
 	useInterval := filter.UseInterval()
 
-	for idx, jobInstance := range database.jobs {
+	for idx, jobInstance := range localDatabase.jobs {
 
 		moduleSame := jobInstance.Namespace == filter.Namespace
 		clusterSame := jobInstance.Pipeline == filter.Pipeline
 		intervalSame := jobInstance.Interval.Equals(&filter.Interval)
 
 		if useId && (jobInstance.Identifier == filter.Identifier) {
-			database.jobs = append(database.jobs[:idx], database.jobs[idx+1:]...)
+			localDatabase.jobs = append(localDatabase.jobs[:idx], localDatabase.jobs[idx+1:]...)
 			break
 		} else if (useModule && moduleSame) || (useCluster && moduleSame && clusterSame) || (useInterval && moduleSame && clusterSame && intervalSame) {
-			database.jobs = append(database.jobs[:idx], database.jobs[idx+1:]...)
+			localDatabase.jobs = append(localDatabase.jobs[:idx], localDatabase.jobs[idx+1:]...)
 		}
 	}
 
 	return nil
 }
 
-func (database *LocalJobDatabase) Replace(filter database.Filter, record any) error {
-	panic("not implemented")
+// Replace is not implemented for the job.LocalDatabase.
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record any) (err error) {
+
+	err = database.NotImplemented
+	return err
 }
 
-func (database *LocalJobDatabase) Print() {
+// Print outputs the *Job records in the job.LocalDatabase to the console.
+func (localDatabase *LocalDatabase) Print() {
 
-	for _, job := range database.jobs {
+	for _, job := range localDatabase.jobs {
 		fmt.Printf("├─ %s\n", job.ToString())
 	}
 }

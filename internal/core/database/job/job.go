@@ -10,7 +10,7 @@ import (
 // Dump
 // A static representation of the jobs in the scheduler
 type Dump struct {
-	Jobs []Job `yaml:"jobs"`
+	Jobs []*Job `yaml:"jobs"`
 }
 
 // Job

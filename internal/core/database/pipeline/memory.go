@@ -15,21 +15,22 @@ import (
 	"github.com/FortifiedCode/flock/internal/core/database"
 )
 
-type LocalPipelineDatabase struct {
-	records map[string]map[string]plover.PipelineIR
+type LocalDatabase struct {
+	records map[string]map[string]*plover.PipelineIR
 
 	mutex sync.RWMutex
 }
 
-func NewLocalPipelineDatabase() *LocalPipelineDatabase {
+func NewLocalPipelineDatabase() *LocalDatabase {
 
-	db := new(LocalPipelineDatabase)
-	db.records = make(map[string]map[string]plover.PipelineIR)
+	localDatabase := new(LocalDatabase)
+	localDatabase.records = make(map[string]map[string]*plover.PipelineIR)
 
-	return db
+	return localDatabase
 }
 
-func (db *LocalPipelineDatabase) Save(path string) error {
+// Save writes records from the pipeline.LocalDatabase to disk.
+func (localDatabase *LocalDatabase) Save(path string) error {
 
 	path = filepath.Clean(path)
 
@@ -37,8 +38,8 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 		return errors.New("path doesn't exist or isn't a directory")
 	}
 
-	db.mutex.RLock()
-	defer db.mutex.RUnlock()
+	localDatabase.mutex.RLock()
+	defer localDatabase.mutex.RUnlock()
 
 	err := filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -61,7 +62,7 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 		return err
 	}
 
-	for moduleId, configs := range db.records {
+	for moduleId, configs := range localDatabase.records {
 		modulePath := filepath.Join(path, moduleId)
 
 		if _, err := os.Stat(modulePath); err == nil {
@@ -103,7 +104,8 @@ func (db *LocalPipelineDatabase) Save(path string) error {
 	return nil
 }
 
-func (db *LocalPipelineDatabase) Load(path string) error {
+// Load reads records from the local disk to pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Load(path string) error {
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New("path doesn't exist or isn't a directory")
@@ -153,22 +155,18 @@ func (db *LocalPipelineDatabase) Load(path string) error {
 			return err
 		}
 
-		_, err = db.Create(database.Filter{Namespace: moduleIdentifier, Pipeline: cfg.Identifier}, cfg)
+		_, err = localDatabase.Create(database.Filter{Namespace: moduleIdentifier, Pipeline: cfg.Identifier}, cfg)
 		return err
 	})
 
 	return err
 }
 
-type ConfigFilter struct {
-	Module     string
-	Identifier string
-}
+// Get retrieves a *plover.PipelineIR record from the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
 
-func (db *LocalPipelineDatabase) Get(filter database.Filter) []any {
-
-	db.mutex.RLock()
-	defer db.mutex.RUnlock()
+	localDatabase.mutex.RLock()
+	defer localDatabase.mutex.RUnlock()
 
 	results := make([]any, 0)
 
@@ -176,17 +174,18 @@ func (db *LocalPipelineDatabase) Get(filter database.Filter) []any {
 		return results
 	}
 
-	module, found := db.records[filter.Namespace]
+	module, found := localDatabase.records[filter.Namespace]
 	if !found {
 		return results
 	}
 
+	var pipeline *plover.PipelineIR
 	if filter.Identifier != "" {
-		cnf, found := module[filter.Identifier]
+		pipeline, found = module[filter.Identifier]
 		if !found {
 			return results
 		}
-		results = append(results, cnf)
+		results = append(results, pipeline)
 	} else {
 		for _, cfg := range module {
 			results = append(results, cfg)
@@ -196,27 +195,28 @@ func (db *LocalPipelineDatabase) Get(filter database.Filter) []any {
 	return results
 }
 
-func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any, error) {
+// Create adds a new *plover.PipelineIR record to the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record any) (any, error) {
 
-	cfg, ok := record.(*plover.PipelineIR)
+	pipelineRecord, ok := record.(*plover.PipelineIR)
 	if !ok {
-		return nil, errors.New("LocalPipelineDatabase expected *pipeline type")
+		return nil, errors.New("LocalDatabase expected *pipeline type")
 	}
 
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
+	localDatabase.mutex.Lock()
+	defer localDatabase.mutex.Unlock()
 
-	module, found := db.records[filter.Namespace]
+	module, found := localDatabase.records[filter.Namespace]
 
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]plover.PipelineIR)
-		db.records[filter.Namespace] = idToCfgMap
+		idToCfgMap := make(map[string]*plover.PipelineIR)
+		localDatabase.records[filter.Namespace] = idToCfgMap
 		module = idToCfgMap
 	}
 
-	_, found = module[cfg.Identifier]
+	_, found = module[pipelineRecord.Identifier]
 
 	// if the pipeline identifier already exists, we shouldn't be overwriting it
 	// otherwise that can create unintended data side effects
@@ -224,39 +224,41 @@ func (db *LocalPipelineDatabase) Create(filter database.Filter, record any) (any
 		return nil, errors.New("pipeline with this identifier already exists in this module")
 	}
 
-	db.records[filter.Namespace][cfg.Identifier] = *cfg // copy
-	return cfg.Identifier, nil
+	localDatabase.records[filter.Namespace][pipelineRecord.Identifier] = pipelineRecord
+	return pipelineRecord.Identifier, nil
 }
 
-func (db *LocalPipelineDatabase) Replace(filter database.Filter, record any) error {
+// Replace swaps a *plover.PipelineIR with an existing record in the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record any) error {
 
 	cfg, ok := record.(*plover.PipelineIR)
 	if !ok {
-		return errors.New("LocalPipelineDatabase expected *pipeline type")
+		return errors.New("LocalDatabase expected *pipeline type")
 	}
 
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
+	localDatabase.mutex.Lock()
+	defer localDatabase.mutex.Unlock()
 
-	_, found := db.records[filter.Namespace]
+	_, found := localDatabase.records[filter.Namespace]
 
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]plover.PipelineIR)
-		db.records[filter.Namespace] = idToCfgMap
+		idToCfgMap := make(map[string]*plover.PipelineIR)
+		localDatabase.records[filter.Namespace] = idToCfgMap
 	}
 
-	db.records[filter.Namespace][cfg.Identifier] = *cfg
+	localDatabase.records[filter.Namespace][cfg.Identifier] = cfg
 	return nil
 }
 
-func (db *LocalPipelineDatabase) Delete(filter database.Filter) error {
+// Delete removes a *plover.PipelineIR from the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
+	localDatabase.mutex.Lock()
+	defer localDatabase.mutex.Unlock()
 
-	configMap, found := db.records[filter.Namespace]
+	configMap, found := localDatabase.records[filter.Namespace]
 	if !found {
 		return errors.New("module does not exist")
 	}
@@ -270,9 +272,10 @@ func (db *LocalPipelineDatabase) Delete(filter database.Filter) error {
 	return nil
 }
 
-func (db *LocalPipelineDatabase) Print() {
+// Print outputs the *plover.PipelineIR records in the pipeline.LocalDatabase to the console.
+func (localDatabase *LocalDatabase) Print() {
 
-	for moduleName, module := range db.records {
+	for moduleName, module := range localDatabase.records {
 
 		fmt.Printf("├─ %s\n", moduleName)
 

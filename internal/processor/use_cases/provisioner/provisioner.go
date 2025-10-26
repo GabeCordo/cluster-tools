@@ -48,7 +48,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		return err
 	}
 
-	useCases.Logger.Printf("%s[%s]%s Pipeline Active (run: %d)\n", terminal.Green, request.Pipeline.Identifier, terminal.Reset, rInstance.Id)
+	useCases.Logger.Printf("%s[%s]%s Data Active (run: %d)\n", terminal.Green, request.Pipeline.Identifier, terminal.Reset, rInstance.Id)
 	go func(rInstance plover.Interactable) {
 
 		m := sync.Mutex{} // used for sending updates to the gateway
@@ -124,7 +124,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		// provide the console with output indicating that the cluster has completed
 		// we already provide output when a cluster is provisioned, so it completes the state
 		duration := time.Now().Sub(rStartTime)
-		useCases.Logger.Printf("%s[%s]%s Pipeline complete, took %dhr %dm %ds %dms %dus\n",
+		useCases.Logger.Printf("%s[%s]%s Data complete, took %dhr %dm %ds %dms %dus\n",
 			terminal.Green,
 			rInstance.Pipeline,
 			terminal.Reset,

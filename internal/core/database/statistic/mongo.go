@@ -1,126 +1,119 @@
 package statistic
 
 import (
-	"context"
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"log"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/FortifiedCode/flock/internal/drivers/mongo"
+	"github.com/FortifiedCode/plover"
 )
 
 const DatabaseName string = "flock"
 const CollectionName string = "statistics"
 
-type MongoStatisticsDatabase struct {
-	client *mongo.Client
+type MongoDatabase struct {
+	driver mongo.Driver
 }
 
-func NewMongoStatisticsDatabase(uri string) (*MongoStatisticsDatabase, error) {
-	db := new(MongoStatisticsDatabase)
+func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 
-	var err error
-
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
-	db.client, err = mongo.Connect(context.TODO(), opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	mongoDatabase := new(MongoDatabase)
+	mongoDatabase.driver = driver
+	return mongoDatabase, nil
 }
 
-func (db *MongoStatisticsDatabase) Get(filter database.Filter) (records []any) {
+// Get retrieves *plover.Statistic records from the statistic.MongoDatabase.
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 
-	d := db.client.Database(DatabaseName)
-	c := d.Collection(CollectionName)
-
-	var mongoFilter bson.D
-	if filter.Namespace == "" {
-		mongoFilter = bson.D{{"namespace", filter.Namespace}}
-	} else {
-		mongoFilter = bson.D{
-			{"$and",
-				bson.A{
-					bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
-					bson.D{{"pipeline", bson.D{{"$eq", filter.Pipeline}}}},
-				},
-			},
-		}
-	}
-
-	cursor, err := c.Find(context.TODO(), mongoFilter)
-	if err != nil {
+	if !mongoDatabase.driver.IsConnected() {
 		return records
 	}
 
-	stats := make([]*Wrapper, 0)
-	err = cursor.All(context.TODO(), &stats)
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
+	stats := make([]*Statistic, 0)
+
+	var err error
+	if filter.Namespace == "" {
+		err = c.FindById("namespace", filter.Namespace, &stats)
+	} else {
+		err = c.FindByIds("namespace", filter.Namespace, "pipeline", filter.Pipeline, &stats)
+	}
+
 	if err != nil {
 		return records
 	}
 
 	records = make([]any, len(stats))
 	for i, stat := range stats {
-		records[i] = stat
+		records[i] = stat.Data
 	}
 
 	return records
 }
 
-func (db *MongoStatisticsDatabase) Create(filter database.Filter, record any) (result any, err error) {
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (result any, err error) {
 
 	result = nil
+	if !mongoDatabase.driver.IsConnected() {
+		return result, database.NotConnected
+	}
 
-	statistic, ok := (record).(Wrapper)
+	statisticRecord, ok := (record).(*plover.Statistics)
 	if !ok {
-		err = errors.New("record is not a Wrapper")
+		err = errors.New("statistic.MongoDatabase.Create expected a *plover.Statistic record type")
 		return result, err
 	}
 
-	d := db.client.Database(DatabaseName)
+	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	_, err = c.InsertOne(context.TODO(), statistic)
+	statistic := Statistic{
+		Pipeline:  filter.Pipeline,
+		Namespace: filter.Namespace,
+		Data:      statisticRecord,
+	}
+
+	err = c.InsertOne(&statistic)
 	return result, err
 }
 
-func (db *MongoStatisticsDatabase) Delete(filter database.Filter) (err error) {
+func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
 
-	d := db.client.Database(DatabaseName)
-	c := d.Collection(CollectionName)
-
-	mongoFilter := bson.D{{"namespace", filter.Namespace}}
-	_, err = c.DeleteMany(context.TODO(), mongoFilter)
-	if err != nil {
-		return err
+	if !mongoDatabase.driver.IsConnected() {
+		return database.NotConnected
 	}
 
-	return nil
-}
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
-func (db *MongoStatisticsDatabase) Replace(filter database.Filter, record any) (err error) {
-
-	log.Println("not implemented")
+	err = c.DeleteManyById("namespace", filter.Namespace)
 	return err
 }
 
-func (db *MongoStatisticsDatabase) Save(path string) (err error) {
+// Replace is not implemented for the statistic.MongoDatabase.
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (err error) {
 
-	log.Println("not implemented")
+	err = database.NotImplemented
 	return err
 }
 
-func (db *MongoStatisticsDatabase) Load(path string) (err error) {
+// Save is not implemented for the statistic.MongoDatabase.
+func (mongoDatabase MongoDatabase) Save(path string) (err error) {
 
-	log.Println("not implemented")
+	err = database.NotImplemented
 	return err
 }
 
-func (db *MongoStatisticsDatabase) Print() {
+// Load is not implemented for the statistic.MongoDatabase.
+func (mongoDatabase MongoDatabase) Load(path string) (err error) {
 
-	log.Println("not implemented")
+	err = database.NotImplemented
+	return err
+}
+
+// Print is not implemented for the statistic.MongoDatabase.
+func (mongoDatabase MongoDatabase) Print() {
+
+	// nop
 }

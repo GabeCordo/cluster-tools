@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"github.com/FortifiedCode/flock/internal/core/database"
 	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/plover"
-	"log"
-	"time"
 )
 
-func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Wrapper) (err error) {
+func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
-	err = plover.CleanupIR(&pipelineData.Pipeline)
+	err = plover.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
 		database.Filter{
 			Namespace:  namespaceId,
@@ -32,59 +29,54 @@ func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statist
 			Namespace: namespaceId,
 			Pipeline:  pipelineId,
 		},
-		statistic.Wrapper{ // TODO : depreciate or fix elapsed time
-			Timestamp: time.Now(),
-			Namespace: namespaceId,
-			Pipeline:  pipelineId,
-			Stats:     *statisticData, // copy TODO: maybe fix this
-		},
+		statisticData,
 	)
 	return err
 }
 
-func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []plover.PipelineIR, err error) {
+func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []*plover.PipelineIR, err error) {
 
 	results := uc.PipelineDatabase.Get(database.Filter{
 		Namespace:  namespaceId,
 		Identifier: pipelineId,
 	})
 
-	configs := make([]plover.PipelineIR, len(results))
+	pipelines = make([]*plover.PipelineIR, len(results))
 	ok := true
 
-	var w *pipeline.Wrapper
+	var p *plover.PipelineIR
 	for i, result := range results {
-		w, ok = result.(*pipeline.Wrapper)
+		p, ok = result.(*plover.PipelineIR)
 		if ok {
-			configs[i] = w.Pipeline // todo: this is a copy instruction, is there a more efficient way?
+			pipelines[i] = p
 		} else {
-			errStr := fmt.Sprintf("expected type '*pipeline.Wrapper' in index %d", i)
+			errStr := fmt.Sprintf("expected type '*pipeline.Data' in index %d", i)
 			err = errors.New(errStr)
 			break
 		}
 	}
 
-	return configs, err
+	return pipelines, err
 }
 
-func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []plover.Statistics, err error) {
+func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []*plover.Statistics, err error) {
 
 	results := uc.StatisticDatabase.Get(database.Filter{
 		Namespace: namespaceId,
 		Pipeline:  pipelineId,
 	})
 
-	statistics = make([]plover.Statistics, len(results))
+	statistics = make([]*plover.Statistics, len(results))
 
-	var s plover.Statistics
+	var s *plover.Statistics
 	var ok bool
 
 	for i, result := range results {
-		s, ok = result.(plover.Statistics)
+		s, ok = result.(*plover.Statistics)
 		if ok {
 			statistics[i] = s
 		} else {
-			errStr := fmt.Sprintf("expected type 'statistic.Statistics' in index %d", i)
+			errStr := fmt.Sprintf("expected type '*statistic.Statistics' in index %d", i)
 			err = errors.New(errStr)
 			break
 		}
@@ -110,7 +102,7 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 	return err
 }
 
-func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Wrapper) (err error) {
+func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Pipeline) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
 		Namespace:  namespaceId,
@@ -121,15 +113,7 @@ func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelin
 
 func (uc UseCases) LoadDatabases(folder string) (err error) {
 
-	if err = uc.PipelineDatabase.Load(folder); err != nil {
-		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
-			err.Error())
-	}
-
-	// some configs may have carried over from previous runs
-	// let the operator know these configs are being loaded into the
-	// flock without having to query the database over HTTP
-	uc.PipelineDatabase.Print()
+	// todo : should we remove this use case if it's not used?
 
 	return nil
 }

@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-type Wrapper struct {
-	Timestamp time.Time         `json:"timestamp"`
-	Namespace string            `json:"namespace"`
-	Pipeline  string            `json:"pipeline"`
-	Elapsed   time.Duration     `json:"elapsed"`
-	Stats     plover.Statistics `json:"statistics"`
+type Statistic struct {
+	Timestamp time.Time          `json:"timestamp"`
+	Namespace string             `json:"namespace"`
+	Pipeline  string             `json:"pipeline"`
+	Elapsed   time.Duration      `json:"elapsed"`
+	Data      *plover.Statistics `json:"statistics"`
 }

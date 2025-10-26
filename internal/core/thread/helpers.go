@@ -80,7 +80,7 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 	return databaseResponse.Data.([]plover.PipelineIR), true
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, p *pipeline.Wrapper) error {
+func StorePipelineInDatabase(mandatory Mandatory, p *pipeline.Pipeline) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
@@ -113,7 +113,7 @@ func StorePipelineInDatabase(mandatory Mandatory, p *pipeline.Wrapper) error {
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, p *pipeline.Wrapper) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, p *pipeline.Pipeline) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,

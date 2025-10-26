@@ -444,7 +444,7 @@ func (t *Thread) getPipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) postPipelineCallback(w http.ResponseWriter, r *http.Request) {
 
-	request := new(pipeline.Wrapper)
+	request := new(pipeline.Pipeline)
 	err := json.NewDecoder(r.Body).Decode(request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -466,7 +466,7 @@ func (t *Thread) postPipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) putPipelineCallback(w http.ResponseWriter, r *http.Request) {
 
-	request := new(pipeline.Wrapper)
+	request := new(pipeline.Pipeline)
 	err := json.NewDecoder(r.Body).Decode(request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

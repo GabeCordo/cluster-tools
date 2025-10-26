@@ -1,66 +1,51 @@
 package job
 
 import (
-	"context"
 	"errors"
-	"log"
-
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 )
 
+const DatabaseName string = "flock"
+const CollectionName string = "jobs"
+
 type MongoDatabase struct {
-	client *mongo.Client
+	driver mongo.Driver
 }
 
-func NewMongoJobDatabase(uri string) (*MongoDatabase, error) {
+func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 
 	db := new(MongoDatabase)
-
-	var err error
-
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
-	db.client, err = mongo.Connect(context.TODO(), opts)
-	if err != nil {
-		return nil, err
-	}
-
+	db.driver = driver
 	return db, nil
 }
 
-func (db MongoDatabase) Get(filter database.Filter) (records []any) {
+// Get retrieves the *Job records from the job.MongoDatabase.
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 
-	d := db.client.Database("flock")
-	c := d.Collection("jobs")
-
-	var mongoFilter bson.D
-	if filter.UseNamespace() {
-		mongoFilter = bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}}
-	} else if filter.UsePipeline() {
-		mongoFilter = bson.D{
-			{"$and",
-				bson.A{
-					bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}},
-					bson.D{{"cluster", bson.D{{"$eq", filter.Pipeline}}}},
-				},
-			},
-		}
-	} else if filter.UseIdentifier() {
-		mongoFilter = bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
-	} else {
-		mongoFilter = bson.D{}
-	}
-
-	cursor, err := c.Find(context.TODO(), mongoFilter)
-	if err != nil {
+	if !mongoDatabase.driver.IsConnected() {
 		return records
 	}
 
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
 	jobs := make([]*Job, 0)
-	err = cursor.All(context.TODO(), &jobs)
+
+	var err error
+	if filter.UseNamespace() {
+		err = c.FindById("module", filter.Namespace, &jobs)
+	} else if filter.UsePipeline() {
+		err = c.FindByIds("module", filter.Namespace, "cluster", filter.Pipeline, &jobs)
+	} else if filter.UseIdentifier() {
+		err = c.FindById("identifier", filter.Identifier, &jobs)
+	} else {
+		err = c.FindAll(&jobs)
+	}
+
+	if err != nil {
+		return records
+	}
 
 	records = make([]any, len(jobs))
 	for i, job := range jobs {
@@ -70,76 +55,69 @@ func (db MongoDatabase) Get(filter database.Filter) (records []any) {
 	return records
 }
 
-func (db MongoDatabase) Create(filter database.Filter, record any) (result any, err error) {
+// Create adds a *Job record to the job.MongoDatabase.
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (result any, err error) {
+
+	if !mongoDatabase.driver.IsConnected() {
+		return nil, database.NotConnected
+	}
 
 	job, ok := (record).(*Job)
 	if !ok || (job == nil) {
 		return nil, errors.New("job can not be nil")
 	}
 
-	d := db.client.Database("flock")
-	c := d.Collection("jobs")
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
 
-	_, err = c.InsertOne(context.TODO(), job)
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+	err = c.InsertOne(job)
+	return nil, err
 }
 
-func (db MongoDatabase) Delete(filter database.Filter) (err error) {
+// Delete removes a *Job record from the job.MongoDatabase.
+func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
 
-	d := db.client.Database("flock")
-	c := d.Collection("jobs")
+	if !mongoDatabase.driver.IsConnected() {
+		return database.NotConnected
+	}
 
-	var mongoFilter bson.D
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
 	if filter.UseNamespace() {
-		mongoFilter = bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}}
+		err = c.DeleteById("module", filter.Namespace)
 	} else if filter.UsePipeline() {
-		mongoFilter = bson.D{
-			{"$and",
-				bson.A{
-					bson.D{{"module", bson.D{{"$eq", filter.Namespace}}}},
-					bson.D{{"cluster", bson.D{{"$eq", filter.Pipeline}}}},
-				},
-			},
-		}
+		err = c.DeleteByIds("module", filter.Namespace, "cluster", filter.Pipeline)
 	} else if filter.UseIdentifier() {
-		mongoFilter = bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}}
+		err = c.DeleteById("identifier", filter.Identifier)
 	}
 
-	result, err := c.DeleteOne(context.TODO(), mongoFilter)
-	if err != nil {
-		return err
-	}
-
-	if result.DeletedCount < 1 {
-		return errors.New("no jobs were deleted")
-	}
-
-	return nil
-}
-
-func (db MongoDatabase) Replace(filter database.Filter, record any) (err error) {
-
-	log.Println("not implemented")
 	return err
 }
 
-func (db MongoDatabase) Save(path string) (err error) {
+// Replace swaps a *Job record from the job.MongoDatabase.
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (err error) {
 
-	log.Println("not implemented")
+	err = database.NotImplemented
 	return err
 }
 
-func (db MongoDatabase) Load(path string) (err error) {
+// Save is not implemented for the job.MongoDatabase struct.
+func (mongoDatabase MongoDatabase) Save(path string) (err error) {
 
-	log.Println("not implemented")
+	err = database.NotImplemented
 	return err
 }
 
-func (db MongoDatabase) Print() {
+// Load is not implemented for the job.MongoDatabase struct.
+func (mongoDatabase MongoDatabase) Load(path string) (err error) {
 
-	log.Println("not implemented")
+	err = database.NotImplemented
+	return err
+}
+
+// Print is not implemented for the job.MongoDatabase struct.
+func (mongoDatabase MongoDatabase) Print() {
+
+	// nop
 }

@@ -1,13 +1,13 @@
 package core
 
 import (
-	"fmt"
 	job2 "github.com/FortifiedCode/flock/internal/core/component/scheduler/job"
 	database2 "github.com/FortifiedCode/flock/internal/core/use_cases/database"
 	processor2 "github.com/FortifiedCode/flock/internal/core/use_cases/processor"
 	runner2 "github.com/FortifiedCode/flock/internal/core/use_cases/runner"
 	scheduler2 "github.com/FortifiedCode/flock/internal/core/use_cases/scheduler"
 	socket2 "github.com/FortifiedCode/flock/internal/core/use_cases/socket"
+	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 	"github.com/FortifiedCode/flock/internal/shared/logging"
 	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
 	"github.com/FortifiedCode/flock/internal/shared/socket/json_socket"
@@ -85,8 +85,6 @@ type Core struct {
 }
 
 func New(configPath string) (*Core, error) {
-
-	envVars := ReadEnvironmentVariables()
 
 	core := new(Core)
 
@@ -235,20 +233,24 @@ func New(configPath string) (*Core, error) {
 	databaseConfig := &database.Config{}
 	core.config.FillDatabaseConfig(databaseConfig)
 
-	fmt.Println("connect to config db")
-	configDatabase, err := configDb.NewMongoConfigDatabase(envVars.MongoDbUri)
+	envVars := ReadEnvironmentVariables()
+	driver := mongo.NewDriver(envVars.MongoDbUri)
+	err = driver.Connect()
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("connect to stat db")
-	statDatabase, err := statisticDb.NewMongoStatisticsDatabase(envVars.MongoDbUri)
+	configDatabase, err := configDb.NewMongoDatabase(driver)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("connect to job db")
-	jobDatabase, err := job.NewMongoJobDatabase(envVars.MongoDbUri)
+	statDatabase, err := statisticDb.NewMongoDatabase(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	jobDatabase, err := job.NewMongoDatabase(driver)
 	if err != nil {
 		return nil, err
 	}
@@ -324,13 +326,7 @@ func New(configPath string) (*Core, error) {
 	return core, nil
 }
 
-const (
-	Version string = "v0.22.0"
-)
-
 func (core *Core) Run() {
-
-	core.banner()
 
 	core.logger.SetColour(terminal.Purple)
 

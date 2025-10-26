@@ -1,81 +1,67 @@
 package pipeline
 
 import (
-	"context"
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"log"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/FortifiedCode/flock/internal/drivers/mongo"
+	"github.com/FortifiedCode/plover"
 )
 
 const DatabaseName string = "flock"
 const CollectionName string = "pipelines"
 
-type MongoConfigDatabase struct {
-	client *mongo.Client
+type MongoDatabase struct {
+	driver mongo.Driver
 }
 
-func NewMongoConfigDatabase(uri string) (*MongoConfigDatabase, error) {
-	db := new(MongoConfigDatabase)
+func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 
-	var err error
-
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
-	db.client, err = mongo.Connect(context.TODO(), opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	mongoDatabase := new(MongoDatabase)
+	mongoDatabase.driver = driver
+	return mongoDatabase, nil
 }
 
-func (db MongoConfigDatabase) Get(filter database.Filter) (records []any) {
+// Get returns the *plover.PipelineIR records associated with the filter.
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 
-	records = make([]any, 0)
-
-	d := db.client.Database(DatabaseName)
-	c := d.Collection(CollectionName)
-
-	// when the identifier is empty we want to return all the configs in the database
-	var mongoFilter bson.D
-	if (filter.Namespace != "") && (filter.Identifier != "") {
-		mongoFilter = bson.D{
-			{"$and",
-				bson.A{
-					bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
-					bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}},
-				},
-			},
-		}
-	} else if (filter.Namespace != "") && (filter.Identifier == "") {
-		mongoFilter = bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}}
-	} else {
-		mongoFilter = bson.D{}
-	}
-
-	cursor, err := c.Find(context.TODO(), mongoFilter)
-	if err != nil {
+	if !mongoDatabase.driver.IsConnected() {
 		return records
 	}
 
-	stats := make([]*Wrapper, 0)
-	err = cursor.All(context.TODO(), &stats)
+	records = make([]any, 0)
+
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
+	stats := make([]Pipeline, 0)
+
+	// when the identifier is empty we want to return all the configs in the database
+	var err error
+	if (filter.Namespace != "") && (filter.Identifier != "") {
+		err = c.FindByIds("namespace", filter.Namespace, "identifier", filter.Identifier, &stats)
+	} else if (filter.Namespace != "") && (filter.Identifier == "") {
+		err = c.FindById("namespace", filter.Namespace, &stats)
+	} else {
+		err = c.FindAll(&stats)
+	}
+
 	if err != nil {
 		return records
 	}
 
 	for _, stat := range stats {
-		records = append(records, stat)
+		records = append(records, stat.Data)
 	}
 
 	return records
 }
 
-func (db MongoConfigDatabase) Create(filter database.Filter, record any) (r any, err error) {
+// Create stores a *plover.PipelineIR record inside the pipeline.MongoDatabase.
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (r any, err error) {
+
+	if !mongoDatabase.driver.IsConnected() {
+		return nil, database.NotConnected
+	}
 
 	if filter.Namespace == "" {
 		err = errors.New("filter.Namespace is required")
@@ -87,31 +73,38 @@ func (db MongoConfigDatabase) Create(filter database.Filter, record any) (r any,
 		return r, err
 	}
 
-	cfg, ok := (record).(*Wrapper)
+	pipelineRecord, ok := (record).(*plover.PipelineIR)
 	if !ok {
 		err = errors.New("expected type *plover.PipelineIR")
 		return r, err
 	}
 
-	d := db.client.Database(DatabaseName)
+	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	records := db.Get(filter)
+	records := mongoDatabase.Get(filter)
 	numOfRecords := len(records)
 	if numOfRecords >= 1 {
 		err = errors.New("pipeline with the same identifier already exists in the module")
 		return r, err
 	}
 
-	_, err = c.InsertOne(context.TODO(), cfg)
-	if err != nil {
-		return nil, err
+	pipeline := Pipeline{
+		Namespace:  filter.Namespace,
+		Identifier: filter.Identifier,
+		Data:       pipelineRecord,
 	}
 
-	return nil, nil
+	err = c.InsertOne(&pipeline)
+	return nil, err
 }
 
-func (db MongoConfigDatabase) Replace(filter database.Filter, record any) (err error) {
+// Replace swaps a *plover.PipelineIR record with another one in the pipeline.MongoDatabase.
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (err error) {
+
+	if !mongoDatabase.driver.IsConnected() {
+		return database.NotConnected
+	}
 
 	if filter.Namespace == "" {
 		err = errors.New("filter.Namespace is required")
@@ -123,37 +116,31 @@ func (db MongoConfigDatabase) Replace(filter database.Filter, record any) (err e
 		return err
 	}
 
-	cfg, ok := (record).(*Wrapper)
+	pipelineRecord, ok := (record).(*plover.PipelineIR)
 	if !ok {
 		err = errors.New("expected type *plover.PipelineIR")
 		return err
 	}
 
-	d := db.client.Database(DatabaseName)
+	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	mongoFilter := bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
-				bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}},
-			},
-		},
+	pipeline := Pipeline{
+		Namespace:  filter.Namespace,
+		Identifier: filter.Identifier,
+		Data:       pipelineRecord,
 	}
 
-	result, err := c.ReplaceOne(context.TODO(), mongoFilter, cfg)
-	if err != nil {
-		return err
-	}
-
-	if result.MatchedCount == 0 {
-		return errors.New("no pipeline with the specified identifier exist for the module; nothing to replace")
-	}
-
-	return nil
+	err = c.ReplaceByIds("namespace", filter.Namespace, "identifier", filter.Identifier, &pipeline)
+	return err
 }
 
-func (db MongoConfigDatabase) Delete(filter database.Filter) (err error) {
+// Delete removes a *plover.PipelineIR record inside the pipeline.MongoDatabase.
+func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
+
+	if !mongoDatabase.driver.IsConnected() {
+		return database.NotConnected
+	}
 
 	if filter.Namespace == "" {
 		err = errors.New("filter.Namespace is required")
@@ -165,43 +152,29 @@ func (db MongoConfigDatabase) Delete(filter database.Filter) (err error) {
 		return err
 	}
 
-	d := db.client.Database(DatabaseName)
+	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	mongoFilter := bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"namespace", bson.D{{"$eq", filter.Namespace}}}},
-				bson.D{{"identifier", bson.D{{"$eq", filter.Identifier}}}},
-			},
-		},
-	}
-
-	result, err := c.DeleteOne(context.TODO(), mongoFilter)
-	if err != nil {
-		return err
-	}
-
-	if result.DeletedCount == 0 {
-		return errors.New("no pipeline with the specified identifier exist for the module; nothing to delete")
-	}
-
-	return nil
-}
-
-func (db MongoConfigDatabase) Save(path string) (err error) {
-
-	log.Println("not implemented")
+	err = c.DeleteByIds("namespace", filter.Namespace, "identifier", filter.Identifier)
 	return err
 }
 
-func (db MongoConfigDatabase) Load(path string) (err error) {
+// Save is not implemented for the pipeline.MongoDatabase struct.
+func (mongoDatabase MongoDatabase) Save(path string) (err error) {
 
-	log.Println("not implemented")
+	err = nil
 	return err
 }
 
-func (db MongoConfigDatabase) Print() {
+// Load is not implemented for the pipeline.MongoDatabase struct.
+func (mongoDatabase MongoDatabase) Load(path string) (err error) {
 
-	log.Println("not implemented")
+	err = nil
+	return err
+}
+
+// Print is not implemented for the pipeline.MongoDatabase struct.
+func (mongoDatabase MongoDatabase) Print() {
+
+	// nop
 }
