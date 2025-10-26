@@ -213,7 +213,7 @@ func TestScheduler_Delete(t *testing.T) {
 	if foundJobs := scheduler.Jobs.Get(f2); len(foundJobs) != 1 {
 		t.Error("expected 1 job in common/vec to be left alone")
 		return
-	} else if foundJobs[0].(job3.Job).Identifier != "test2" {
+	} else if foundJobs[0].(*job3.Job).Identifier != "test2" {
 		t.Error("wrong job was deleted")
 	}
 }
