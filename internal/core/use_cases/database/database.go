@@ -4,11 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/plover"
 )
 
 func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
+
+	if pipelineData == nil {
+		return errors.New("the *plover.PipelineIR cannot be nil")
+	}
 
 	err = plover.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
@@ -102,7 +105,7 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 	return err
 }
 
-func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *pipeline.Pipeline) (err error) {
+func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
 		Namespace:  namespaceId,

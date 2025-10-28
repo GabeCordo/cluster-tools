@@ -35,7 +35,7 @@ func (driver *Driver) Connect() (err error) {
 	opts := options.Client().ApplyURI(driver.meta.uri).SetServerAPIOptions(serverAPI)
 
 	driver.client, err = mongo.Connect(context.TODO(), opts)
-	if err != nil {
+	if err == nil {
 		driver.flags.connected = true
 	}
 

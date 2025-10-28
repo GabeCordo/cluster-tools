@@ -2,7 +2,6 @@ package thread
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/plover"
 	"strconv"
 
@@ -21,7 +20,7 @@ type Mandatory struct {
 	Timeout       float64
 }
 
-func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf plover.PipelineIR, found bool) {
+func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf []*plover.PipelineIR, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -37,21 +36,27 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 	data, didTimeout := nonce2.SendAndWait(
 		mandatory.ResponseTable, databaseRequest.Nonce, mandatory.Timeout)
 	if didTimeout {
-		return plover.PipelineIR{}, false
+		return nil, false
 	}
 
 	databaseResponse, ok := (data).(*Response)
 	if !ok {
-		return plover.PipelineIR{}, false
+		return nil, false
 	}
 
 	if !databaseResponse.Success {
-		return plover.PipelineIR{}, false
+		return nil, false
 	}
-	return databaseResponse.Data.([]plover.PipelineIR)[0], true
+
+	pp, ok := databaseResponse.Data.([]*plover.PipelineIR)
+	if !ok {
+		return nil, false
+	}
+
+	return pp, true
 }
 
-func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []plover.PipelineIR, found bool) {
+func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []*plover.PipelineIR, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -77,17 +82,19 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 	if !databaseResponse.Success {
 		return nil, false
 	}
-	return databaseResponse.Data.([]plover.PipelineIR), true
+
+	pp, ok := databaseResponse.Data.([]*plover.PipelineIR)
+	return pp, ok
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, p *pipeline.Pipeline) error {
+func StorePipelineInDatabase(mandatory Mandatory, namespace, identifier string, p *plover.PipelineIR) error {
 
 	databaseRequest := Request{
 		Action: CreateAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Namespace: p.Namespace,
-			Pipeline:  p.Identifier,
+			Namespace: namespace,
+			Pipeline:  identifier,
 		},
 		Data:  p,
 		Nonce: mandatory.NoncePool.Next(),
@@ -113,14 +120,14 @@ func StorePipelineInDatabase(mandatory Mandatory, p *pipeline.Pipeline) error {
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, p *pipeline.Pipeline) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, namespace, identifier string, p *plover.PipelineIR) (success bool) {
 
 	databaseRequest := Request{
 		Action: UpdateAction,
 		Type:   PipelineRecord,
 		Identifiers: RequestIdentifiers{
-			Namespace: p.Namespace,
-			Pipeline:  p.Identifier,
+			Namespace: namespace,
+			Pipeline:  identifier,
 		},
 		Data:  p,
 		Nonce: mandatory.NoncePool.Next(),
@@ -325,7 +332,8 @@ func GetFunctions(mandatory Mandatory, moduleName string) (clusters []processor2
 		return nil, false
 	}
 
-	return (provisionerResponse.Data).([]processor2.FunctionData), true
+	ff, ok := (provisionerResponse.Data).([]processor2.FunctionData)
+	return ff, ok
 }
 
 func CreateRun(mandatory Mandatory,
@@ -431,7 +439,7 @@ func StopRun(mandatory Mandatory, id uint64) error {
 	return response.Error
 }
 
-func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []plover.Statistics, found bool) {
+func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []*plover.Statistics, found bool) {
 
 	databaseRequest := Request{
 		Action: GetAction,
@@ -458,7 +466,7 @@ func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (en
 		return nil, false
 	}
 
-	statistics, ok := (databaseResponse.Data).([]plover.Statistics)
+	statistics, ok := (databaseResponse.Data).([]*plover.Statistics)
 	if !ok {
 		return nil, false
 	}
@@ -754,7 +762,7 @@ func DeleteJob(mandatory Mandatory, filter *database.Filter) error {
 	return response.Error
 }
 
-func JobQueue(mandatory Mandatory) ([]job.Job, error) {
+func JobQueue(mandatory Mandatory) ([]*job.Job, error) {
 
 	request := Request{
 		Action: GetAction,
@@ -773,7 +781,7 @@ func JobQueue(mandatory Mandatory) ([]job.Job, error) {
 		return nil, nonce2.InvalidResponseReceived
 	}
 
-	jobs, ok := (response.Data).([]job.Job)
+	jobs, ok := (response.Data).([]*job.Job)
 	if !ok {
 		return nil, nonce2.InvalidResponseReceived
 	}

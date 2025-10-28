@@ -3,7 +3,6 @@ package database
 import (
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/plover"
 )
@@ -110,7 +109,7 @@ func (t *Thread) handleDeleteStatisticRecord(request *thread.Request, response *
 
 func (t *Thread) handleUpdatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	cfg, ok := (request.Data).(*pipeline.Pipeline)
+	cfg, ok := (request.Data).(*plover.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType

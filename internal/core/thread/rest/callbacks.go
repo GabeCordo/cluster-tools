@@ -451,6 +451,11 @@ func (t *Thread) postPipelineCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if (request.Identifier == "") || (request.Namespace == "") || (request.Data == nil) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	mandatory := thread.Mandatory{
 		Pipe:          t.channels.c1,
 		ResponseTable: t.DatabaseResponseTable,
@@ -458,7 +463,7 @@ func (t *Thread) postPipelineCallback(w http.ResponseWriter, r *http.Request) {
 		Timeout:       t.config.Timeout,
 	}
 
-	err = thread.StorePipelineInDatabase(mandatory, request)
+	err = thread.StorePipelineInDatabase(mandatory, request.Namespace, request.Identifier, request.Data)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
 	}
@@ -480,7 +485,7 @@ func (t *Thread) putPipelineCallback(w http.ResponseWriter, r *http.Request) {
 		Timeout:       t.config.Timeout,
 	}
 
-	isOk := thread.ReplacePipelineInDatabase(mandatory, request)
+	isOk := thread.ReplacePipelineInDatabase(mandatory, request.Namespace, request.Identifier, request.Data)
 	if !isOk {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -505,7 +510,8 @@ func (t *Thread) deletePipelineCallback(w http.ResponseWriter, r *http.Request) 
 	if foundMapping {
 		pipelineId = mapping[0]
 	} else {
-		pipelineId = ""
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	mandatory := thread.Mandatory{

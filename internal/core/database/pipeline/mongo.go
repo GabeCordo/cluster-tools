@@ -33,24 +33,24 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	stats := make([]Pipeline, 0)
+	pp := make([]Pipeline, 0)
 
 	// when the identifier is empty we want to return all the configs in the database
 	var err error
 	if (filter.Namespace != "") && (filter.Identifier != "") {
-		err = c.FindByIds("namespace", filter.Namespace, "identifier", filter.Identifier, &stats)
+		err = c.FindByIds("namespace", filter.Namespace, "identifier", filter.Identifier, &pp)
 	} else if (filter.Namespace != "") && (filter.Identifier == "") {
-		err = c.FindById("namespace", filter.Namespace, &stats)
+		err = c.FindById("namespace", filter.Namespace, &pp)
 	} else {
-		err = c.FindAll(&stats)
+		err = c.FindAll(&pp)
 	}
 
 	if err != nil {
 		return records
 	}
 
-	for _, stat := range stats {
-		records = append(records, stat.Data)
+	for _, p := range pp {
+		records = append(records, p.Data)
 	}
 
 	return records
