@@ -171,7 +171,7 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		return
 	}
 
-	pipelineConfigs, ok := iResponse.Data.([]plover.PipelineIR)
+	pipelineConfigs, ok := iResponse.Data.([]*plover.PipelineIR)
 	if !ok {
 		oResponse := thread.NewResponse(thread.Runner)
 		oResponse.Error = errors.New("expected response to be []pipeline.Data")
@@ -188,7 +188,7 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		return
 	}
 
-	cfg = &pipelineConfigs[0]
+	cfg = pipelineConfigs[0]
 
 	id, err = t.useCases.CreateRun(iRequest.Identifiers.Namespace,
 		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg)
