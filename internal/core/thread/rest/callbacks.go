@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"net/http"
 	"net/url"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/FortifiedCode/flock/internal/core/component/processor"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 )
 

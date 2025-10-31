@@ -13,15 +13,10 @@ import (
 func (uc UseCases) GetJobs(filter database.Filter) (jobs []*job.Job) {
 
 	results := uc.Scheduler.Jobs.Get(filter)
-	jobs = make([]*job.Job, len(results))
 
-	var j *job.Job
-	var ok bool
+	jobs = make([]*job.Job, len(results))
 	for i, result := range results {
-		j, ok = (result).(*job.Job)
-		if ok {
-			jobs[i] = j
-		}
+		jobs[i] = result
 	}
 
 	return jobs

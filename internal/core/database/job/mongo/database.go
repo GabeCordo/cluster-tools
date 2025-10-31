@@ -1,8 +1,8 @@
-package job
+package mongo
 
 import (
-	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 )
 
@@ -21,16 +21,14 @@ func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 }
 
 // Get retrieves the *Job records from the job.MongoDatabase.
-func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (jobs []*job.Job) {
 
 	if !mongoDatabase.driver.IsConnected() {
-		return records
+		return jobs
 	}
 
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
-
-	jobs := make([]*Job, 0)
 
 	var err error
 	if filter.UseNamespace() {
@@ -44,34 +42,24 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 	}
 
 	if err != nil {
-		return records
+		return jobs
 	}
 
-	records = make([]any, len(jobs))
-	for i, job := range jobs {
-		records[i] = job
-	}
-
-	return records
+	return jobs
 }
 
 // Create adds a *Job record to the job.MongoDatabase.
-func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (result any, err error) {
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *job.Job) (id string, err error) {
 
 	if !mongoDatabase.driver.IsConnected() {
-		return nil, database.NotConnected
-	}
-
-	job, ok := (record).(*Job)
-	if !ok || (job == nil) {
-		return nil, errors.New("job can not be nil")
+		return "", database.NotConnected
 	}
 
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	err = c.InsertOne(job)
-	return nil, err
+	err = c.InsertOne(record)
+	return "", err
 }
 
 // Delete removes a *Job record from the job.MongoDatabase.
@@ -96,7 +84,7 @@ func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
 }
 
 // Replace swaps a *Job record from the job.MongoDatabase.
-func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (err error) {
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *job.Job) (err error) {
 
 	err = database.NotImplemented
 	return err

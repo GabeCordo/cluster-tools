@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"github.com/FortifiedCode/flock/internal/core/database"
 	"github.com/FortifiedCode/plover"
 )
@@ -45,18 +44,8 @@ func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines 
 	})
 
 	pipelines = make([]*plover.PipelineIR, len(results))
-	ok := true
-
-	var p *plover.PipelineIR
 	for i, result := range results {
-		p, ok = result.(*plover.PipelineIR)
-		if ok {
-			pipelines[i] = p
-		} else {
-			errStr := fmt.Sprintf("expected type '*pipeline.Data' in index %d", i)
-			err = errors.New(errStr)
-			break
-		}
+		pipelines[i] = result
 	}
 
 	return pipelines, err
@@ -70,19 +59,8 @@ func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistic
 	})
 
 	statistics = make([]*plover.Statistics, len(results))
-
-	var s *plover.Statistics
-	var ok bool
-
 	for i, result := range results {
-		s, ok = result.(*plover.Statistics)
-		if ok {
-			statistics[i] = s
-		} else {
-			errStr := fmt.Sprintf("expected type '*statistic.Statistics' in index %d", i)
-			err = errors.New(errStr)
-			break
-		}
+		statistics[i] = result
 	}
 
 	return statistics, err

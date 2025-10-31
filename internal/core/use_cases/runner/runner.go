@@ -16,10 +16,10 @@ func (uc UseCases) GetRuns(namespace, pipeline string, identifier uint64) (rr []
 		Identifier: strconv.FormatUint(identifier, 10),
 	}
 
-	instances := uc.RunDatabase.Get(f)
-	rr = make([]*run.Run, len(instances))
-	for i, instance := range instances {
-		rr[i] = instance.(*run.Run)
+	results := uc.RunDatabase.Get(f)
+	rr = make([]*run.Run, len(results))
+	for i, result := range results {
+		rr[i] = result
 	}
 
 	return rr
@@ -32,12 +32,7 @@ func (uc UseCases) GetRun(runId uint64) (*run.Run, error) {
 		return nil, errors.New("runner cannot be found")
 	}
 
-	stored, ok := (results[0]).(*run.Run)
-	if !ok {
-		return nil, errors.New("failed to cast result to *run.Run")
-	}
-
-	return stored, nil
+	return results[0], nil
 }
 
 func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *plover.PipelineIR) (uint64, error) {
@@ -47,14 +42,10 @@ func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, confi
 		Namespace: namespace,
 		Pipeline:  pipeline,
 	}
-	result, err := uc.RunDatabase.Create(filter, config)
+
+	id, err := uc.RunDatabase.Create(filter, config)
 	if err != nil {
 		return 0, err
-	}
-
-	id, ok := result.(uint64)
-	if !ok {
-		return 0, errors.New("failed to cast result to uint64")
 	}
 
 	return id, nil

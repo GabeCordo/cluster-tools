@@ -1,9 +1,10 @@
-package statistic
+package in_memory
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/plover"
 	"os"
 	"path/filepath"
@@ -14,14 +15,14 @@ import (
 )
 
 type LocalDatabase struct {
-	records map[string]map[string][]*Statistic
+	records map[string]map[string][]*statistic.Statistic
 	mutex   sync.RWMutex
 }
 
 func NewLocalDatabase() *LocalDatabase {
 
 	db := new(LocalDatabase)
-	db.records = make(map[string]map[string][]*Statistic)
+	db.records = make(map[string]map[string][]*statistic.Statistic)
 
 	return db
 }
@@ -69,10 +70,7 @@ func (localDatabase *LocalDatabase) Load(path string) (err error) {
 }
 
 // Get returns a list of *plover.Statistic records in the statistic.LocalDatabase.
-func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
-
-	// (records []Statistic, err error)
-	results := make([]any, 0)
+func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plover.Statistics) {
 
 	localDatabase.mutex.RLock()
 	defer localDatabase.mutex.RUnlock()
@@ -104,36 +102,31 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
 }
 
 // Create adds a new *plover.Statistic record to the statistic.LocalDatabase.
-func (localDatabase *LocalDatabase) Create(filter database.Filter, record any) (any, error) {
-
-	statisticRecord, ok := record.(*plover.Statistics)
-	if !ok {
-		return nil, errors.New("invalid record type")
-	}
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plover.Statistics) (*plover.Statistics, error) {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
 
 	if _, found := localDatabase.records[filter.Namespace]; !found {
-		localDatabase.records[filter.Namespace] = make(map[string][]*Statistic)
+		localDatabase.records[filter.Namespace] = make(map[string][]*statistic.Statistic)
 	}
 
-	statistic := &Statistic{
+	s := &statistic.Statistic{
 		Namespace: filter.Namespace,
 		Timestamp: time.Now(),
 		Pipeline:  filter.Pipeline,
-		Data:      statisticRecord,
+		Data:      record,
 	}
 
 	if _, found := localDatabase.records[filter.Namespace][filter.Pipeline]; !found {
-		statistics := make([]*Statistic, 1)
-		statistics[0] = statistic
+		statistics := make([]*statistic.Statistic, 1)
+		statistics[0] = s
 		localDatabase.records[filter.Namespace][filter.Pipeline] = statistics
 	} else {
-		localDatabase.records[filter.Namespace][filter.Pipeline] = append(localDatabase.records[filter.Namespace][filter.Pipeline], statistic)
+		localDatabase.records[filter.Namespace][filter.Pipeline] = append(localDatabase.records[filter.Namespace][filter.Pipeline], s)
 	}
 
-	return filter.Pipeline, nil
+	return record, nil
 }
 
 // Delete removes a *plover.Statistic record from the statistic.LocalDatabase.
@@ -151,7 +144,7 @@ func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 }
 
 // Replace is not implemented for the statistic.LocalDatabase.
-func (localDatabase *LocalDatabase) Replace(filter database.Filter, record any) (err error) {
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plover.Statistics) (err error) {
 
 	err = database.NotImplemented
 	return err

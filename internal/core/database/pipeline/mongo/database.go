@@ -1,8 +1,9 @@
-package pipeline
+package mongo
 
 import (
 	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
 	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 	"github.com/FortifiedCode/plover"
 )
@@ -22,18 +23,16 @@ func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 }
 
 // Get returns the *plover.PipelineIR records associated with the filter.
-func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plover.PipelineIR) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return records
 	}
 
-	records = make([]any, 0)
-
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	pp := make([]Pipeline, 0)
+	pp := make([]pipeline.Pipeline, 0)
 
 	// when the identifier is empty we want to return all the configs in the database
 	var err error
@@ -57,26 +56,20 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 }
 
 // Create stores a *plover.PipelineIR record inside the pipeline.MongoDatabase.
-func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (r any, err error) {
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *plover.PipelineIR) (id string, err error) {
 
 	if !mongoDatabase.driver.IsConnected() {
-		return nil, database.NotConnected
+		return id, database.NotConnected
 	}
 
 	if filter.Namespace == "" {
 		err = errors.New("filter.Namespace is required")
-		return r, err
+		return id, err
 	}
 
 	if filter.Identifier == "" {
 		err = errors.New("filter.Identifier is required")
-		return r, err
-	}
-
-	pipelineRecord, ok := (record).(*plover.PipelineIR)
-	if !ok {
-		err = errors.New("expected type *plover.PipelineIR")
-		return r, err
+		return id, err
 	}
 
 	d := mongoDatabase.driver.Database(DatabaseName)
@@ -86,21 +79,21 @@ func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (r
 	numOfRecords := len(records)
 	if numOfRecords >= 1 {
 		err = errors.New("pipeline with the same identifier already exists in the module")
-		return r, err
+		return id, err
 	}
 
-	pipeline := Pipeline{
+	p := pipeline.Pipeline{
 		Namespace:  filter.Namespace,
 		Identifier: filter.Identifier,
-		Data:       pipelineRecord,
+		Data:       record,
 	}
+	err = c.InsertOne(&p)
 
-	err = c.InsertOne(&pipeline)
-	return nil, err
+	return id, err
 }
 
 // Replace swaps a *plover.PipelineIR record with another one in the pipeline.MongoDatabase.
-func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (err error) {
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *plover.PipelineIR) (err error) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return database.NotConnected
@@ -116,22 +109,16 @@ func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (
 		return err
 	}
 
-	pipelineRecord, ok := (record).(*plover.PipelineIR)
-	if !ok {
-		err = errors.New("expected type *plover.PipelineIR")
-		return err
-	}
-
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	pipeline := Pipeline{
+	p := pipeline.Pipeline{
 		Namespace:  filter.Namespace,
 		Identifier: filter.Identifier,
-		Data:       pipelineRecord,
+		Data:       record,
 	}
 
-	err = c.ReplaceByIds("namespace", filter.Namespace, "identifier", filter.Identifier, &pipeline)
+	err = c.ReplaceByIds("namespace", filter.Namespace, "identifier", filter.Identifier, &p)
 	return err
 }
 

@@ -2,13 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"gopkg.in/yaml.v3"
 )
 

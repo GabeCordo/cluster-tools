@@ -90,13 +90,3 @@ func (filter Filter) UsePipeline() bool {
 func (filter Filter) UseInterval() bool {
 	return !filter.Interval.Empty() && (filter.Namespace != "") && (filter.Pipeline != "")
 }
-
-type Database interface {
-	Get(filter Filter) []any
-	Create(filter Filter, record any) (any, error)
-	Replace(filter Filter, record any) error
-	Delete(filter Filter) error
-	Save(path string) error
-	Load(path string) error
-	Print()
-}

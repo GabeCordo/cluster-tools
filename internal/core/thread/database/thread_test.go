@@ -2,13 +2,13 @@ package database
 
 import (
 	"errors"
+	in_memory2 "github.com/FortifiedCode/flock/internal/core/database/job/in_memory"
+	"github.com/FortifiedCode/flock/internal/core/database/pipeline/in_memory"
+	in_memory3 "github.com/FortifiedCode/flock/internal/core/database/statistic/in_memory"
 	database2 "github.com/FortifiedCode/flock/internal/core/use_cases/database"
 	"github.com/FortifiedCode/plover"
 	"testing"
 
-	"github.com/FortifiedCode/flock/internal/core/database/job"
-	"github.com/FortifiedCode/flock/internal/core/database/pipeline"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
 )
@@ -19,9 +19,9 @@ func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) 
 	Min := make(chan *thread.Request, 1)
 	Mout := make(chan *thread.Response, 1)
 
-	sD := statistic.NewLocalDatabase()
-	cD := pipeline.NewLocalPipelineDatabase()
-	jD := job.NewLocalJobDatabase()
+	sD := in_memory3.NewLocalDatabase()
+	cD := in_memory.NewLocalPipelineDatabase()
+	jD := in_memory2.NewLocalJobDatabase()
 
 	logger, _ := text_logging.New("database")
 

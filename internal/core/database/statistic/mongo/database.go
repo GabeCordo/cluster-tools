@@ -1,8 +1,8 @@
-package statistic
+package mongo
 
 import (
-	"errors"
 	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 	"github.com/FortifiedCode/plover"
 )
@@ -22,7 +22,7 @@ func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 }
 
 // Get retrieves *plover.Statistic records from the statistic.MongoDatabase.
-func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plover.Statistics) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return records
@@ -31,7 +31,7 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	stats := make([]*Statistic, 0)
+	stats := make([]*statistic.Statistic, 0)
 
 	var err error
 	if filter.Namespace == "" {
@@ -44,7 +44,7 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 		return records
 	}
 
-	records = make([]any, len(stats))
+	records = make([]*plover.Statistics, len(stats))
 	for i, stat := range stats {
 		records[i] = stat.Data
 	}
@@ -52,29 +52,23 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []any) {
 	return records
 }
 
-func (mongoDatabase MongoDatabase) Create(filter database.Filter, record any) (result any, err error) {
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *plover.Statistics) (result *plover.Statistics, err error) {
 
 	result = nil
 	if !mongoDatabase.driver.IsConnected() {
 		return result, database.NotConnected
 	}
 
-	statisticRecord, ok := (record).(*plover.Statistics)
-	if !ok {
-		err = errors.New("statistic.MongoDatabase.Create expected a *plover.Statistic record type")
-		return result, err
-	}
-
 	d := mongoDatabase.driver.Database(DatabaseName)
 	c := d.Collection(CollectionName)
 
-	statistic := Statistic{
+	s := statistic.Statistic{
 		Pipeline:  filter.Pipeline,
 		Namespace: filter.Namespace,
-		Data:      statisticRecord,
+		Data:      record,
 	}
 
-	err = c.InsertOne(&statistic)
+	err = c.InsertOne(&s)
 	return result, err
 }
 
@@ -92,7 +86,7 @@ func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
 }
 
 // Replace is not implemented for the statistic.MongoDatabase.
-func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record any) (err error) {
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *plover.Statistics) (err error) {
 
 	err = database.NotImplemented
 	return err

@@ -2,13 +2,13 @@ package thread
 
 import (
 	"errors"
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"github.com/FortifiedCode/plover"
 	"strconv"
 
 	"github.com/FortifiedCode/flock/internal/core/component/message/log"
 	processor2 "github.com/FortifiedCode/flock/internal/core/component/processor"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"github.com/FortifiedCode/flock/internal/core/database/run"
 	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
 )

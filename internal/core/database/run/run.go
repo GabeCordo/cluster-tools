@@ -2,6 +2,7 @@ package run
 
 import (
 	"errors"
+	"github.com/FortifiedCode/flock/internal/core/database"
 	"github.com/FortifiedCode/plover"
 	"sync"
 )
@@ -146,4 +147,10 @@ func (supervisor *Run) IsRunning() bool {
 	defer supervisor.mutex.RUnlock()
 
 	return supervisor.Status == Active
+}
+
+type Database interface {
+	Get(filter database.Filter) []*Run
+	Create(filter database.Filter, data *plover.PipelineIR) (uint64, error)
+	Print()
 }

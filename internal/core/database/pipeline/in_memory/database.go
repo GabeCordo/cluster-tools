@@ -1,4 +1,4 @@
-package pipeline
+package in_memory
 
 import (
 	"encoding/json"
@@ -163,12 +163,10 @@ func (localDatabase *LocalDatabase) Load(path string) error {
 }
 
 // Get retrieves a *plover.PipelineIR record from the pipeline.LocalDatabase.
-func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
+func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plover.PipelineIR) {
 
 	localDatabase.mutex.RLock()
 	defer localDatabase.mutex.RUnlock()
-
-	results := make([]any, 0)
 
 	if filter.Namespace == "" {
 		return results
@@ -196,12 +194,7 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) []any {
 }
 
 // Create adds a new *plover.PipelineIR record to the pipeline.LocalDatabase.
-func (localDatabase *LocalDatabase) Create(filter database.Filter, record any) (any, error) {
-
-	pipelineRecord, ok := record.(*plover.PipelineIR)
-	if !ok {
-		return nil, errors.New("LocalDatabase expected *pipeline type")
-	}
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plover.PipelineIR) (string, error) {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
@@ -216,25 +209,20 @@ func (localDatabase *LocalDatabase) Create(filter database.Filter, record any) (
 		module = idToCfgMap
 	}
 
-	_, found = module[pipelineRecord.Identifier]
+	_, found = module[record.Identifier]
 
 	// if the pipeline identifier already exists, we shouldn't be overwriting it
 	// otherwise that can create unintended data side effects
 	if found {
-		return nil, errors.New("pipeline with this identifier already exists in this module")
+		return "", errors.New("pipeline with this identifier already exists in this module")
 	}
 
-	localDatabase.records[filter.Namespace][pipelineRecord.Identifier] = pipelineRecord
-	return pipelineRecord.Identifier, nil
+	localDatabase.records[filter.Namespace][record.Identifier] = record
+	return record.Identifier, nil
 }
 
 // Replace swaps a *plover.PipelineIR with an existing record in the pipeline.LocalDatabase.
-func (localDatabase *LocalDatabase) Replace(filter database.Filter, record any) error {
-
-	cfg, ok := record.(*plover.PipelineIR)
-	if !ok {
-		return errors.New("LocalDatabase expected *pipeline type")
-	}
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plover.PipelineIR) error {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
@@ -248,7 +236,7 @@ func (localDatabase *LocalDatabase) Replace(filter database.Filter, record any) 
 		localDatabase.records[filter.Namespace] = idToCfgMap
 	}
 
-	localDatabase.records[filter.Namespace][cfg.Identifier] = cfg
+	localDatabase.records[filter.Namespace][record.Identifier] = record
 	return nil
 }
 

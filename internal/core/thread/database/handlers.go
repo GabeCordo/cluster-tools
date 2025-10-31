@@ -2,7 +2,7 @@ package database
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/core/database"
+	"github.com/FortifiedCode/flock/internal/core/database/contact"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/plover"
 )
@@ -61,7 +61,7 @@ func (t *Thread) handleGetPipelineRecord(request *thread.Request, response *thre
 	}
 
 	if len(configs) < 1 {
-		response.Error = database.NotFound
+		response.Error = contact.NotFound
 		response.Success = false
 	}
 	response.Data = configs
@@ -77,7 +77,7 @@ func (t *Thread) handleGetStatisticRecord(request *thread.Request, response *thr
 	}
 
 	if len(statistics) < 1 {
-		response.Error = database.NotFound
+		response.Error = contact.NotFound
 		response.Success = false
 	}
 	response.Data = statistics
