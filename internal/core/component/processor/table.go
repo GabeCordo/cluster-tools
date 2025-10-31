@@ -199,7 +199,7 @@ func (table *Table) AddModule(processorId uint64, config *plover.ModuleIR) error
 		}
 
 		// TODO : remove
-		//clusterInstance.SetMode(export.Pipeline.Mode)
+		//clusterInstance.SetMode(export.Data.Mode)
 	}
 
 	// TODO : allow the user to specify whether they want modules to be mounted by default

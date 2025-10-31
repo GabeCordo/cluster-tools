@@ -10,13 +10,13 @@ import (
 
 func (uc UseCases) FindCandidateProcessor(r *thread.Response) (*processor2.Processor, error) {
 
-	pp, ok := r.Data.([]plover.PipelineIR)
+	pp, ok := r.Data.([]*plover.PipelineIR)
 	if !ok {
-		return nil, errors.New("received invalid response from database")
+		return nil, errors.New("FindCandidateProcessor expected []*plover.PipelineIR type")
 	}
 
 	if len(pp) < 1 {
-		return nil, errors.New("unknown pipeline")
+		return nil, errors.New("FindCandidateProcessor expected at least one pipeline")
 	}
 	p := pp[0]
 

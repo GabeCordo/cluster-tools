@@ -171,10 +171,10 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		return
 	}
 
-	pipelineConfigs, ok := iResponse.Data.([]plover.PipelineIR)
+	pipelineConfigs, ok := iResponse.Data.([]*plover.PipelineIR)
 	if !ok {
 		oResponse := thread.NewResponse(thread.Runner)
-		oResponse.Error = errors.New("expected response to be []pipeline.Pipeline")
+		oResponse.Error = errors.New("expected response to be []pipeline.Data")
 		delete(t.requestStore, iRequest.Nonce)
 		t.sendResponse(iRequest, oResponse)
 		return
@@ -182,13 +182,13 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 
 	if len(pipelineConfigs) < 1 {
 		oResponse := thread.NewResponse(thread.Runner)
-		oResponse.Error = errors.New("expected response to be []pipeline.Pipeline of length at least 1")
+		oResponse.Error = errors.New("expected response to be []pipeline.Data of length at least 1")
 		delete(t.requestStore, iRequest.Nonce)
 		t.sendResponse(iRequest, oResponse)
 		return
 	}
 
-	cfg = &pipelineConfigs[0]
+	cfg = pipelineConfigs[0]
 
 	id, err = t.useCases.CreateRun(iRequest.Identifiers.Namespace,
 		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg)

@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/FortifiedCode/flock/internal/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/plover"
 )
 
 type Request struct {
@@ -33,11 +33,11 @@ const (
 )
 
 type SupervisorRequest struct {
-	Identifier uint64               `json:"identifier"`
-	Action     SupervisorAction     `json:"action,omitempty"`
-	Statistics statistic.Statistics `json:"statistics,omitempty"`
-	Log        LogRequest           `json:"log,omitempty"`
-	Cache      CacheRequest         `json:"cache,omitempty"`
+	Identifier uint64            `json:"identifier"`
+	Action     SupervisorAction  `json:"action,omitempty"`
+	Statistics plover.Statistics `json:"statistics,omitempty"`
+	Log        LogRequest        `json:"log,omitempty"`
+	Cache      CacheRequest      `json:"cache,omitempty"`
 }
 
 type LogLevel string

@@ -6,7 +6,9 @@ import (
 	"time"
 )
 
-var NoResponseReceived = errors.New("no response recieved from the channel")
+var InvalidResponseReceived = errors.New("invalid response")
+
+var NoResponseReceived = errors.New("no response received from the channel")
 
 type ResponseTable struct {
 	responses map[Nonce]any

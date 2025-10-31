@@ -1,17 +1,18 @@
 package job
 
 import (
+	"github.com/FortifiedCode/flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/core/database/job/in_memory"
 	"testing"
 
 	"github.com/FortifiedCode/flock/internal/core/database"
-	job3 "github.com/FortifiedCode/flock/internal/core/database/job"
 )
 
 var testInterval = &database.Interval{
 	Minute: 10,
 }
 
-var testJob = &job3.Job{
+var testJob = &job.Job{
 	Identifier: "test",
 	Namespace:  "common",
 	Pipeline:   "vec",
@@ -19,7 +20,7 @@ var testJob = &job3.Job{
 	Metadata:   make(map[string]string),
 }
 
-var testDupJob = &job3.Job{
+var testDupJob = &job.Job{
 	Identifier: "test2",
 	Namespace:  "common",
 	Pipeline:   "vec",
@@ -31,7 +32,7 @@ var testInterval2 = &database.Interval{
 	Minute: 5,
 }
 
-var testJob2 = &job3.Job{
+var testJob2 = &job.Job{
 	Identifier: "test2",
 	Namespace:  "common",
 	Pipeline:   "vec",
@@ -39,7 +40,7 @@ var testJob2 = &job3.Job{
 	Metadata:   make(map[string]string),
 }
 
-var testJob3 = &job3.Job{
+var testJob3 = &job.Job{
 	Identifier: "test3",
 	Namespace:  "common",
 	Pipeline:   "hello",
@@ -49,7 +50,7 @@ var testJob3 = &job3.Job{
 
 func TestScheduler_Create(t *testing.T) {
 
-	scheduler, err := New(job3.NewLocalJobDatabase())
+	scheduler, err := New(in_memory.NewLocalJobDatabase())
 	if err != nil {
 		t.Error(err)
 		return
@@ -63,7 +64,7 @@ func TestScheduler_Create(t *testing.T) {
 
 func TestScheduler_GetBy(t *testing.T) {
 
-	scheduler, err := New(job3.NewLocalJobDatabase())
+	scheduler, err := New(in_memory.NewLocalJobDatabase())
 	if err != nil {
 		t.Error(err)
 		return
@@ -125,7 +126,7 @@ func TestScheduler_GetBy(t *testing.T) {
 
 func TestScheduler_Delete(t *testing.T) {
 
-	scheduler, err := New(job3.NewLocalJobDatabase())
+	scheduler, err := New(in_memory.NewLocalJobDatabase())
 	if err != nil {
 		t.Error(err)
 		return
@@ -213,7 +214,7 @@ func TestScheduler_Delete(t *testing.T) {
 	if foundJobs := scheduler.Jobs.Get(f2); len(foundJobs) != 1 {
 		t.Error("expected 1 job in common/vec to be left alone")
 		return
-	} else if foundJobs[0].(job3.Job).Identifier != "test2" {
+	} else if foundJobs[0].Identifier != "test2" {
 		t.Error("wrong job was deleted")
 	}
 }

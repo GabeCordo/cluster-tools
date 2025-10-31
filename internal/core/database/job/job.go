@@ -2,15 +2,14 @@ package job
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/FortifiedCode/flock/internal/core/database"
+	"time"
 )
 
 // Dump
 // A static representation of the jobs in the scheduler
 type Dump struct {
-	Jobs []Job `yaml:"jobs"`
+	Jobs []*Job `yaml:"jobs"`
 }
 
 // Job
@@ -64,4 +63,14 @@ func (job Job) ToString() string {
 
 	return fmt.Sprintf("%s %s.%s (pipeline: %s)",
 		job.Interval.ToString(), job.Namespace, job.Identifier, job.Pipeline)
+}
+
+type Database interface {
+	Get(filter database.Filter) []*Job
+	Create(filter database.Filter, record *Job) (string, error)
+	Replace(filter database.Filter, record *Job) error
+	Delete(filter database.Filter) error
+	Save(path string) error
+	Load(path string) error
+	Print()
 }

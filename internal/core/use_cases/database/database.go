@@ -2,21 +2,21 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/plover"
-	"log"
-	"time"
 )
 
 func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
+	if pipelineData == nil {
+		return errors.New("the *plover.PipelineIR cannot be nil")
+	}
+
 	err = plover.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
 		database.Filter{
-			Namespace: namespaceId,
-			Pipeline:  pipelineId,
+			Namespace:  namespaceId,
+			Identifier: pipelineId,
 		},
 		pipelineData,
 	)
@@ -24,60 +24,43 @@ func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipeline
 	return err
 }
 
-func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statisticData *statistic.Statistics) (err error) {
+func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statisticData *plover.Statistics) (err error) {
 
 	_, err = uc.StatisticDatabase.Create(
 		database.Filter{
 			Namespace: namespaceId,
 			Pipeline:  pipelineId,
 		},
-		statistic.Wrapper{ // TODO : depreciate or fix elapsed time
-			Timestamp: time.Now(),
-			Stats:     *statisticData, // copy TODO: maybe fix this
-		},
+		statisticData,
 	)
 	return err
 }
 
-func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []plover.PipelineIR, err error) {
+func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []*plover.PipelineIR, err error) {
 
 	results := uc.PipelineDatabase.Get(database.Filter{
 		Namespace:  namespaceId,
 		Identifier: pipelineId,
 	})
 
-	configs := make([]plover.PipelineIR, len(results))
-	ok := true
-
+	pipelines = make([]*plover.PipelineIR, len(results))
 	for i, result := range results {
-		configs[i], ok = result.(plover.PipelineIR)
-		if !ok {
-			errStr := fmt.Sprintf("expected type 'pipeline.Pipeline' in index %d", i)
-			err = errors.New(errStr)
-			break
-		}
+		pipelines[i] = result
 	}
 
-	return configs, err
+	return pipelines, err
 }
 
-func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []statistic.Statistics, err error) {
+func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []*plover.Statistics, err error) {
 
 	results := uc.StatisticDatabase.Get(database.Filter{
 		Namespace: namespaceId,
 		Pipeline:  pipelineId,
 	})
 
-	statistics = make([]statistic.Statistics, len(results))
-	ok := true
-
+	statistics = make([]*plover.Statistics, len(results))
 	for i, result := range results {
-		statistics[i], ok = result.(statistic.Statistics)
-		if !ok {
-			errStr := fmt.Sprintf("expected type 'statistic.Statistics' in index %d", i)
-			err = errors.New(errStr)
-			break
-		}
+		statistics[i] = result
 	}
 
 	return statistics, err
@@ -103,23 +86,15 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
-		Namespace: namespaceId,
-		Pipeline:  pipelineId,
+		Namespace:  namespaceId,
+		Identifier: pipelineId,
 	}, pipelineData)
 	return err
 }
 
 func (uc UseCases) LoadDatabases(folder string) (err error) {
 
-	if err = uc.PipelineDatabase.Load(folder); err != nil {
-		log.Panicf("could not load saved configs, statistic 'etl doctor' to verify the configuration is valid %s\n",
-			err.Error())
-	}
-
-	// some configs may have carried over from previous runs
-	// let the operator know these configs are being loaded into the
-	// flock without having to query the database over HTTP
-	uc.PipelineDatabase.Print()
+	// todo : should we remove this use case if it's not used?
 
 	return nil
 }

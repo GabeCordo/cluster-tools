@@ -1,14 +1,19 @@
 package core
 
 import (
-	job2 "github.com/FortifiedCode/flock/internal/core/component/scheduler/job"
-	database2 "github.com/FortifiedCode/flock/internal/core/use_cases/database"
-	processor2 "github.com/FortifiedCode/flock/internal/core/use_cases/processor"
-	runner2 "github.com/FortifiedCode/flock/internal/core/use_cases/runner"
-	scheduler2 "github.com/FortifiedCode/flock/internal/core/use_cases/scheduler"
-	socket2 "github.com/FortifiedCode/flock/internal/core/use_cases/socket"
+	"github.com/FortifiedCode/flock/internal/core/component/scheduler/job"
+	jobDb "github.com/FortifiedCode/flock/internal/core/database/job/mongo"
+	pipelineDb "github.com/FortifiedCode/flock/internal/core/database/pipeline/mongo"
+	runDb "github.com/FortifiedCode/flock/internal/core/database/run/in_memory"
+	statisticDb "github.com/FortifiedCode/flock/internal/core/database/statistic/mongo"
+	databaseUc "github.com/FortifiedCode/flock/internal/core/use_cases/database"
+	processorUc "github.com/FortifiedCode/flock/internal/core/use_cases/processor"
+	runnerUc "github.com/FortifiedCode/flock/internal/core/use_cases/runner"
+	schedulerUc "github.com/FortifiedCode/flock/internal/core/use_cases/scheduler"
+	socketUc "github.com/FortifiedCode/flock/internal/core/use_cases/socket"
+	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 	"github.com/FortifiedCode/flock/internal/shared/logging"
-	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
+	"github.com/FortifiedCode/flock/internal/shared/nonce"
 	"github.com/FortifiedCode/flock/internal/shared/socket/json_socket"
 	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"os"
@@ -17,10 +22,6 @@ import (
 
 	"github.com/FortifiedCode/flock/internal/core/component/message/log"
 	processorCmp "github.com/FortifiedCode/flock/internal/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/core/database/job"
-	configDb "github.com/FortifiedCode/flock/internal/core/database/pipeline"
-	supervisorDb "github.com/FortifiedCode/flock/internal/core/database/run"
-	statisticDb "github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/flock/internal/core/thread/database"
 	"github.com/FortifiedCode/flock/internal/core/thread/messenger"
@@ -84,6 +85,7 @@ type Core struct {
 }
 
 func New(configPath string) (*Core, error) {
+
 	core := new(Core)
 
 	core.interrupt = make(chan thread.InterruptEvent, 10)
@@ -128,7 +130,7 @@ func New(configPath string) (*Core, error) {
 	httpConfig := &restApi.Config{}
 	core.config.FillHttpClientConfig(httpConfig)
 
-	restNoncePool := nonce2.New(restNonceMin, restNonceMax)
+	restNoncePool := nonce.New(restNonceMin, restNonceMax)
 
 	core.RestThread, err = restApi.New(httpConfig, restLogger, restNoncePool,
 		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23)
@@ -146,11 +148,11 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	socketNoncePool := nonce2.New(socketNonceMin, socketNonceMax)
+	socketNoncePool := nonce.New(socketNonceMin, socketNonceMax)
 
 	jsonSocket := json_socket.NewServer()
 
-	socketUseCases := socket2.UseCases{Socket: jsonSocket, Logger: socketLogger}
+	socketUseCases := socketUc.UseCases{Socket: jsonSocket, Logger: socketLogger}
 
 	core.SocketThread, err = socket.New(socketConfig, socketLogger, socketNoncePool, &socketUseCases,
 		core.interrupt, core.C7, core.C8, core.C9, core.C10)
@@ -170,7 +172,7 @@ func New(configPath string) (*Core, error) {
 
 	table := processorCmp.NewTable()
 
-	processorUseCases := processor2.UseCases{
+	processorUseCases := processorUc.UseCases{
 		ProcessorTable: table,
 		Logger:         processorLogger,
 	}
@@ -191,9 +193,9 @@ func New(configPath string) (*Core, error) {
 	runnerConfig := &runner.Config{}
 	core.config.FillRunnerConfig(runnerConfig)
 
-	registry := supervisorDb.NewLocalDatabase()
+	registry := runDb.NewLocalDatabase()
 
-	runnerUseCases := runner2.UseCases{
+	runnerUseCases := runnerUc.UseCases{
 		RunDatabase: registry,
 	}
 
@@ -231,11 +233,29 @@ func New(configPath string) (*Core, error) {
 	databaseConfig := &database.Config{}
 	core.config.FillDatabaseConfig(databaseConfig)
 
-	configDatabase := configDb.NewLocalPipelineDatabase()
-	statDatabase := statisticDb.NewLocalStatisticDatabase()
-	jobDatabase := job.NewLocalJobDatabase()
+	envVars := ReadEnvironmentVariables()
+	driver := mongo.NewDriver(envVars.MongoDbUri)
+	err = driver.Connect()
+	if err != nil {
+		return nil, err
+	}
 
-	databaseUseCases := database2.UseCases{
+	configDatabase, err := pipelineDb.NewMongoDatabase(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	statDatabase, err := statisticDb.NewMongoDatabase(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	jobDatabase, err := jobDb.NewMongoDatabase(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	databaseUseCases := databaseUc.UseCases{
 		PipelineDatabase:  configDatabase,
 		StatisticDatabase: statDatabase,
 		JobDatabase:       jobDatabase,
@@ -273,23 +293,23 @@ func New(configPath string) (*Core, error) {
 		return nil, err
 	}
 
-	schedulerConig := &scheduler.Config{}
-	core.config.FillSchedulerConfig(schedulerConig)
+	schedulerConfig := &scheduler.Config{}
+	core.config.FillSchedulerConfig(schedulerConfig)
 
-	sch, err := job2.New(jobDatabase)
+	sch, err := job.New(jobDatabase)
 	if err != nil {
 		return nil, err
 	}
 
-	schedulerUseCases := scheduler2.UseCases{
+	schedulerUseCases := schedulerUc.UseCases{
 		Scheduler:    sch,
 		JobsDatabase: sch.Jobs,
 		Logger:       schedulerLogger,
 	}
 
-	scheduleNoncePool := nonce2.New(schedulerNonceMin, schedulerNonceMax)
+	scheduleNoncePool := nonce.New(schedulerNonceMin, schedulerNonceMax)
 
-	core.SchedulerThread, err = scheduler.New(schedulerConig, schedulerLogger, schedulerUseCases, scheduleNoncePool,
+	core.SchedulerThread, err = scheduler.New(schedulerConfig, schedulerLogger, schedulerUseCases, scheduleNoncePool,
 		core.interrupt, core.C18, core.C19, core.C20, core.C21, core.C26, core.C27)
 	if err != nil {
 		return nil, err
@@ -306,13 +326,7 @@ func New(configPath string) (*Core, error) {
 	return core, nil
 }
 
-const (
-	Version string = "v0.22.0"
-)
-
 func (core *Core) Run() {
-
-	core.banner()
 
 	core.logger.SetColour(terminal.Purple)
 

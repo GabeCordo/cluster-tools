@@ -10,13 +10,13 @@ import (
 	"github.com/FortifiedCode/flock/internal/shared/nonce"
 )
 
-func (uc UseCases) GetJobs(filter database.Filter) []job.Job {
+func (uc UseCases) GetJobs(filter database.Filter) (jobs []*job.Job) {
 
 	results := uc.Scheduler.Jobs.Get(filter)
 
-	jobs := make([]job.Job, len(results))
+	jobs = make([]*job.Job, len(results))
 	for i, result := range results {
-		jobs[i] = result.(job.Job)
+		jobs[i] = result
 	}
 
 	return jobs

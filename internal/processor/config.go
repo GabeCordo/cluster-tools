@@ -25,7 +25,7 @@ type Config struct {
 		Debug    bool   `yaml:"debug" toml:"Debug"`
 		Pipeline struct {
 			Default string `yaml:"default,omitempty" toml:"Default,omitempty"`
-		} `yaml:"pipeline" toml:"Pipeline"`
+		} `yaml:"pipeline" toml:"Data"`
 		Run     []RunConfig `yaml:"run" toml:"Runtime"`
 		Threads struct {
 			Timeout float64 `yaml:"timeout" toml:"Timeout"`

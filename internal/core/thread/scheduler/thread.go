@@ -6,10 +6,6 @@ import (
 
 func (t *Thread) Setup() {
 
-	err := t.useCases.LoadJobsFromDisk(t.config.SchedulesFolder)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (t *Thread) Start() {

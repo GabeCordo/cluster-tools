@@ -1,10 +1,8 @@
 package job
 
 import (
-	"sync"
-
-	"github.com/FortifiedCode/flock/internal/core/database"
 	"github.com/FortifiedCode/flock/internal/core/database/job"
+	"sync"
 )
 
 // Config
@@ -17,15 +15,15 @@ type Config struct {
 // Scheduler
 // Contains a collection of Jobs that are statistic on fixed intervals.
 type Scheduler struct {
-	Jobs   database.Database // A static list of Jobs registered to the scheduler.
-	queue  []job.Job         // A dynamic list of Jobs waiting to be statistic.
-	config Config            // Dynamic information that tells the Scheduler how to statistic.
+	Jobs   job.Database // A static list of Jobs registered to the scheduler.
+	queue  []job.Job    // A dynamic list of Jobs waiting to be statistic.
+	config Config       // Dynamic information that tells the Scheduler how to statistic.
 	mutex  sync.RWMutex
 }
 
 // New
 // Creates a new scheduler and initializes default fields.
-func New(database database.Database) (*Scheduler, error) {
+func New(database job.Database) (*Scheduler, error) {
 	scheduler := new(Scheduler)
 	scheduler.Jobs = database
 	scheduler.queue = make([]job.Job, 0)

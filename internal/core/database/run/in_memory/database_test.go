@@ -1,6 +1,7 @@
-package run
+package in_memory
 
 import (
+	"github.com/FortifiedCode/flock/internal/core/database/run"
 	"github.com/FortifiedCode/plover"
 	"strconv"
 	"testing"
@@ -13,6 +14,16 @@ var (
 	ModuleName    = "test-mod"
 	ClusterName   = "test-mod"
 )
+
+func Test_StatisticLocalDatabase_Is_Implemented(t *testing.T) {
+
+	d := NewLocalDatabase()
+
+	var i run.Database
+	i = d
+
+	i.Print()
+}
 
 func TestRegistry_Create(t *testing.T) {
 
@@ -32,7 +43,7 @@ func TestRegistry_Create(t *testing.T) {
 		return
 	}
 
-	if id.(uint64) != 1 {
+	if id != 1 {
 		t.Error("id should be 1")
 	}
 }
@@ -54,18 +65,18 @@ func TestRegistry_Get(t *testing.T) {
 		t.Error("failed to create a new runner")
 	}
 
-	if id.(uint64) != 1 {
+	if id != 1 {
 		t.Error("id should be 1")
 	}
 
-	f := database.Filter{Identifier: strconv.FormatUint(id.(uint64), 10)}
+	f := database.Filter{Identifier: strconv.FormatUint(id, 10)}
 	results := registry.Get(f)
 
 	if len(results) != 1 {
 		t.Error("failed to find a runner record that exists")
 	}
 
-	if (results[0].(*Run)).Pipeline.Identifier != ClusterName {
+	if results[0].Pipeline.Identifier != ClusterName {
 		t.Error("runner failed to database the correct pipeline record")
 	}
 }

@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+var NotImplemented = errors.New("the database function is not implemented")
+var NotConnected = errors.New("the database is not connected")
+
 // Interval
 // Contains information about how often a job should be statistic.
 type Interval struct {
@@ -86,14 +89,4 @@ func (filter Filter) UsePipeline() bool {
 
 func (filter Filter) UseInterval() bool {
 	return !filter.Interval.Empty() && (filter.Namespace != "") && (filter.Pipeline != "")
-}
-
-type Database interface {
-	Get(filter Filter) []any
-	Create(filter Filter, record any) (any, error)
-	Replace(filter Filter, record any) error
-	Delete(filter Filter) error
-	Save(path string) error
-	Load(path string) error
-	Print()
 }

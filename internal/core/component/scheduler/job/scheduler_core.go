@@ -1,11 +1,11 @@
 package job
 
 import (
+	"github.com/FortifiedCode/flock/internal/core/database/job"
 	"log"
 	"time"
 
 	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/job"
 )
 
 // Watch
@@ -17,15 +17,11 @@ func Watch(scheduler *Scheduler) {
 
 		// TODO: at the moment this only works with minute scheduling
 
-		rr := scheduler.Jobs.Get(database.Filter{})
-		for _, r := range rr {
-			jb, ok := r.(job.Job)
-			if !ok {
-				continue
-			}
-			if job.IsTimeToRun(&jb) {
+		jj := scheduler.Jobs.Get(database.Filter{})
+		for _, j := range jj {
+			if job.IsTimeToRun(j) {
 				scheduler.mutex.Lock()
-				scheduler.queue = append(scheduler.queue, jb)
+				scheduler.queue = append(scheduler.queue, *j) // todo : why are we copying?
 				scheduler.mutex.Unlock()
 			}
 		}
@@ -87,7 +83,5 @@ func (scheduler *Scheduler) GetQueue() []job.Job {
 
 func (scheduler *Scheduler) Print() {
 
-	if db, ok := (scheduler.Jobs).(database.Database); ok {
-		db.Print()
-	}
+	scheduler.Jobs.Print()
 }

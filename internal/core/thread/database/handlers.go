@@ -2,22 +2,21 @@ package database
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/core/database"
-	"github.com/FortifiedCode/flock/internal/core/database/statistic"
+	"github.com/FortifiedCode/flock/internal/core/database/contact"
 	"github.com/FortifiedCode/flock/internal/core/thread"
 	"github.com/FortifiedCode/plover"
 )
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	configData, ok := (request.Data).(plover.PipelineIR)
+	configData, ok := (request.Data).(*plover.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
 		return
 	}
 
-	err := t.useCases.CreatePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, &configData)
+	err := t.useCases.CreatePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, configData)
 	if err != nil {
 		response.Success = false
 		response.Error = errors.New("failed to create pipeline record")
@@ -32,7 +31,7 @@ func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *t
 
 func (t *Thread) handleCreateStatisticRecord(request *thread.Request, response *thread.Response) {
 
-	statisticsData, ok := (request.Data).(*statistic.Statistics)
+	statisticsData, ok := (request.Data).(*plover.Statistics)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
@@ -62,7 +61,7 @@ func (t *Thread) handleGetPipelineRecord(request *thread.Request, response *thre
 	}
 
 	if len(configs) < 1 {
-		response.Error = database.NotFound
+		response.Error = contact.NotFound
 		response.Success = false
 	}
 	response.Data = configs
@@ -78,7 +77,7 @@ func (t *Thread) handleGetStatisticRecord(request *thread.Request, response *thr
 	}
 
 	if len(statistics) < 1 {
-		response.Error = database.NotFound
+		response.Error = contact.NotFound
 		response.Success = false
 	}
 	response.Data = statistics
@@ -110,14 +109,14 @@ func (t *Thread) handleDeleteStatisticRecord(request *thread.Request, response *
 
 func (t *Thread) handleUpdatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	cfg, ok := (request.Data).(plover.PipelineIR)
+	cfg, ok := (request.Data).(*plover.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType
 		return
 	}
 
-	err := t.useCases.ReplacePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, &cfg)
+	err := t.useCases.ReplacePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline, cfg)
 
 	if err == nil {
 		t.useCases.PipelineDatabase.Print()
