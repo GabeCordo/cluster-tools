@@ -5,6 +5,7 @@ import (
 	"github.com/FortifiedCode/flock/internal/core/database/statistic"
 	"github.com/FortifiedCode/flock/internal/drivers/mongo"
 	"github.com/FortifiedCode/plover"
+	"time"
 )
 
 const DatabaseName string = "flock"
@@ -64,6 +65,7 @@ func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *plover
 
 	s := statistic.Statistic{
 		Pipeline:  filter.Pipeline,
+		Timestamp: time.Now(),
 		Namespace: filter.Namespace,
 		Data:      record,
 	}
