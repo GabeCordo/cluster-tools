@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/targets/core"
 	"os"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/core"
 	"gopkg.in/yaml.v3"
 )
 

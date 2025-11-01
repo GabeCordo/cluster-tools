@@ -1,7 +1,7 @@
 package flock
 
 import (
-	"github.com/FortifiedCode/flock/internal/processor"
+	processor2 "github.com/FortifiedCode/flock/internal/targets/processor"
 	"github.com/FortifiedCode/plover"
 	"os"
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 const defaultConfigName = "processor0"
 
 type Processor struct {
-	value *processor.Processor
+	value *processor2.Processor
 }
 
 func New(repository *plover.Repository) Processor {
@@ -29,9 +29,9 @@ func New(repository *plover.Repository) Processor {
 		filepath.Join(workingDir, "..", "..", "processor.toml"),
 	}
 
-	var cfg *processor.Config = nil
+	var cfg *processor2.Config = nil
 	for _, path := range paths {
-		cfg, err = processor.Load(path)
+		cfg, err = processor2.Load(path)
 		if err == nil {
 			break
 		}
@@ -39,10 +39,10 @@ func New(repository *plover.Repository) Processor {
 
 	// there 'err' is non nil when we could not find a config
 	if err != nil {
-		cfg = processor.NewConfig(defaultConfigName)
+		cfg = processor2.NewConfig(defaultConfigName)
 	}
 
-	p := processor.New(cfg, repository)
+	p := processor2.New(cfg, repository)
 	return Processor{value: p}
 }
 

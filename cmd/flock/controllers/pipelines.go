@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/shared/api"
 	"github.com/FortifiedCode/plover"
 	"log"
 	"os"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/FortifiedCode/commandline"
 	"github.com/FortifiedCode/flock/cmd/flock/local"
-	"github.com/FortifiedCode/flock/internal/api"
 	"gopkg.in/yaml.v3"
 )
 

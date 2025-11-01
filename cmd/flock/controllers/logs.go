@@ -2,14 +2,14 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/targets/core/component/message"
+	"github.com/FortifiedCode/flock/internal/targets/core/component/message/log"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/core/component/message"
-	"github.com/FortifiedCode/flock/internal/core/component/message/log"
 )
 
 type LogController struct {

@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/core"
 	"github.com/FortifiedCode/flock/internal/shared/terminal"
+	"github.com/FortifiedCode/flock/internal/targets/core"
 	"log"
 	"os"
 )

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/shared/api"
 	"os"
 	"os/signal"
 	"strconv"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/FortifiedCode/commandline"
 	"github.com/FortifiedCode/flock/cmd/flock/local"
-	"github.com/FortifiedCode/flock/internal/api"
 )
 
 type RunController struct {

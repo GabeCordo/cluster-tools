@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/core/database/job"
+	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
 	"os"
 	"path/filepath"
 	"strconv"

@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/shared/api"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/api"
 )
 
 type ConnectController struct {
