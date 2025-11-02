@@ -81,11 +81,3 @@ func (uc UseCases) LoadJobsFromDisk(schedulersFolder string) error {
 
 	return uc.Scheduler.Jobs.Load(schedulersFolder)
 }
-
-func (uc UseCases) SaveJobsToDisk(schedulersFolder string) {
-
-	err := uc.Scheduler.Jobs.Save(schedulersFolder)
-	if err != nil {
-		uc.Logger.Warnln(err.Error())
-	}
-}

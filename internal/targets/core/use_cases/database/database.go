@@ -98,18 +98,3 @@ func (uc UseCases) LoadDatabases(folder string) (err error) {
 
 	return nil
 }
-
-func (uc UseCases) SaveDatabases(pipelineFolder, statisticsFolder string) {
-
-	if err := uc.PipelineDatabase.Save(pipelineFolder); err != nil {
-		uc.Logger.Alertf("failed to save configs created during runtime %s\n", err.Error())
-	} else {
-		uc.Logger.Printf("saved pipelines to %s\n", pipelineFolder)
-	}
-
-	if err := uc.StatisticDatabase.Save(statisticsFolder); err != nil {
-		uc.Logger.Alertf("failed to save statistics created during runtime %s\n", err.Error())
-	} else {
-		uc.Logger.Printf("saved statistics to %s\n", statisticsFolder)
-	}
-}

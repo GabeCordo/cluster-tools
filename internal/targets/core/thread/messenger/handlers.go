@@ -7,7 +7,7 @@ import (
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 )
 
-func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {
+func (t *Thread) ProcessConsoleRequest(request *thread.Request) error {
 	var priority message.Priority
 
 	switch request.Type {
@@ -24,7 +24,7 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {
 		return errors.New("expected request.Data to be of type string")
 	}
 
-	err := th.messenger.Message(
+	err := t.messenger.Message(
 		message.Source{
 			Module:     request.Identifiers.Module,
 			Cluster:    request.Identifiers.Function,
@@ -38,14 +38,14 @@ func (th *Thread) ProcessConsoleRequest(request *thread.Request) error {
 	return err
 }
 
-func (th *Thread) ProcessCloseLogRequest(request *thread.Request) error {
+func (t *Thread) ProcessCloseLogRequest(request *thread.Request) error {
 
-	th.logger.Printf("[%s][%s][%d] closing log\n",
+	t.logger.Printf("[%s][%s][%d] closing log\n",
 		request.Identifiers.Module,
 		request.Identifiers.Function,
 		request.Identifiers.Supervisor,
 	)
-	err := th.messenger.Flush(
+	err := t.messenger.Flush(
 		message.Source{
 			Module:     request.Identifiers.Module,
 			Cluster:    request.Identifiers.Function,
@@ -59,7 +59,7 @@ func (th *Thread) ProcessCloseLogRequest(request *thread.Request) error {
 	//
 	// Action: Only log other types of errors encountered.
 	if errors.Is(err, message.LogSaveFailedError) {
-		th.logger.Printf("closing log failed %s\n", err.Error())
+		t.logger.Printf("closing log failed %s\n", err.Error())
 	}
 
 	return err

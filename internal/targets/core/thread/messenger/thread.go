@@ -1,41 +1,44 @@
 package messenger
 
 import (
+	"github.com/FortifiedCode/flock/internal/flags"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 )
 
-func (th *Thread) Setup() {
+func (t *Thread) Setup() {
 
+	t.logger.SetColour(terminal.Blue)
 }
 
-func (th *Thread) Start() {
+func (t *Thread) Start() {
 
 	var iReq *thread.Request
 	var oRsp *thread.Response
 
 	for {
 		select {
-		case iReq = <-th.channels.c3:
+		case iReq = <-t.channels.c3:
 			{
-				oRsp = th.handleRequest(iReq)
+				oRsp = t.handleRequest(iReq)
 				if oRsp != nil {
 					thread.CopyMetadata(iReq, oRsp)
-					th.channels.c4 <- oRsp
+					t.channels.c4 <- oRsp
 				}
 			}
-		case iReq = <-th.channels.c22:
+		case iReq = <-t.channels.c22:
 			{
-				oRsp = th.handleRequest(iReq)
+				oRsp = t.handleRequest(iReq)
 				if oRsp != nil {
 					thread.CopyMetadata(iReq, oRsp)
-					th.channels.c23 <- oRsp
+					t.channels.c23 <- oRsp
 				}
 			}
-		case iReq = <-th.channels.c17:
+		case iReq = <-t.channels.c17:
 			{
-				_ = th.handleRequest(iReq)
+				_ = t.handleRequest(iReq)
 			}
-		case <-th.channels.close:
+		case <-t.channels.close:
 			{
 				// shutting down the messenger thread
 				break
@@ -45,9 +48,13 @@ func (th *Thread) Start() {
 	}
 }
 
-func (th *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
+func (t *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
 
 	var err error
+
+	if flags.DEBUG {
+		t.logger.Printf("Received %s", request.ToString())
+	}
 
 	switch request.Action {
 	case thread.GetAction:
@@ -66,11 +73,11 @@ func (th *Thread) handleRequest(request *thread.Request) (response *thread.Respo
 		}
 	case thread.CloseAction:
 		{
-			err = th.ProcessCloseLogRequest(request)
+			err = t.ProcessCloseLogRequest(request)
 		}
 	default:
 		{
-			err = th.ProcessConsoleRequest(request)
+			err = t.ProcessConsoleRequest(request)
 		}
 	}
 
@@ -80,8 +87,8 @@ func (th *Thread) handleRequest(request *thread.Request) (response *thread.Respo
 	return response
 }
 
-func (th *Thread) Teardown() {
+func (t *Thread) Teardown() {
 
 	// send a notification to the Start() goroutine to terminate
-	th.channels.close <- thread.Shutdown
+	t.channels.close <- thread.Shutdown
 }

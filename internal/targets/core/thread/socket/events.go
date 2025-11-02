@@ -7,7 +7,6 @@ import (
 	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"github.com/FortifiedCode/plover"
-	"log"
 	"net"
 )
 
@@ -19,6 +18,7 @@ func (events Events) OnClientConnectEvent(id socket.ConnectionId, conn net.Conn)
 
 	mandatory := thread.Mandatory{
 		Pipe:          events.thread.channels.c7,
+		Log:           events.thread.logger,
 		ResponseTable: events.thread.responseTables.processor,
 		NoncePool:     events.thread.noncePool,
 		Timeout:       events.thread.config.Timeout,
@@ -33,6 +33,7 @@ func (events Events) OnClientDisconnectEvent(id socket.ConnectionId, conn string
 
 	mandatory := thread.Mandatory{
 		Pipe:          events.thread.channels.c7,
+		Log:           events.thread.logger,
 		ResponseTable: events.thread.responseTables.processor,
 		NoncePool:     events.thread.noncePool,
 		Timeout:       events.thread.config.Timeout,
@@ -55,21 +56,27 @@ func (events Events) OnMessageEvent(id socket.ConnectionId, request *socket.Mess
 				{
 					b, err := json.Marshal(request.Data)
 					if err != nil {
-						log.Println(err)
+						events.thread.logger.Println(err.Error())
 						return
 					}
 
 					config := new(plover.ModuleIR)
 					err = json.Unmarshal(b, config)
 					if err != nil {
-						log.Println("received invalid data for Create Module")
+						events.thread.logger.Printf("ConnectionId %d invalid data for Create Module", id)
 						return
 					}
 
-					log.Printf("received module %s (%s)\n", config.Identifier, config.Version)
+					events.thread.logger.Printf(
+						"ConnectionId %d received a new module %s:%s\n",
+						id,
+						config.Identifier,
+						config.Version,
+					)
 
 					mandatory := thread.Mandatory{
 						Pipe:          events.thread.channels.c7,
+						Log:           events.thread.logger,
 						ResponseTable: events.thread.responseTables.processor,
 						NoncePool:     events.thread.noncePool,
 						Timeout:       events.thread.config.Timeout,
@@ -94,19 +101,20 @@ func (events Events) OnMessageEvent(id socket.ConnectionId, request *socket.Mess
 				{
 					b, err := json.Marshal(request.Data)
 					if err != nil {
-						log.Println("failed to marshal the received data")
+						events.thread.logger.Printf("ConnectionId %d to marshal the received data", id)
 						return
 					}
 
 					instance := new(run.Run)
 					err = json.Unmarshal(b, instance)
 					if err != nil {
-						log.Println("received invalid data for update run")
+						events.thread.logger.Printf("ConnectionId %d received invalid data for update run", id)
 						return
 					}
 
 					mandatory := thread.Mandatory{
 						Pipe:          events.thread.channels.c7,
+						Log:           events.thread.logger,
 						ResponseTable: events.thread.responseTables.processor,
 						NoncePool:     events.thread.noncePool,
 						Timeout:       events.thread.config.Timeout,

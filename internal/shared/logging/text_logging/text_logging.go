@@ -15,6 +15,7 @@ import (
 /* ------------------------ **** Constants ***** -------------------------- */
 
 const LoggerFormat = "[%s][%s] "
+const HideTimestampFlag = 0
 
 /* ----------------------- **** Static Vars ***** ------------------------- */
 
@@ -46,6 +47,8 @@ func New(thread string, debug ...*bool) (*TextLogger, error) {
 		}
 		logger.debug = debug[0]
 	}
+
+	log.SetFlags(HideTimestampFlag)
 
 	return logger, nil
 }

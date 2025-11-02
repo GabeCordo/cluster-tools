@@ -19,6 +19,18 @@ func (sc StartCommand) banner() {
 	fmt.Println()
 }
 
+const MongoDatabaseUriEnv = "MONGO_DATABASE_URI"
+
+type EnvironmentVariables struct {
+	MongoDbUri string
+}
+
+func (sc StartCommand) readEnvironmentVariables() (env EnvironmentVariables) {
+
+	env.MongoDbUri = os.Getenv(MongoDatabaseUriEnv)
+	return env
+}
+
 func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	// check to see that the etl thread has been initialized with the required files
@@ -30,16 +42,20 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 
 	sc.banner()
 
-	terminal.HorizontalBar()
-	fmt.Println("Setting up dependencies...")
+	env := sc.readEnvironmentVariables()
 
-	c, err := core.New(DefaultCoreConfigFile)
+	cfg, err := core.GetConfigInstance(DefaultCoreConfigFile)
 	if err != nil {
-		log.Panic(err.Error())
+		log.Println(err)
+		return commandline.Terminate
 	}
+	cfg.Database.Url = env.MongoDbUri
 
-	terminal.HorizontalBar()
-	fmt.Println("Launching the threads...")
+	c, err := core.New(cfg)
+	if err != nil {
+		log.Println(err)
+		return commandline.Terminate
+	}
 
 	c.Run()
 

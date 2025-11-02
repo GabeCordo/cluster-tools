@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"fmt"
 	"github.com/FortifiedCode/flock/internal/shared/buffers"
 	"github.com/FortifiedCode/flock/internal/shared/logging"
 	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
@@ -161,7 +160,7 @@ func (p *Processor) Connect() {
 
 	select {
 	case <-sigs:
-		fmt.Println("system sent SIGTERM or SIGINT signal")
+		p.logger.Println("system sent SIGTERM or SIGINT signal")
 		p.channels.interrupt <- thread.Panic
 	case interrupt := <-p.channels.interrupt:
 		switch interrupt {
