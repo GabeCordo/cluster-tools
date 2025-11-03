@@ -61,23 +61,23 @@ const (
 func (threadType ThreadType) ToString() string {
 	switch threadType {
 	case RestAPI:
-		return "HTTP-CLIENT"
+		return "http"
 	case Socket:
-		return "TLS-SOCKET"
+		return "socket"
 	case Processor:
-		return "PROCESSOR"
+		return "processor"
 	case Runner:
-		return "RUNNER"
+		return "runner"
 	case Messenger:
-		return "MESSENGER"
+		return "messenger"
 	case Database:
-		return "DATABASE"
+		return "database"
 	case Cache:
-		return "CACHE"
+		return "cache"
 	case Scheduler:
-		return "SCHEDULER"
+		return "scheduler"
 	default:
-		return "-"
+		return "common"
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 
 func (t *Thread) Setup() {
 
-	t.logger.SetColour(terminal.Cyan)
+	t.logger.SetColour(terminal.Blue)
 }
 
 func (t *Thread) Start() {

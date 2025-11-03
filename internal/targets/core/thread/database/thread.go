@@ -8,7 +8,7 @@ import (
 
 func (t *Thread) Setup() {
 
-	t.logger.SetColour(terminal.Orange)
+	t.logger.SetColour(terminal.Blue)
 
 	err := t.useCases.LoadDatabases(t.config.ConfigsFolder)
 	if err != nil {
