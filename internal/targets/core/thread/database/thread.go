@@ -1,10 +1,14 @@
 package database
 
 import (
+	"github.com/FortifiedCode/flock/internal/flags"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {
+
+	t.logger.SetColour(terminal.Blue)
 
 	err := t.useCases.LoadDatabases(t.config.ConfigsFolder)
 	if err != nil {
@@ -62,6 +66,10 @@ func (t *Thread) Start() {
 }
 
 func (t *Thread) handleRequest(request *thread.Request) (response *thread.Response) {
+
+	if flags.DEBUG {
+		t.logger.Printf("Received %s", request.ToString())
+	}
 
 	response = thread.NewResponse(thread.Database)
 
@@ -144,6 +152,4 @@ func (t *Thread) Teardown() {
 
 	// send a notification to the Start() goroutine to terminate
 	t.channels.close <- thread.Shutdown
-
-	t.useCases.SaveDatabases(t.config.ConfigsFolder, t.config.StatisticsFolder)
 }

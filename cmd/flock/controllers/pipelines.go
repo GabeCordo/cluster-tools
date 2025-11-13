@@ -51,7 +51,6 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	// inside the folder and register them on the core
 	if fInfo.IsDir() {
 		err := filepath.Walk(providedPath, func(path string, info os.FileInfo, err error) error {
-			//fmt.Println(path)
 			if info.IsDir() || err != nil {
 				return nil
 			}

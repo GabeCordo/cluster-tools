@@ -1,5 +1,7 @@
 package logging
 
+import "github.com/FortifiedCode/flock/internal/shared/terminal"
+
 //////////////////////////////////////////////////////////////////////////////
 //							   	  Logging
 //////////////////////////////////////////////////////////////////////////////
@@ -18,13 +20,13 @@ const (
 func (alertType AlertType) ToString() string {
 	switch alertType {
 	case Warning:
-		return "?"
+		return terminal.Yellow + "@" + terminal.Reset
 	case Alert:
-		return "!"
+		return terminal.Orange + "!" + terminal.Reset
 	case Panic:
-		return "p"
+		return terminal.Red + "p" + terminal.Reset
 	default:
-		return "-"
+		return terminal.White + "+" + terminal.Reset
 	}
 }
 

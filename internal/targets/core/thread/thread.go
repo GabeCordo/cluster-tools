@@ -2,6 +2,7 @@ package thread
 
 import (
 	"errors"
+	"fmt"
 	"github.com/FortifiedCode/flock/internal/shared/nonce"
 )
 
@@ -23,6 +24,8 @@ const (
 	User RequestCaller = iota
 )
 
+const NumOfRequestActions = 9
+
 type RequestAction uint16
 
 const (
@@ -36,6 +39,20 @@ const (
 	UnMountAction
 	CloseAction
 )
+
+var requestActionStrings = [NumOfRequestActions]string{
+	"PingAction",
+	"GetAction",
+	"CreateAction",
+	"UpdateAction",
+	"DeleteAction",
+	"LogAction",
+	"MountAction",
+	"UnMountAction",
+	"CloseAction",
+}
+
+const NumOfRequestTypes = 14
 
 type RequestType uint16
 
@@ -55,6 +72,23 @@ const (
 	FatalLogRecord
 	SubscriberRecord
 )
+
+var requestTypeStrings = [NumOfRequestTypes]string{
+	"ProcessorRecord",
+	"ModuleRecord",
+	"FunctionRecord",
+	"RunRecord",
+	"PipelineRecord",
+	"CacheRecord",
+	"SmtpRecord",
+	"JobRecord",
+	"QueueRecord",
+	"StatisticRecord",
+	"DefaultLogRecord",
+	"WarningLogRecord",
+	"FatalLogRecord",
+	"SubscriberRecord",
+}
 
 type RequestIdentifiers struct {
 	Processor  uint64
@@ -76,6 +110,15 @@ type Request struct {
 	Nonce       nonce.Nonce
 }
 
+func (request Request) ToString() string {
+	return fmt.Sprintf(
+		"Request(action: %s, type: %s, nonce: %d)",
+		requestActionStrings[request.Action],
+		requestTypeStrings[request.Type],
+		request.Nonce,
+	)
+}
+
 type Response struct {
 	Action  RequestAction
 	Type    RequestType
@@ -84,6 +127,17 @@ type Response struct {
 	Data    any
 	Source  Module
 	Nonce   nonce.Nonce
+}
+
+func (response Response) ToString() string {
+	return fmt.Sprintf(
+		"Response(success: %t, err_nil: %t, action: %s, type: %s, nonce: %d)",
+		response.Success,
+		response.Error == nil,
+		requestActionStrings[response.Action],
+		requestTypeStrings[response.Type],
+		response.Nonce,
+	)
 }
 
 type ProcessorResponseData struct {

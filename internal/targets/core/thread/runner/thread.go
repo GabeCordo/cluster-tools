@@ -1,11 +1,14 @@
 package runner
 
 import (
+	"github.com/FortifiedCode/flock/internal/flags"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {
 
+	t.logger.SetColour(terminal.Orange)
 }
 
 func (t *Thread) Start() {
@@ -74,6 +77,10 @@ func (t *Thread) sendResponse(request *thread.Request, response *thread.Response
 // to process the current thread.Request. Once it receives additional information
 // it will send a thread.Response to the original callee.
 func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Response) {
+
+	if flags.DEBUG {
+		t.logger.Printf("Received %s ", request.ToString())
+	}
 
 	var err error
 
@@ -158,6 +165,10 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 }
 
 func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Response) {
+
+	if flags.DEBUG {
+		t.logger.Printf("Received %s", iResponse.ToString())
+	}
 
 	switch iResponse.Source {
 	case thread.Database:

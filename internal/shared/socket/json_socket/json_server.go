@@ -162,7 +162,10 @@ func (server *Server) clientConnectionHandler(conn net.Conn) {
 		log.Println(err)
 	}
 
-	server.handler.ReleaseConnection(client.Id)
+	err = server.handler.ReleaseConnection(client.Id)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // Send

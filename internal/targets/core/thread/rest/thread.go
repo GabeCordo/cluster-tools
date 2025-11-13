@@ -3,6 +3,8 @@ package rest
 import (
 	"context"
 	"fmt"
+	"github.com/FortifiedCode/flock/internal/flags"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"net/http"
 	"net/http/pprof"
@@ -10,6 +12,8 @@ import (
 )
 
 func (t *Thread) Setup() {
+
+	t.logger.SetColour(terminal.Green)
 
 	mux := http.NewServeMux()
 
@@ -80,6 +84,8 @@ func (t *Thread) Start() {
 	go func(t *Thread) {
 		err := t.server.ListenAndServe()
 		if err != nil {
+			t.logger.Alertf("The REST API is unable to bind to the port %d", t.config.Net.Port)
+			t.logger.Alertf("You need to check what service is using port %d", t.config.Net.Port)
 			t.channels.interrupt <- thread.Panic
 		}
 	}(t)
@@ -90,18 +96,30 @@ func (t *Thread) Start() {
 		select {
 		case iRsp = <-t.channels.c6:
 			{
+				if flags.DEBUG {
+					t.logger.Printf("Received %s", iRsp.ToString())
+				}
 				t.ProcessorResponseTable.Write(iRsp.Nonce, iRsp)
 			}
 		case iRsp = <-t.channels.c2:
 			{
+				if flags.DEBUG {
+					t.logger.Printf("Received %s", iRsp.ToString())
+				}
 				t.DatabaseResponseTable.Write(iRsp.Nonce, iRsp)
 			}
 		case iRsp = <-t.channels.c21:
 			{
+				if flags.DEBUG {
+					t.logger.Printf("Received %s", iRsp.ToString())
+				}
 				t.SchedulerResponseTable.Write(iRsp.Nonce, iRsp)
 			}
 		case iRsp = <-t.channels.c23:
 			{
+				if flags.DEBUG {
+					t.logger.Printf("Received %s", iRsp.ToString())
+				}
 				t.MessengerResponseTable.Write(iRsp.Nonce, iRsp)
 			}
 		case <-t.channels.close:

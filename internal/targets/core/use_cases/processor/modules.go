@@ -2,7 +2,6 @@ package processor
 
 import (
 	"errors"
-	"fmt"
 	processor2 "github.com/FortifiedCode/flock/internal/targets/core/component/processor"
 	"github.com/FortifiedCode/plover"
 )
@@ -59,7 +58,7 @@ func (uc UseCases) AddModule(processorId uint64, cfg *plover.ModuleIR) error {
 	// let the operator have an understanding of the flock's state
 	// ->	when a processor is added it may change what modules/configs/processors are available to use
 	//		and whether they are mounted in the flock currently
-	fmt.Println("UPDATED ==================>")
+	uc.Logger.Println("UPDATED ==================>")
 	uc.ProcessorTable.Print()
 
 	return nil

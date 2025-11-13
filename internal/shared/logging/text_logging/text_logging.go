@@ -14,7 +14,8 @@ import (
 
 /* ------------------------ **** Constants ***** -------------------------- */
 
-const LoggerFormat = "[%s][%s] "
+const LoggerFormat = "[%s](%s) "
+const HideTimestampFlag = 0
 
 /* ----------------------- **** Static Vars ***** ------------------------- */
 
@@ -47,12 +48,14 @@ func New(thread string, debug ...*bool) (*TextLogger, error) {
 		logger.debug = debug[0]
 	}
 
+	log.SetFlags(HideTimestampFlag)
+
 	return logger, nil
 }
 
 func (logger *TextLogger) prefix(alert logging.AlertType) string {
-	format := fmt.Sprintf(LoggerFormat, logger.thread, alert.ToString())
-	return logger.colour + format + terminal.Reset
+	format := fmt.Sprintf(LoggerFormat, alert.ToString(), logger.colour+logger.thread+terminal.Reset)
+	return format
 }
 
 func (logger *TextLogger) canPrint() bool {

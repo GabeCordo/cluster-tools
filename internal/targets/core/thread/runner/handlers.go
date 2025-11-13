@@ -38,7 +38,7 @@ func (t *Thread) handleCreateRun(request *thread2.Request, response **thread2.Re
 
 	// send a request to the Database thread for the pipeline
 	t.requestStore[request.Nonce] = request
-	thread2.AsyncGetPipelineFromDatabase(t.channels.c15, request)
+	thread2.AsyncGetPipelineFromDatabase(t.channels.c15, t.logger, request)
 }
 
 func (t *Thread) handleUpdateRun(request *thread2.Request, response **thread2.Response) {
@@ -72,7 +72,7 @@ func (t *Thread) handleUpdateRun(request *thread2.Request, response **thread2.Re
 	if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
 		t.logger.Printf("[proc: %d -> flock][id: %d] runner has completed\n", r.Processor, r.GetId())
 		t.requestStore[request.Nonce] = request
-		thread2.AsyncCreateStatisticRecordInDatabase(t.channels.c15, request, r)
+		thread2.AsyncCreateStatisticRecordInDatabase(t.channels.c15, t.logger, request, r)
 	}
 }
 
@@ -92,7 +92,7 @@ func (t *Thread) handleDeleteRun(request *thread2.Request, response **thread2.Re
 	r.Status = run.Cancelled
 
 	t.requestStore[request.Nonce] = request
-	thread2.AsyncDeleteRun(t.channels.c9, request, request.Identifiers.Supervisor, r.Processor)
+	thread2.AsyncDeleteRun(t.channels.c9, t.logger, request, request.Identifiers.Supervisor, r.Processor)
 }
 
 func (t *Thread) handleLogRun(request *thread2.Request, response **thread2.Response) {
@@ -133,7 +133,7 @@ func (t *Thread) handleLogRun(request *thread2.Request, response **thread2.Respo
 		logType = thread2.DefaultLogRecord
 	}
 
-	thread2.AsyncSendLogToMessenger(t.channels.c17, request.Nonce,
+	thread2.AsyncSendLogToMessenger(t.channels.c17, t.logger, request.Nonce,
 		r.Namespace, r.Pipeline.Identifier, r.GetId(), logType, l.Message)
 }
 
@@ -150,7 +150,7 @@ func (t *Thread) handleStopRun(request *thread2.Request, response **thread2.Resp
 
 	r.Status = run.Cancelled
 
-	thread2.AsyncSendStopToMessenger(t.channels.c9, request, request.Identifiers.Supervisor, r.Processor)
+	thread2.AsyncSendStopToMessenger(t.channels.c9, t.logger, request, request.Identifiers.Supervisor, r.Processor)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -213,13 +213,13 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread2.Request, iRespo
 		return
 	}
 
-	thread2.AsyncSendRunToSocket(t.channels.c9, iRequest, id, cfg, metadata)
+	thread2.AsyncSendRunToSocket(t.channels.c9, t.logger, iRequest, id, cfg, metadata)
 }
 
 func (t *Thread) handleDatabaseCreatesStatistic(iRequest *thread2.Request, iResponse *thread2.Response) {
 
 	if iResponse.Error == nil {
-		thread2.AsyncCloseMessengerForRun(t.channels.c17, iRequest)
+		thread2.AsyncCloseMessengerForRun(t.channels.c17, t.logger, iRequest)
 	} else {
 		// the database failed to create a statistic record for the run
 		oResponse := thread2.NewResponse(thread2.Runner)

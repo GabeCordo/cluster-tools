@@ -49,7 +49,8 @@ func (uc *UseCases) StartNetworkSocket(host string, port int) {
 
 	err := uc.Socket.Listen(host, port)
 	if err != nil {
-		uc.Logger.Alertln(err.Error())
+		uc.Logger.Alertf("The TCP socket cannot bind to the port %d", port)
+		uc.Logger.Alertf("You need to check what service is using port %d", port)
 	}
 }
 

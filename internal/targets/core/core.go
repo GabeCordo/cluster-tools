@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"github.com/FortifiedCode/flock/internal/shared/drivers/mongo"
 	"github.com/FortifiedCode/flock/internal/shared/logging"
 	"github.com/FortifiedCode/flock/internal/shared/nonce"
@@ -29,6 +30,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
 )
@@ -41,6 +43,43 @@ const (
 	socketNonceMin    = 524228
 	socketNonceMax    = 786342 // (base) 524228 + 262114 (offset)
 )
+
+type ThreadType uint8
+
+const (
+	RestAPI ThreadType = iota
+	Socket
+	Processor
+	Runner
+	Database
+	Messenger
+	Cache
+	Scheduler
+	Undefined
+)
+
+func (threadType ThreadType) ToString() string {
+	switch threadType {
+	case RestAPI:
+		return "http"
+	case Socket:
+		return "socket"
+	case Processor:
+		return "processor"
+	case Runner:
+		return "runner"
+	case Messenger:
+		return "messenger"
+	case Database:
+		return "database"
+	case Cache:
+		return "cache"
+	case Scheduler:
+		return "scheduler"
+	default:
+		return "common"
+	}
+}
 
 type Core struct {
 	RestThread      *restApi.Thread
@@ -84,7 +123,7 @@ type Core struct {
 	logger logging.Logger
 }
 
-func New(configPath string) (*Core, error) {
+func New(config *Config) (*Core, error) {
 
 	core := new(Core)
 
@@ -118,12 +157,23 @@ func New(configPath string) (*Core, error) {
 	core.C27 = make(chan *thread.Response, 10)
 
 	/* load the cfg in for the first time */
-	core.config = GetConfigInstance(configPath)
+	if config == nil {
+		return nil, errors.New("config cannot be nil")
+	}
+	core.config = config
 
-	// HTTP CLIENT LOGICAL THREAD
-
-	restLogger, err := text_logging.New(RestAPI.ToString(), &GetConfigInstance().Debug)
+	coreLogger, err := text_logging.New(Undefined.ToString(), &core.config.Debug)
 	if err != nil {
+		return nil, err
+	}
+	core.logger = coreLogger
+	core.logger.SetColour(terminal.Purple)
+
+	// REST API LOGICAL THREAD
+
+	restLogger, err := text_logging.New(RestAPI.ToString(), &core.config.Debug)
+	if err != nil {
+		core.logger.Alertln("failed to initialize rest api logger")
 		return nil, err
 	}
 
@@ -135,16 +185,18 @@ func New(configPath string) (*Core, error) {
 	core.RestThread, err = restApi.New(httpConfig, restLogger, restNoncePool,
 		core.interrupt, core.C1, core.C2, core.C5, core.C6, core.C20, core.C21, core.C22, core.C23)
 	if err != nil {
+		core.logger.Alertln("failed to initialize rest api thread")
 		return nil, err
 	}
 
-	// SOCKET LOGICAL THREAD
+	// TCP SOCKET LOGICAL THREAD
 
 	socketConfig := &socket.Config{}
 	core.config.FillSocketConfig(socketConfig)
 
-	socketLogger, err := text_logging.New(Socket.ToString(), &GetConfigInstance().Debug)
+	socketLogger, err := text_logging.New(Socket.ToString(), &core.config.Debug)
 	if err != nil {
+		core.logger.Alertln("failed to initialize socket logger")
 		return nil, err
 	}
 
@@ -157,13 +209,15 @@ func New(configPath string) (*Core, error) {
 	core.SocketThread, err = socket.New(socketConfig, socketLogger, socketNoncePool, &socketUseCases,
 		core.interrupt, core.C7, core.C8, core.C9, core.C10)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the socket thread")
 		return nil, err
 	}
 
 	// PROCESSOR LOGICAL THREAD
 
-	processorLogger, err := text_logging.New(Processor.ToString(), &GetConfigInstance().Debug)
+	processorLogger, err := text_logging.New(Processor.ToString(), &core.config.Debug)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the processor logger")
 		return nil, err
 	}
 
@@ -180,13 +234,15 @@ func New(configPath string) (*Core, error) {
 	core.ProcessorThread, err = processor.New(processorConfig, processorLogger, processorUseCases,
 		core.interrupt, core.C5, core.C6, core.C7, core.C8, core.C11, core.C12, core.C13, core.C14, core.C18, core.C19)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the processor thread")
 		return nil, err
 	}
 
-	// SUPERVISOR LOGICAL THREAD
+	// RUNNER LOGICAL THREAD
 
-	runnerLogger, err := text_logging.New(Runner.ToString(), &GetConfigInstance().Debug)
+	runnerLogger, err := text_logging.New(Runner.ToString(), &core.config.Debug)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the runner logger")
 		return nil, err
 	}
 
@@ -202,13 +258,15 @@ func New(configPath string) (*Core, error) {
 	core.RunnerThread, err = runner.NewThread(runnerConfig, runnerLogger, runnerUseCases,
 		core.interrupt, core.C13, core.C14, core.C15, core.C16, core.C17, core.C9, core.C10)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the runner thread")
 		return nil, err
 	}
 
 	// MESSENGER LOGICAL THREAD
 
-	messengerLogger, err := text_logging.New(Messenger.ToString(), &GetConfigInstance().Debug)
+	messengerLogger, err := text_logging.New(Messenger.ToString(), &core.config.Debug)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the messenger logger")
 		return nil, err
 	}
 
@@ -220,38 +278,49 @@ func New(configPath string) (*Core, error) {
 	core.MessengerThread, err = messenger.New(messengerConfig, messengerLogger, logger,
 		core.interrupt, core.C3, core.C4, core.C17, core.C22, core.C23)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the messenger thread")
 		return nil, err
 	}
 
 	// DATABASE LOGICAL THREAD
 
-	databaseLogger, err := text_logging.New(Database.ToString(), &GetConfigInstance().Debug)
+	databaseLogger, err := text_logging.New(Database.ToString(), &core.config.Debug)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the database logger")
 		return nil, err
 	}
 
 	databaseConfig := &database.Config{}
 	core.config.FillDatabaseConfig(databaseConfig)
 
-	envVars := ReadEnvironmentVariables()
-	driver := mongo.NewDriver(envVars.MongoDbUri)
+	core.logger.Println("Attempting Connection to NoSQL Database")
+	driver := mongo.NewDriver(core.config.Database.Url)
+
+	timestampA := time.Now()
 	err = driver.Connect()
 	if err != nil {
+		core.logger.Alertln("there was a failure while attempting to connect to mongodb")
 		return nil, err
+	} else {
+		timestampB := time.Now()
+		core.logger.Printf("Connection to NoSQL Database established after %d μs", timestampB.Sub(timestampA).Microseconds())
 	}
 
 	configDatabase, err := pipelineDb.NewMongoDatabase(driver)
 	if err != nil {
+		core.logger.Alertln("failed to initialize config database")
 		return nil, err
 	}
 
 	statDatabase, err := statisticDb.NewMongoDatabase(driver)
 	if err != nil {
+		core.logger.Alertln("failed to initialize statistic database")
 		return nil, err
 	}
 
 	jobDatabase, err := jobDb.NewMongoDatabase(driver)
 	if err != nil {
+		core.logger.Alertln("failed to initialize job database")
 		return nil, err
 	}
 
@@ -265,6 +334,7 @@ func New(configPath string) (*Core, error) {
 	core.DatabaseThread, err = database.New(databaseConfig, databaseLogger, databaseUseCases,
 		core.interrupt, core.C1, core.C2, core.C3, core.C4, core.C11, core.C12, core.C15, core.C16, core.C26, core.C27)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the database thread")
 		return nil, err
 	}
 
@@ -288,8 +358,9 @@ func New(configPath string) (*Core, error) {
 
 	// SCHEDULER LOGICAL THREAD
 
-	schedulerLogger, err := text_logging.New(Scheduler.ToString(), &GetConfigInstance().Debug)
+	schedulerLogger, err := text_logging.New(Scheduler.ToString(), &core.config.Debug)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the scheduler logger")
 		return nil, err
 	}
 
@@ -298,6 +369,7 @@ func New(configPath string) (*Core, error) {
 
 	sch, err := job.New(jobDatabase)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the job scheduler")
 		return nil, err
 	}
 
@@ -312,43 +384,36 @@ func New(configPath string) (*Core, error) {
 	core.SchedulerThread, err = scheduler.New(schedulerConfig, schedulerLogger, schedulerUseCases, scheduleNoncePool,
 		core.interrupt, core.C18, core.C19, core.C20, core.C21, core.C26, core.C27)
 	if err != nil {
+		core.logger.Alertln("failed to initialize the scheduler thread")
 		return nil, err
 	}
-
-	// CORE DEFINITIONS
-
-	coreLogger, err := text_logging.New(Undefined.ToString(), &GetConfigInstance().Debug)
-	if err != nil {
-		return nil, err
-	}
-	core.logger = coreLogger
 
 	return core, nil
 }
 
 func (core *Core) Run() {
 
-	core.logger.SetColour(terminal.Purple)
-
-	if GetConfigInstance().Debug {
-		core.logger.Println("debug mode ON")
+	if core.config.Debug {
+		core.logger.Println("Debug mode ON")
 	} else {
-		core.logger.Println("debug mode OFF")
+		core.logger.Println("Debug mode OFF")
 	}
+
+	intervalTimestamp := time.Now()
 
 	// needed in-case the proceeding thread need logging or email capabilities during startup
 	core.MessengerThread.Setup()
 	go core.MessengerThread.Start() // event loop
-	if core.config.Debug {
-		core.logger.Println("Messenger Thread Started")
-	}
+	messengerTimestamp := time.Now()
+	core.logger.Printf("Messenger Thread Started in %d μs",
+		messengerTimestamp.Sub(intervalTimestamp).Microseconds())
 
 	// needed in-case the runner or rest thread need to populate data on startup
 	core.DatabaseThread.Setup()
 	go core.DatabaseThread.Start() // event loop
-	if core.config.Debug {
-		core.logger.Println("Database Thread Started")
-	}
+	databaseTimestamp := time.Now()
+	core.logger.Printf("Database Thread Started in %d μs",
+		databaseTimestamp.Sub(messengerTimestamp).Microseconds())
 
 	// if we chain requests, we should have a way to save that data for re-use
 	// FIX: the cache should start up before the provisioner in case the provisioner
@@ -361,46 +426,38 @@ func (core *Core) Run() {
 
 	core.RunnerThread.Setup()
 	go core.RunnerThread.Start()
-	if core.config.Debug {
-		core.logger.Println("Runtime Thread Started")
-	}
+	runnerTimestamp := time.Now()
+	core.logger.Printf("Runtime Thread Started in %d μs",
+		runnerTimestamp.Sub(databaseTimestamp).Microseconds())
 
 	core.ProcessorThread.Setup()
 	go core.ProcessorThread.Start()
-	if core.config.Debug {
-		core.logger.Println("Processor Thread Started")
-	}
+	processorTimestamp := time.Now()
+	core.logger.Printf("Processor Thread Started in %d μs",
+		processorTimestamp.Sub(runnerTimestamp).Microseconds())
 
 	core.SchedulerThread.Setup()
 	go core.SchedulerThread.Start()
-	if core.config.Debug {
-		core.logger.Println("Scheduler Thread Starting")
-	}
+	schedulerTimestamp := time.Now()
+	core.logger.Printf("Scheduler Thread Starting in %d μs",
+		schedulerTimestamp.Sub(processorTimestamp).Microseconds())
 
 	core.SocketThread.Setup()
 	go core.SocketThread.Start()
-	if core.config.Debug {
-		core.logger.Println("HTTP Processor API Thread Started")
-		core.logger.Printf("\t- Listening on %s:%d\n",
-			core.config.Net.Processor.Host, core.config.Net.Processor.Port)
-	}
+	socketTimestamp := time.Now()
+	core.logger.Printf("TCP Socket Thread Started in %d μs",
+		socketTimestamp.Sub(schedulerTimestamp).Microseconds())
+	core.logger.Printf("\t- Listening on %s:%d\n",
+		core.config.Net.Processor.Host, core.config.Net.Processor.Port)
 
 	// the gateway to the frontend cluster should be the last startup
 	core.RestThread.Setup()
-	go core.RestThread.Start() // event loop
-	if core.config.Debug {
-		core.logger.Println("HTTP Client API Thread Started")
-		core.logger.Printf("\t- Listening on %s:%d\n",
-			core.config.Net.Client.Host, core.config.Net.Client.Port)
-	}
-
-	// HOTFIX: 3 - weird output for docker
-	// bug: on docker having the REPL enabled causes the @etl prefix to
-	// 		be spammed. Issue with docker giving the program the impression
-	//		it is being fed empty lines?
-	if core.config.EnableRepl {
-		go core.repl()
-	}
+	go core.RestThread.Start()
+	restTimestamp := time.Now()
+	core.logger.Printf("HTTP API Thread Started in %d μs",
+		restTimestamp.Sub(socketTimestamp).Microseconds())
+	core.logger.Printf("\t- Listening on %s:%d\n",
+		core.config.Net.Client.Host, core.config.Net.Client.Port)
 
 	// monitor system calls being sent to the processor, if the etl is being
 	// statistic on a log machine, the developer might attempt to kill the processor with SIGINT

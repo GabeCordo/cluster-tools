@@ -32,7 +32,8 @@ type Config struct {
 	EnableCors         bool    `yaml:"enable-cors"`
 	EnableRepl         bool    `yaml:"enable-repl"`
 	Database           struct {
-		Type string `yaml:"type"`
+		Type string `yaml:"type,omitempty"`
+		Url  string `yaml:"url,omitempty"` // may be defined by an environment variable.
 	} `yaml:"database"`
 	Cache struct {
 		Expiry  float64 `yaml:"expire-in"`
@@ -259,7 +260,7 @@ var (
 	ConfigInstance *Config
 )
 
-func GetConfigInstance(configPath ...string) *Config {
+func GetConfigInstance(configPath ...string) (*Config, error) {
 	configLock.Lock()
 	defer configLock.Unlock()
 
@@ -267,7 +268,7 @@ func GetConfigInstance(configPath ...string) *Config {
 	   needs to pass in a configPath to load the common instance from
 	*/
 	if (ConfigInstance == nil) && (len(configPath) < 1) {
-		return nil
+		return nil, errors.New("config path required")
 	}
 
 	if ConfigInstance == nil {
@@ -286,5 +287,5 @@ func GetConfigInstance(configPath ...string) *Config {
 		}
 	}
 
-	return ConfigInstance
+	return ConfigInstance, nil
 }

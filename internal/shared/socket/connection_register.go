@@ -154,17 +154,19 @@ func (handler *ConnectionRegister) RegisterConnection(conn net.Conn) (connection
 //
 // Thread Safe: Yes,
 // Allocates Memory: No
-func (handler *ConnectionRegister) ReleaseConnection(id ConnectionId) {
+func (handler *ConnectionRegister) ReleaseConnection(id ConnectionId) (err error) {
 
 	handler.connection.mutex.Lock()
 	defer handler.connection.mutex.Unlock()
 
 	// release the client id back into the pool of usable client ids
-	err := handler.clientIdPool.Add(uint64(id))
+	err = handler.clientIdPool.Add(uint64(id))
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	handler.connection.number--
 	delete(handler.connection.clients, id)
+
+	return nil
 }
