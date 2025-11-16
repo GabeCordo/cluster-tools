@@ -66,6 +66,29 @@ func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistic
 	return statistics, err
 }
 
+func (uc UseCases) SummaryOfStatistics(namespaceId string) (fields []string, err error) {
+
+	filter := database.Filter{Namespace: namespaceId}
+
+	var rr []any
+	rr, err = uc.StatisticDatabase.Distinct(filter)
+	if err != nil {
+		return fields, err
+	}
+
+	var ok bool
+
+	fields = make([]string, len(rr))
+	for idx, r := range rr {
+		fields[idx], ok = (r).(string)
+		if !ok {
+			return fields, errors.New("the field is not a string")
+		}
+	}
+
+	return fields, err
+}
+
 func (uc UseCases) DeletePipelineRecord(namespaceId, pipelineId string) (err error) {
 
 	err = uc.PipelineDatabase.Delete(database.Filter{

@@ -24,7 +24,7 @@ const (
 	User RequestCaller = iota
 )
 
-const NumOfRequestActions = 9
+const NumOfRequestActions = 10
 
 type RequestAction uint16
 
@@ -38,6 +38,7 @@ const (
 	MountAction
 	UnMountAction
 	CloseAction
+	SummaryAction
 )
 
 var requestActionStrings = [NumOfRequestActions]string{
@@ -50,6 +51,7 @@ var requestActionStrings = [NumOfRequestActions]string{
 	"MountAction",
 	"UnMountAction",
 	"CloseAction",
+	"SummaryAction",
 }
 
 const NumOfRequestTypes = 14

@@ -108,6 +108,19 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 				}
 			}
 		}
+	case thread.SummaryAction:
+		{
+			switch request.Type {
+			case thread.StatisticRecord:
+				{
+					t.handleSummaryStatistics(request, response)
+				}
+			default:
+				{
+					response.Error = thread.UnknownRequest
+				}
+			}
+		}
 	case thread.DeleteAction:
 		{
 			switch request.Type {

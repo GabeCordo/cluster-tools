@@ -87,6 +87,20 @@ func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
 	return err
 }
 
+func (mongoDatabase MongoDatabase) Distinct(filter database.Filter) (results []any, err error) {
+
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
+	if filter.Namespace == "" {
+		results = c.Distinct("namespace")
+	} else {
+		results = c.DistinctFor("pipeline", "namespace", filter.Namespace)
+	}
+
+	return results, err
+}
+
 // Replace is not implemented for the statistic.MongoDatabase.
 func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *plover.Statistics) (err error) {
 

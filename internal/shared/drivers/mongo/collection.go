@@ -121,3 +121,17 @@ func (collection Collection) ReplaceByIds(idA, valueA, idB, valueB string, in an
 
 	return err
 }
+
+func (collection Collection) Distinct(idA string) (types []any) {
+
+	emptyFilter := bson.D{}
+	types, _ = collection.collection.Distinct(context.TODO(), idA, emptyFilter)
+	return types
+}
+
+func (collection Collection) DistinctFor(idA, idB, valueB string) (types []any) {
+
+	filter := collection.filterByOne(idB, valueB)
+	types, _ = collection.collection.Distinct(context.TODO(), idA, filter)
+	return types
+}

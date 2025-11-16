@@ -149,6 +149,13 @@ func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plov
 	return err
 }
 
+// Distinct is not implemented for the statistic.LocalDatabase
+func (localDatabase *LocalDatabase) Distinct(filter database.Filter) (results []any, err error) {
+
+	err = database.NotImplemented
+	return results, err
+}
+
 // Print outputs the *plover.Statistic records inside the statistic.LocalDatabase to the console.
 func (localDatabase *LocalDatabase) Print() {
 
