@@ -63,6 +63,47 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 	return pp, true
 }
 
+func GetNamespacesFromDatabase(mandatory Mandatory) (namespaces []string, err error) {
+
+	request := Request{
+		Action: GetAction,
+		Type:   NamespaceRecord,
+		Nonce:  mandatory.NoncePool.Next(),
+	}
+
+	if flags.DEBUG {
+		mandatory.Log.Printf("Sending %s", request.ToString())
+	}
+
+	mandatory.Pipe <- &request
+
+	data, didTimeout := nonce.SendAndWait(
+		mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	if didTimeout {
+		err = nonce.NoResponseReceived
+		return namespaces, err
+	}
+
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return namespaces, err
+	}
+
+	if !databaseResponse.Success {
+		err = nonce.InvalidResponseReceived
+		return namespaces, err
+	}
+
+	namespaces, ok = databaseResponse.Data.([]string)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return namespaces, err
+	}
+
+	return namespaces, err
+}
+
 func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []*plover.PipelineIR, found bool) {
 
 	request := Request{

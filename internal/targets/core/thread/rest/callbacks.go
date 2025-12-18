@@ -394,6 +394,43 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (t *Thread) namespaceCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodGet {
+		t.getNamespaceCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (t *Thread) getNamespaceCallback(w http.ResponseWriter, r *http.Request) {
+
+	mandatory := thread.Mandatory{
+		Pipe:          t.channels.c1,
+		Log:           t.logger,
+		ResponseTable: t.DatabaseResponseTable,
+		NoncePool:     t.noncePool,
+		Timeout:       t.config.Timeout,
+	}
+
+	namespaces, err := thread.GetNamespacesFromDatabase(mandatory)
+	response := Response{
+		Success: err == nil,
+		Data:    namespaces,
+	}
+
+	bytes, err := json.Marshal(&response)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(bytes)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {

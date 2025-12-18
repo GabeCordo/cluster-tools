@@ -54,7 +54,7 @@ var requestActionStrings = [NumOfRequestActions]string{
 	"SummaryAction",
 }
 
-const NumOfRequestTypes = 14
+const NumOfRequestTypes = 15
 
 type RequestType uint16
 
@@ -73,6 +73,7 @@ const (
 	WarningLogRecord
 	FatalLogRecord
 	SubscriberRecord
+	NamespaceRecord
 )
 
 var requestTypeStrings = [NumOfRequestTypes]string{
@@ -90,6 +91,7 @@ var requestTypeStrings = [NumOfRequestTypes]string{
 	"WarningLogRecord",
 	"FatalLogRecord",
 	"SubscriberRecord",
+	"NamespaceRecord",
 }
 
 type RequestIdentifiers struct {

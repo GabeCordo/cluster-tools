@@ -102,6 +102,10 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 				{
 					t.handleGetStatisticRecord(request, response)
 				}
+			case thread.NamespaceRecord:
+				{
+					t.handleGetNamespaceRecord(request, response)
+				}
 			default:
 				{
 					response.Error = thread.UnknownRequest

@@ -46,6 +46,10 @@ func (t *Thread) Setup() {
 		f(t.statisticCallback, w, r)
 	})
 
+	mux.HandleFunc("/namespaces/", func(w http.ResponseWriter, r *http.Request) {
+		f(t.namespaceCallback, w, r)
+	})
+
 	mux.HandleFunc("/pipeline", func(w http.ResponseWriter, r *http.Request) {
 		f(t.pipelineCallback, w, r)
 	})

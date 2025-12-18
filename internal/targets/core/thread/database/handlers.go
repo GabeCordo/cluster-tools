@@ -83,6 +83,18 @@ func (t *Thread) handleGetStatisticRecord(request *thread.Request, response *thr
 	response.Data = statistics
 }
 
+func (t *Thread) handleGetNamespaceRecord(request *thread.Request, response *thread.Response) {
+
+	namespaces, err := t.useCases.GetNamespaceRecords()
+	if err != nil {
+		response.Success = false
+		response.Error = err
+		return
+	}
+
+	response.Data = namespaces
+}
+
 func (t *Thread) handleSummaryStatistics(request *thread.Request, response *thread.Response) {
 
 	summary, err := t.useCases.SummaryOfStatistics(request.Identifiers.Namespace)
