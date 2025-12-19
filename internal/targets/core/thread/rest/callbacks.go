@@ -56,10 +56,10 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		/* show the operator all the modules registered to the flock */
 		t.getModuleCallback(w, r)
-	} else if r.Method == "PUT" {
+	} else if r.Method == http.MethodPut {
 		/* the operator shall be allowed to mount and unmount modules */
 		t.putModuleCallback(w, r)
 	} else {
@@ -145,10 +145,10 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) functionCallback(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		/* the operator shall see clusters registered to the flock */
 		t.getFunctionCallback(w, r)
-	} else if r.Method == "PUT" {
+	} else if r.Method == http.MethodPut {
 		/* the operator shall mount clusters in the flock */
 		/* the operator shall unmount clusters in the flock */
 		t.putFunctionCallback(w, r)
@@ -251,9 +251,9 @@ type RunProvisionJSONResponse struct {
 
 func (t *Thread) runCallback(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		t.getRunCallback(w, r)
-	} else if r.Method == "POST" {
+	} else if r.Method == http.MethodPost {
 		t.postRunCallback(w, r)
 	} else if r.Method == http.MethodDelete {
 		t.deleteRunCallback(w, r)
@@ -396,13 +396,13 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 
 func (t *Thread) pipelineCallback(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		t.getPipelineCallback(w, r)
-	} else if r.Method == "POST" {
+	} else if r.Method == http.MethodPost {
 		t.postPipelineCallback(w, r)
-	} else if r.Method == "PUT" {
+	} else if r.Method == http.MethodPut {
 		t.putPipelineCallback(w, r)
-	} else if r.Method == "DELETE" {
+	} else if r.Method == http.MethodDelete {
 		t.deletePipelineCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -537,9 +537,16 @@ func (t *Thread) deletePipelineCallback(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) statisticsCallback(w http.ResponseWriter, r *http.Request) {
 
-	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	if r.Method == http.MethodGet {
+		t.getStatisticsCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (t *Thread) getStatisticsCallback(w http.ResponseWriter, r *http.Request) {
 
 	mandatory := thread.Mandatory{
 		Pipe:          t.channels.c1,
@@ -549,38 +556,91 @@ func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
 		Timeout:       t.config.Timeout,
 	}
 
-	if r.Method == "GET" {
+	var namespace string
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+	namespaceName, foundNamespaceName := urlMapping["namespace"]
+	if foundNamespaceName {
+		namespace = namespaceName[0]
+	} else {
+		namespace = ""
+	}
 
-		namespaceName, namespaceNameFound := urlMapping["namespace"]
-		pipelineName, pipelineNameFound := urlMapping["pipeline"]
+	fields, err := thread.FindStatistics(mandatory, namespace)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-		if namespaceNameFound && pipelineNameFound {
-			statistics, found := thread.FindStatistics(mandatory, namespaceName[0], pipelineName[0])
-			if found {
-				bytes, err := json.Marshal(statistics)
-				if err == nil {
-					if _, err = w.Write(bytes); err != nil {
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				} else {
-					w.WriteHeader(http.StatusInternalServerError)
-				}
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-			}
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
+	bytes, err := json.Marshal(fields)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err = w.Write(bytes); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (t *Thread) statisticCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodGet {
+		t.getStatisticCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
+func (t *Thread) getStatisticCallback(w http.ResponseWriter, r *http.Request) {
+
+	mandatory := thread.Mandatory{
+		Pipe:          t.channels.c1,
+		Log:           t.logger,
+		ResponseTable: t.DatabaseResponseTable,
+		NoncePool:     t.noncePool,
+		Timeout:       t.config.Timeout,
+	}
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	var namespaceName string
+	namespaceSlice, namespaceNameFound := urlMapping["namespace"]
+	if namespaceNameFound {
+		namespaceName = namespaceSlice[0]
+	} else {
+		namespaceName = ""
+	}
+
+	var pipelineName string
+	pipelineSlice, pipelineNameFound := urlMapping["pipeline"]
+	if pipelineNameFound {
+		pipelineName = pipelineSlice[0]
+	} else {
+		pipelineName = ""
+	}
+
+	statistics, found := thread.FindStatistic(mandatory, namespaceName, pipelineName)
+	if !found {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	bytes, err := json.Marshal(statistics)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err = w.Write(bytes); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func (t *Thread) debugCallback(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		t.getDebugCallback(w, r)
-	} else if r.Method == "POST" {
+	} else if r.Method == http.MethodPost {
 		t.postDebugCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -697,6 +757,7 @@ func (t *Thread) getJobCallback(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	_, err = w.Write(b)
@@ -730,13 +791,16 @@ func (t *Thread) postJobCallback(w http.ResponseWriter, r *http.Request) {
 		response.Success = true
 	}
 
-	if b, err := json.Marshal(response); err != nil {
+	var b []byte
+	b, err = json.Marshal(response)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-	} else {
-		_, err = w.Write(b)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -789,6 +853,7 @@ func (t *Thread) deleteJobCallback(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	_, err = w.Write(b)
@@ -827,6 +892,7 @@ func (t *Thread) getJobQueueCallback(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	_, err = w.Write(b)

@@ -517,7 +517,7 @@ func StopRun(mandatory Mandatory, id uint64) error {
 	return response.Error
 }
 
-func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (entries []*plover.Statistics, found bool) {
+func FindStatistic(mandatory Mandatory, namespaceName, pipelineName string) (entries []*plover.Statistics, found bool) {
 
 	request := Request{
 		Action: GetAction,
@@ -555,6 +555,47 @@ func FindStatistics(mandatory Mandatory, namespaceName, pipelineName string) (en
 	}
 
 	return statistics, true
+}
+
+func FindStatistics(mandatory Mandatory, namespaceName string) (fields []string, err error) {
+
+	request := Request{
+		Action: SummaryAction,
+		Type:   StatisticRecord,
+		Identifiers: RequestIdentifiers{
+			Namespace: namespaceName,
+		},
+		Nonce: mandatory.NoncePool.Next(),
+	}
+
+	if flags.DEBUG {
+		mandatory.Log.Printf("Sending %s", request.ToString())
+	}
+
+	mandatory.Pipe <- &request
+	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	if didTimeout {
+		err = nonce.NoResponseReceived
+		return fields, err
+	}
+
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return fields, err
+	}
+
+	if !databaseResponse.Success {
+		return fields, err
+	}
+
+	fields, ok = (databaseResponse.Data).([]string)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return fields, err
+	}
+
+	return fields, err
 }
 
 func ShutdownCore(pipe chan<- InterruptEvent) error {
@@ -942,7 +983,7 @@ func GetSubscribers(mandatory Mandatory) ([]string, error) {
 	if flags.DEBUG {
 		mandatory.Log.Printf("Sending %s", request.ToString())
 	}
-	
+
 	mandatory.Pipe <- &request
 
 	rsp, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)

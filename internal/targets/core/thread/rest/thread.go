@@ -39,6 +39,10 @@ func (t *Thread) Setup() {
 	})
 
 	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
+		f(t.statisticsCallback, w, r)
+	})
+
+	mux.HandleFunc("/statistic/", func(w http.ResponseWriter, r *http.Request) {
 		f(t.statisticCallback, w, r)
 	})
 

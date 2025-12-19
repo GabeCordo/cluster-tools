@@ -83,6 +83,17 @@ func (t *Thread) handleGetStatisticRecord(request *thread.Request, response *thr
 	response.Data = statistics
 }
 
+func (t *Thread) handleSummaryStatistics(request *thread.Request, response *thread.Response) {
+
+	summary, err := t.useCases.SummaryOfStatistics(request.Identifiers.Namespace)
+	if err != nil {
+		response.Success = false
+		response.Error = err
+	} else {
+		response.Data = summary
+	}
+}
+
 func (t *Thread) handleDeletePipelineRecord(request *thread.Request, response *thread.Response) {
 
 	err := t.useCases.DeletePipelineRecord(request.Identifiers.Namespace, request.Identifiers.Pipeline)

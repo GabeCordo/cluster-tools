@@ -19,6 +19,7 @@ type Database interface {
 	Create(filter database.Filter, record *plover.Statistics) (*plover.Statistics, error)
 	Replace(filter database.Filter, record *plover.Statistics) error
 	Delete(filter database.Filter) error
+	Distinct(filter database.Filter) ([]any, error)
 	Save(path string) error
 	Load(path string) error
 	Print()
