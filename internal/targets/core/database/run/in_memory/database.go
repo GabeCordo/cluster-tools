@@ -62,7 +62,7 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) (runs []*run.Run
 }
 
 // Create adds a *plover.PipelineIR record to the run.LocalDatabase.
-func (localDatabase *LocalDatabase) Create(filter database.Filter, data *plover.PipelineIR) (uint64, error) {
+func (localDatabase *LocalDatabase) Create(filter database.Filter, data *plover.PipelineIR, startedBy run.StartedBy) (uint64, error) {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
@@ -70,7 +70,7 @@ func (localDatabase *LocalDatabase) Create(filter database.Filter, data *plover.
 	identifier := localDatabase.counter
 
 	// todo: get this out of here, pass the pointer rather than create it here!
-	s := run.New(identifier, filter.Processor, filter.Namespace, data)
+	s := run.New(identifier, filter.Processor, filter.Namespace, startedBy, data)
 	localDatabase.runs[identifier] = s
 
 	localDatabase.counter++

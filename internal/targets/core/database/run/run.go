@@ -5,13 +5,14 @@ import (
 	"github.com/FortifiedCode/flock/internal/targets/core/database"
 	"github.com/FortifiedCode/plover"
 	"sync"
+	"time"
 )
 
 type Status string
 
 const (
-	Created Status = "created"
-	Active         = "active"
+	Created    Status = "created"
+	Active            = "active"
 	Crashed           = "crashed"
 	Completed         = "completed"
 	Terminated        = "terminated" // this is legacy
@@ -37,6 +38,28 @@ func FromString(s string) Status {
 	}
 }
 
+type StartedBy string
+
+const (
+	Operator  StartedBy = "operator"
+	Processor           = "processor"
+	Scheduler           = "scheduler"
+	Unknown             = "unknown"
+)
+
+func StartedByFromString(s string) StartedBy {
+	switch s {
+	case "operator":
+		return Operator
+	case "processor":
+		return Processor
+	case "scheduler":
+		return Scheduler
+	default:
+		return Unknown
+	}
+}
+
 type Event string
 
 const (
@@ -57,6 +80,19 @@ type Run struct {
 	Id     uint64 `json:"id"`
 	Status Status `json:"status,omitempty"`
 
+	Time struct {
+		Created     time.Time `json:"created"`
+		LastUpdated time.Time `json:"last_updated"`
+		Duration    struct {
+			Hours       uint64 `json:"hours"`
+			Minutes     uint64 `json:"minutes"`
+			Seconds     uint64 `json:"seconds"`
+			Millisecond uint64 `json:"milliseconds"`
+		} `json:"duration"`
+	} `json:"time"`
+
+	StartedBy StartedBy `json:"started_by"`
+
 	Processor uint64 `json:"processor,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 
@@ -67,17 +103,20 @@ type Run struct {
 	mutex sync.RWMutex
 }
 
-func New(runId, processorId uint64, namespaceName string, cfg *plover.PipelineIR) *Run {
-	supervisor := new(Run)
+func New(runId, processorId uint64, namespaceName string, startedBy StartedBy, cfg *plover.PipelineIR) *Run {
+	run := new(Run)
 
-	supervisor.Status = Created
-	supervisor.Id = runId
-	supervisor.Processor = processorId
-	supervisor.Namespace = namespaceName
-	supervisor.Pipeline = *cfg // copy instance
-	supervisor.Statistics = plover.NewStatistics(0, 0)
+	run.Status = Created
+	run.Id = runId
+	run.Processor = processorId
+	run.Namespace = namespaceName
+	run.StartedBy = startedBy
+	run.Pipeline = *cfg // copy instance
+	run.Statistics = plover.NewStatistics(0, 0)
+	run.Time.Created = time.Now()
+	run.Time.LastUpdated = run.Time.Created
 
-	return supervisor
+	return run
 }
 
 func (supervisor *Run) Event(event Event) Status {
@@ -119,6 +158,8 @@ func (supervisor *Run) SetStatus(status Status) {
 	defer supervisor.mutex.Unlock()
 
 	supervisor.Status = status
+	supervisor.Time.LastUpdated = time.Now()
+	supervisor.calculateDuration()
 }
 
 func (supervisor *Run) GetId() uint64 {
@@ -137,7 +178,9 @@ func (supervisor *Run) SetStatistic(statistic *plover.Statistics) error {
 	if statistic == nil {
 		return errors.New("statistic is nil")
 	}
+	supervisor.Time.LastUpdated = time.Now()
 	supervisor.Statistics = statistic
+	supervisor.calculateDuration()
 	return nil
 }
 
@@ -149,8 +192,24 @@ func (supervisor *Run) IsRunning() bool {
 	return supervisor.Status == Active
 }
 
+func (supervisor *Run) calculateDuration() {
+
+	duration := supervisor.Time.LastUpdated.Sub(supervisor.Time.Created)
+	hours := uint64(duration.Hours())
+	supervisor.Time.Duration.Hours = hours
+
+	minutes := uint64(duration.Minutes())
+	supervisor.Time.Duration.Minutes = minutes - (hours * 60)
+
+	seconds := uint64(duration.Seconds())
+	supervisor.Time.Duration.Seconds = seconds - (minutes * 60)
+
+	milliseconds := uint64(duration.Milliseconds())
+	supervisor.Time.Duration.Millisecond = milliseconds - (seconds * 1000)
+}
+
 type Database interface {
 	Get(filter database.Filter) []*Run
-	Create(filter database.Filter, data *plover.PipelineIR) (uint64, error)
+	Create(filter database.Filter, data *plover.PipelineIR, startedBy StartedBy) (uint64, error)
 	Print()
 }

@@ -190,8 +190,19 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread2.Request, iRespo
 
 	cfg = pipelineConfigs[0]
 
+	var startedBy run.StartedBy
+	if iRequest.StartedBy == thread2.HttpClient {
+		startedBy = run.Operator
+	} else if iRequest.StartedBy == thread2.Processor {
+		startedBy = run.Processor
+	} else if iRequest.StartedBy == thread2.Scheduler {
+		startedBy = run.Scheduler
+	} else {
+		startedBy = run.Unknown
+	}
+
 	id, err = t.useCases.CreateRun(iRequest.Identifiers.Namespace,
-		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg)
+		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg, startedBy)
 
 	if err != nil {
 		// the runner shall inform the iRequest source that the thread was

@@ -1092,7 +1092,7 @@ func AsyncGetPipeline(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, nam
 	pipe <- request
 }
 
-func AsyncCreateRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, module, pipeline string, processor uint64, metadata map[string]string) {
+func AsyncCreateRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, module, pipeline string, processor uint64, metadata map[string]string, startedBy Module) {
 
 	request := new(Request)
 	if request == nil {
@@ -1111,6 +1111,7 @@ func AsyncCreateRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, names
 	request.Data = metadata // will contain the metadata map[string]string
 	request.Source = Processor
 	request.Nonce = n
+	request.StartedBy = startedBy
 
 	if flags.DEBUG {
 		l.Printf("Sending %s", request.ToString())

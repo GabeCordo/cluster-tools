@@ -213,7 +213,7 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 	if oResponse.Error == nil {
 		t.requestStore[iRequest.Nonce] = iRequest
 		thread.AsyncCreateRun(t.channels.c13, t.logger, iRequest.Nonce, iRequest.Identifiers.Namespace,
-			iRequest.Identifiers.Module, iRequest.Identifiers.Pipeline, p.Id, metadata)
+			iRequest.Identifiers.Module, iRequest.Identifiers.Pipeline, p.Id, metadata, iRequest.Source)
 	} else {
 		delete(t.requestStore, iRequest.Nonce)
 		t.sendResponse(iRequest, oResponse)

@@ -35,7 +35,7 @@ func (uc UseCases) GetRun(runId uint64) (*run.Run, error) {
 	return results[0], nil
 }
 
-func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *plover.PipelineIR) (uint64, error) {
+func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *plover.PipelineIR, startedBy run.StartedBy) (uint64, error) {
 
 	filter := database.Filter{
 		Processor: processor,
@@ -43,7 +43,7 @@ func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, confi
 		Pipeline:  pipeline,
 	}
 
-	id, err := uc.RunDatabase.Create(filter, config)
+	id, err := uc.RunDatabase.Create(filter, config, startedBy)
 	if err != nil {
 		return 0, err
 	}
