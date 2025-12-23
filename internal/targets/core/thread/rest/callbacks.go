@@ -10,6 +10,7 @@ import (
 	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -272,13 +273,13 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pipelineVar := ""
-	if pipelineStr, found := urlMapping["cluster"]; found {
+	if pipelineStr, found := urlMapping["pipeline"]; found {
 		pipelineVar = pipelineStr[0]
 	}
 
 	var id string
 	if idStr, found := urlMapping["id"]; found {
-		if _, err := strconv.ParseUint(idStr[0], 10, 64); err != nil {
+		if _, err := strconv.ParseUint(idStr[0], 10, 64); err == nil {
 			id = idStr[0]
 		} else {
 			id = "0"
@@ -312,6 +313,9 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 		response.Success = false
 		response.Description = err.Error()
 	} else {
+		sort.Slice(instance, func(i, j int) bool {
+			return instance[i].Id > instance[j].Id
+		})
 		response.Data = instance
 	}
 

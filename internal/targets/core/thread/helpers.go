@@ -478,8 +478,8 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 		Action: GetAction,
 		Type:   RunRecord,
 		Identifiers: RequestIdentifiers{
-			Module:     filter.Namespace,
-			Function:   filter.Pipeline,
+			Namespace:  filter.Namespace,
+			Pipeline:   filter.Pipeline,
 			Supervisor: id,
 		},
 		Nonce: mandatory.NoncePool.Next(),
