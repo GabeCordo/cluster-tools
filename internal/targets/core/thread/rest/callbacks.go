@@ -3,16 +3,17 @@ package rest
 import (
 	"encoding/json"
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/pipeline"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
+	"github.com/FortifiedCode/flock/internal/targets/core/database"
+	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
+	"github.com/FortifiedCode/flock/internal/targets/core/database/pipeline"
+	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 )
 
 // TODO : add comments to the else conditions where the processor may support
@@ -660,16 +661,16 @@ func (t *Thread) deletePipelineCallback(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (t *Thread) statisticsCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) statisticInfoCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		t.getStatisticsCallback(w, r)
+		t.getStatisticInfoCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (t *Thread) getStatisticsCallback(w http.ResponseWriter, r *http.Request) {
+func (t *Thread) getStatisticInfoCallback(w http.ResponseWriter, r *http.Request) {
 
 	mandatory := thread.Mandatory{
 		Pipe:          t.channels.c1,

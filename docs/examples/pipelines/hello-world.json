@@ -1,0 +1,42 @@
+{
+  "namespace": "common",
+  "identifier": "hello-world",
+  "data": {
+    "id": "hello-world",
+    "functions": [
+      {
+        "module": "common",
+        "id": "generator",
+        "metadata": {
+          "static_mount": false
+        },
+        "to": "1",
+        "start_with": 1,
+        "maximum": 1,
+        "parameters": [],
+        "returns": []
+      },
+      {
+        "module": "common",
+        "id": "prt",
+        "metadata": {
+          "static_mount": false
+        },
+        "from": "1",
+        "start_with": 1,
+        "maximum": 1,
+        "parameters": [],
+        "returns": []
+      }
+    ],
+    "pipes": [
+      {
+        "id": "1",
+        "threshold": 10,
+        "growth_factor": 2
+      }
+    ],
+    "on_startup": "",
+    "on_teardown": ""
+  }
+}

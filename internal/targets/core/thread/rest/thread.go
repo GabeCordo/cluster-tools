@@ -3,12 +3,13 @@ package rest
 import (
 	"context"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/flags"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"net/http"
 	"net/http/pprof"
 	"time"
+
+	"github.com/FortifiedCode/flock/internal/flags"
+	"github.com/FortifiedCode/flock/internal/shared/terminal"
+	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {
@@ -42,12 +43,12 @@ func (t *Thread) Setup() {
 		f(t.runCountCallback, w, r)
 	})
 
-	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
-		f(t.statisticsCallback, w, r)
-	})
-
 	mux.HandleFunc("/statistic/", func(w http.ResponseWriter, r *http.Request) {
 		f(t.statisticCallback, w, r)
+	})
+
+	mux.HandleFunc("/statistic/info", func(w http.ResponseWriter, r *http.Request) {
+		f(t.statisticInfoCallback, w, r)
 	})
 
 	mux.HandleFunc("/namespaces/", func(w http.ResponseWriter, r *http.Request) {

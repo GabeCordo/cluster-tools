@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/FortifiedCode/commandline"
 	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"github.com/FortifiedCode/flock/internal/targets/core"
-	"log"
-	"os"
 )
 
 type StartCommand struct {
@@ -31,6 +33,16 @@ func (sc StartCommand) readEnvironmentVariables() (env EnvironmentVariables) {
 	return env
 }
 
+func (sc StartCommand) verifyMandatoryEnvironmentVariables(env EnvironmentVariables) (err error) {
+
+	if env.MongoDbUri == "" {
+		output := fmt.Sprintf("the environment variable %s needs to be set", MongoDatabaseUriEnv)
+		err = errors.New(output)
+	}
+
+	return err
+}
+
 func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	// check to see that the etl thread has been initialized with the required files
@@ -43,6 +55,11 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	sc.banner()
 
 	env := sc.readEnvironmentVariables()
+	err := sc.verifyMandatoryEnvironmentVariables(env)
+	if err != nil {
+		log.Println(err)
+		return commandline.Terminate
+	}
 
 	cfg, err := core.GetConfigInstance(DefaultCoreConfigFile)
 	if err != nil {
