@@ -17,7 +17,19 @@ import (
 func (t *Thread) handleGetRun(request *thread2.Request, response **thread2.Response) {
 
 	rr := t.useCases.GetRuns(request.Identifiers.Namespace,
-		request.Identifiers.Pipeline, request.Identifiers.Supervisor)
+		request.Identifiers.Pipeline, request.Identifiers.Supervisor,
+		request.Metadata.Maximum, request.Metadata.Offset)
+
+	*response = thread2.NewResponse(thread2.Runner)
+	(*response).Success = true
+	(*response).Data = rr
+}
+
+func (t *Thread) handleCountRuns(request *thread2.Request, response **thread2.Response) {
+
+	rr := t.useCases.CountRuns(
+		request.Identifiers.Namespace, request.Identifiers.Pipeline,
+	)
 
 	*response = thread2.NewResponse(thread2.Runner)
 	(*response).Success = true
@@ -78,7 +90,7 @@ func (t *Thread) handleUpdateRun(request *thread2.Request, response **thread2.Re
 
 func (t *Thread) handleDeleteRun(request *thread2.Request, response **thread2.Response) {
 
-	rr := t.useCases.GetRuns(database.Empty, database.Empty, request.Identifiers.Supervisor)
+	rr := t.useCases.GetRuns(database.Empty, database.Empty, request.Identifiers.Supervisor, database.Zero, database.Zero)
 
 	if len(rr) < 1 {
 		*response = thread2.NewResponse(thread2.Runner)

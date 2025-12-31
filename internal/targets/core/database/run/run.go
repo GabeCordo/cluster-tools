@@ -210,6 +210,7 @@ func (supervisor *Run) calculateDuration() {
 
 type Database interface {
 	Get(filter database.Filter) []*Run
+	Count(filter database.Filter) uint32
 	Create(filter database.Filter, data *plover.PipelineIR, startedBy StartedBy) (uint64, error)
 	Print()
 }

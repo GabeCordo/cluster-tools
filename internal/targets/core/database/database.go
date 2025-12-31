@@ -59,16 +59,20 @@ func (interval Interval) ToString() string {
 
 var NotFound = errors.New("no records found with the received filter")
 
-const Empty = ""
+const Empty string = ""
+
+const Zero uint64 = 0
 
 type Filter struct {
-	Namespace  string
-	Pipeline  string
-	Interval  Interval
-	Processor uint64
-	Identifier string
-	Config     string
-	Verbose    bool
+	Namespace       string
+	Pipeline        string
+	Interval        Interval
+	Processor       uint64
+	Identifier      string
+	Config          string
+	MaximumResults  uint64
+	OffsetOfResults uint64
+	Verbose         bool
 }
 
 func (filter Filter) IsEmpty() bool {
@@ -89,4 +93,12 @@ func (filter Filter) UsePipeline() bool {
 
 func (filter Filter) UseInterval() bool {
 	return !filter.Interval.Empty() && (filter.Namespace != "") && (filter.Pipeline != "")
+}
+
+func (filter Filter) UseMaximum() bool {
+	return filter.MaximumResults > 0
+}
+
+func (filter Filter) UseOffset() bool {
+	return filter.OffsetOfResults > 0
 }

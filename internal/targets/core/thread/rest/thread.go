@@ -38,6 +38,10 @@ func (t *Thread) Setup() {
 		f(t.runCallback, w, r)
 	})
 
+	mux.HandleFunc("/run/count", func(w http.ResponseWriter, r *http.Request) {
+		f(t.runCountCallback, w, r)
+	})
+
 	mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
 		f(t.statisticsCallback, w, r)
 	})

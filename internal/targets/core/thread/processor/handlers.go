@@ -50,8 +50,25 @@ func (t *Thread) handleGetRun(request *thread.Request, response **thread.Respons
 	//	-	num processed?
 	// id -> the entire record of the runner
 	//	-	full information
-	thread.AsyncGetRun(t.channels.c13, t.logger, request.Nonce,
-		request.Identifiers.Namespace, request.Identifiers.Pipeline, request.Identifiers.Supervisor)
+	thread.AsyncGetRun(
+		t.channels.c13, t.logger, request.Nonce,
+		request.Identifiers.Namespace, request.Identifiers.Pipeline, request.Identifiers.Supervisor,
+		request.Metadata.Maximum, request.Metadata.Offset,
+	)
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+////							Count Functions
+//////////////////////////////////////////////////////////////////////////////////////////
+
+func (t *Thread) handleCountRuns(request *thread.Request, response **thread.Response) {
+
+	t.requestStore[request.Nonce] = request
+
+	thread.AsyncCountRuns(
+		t.channels.c13, t.logger, request.Nonce,
+		request.Identifiers.Namespace, request.Identifiers.Pipeline,
+	)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -218,6 +235,19 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread.Request, iRespon
 		delete(t.requestStore, iRequest.Nonce)
 		t.sendResponse(iRequest, oResponse)
 	}
+}
+
+func (t *Thread) handleRunnerRespondsToCount(iRequest *thread.Request, iResponse *thread.Response) {
+
+	delete(t.requestStore, iRequest.Nonce)
+	oResponse := thread.NewResponse(thread.Processor)
+	if iResponse.Error != nil {
+		oResponse.Error = iResponse.Error
+	} else {
+		oResponse.Error = nil
+		oResponse.Data = iResponse.Data
+	}
+	t.sendResponse(iRequest, oResponse)
 }
 
 func (t *Thread) handleRunnerRespondsToCreateRun(iRequest *thread.Request, iResponse *thread.Response) {

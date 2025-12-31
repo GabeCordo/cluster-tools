@@ -8,12 +8,14 @@ import (
 	"strconv"
 )
 
-func (uc UseCases) GetRuns(namespace, pipeline string, identifier uint64) (rr []*run.Run) {
+func (uc UseCases) GetRuns(namespace, pipeline string, identifier, maximum, offset uint64) (rr []*run.Run) {
 
 	f := database.Filter{
-		Namespace:  namespace,
-		Pipeline:   pipeline,
-		Identifier: strconv.FormatUint(identifier, 10),
+		Namespace:       namespace,
+		Pipeline:        pipeline,
+		Identifier:      strconv.FormatUint(identifier, 10),
+		MaximumResults:  maximum,
+		OffsetOfResults: offset,
 	}
 
 	results := uc.RunDatabase.Get(f)
@@ -33,6 +35,17 @@ func (uc UseCases) GetRun(runId uint64) (*run.Run, error) {
 	}
 
 	return results[0], nil
+}
+
+func (uc UseCases) CountRuns(namespace, pipeline string) (count uint32) {
+
+	f := database.Filter{
+		Namespace: namespace,
+		Pipeline:  pipeline,
+	}
+
+	count = uc.RunDatabase.Count(f)
+	return count
 }
 
 func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *plover.PipelineIR, startedBy run.StartedBy) (uint64, error) {

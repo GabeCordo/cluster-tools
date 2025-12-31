@@ -277,12 +277,35 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 		pipelineVar = pipelineStr[0]
 	}
 
+	var maximumResults uint64 = 0
+	if maximumResultsStr, found := urlMapping["maximumResults"]; found {
+		var err error
+		maximumResults, err = strconv.ParseUint(maximumResultsStr[0], 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+
+	var offsetOfResults uint64 = 0
+	if offsetOfResultsStr, found := urlMapping["offsetOfResults"]; found {
+		var err error
+		offsetOfResults, err = strconv.ParseUint(offsetOfResultsStr[0], 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+
 	var id string
 	if idStr, found := urlMapping["id"]; found {
-		if _, err := strconv.ParseUint(idStr[0], 10, 64); err == nil {
-			id = idStr[0]
+		var err error
+		_, err = strconv.ParseUint(idStr[0], 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		} else {
-			id = "0"
+			id = idStr[0]
 		}
 	} else {
 		id = "0"
@@ -303,9 +326,11 @@ func (t *Thread) getRunCallback(w http.ResponseWriter, r *http.Request) {
 		Timeout:       t.config.Timeout,
 	}
 	filter := database.Filter{
-		Namespace:  namespace,
-		Pipeline:   pipelineVar,
-		Identifier: id,
+		Namespace:       namespace,
+		Pipeline:        pipelineVar,
+		Identifier:      id,
+		MaximumResults:  maximumResults,
+		OffsetOfResults: offsetOfResults,
 	}
 
 	instance, err := thread.GetRun(mandatory, filter)
@@ -395,6 +420,63 @@ func (t *Thread) deleteRunCallback(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
+func (t *Thread) runCountCallback(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodGet {
+		t.getRunCountCallback(w, r)
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (t *Thread) getRunCountCallback(w http.ResponseWriter, r *http.Request) {
+
+	urlMapping, _ := url.ParseQuery(r.URL.RawQuery)
+
+	namespace := ""
+	if namespaceStr, found := urlMapping["namespace"]; found {
+		namespace = namespaceStr[0]
+	}
+
+	pipelineVar := ""
+	if pipelineStr, found := urlMapping["pipeline"]; found {
+		pipelineVar = pipelineStr[0]
+	}
+
+	if (namespace == "") && (pipelineVar == "") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	response := &Response{Success: true}
+
+	mandatory := thread.Mandatory{
+		Pipe:          t.channels.c5,
+		Log:           t.logger,
+		ResponseTable: t.ProcessorResponseTable,
+		NoncePool:     t.noncePool,
+		Timeout:       t.config.Timeout,
+	}
+	filter := database.Filter{
+		Namespace: namespace,
+		Pipeline:  pipelineVar,
+	}
+
+	count, err := thread.GetRunCount(mandatory, filter)
+	if err != nil {
+		response.Success = false
+		response.Description = err.Error()
+	} else {
+		response.Data = count
+	}
+
+	b, _ := json.Marshal(response)
+	_, err = w.Write(b)
+	if err != nil {
+		t.logger.Alert(err.Error())
 	}
 }
 
