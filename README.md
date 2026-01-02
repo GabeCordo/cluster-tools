@@ -5,8 +5,7 @@ An open source ingress gateway for monitoring and load balancing requests to dis
 Pops provides fine-grained control over a deployment of horizontally distribute pipelines to control: how they
 are provisioned, how they should be taken offline, how they should be made redundant, and how they should be versioned.
 
-> Flock is a work in progress with hopes of adding more SRE functionality such as SLIs and SLAs
-> to the engine. If you are interested, feel free to reach out.
+> Flock is a personal project that is a work in progress. 
 
 ### Local Flock Installation
 Before performing a local installation make sure the GOPATH bin folder has been added to your environment PATH variable. The
