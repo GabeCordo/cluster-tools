@@ -1,11 +1,12 @@
 package in_memory
 
 import (
+	"strconv"
+	"testing"
+
 	"github.com/FortifiedCode/flock/internal/targets/core/database"
 	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
 	"github.com/FortifiedCode/plover"
-	"strconv"
-	"testing"
 )
 
 var (
@@ -36,7 +37,7 @@ func TestRegistry_Create(t *testing.T) {
 	}
 
 	cfg := &plover.PipelineIR{} // todo: this is a temp hack
-	id, err := registry.Create(filter, cfg)
+	id, err := registry.Create(filter, cfg, run.Operator)
 	if err != nil {
 		t.Error("failed to create a new runner")
 		return
@@ -59,7 +60,7 @@ func TestRegistry_Get(t *testing.T) {
 	}
 
 	cfg := &plover.PipelineIR{Identifier: ClusterName}
-	id, err := registry.Create(filter, cfg)
+	id, err := registry.Create(filter, cfg, run.Operator)
 	if err != nil {
 		t.Error("failed to create a new runner")
 	}
