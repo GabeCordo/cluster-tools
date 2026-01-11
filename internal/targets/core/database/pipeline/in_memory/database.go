@@ -271,3 +271,8 @@ func (localDatabase *LocalDatabase) Print() {
 		}
 	}
 }
+
+func (localDatabase *LocalDatabase) Distinct(filter database.Filter) ([]any, error) {
+
+	return nil, database.NotImplemented
+}

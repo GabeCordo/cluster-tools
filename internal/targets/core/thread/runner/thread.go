@@ -98,6 +98,19 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 				}
 			}
 		}
+	case thread.CountAction:
+		{
+			switch request.Type {
+			case thread.RunRecord:
+				{
+					t.handleCountRuns(request, &response)
+				}
+			default:
+				{
+					err = thread.BadRequestType
+				}
+			}
+		}
 	case thread.CreateAction:
 		{
 			switch request.Type {

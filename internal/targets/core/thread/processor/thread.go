@@ -121,6 +121,19 @@ func (t *Thread) handleRequest(request *thread.Request) (response *thread.Respon
 				}
 			}
 		}
+	case thread.CountAction:
+		{
+			switch request.Type {
+			case thread.RunRecord:
+				{
+					t.handleCountRuns(request, &response)
+				}
+			default:
+				{
+					err = thread.UnknownRequest
+				}
+			}
+		}
 	case thread.CreateAction:
 		{
 			switch request.Type {
@@ -253,14 +266,16 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 		{
 			switch iResponse.Action {
 			case thread.GetAction:
-				switch iResponse.Type {
-				case thread.PipelineRecord:
-					{
-						t.handleDatabaseReturnsPipeline(iRequest, iResponse)
-					}
-				default:
-					{
-						// NOP
+				{
+					switch iResponse.Type {
+					case thread.PipelineRecord:
+						{
+							t.handleDatabaseReturnsPipeline(iRequest, iResponse)
+						}
+					default:
+						{
+							// NOP
+						}
 					}
 				}
 			default:
@@ -328,6 +343,19 @@ func (t *Thread) handleResponse(iRequest *thread.Request, iResponse *thread.Resp
 					case thread.RunRecord:
 						{
 							t.handleRunnerRespondsToGet(iRequest, iResponse)
+						}
+					default:
+						{
+							// NOP
+						}
+					}
+				}
+			case thread.CountAction:
+				{
+					switch iResponse.Type {
+					case thread.RunRecord:
+						{
+							t.handleRunnerRespondsToCount(iRequest, iResponse)
 						}
 					default:
 						{

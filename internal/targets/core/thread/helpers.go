@@ -63,6 +63,47 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 	return pp, true
 }
 
+func GetNamespacesFromDatabase(mandatory Mandatory) (namespaces []string, err error) {
+
+	request := Request{
+		Action: GetAction,
+		Type:   NamespaceRecord,
+		Nonce:  mandatory.NoncePool.Next(),
+	}
+
+	if flags.DEBUG {
+		mandatory.Log.Printf("Sending %s", request.ToString())
+	}
+
+	mandatory.Pipe <- &request
+
+	data, didTimeout := nonce.SendAndWait(
+		mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	if didTimeout {
+		err = nonce.NoResponseReceived
+		return namespaces, err
+	}
+
+	databaseResponse, ok := (data).(*Response)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return namespaces, err
+	}
+
+	if !databaseResponse.Success {
+		err = nonce.InvalidResponseReceived
+		return namespaces, err
+	}
+
+	namespaces, ok = databaseResponse.Data.([]string)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return namespaces, err
+	}
+
+	return namespaces, err
+}
+
 func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []*plover.PipelineIR, found bool) {
 
 	request := Request{
@@ -437,9 +478,13 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 		Action: GetAction,
 		Type:   RunRecord,
 		Identifiers: RequestIdentifiers{
-			Module:     filter.Namespace,
-			Function:   filter.Pipeline,
+			Namespace:  filter.Namespace,
+			Pipeline:   filter.Pipeline,
 			Supervisor: id,
+		},
+		Metadata: RequestMetadata{
+			Maximum: filter.MaximumResults,
+			Offset:  filter.OffsetOfResults,
 		},
 		Nonce: mandatory.NoncePool.Next(),
 	}
@@ -470,6 +515,50 @@ func GetRun(mandatory Mandatory, filter database.Filter) ([]*run.Run, error) {
 	}
 
 	return runs, nil
+}
+
+func GetRunCount(mandatory Mandatory, filter database.Filter) (count uint32, err error) {
+
+	request := Request{
+		Action: CountAction,
+		Type:   RunRecord,
+		Identifiers: RequestIdentifiers{
+			Namespace: filter.Namespace,
+			Pipeline:  filter.Pipeline,
+		},
+		Nonce: mandatory.NoncePool.Next(),
+	}
+
+	if flags.DEBUG {
+		mandatory.Log.Printf("Sending %s", request.ToString())
+	}
+
+	mandatory.Pipe <- &request
+
+	data, didTimeout := nonce.SendAndWait(mandatory.ResponseTable, request.Nonce, mandatory.Timeout)
+	if didTimeout {
+		err = nonce.NoResponseReceived
+		return count, err
+	}
+
+	response, ok := (data).(*Response)
+	if !ok {
+		err = nonce.InvalidResponseReceived
+		return count, err
+	}
+
+	if !response.Success {
+		err = response.Error
+		return count, err
+	}
+
+	count, ok = (response.Data).(uint32)
+	if !ok {
+		err = errors.New("expected to received uint32")
+		return count, err
+	}
+
+	return count, err
 }
 
 func AsyncUpdateRun(mandatory Mandatory, data *run.Run) {
@@ -1004,7 +1093,7 @@ func GetSubscribers(mandatory Mandatory) ([]string, error) {
 	return subscribers, response.Error
 }
 
-func AsyncGetRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, pipeline string, supervisor uint64) {
+func AsyncGetRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, pipeline string, supervisor, maximum, offset uint64) {
 
 	request := new(Request)
 	if request == nil {
@@ -1017,6 +1106,33 @@ func AsyncGetRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespac
 		Namespace:  namespace,
 		Pipeline:   pipeline,
 		Supervisor: supervisor,
+	}
+	request.Metadata = RequestMetadata{
+		Maximum: maximum,
+		Offset:  offset,
+	}
+	request.Source = Processor
+	request.Nonce = n
+
+	if flags.DEBUG {
+		l.Printf("Sending %s", request.ToString())
+	}
+
+	pipe <- request
+}
+
+func AsyncCountRuns(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, pipeline string) {
+
+	request := new(Request)
+	if request == nil {
+		panic("failed to allocate thread.Request")
+	}
+
+	request.Action = CountAction
+	request.Type = RunRecord
+	request.Identifiers = RequestIdentifiers{
+		Namespace: namespace,
+		Pipeline:  pipeline,
 	}
 	request.Source = Processor
 	request.Nonce = n
@@ -1051,7 +1167,7 @@ func AsyncGetPipeline(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, nam
 	pipe <- request
 }
 
-func AsyncCreateRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, module, pipeline string, processor uint64, metadata map[string]string) {
+func AsyncCreateRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, namespace, module, pipeline string, processor uint64, metadata map[string]string, startedBy Module) {
 
 	request := new(Request)
 	if request == nil {
@@ -1070,6 +1186,7 @@ func AsyncCreateRun(pipe chan<- *Request, l logging.Logger, n nonce.Nonce, names
 	request.Data = metadata // will contain the metadata map[string]string
 	request.Source = Processor
 	request.Nonce = n
+	request.StartedBy = startedBy
 
 	if flags.DEBUG {
 		l.Printf("Sending %s", request.ToString())

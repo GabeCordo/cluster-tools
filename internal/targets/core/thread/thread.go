@@ -24,7 +24,7 @@ const (
 	User RequestCaller = iota
 )
 
-const NumOfRequestActions = 10
+const NumOfRequestActions = 11
 
 type RequestAction uint16
 
@@ -39,6 +39,7 @@ const (
 	UnMountAction
 	CloseAction
 	SummaryAction
+	CountAction
 )
 
 var requestActionStrings = [NumOfRequestActions]string{
@@ -52,9 +53,10 @@ var requestActionStrings = [NumOfRequestActions]string{
 	"UnMountAction",
 	"CloseAction",
 	"SummaryAction",
+	"CountAction",
 }
 
-const NumOfRequestTypes = 14
+const NumOfRequestTypes = 15
 
 type RequestType uint16
 
@@ -73,6 +75,7 @@ const (
 	WarningLogRecord
 	FatalLogRecord
 	SubscriberRecord
+	NamespaceRecord
 )
 
 var requestTypeStrings = [NumOfRequestTypes]string{
@@ -90,6 +93,7 @@ var requestTypeStrings = [NumOfRequestTypes]string{
 	"WarningLogRecord",
 	"FatalLogRecord",
 	"SubscriberRecord",
+	"NamespaceRecord",
 }
 
 type RequestIdentifiers struct {
@@ -102,12 +106,19 @@ type RequestIdentifiers struct {
 	Supervisor uint64
 }
 
+type RequestMetadata struct {
+	Maximum uint64
+	Offset  uint64
+}
+
 type Request struct {
 	Action      RequestAction
 	Type        RequestType
 	Identifiers RequestIdentifiers
+	Metadata    RequestMetadata
 	Data        any
 	Source      Module
+	StartedBy   Module
 	Caller      RequestCaller
 	Nonce       nonce.Nonce
 }

@@ -165,3 +165,17 @@ func (mongoDatabase MongoDatabase) Print() {
 
 	// nop
 }
+
+func (mongoDatabase MongoDatabase) Distinct(filter database.Filter) (namespaces []any, err error) {
+
+	if !mongoDatabase.driver.IsConnected() {
+		err = database.NotConnected
+		return namespaces, err
+	}
+
+	d := mongoDatabase.driver.Database(DatabaseName)
+	c := d.Collection(CollectionName)
+
+	namespaces = c.Distinct("namespace")
+	return namespaces, err
+}

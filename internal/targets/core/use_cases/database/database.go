@@ -66,6 +66,45 @@ func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistic
 	return statistics, err
 }
 
+func (uc UseCases) GetNamespaceRecords() (namespaces []string, err error) {
+
+	foundNamespaces := make(map[string]bool)
+
+	pipelineDbNamespaces, err := uc.PipelineDatabase.Distinct(database.Filter{})
+	if err != nil {
+		return nil, err
+	}
+
+	namespaces = make([]string, len(pipelineDbNamespaces))
+
+	for i, pipelineDbNamespace := range pipelineDbNamespaces {
+		namespace, ok := pipelineDbNamespace.(string)
+		if !ok {
+			return nil, errors.New("distinct() should return a list of namespace strings")
+		} else {
+			namespaces[i] = namespace
+			foundNamespaces[namespace] = true
+		}
+	}
+
+	statisticDbNamespaces, err := uc.StatisticDatabase.Distinct(database.Filter{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, statisticDbNamespace := range statisticDbNamespaces {
+		namespace, ok := statisticDbNamespace.(string)
+		if !ok {
+			return nil, errors.New("distinct() should return a list of namespace strings")
+		} else if found := foundNamespaces[namespace]; !found {
+			namespaces = append(namespaces, namespace)
+			foundNamespaces[namespace] = true
+		}
+	}
+
+	return namespaces, err
+}
+
 func (uc UseCases) SummaryOfStatistics(namespaceId string) (fields []string, err error) {
 
 	filter := database.Filter{Namespace: namespaceId}

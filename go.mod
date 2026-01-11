@@ -5,7 +5,7 @@ go 1.24.6
 require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/FortifiedCode/commandline v0.3.1
-	github.com/FortifiedCode/plover v0.3.3
+	github.com/FortifiedCode/plover v0.3.4
 	go.mongodb.org/mongo-driver v1.17.4
 	gopkg.in/yaml.v3 v3.0.1
 )

@@ -17,7 +17,19 @@ import (
 func (t *Thread) handleGetRun(request *thread2.Request, response **thread2.Response) {
 
 	rr := t.useCases.GetRuns(request.Identifiers.Namespace,
-		request.Identifiers.Pipeline, request.Identifiers.Supervisor)
+		request.Identifiers.Pipeline, request.Identifiers.Supervisor,
+		request.Metadata.Maximum, request.Metadata.Offset)
+
+	*response = thread2.NewResponse(thread2.Runner)
+	(*response).Success = true
+	(*response).Data = rr
+}
+
+func (t *Thread) handleCountRuns(request *thread2.Request, response **thread2.Response) {
+
+	rr := t.useCases.CountRuns(
+		request.Identifiers.Namespace, request.Identifiers.Pipeline,
+	)
 
 	*response = thread2.NewResponse(thread2.Runner)
 	(*response).Success = true
@@ -78,7 +90,7 @@ func (t *Thread) handleUpdateRun(request *thread2.Request, response **thread2.Re
 
 func (t *Thread) handleDeleteRun(request *thread2.Request, response **thread2.Response) {
 
-	rr := t.useCases.GetRuns(database.Empty, database.Empty, request.Identifiers.Supervisor)
+	rr := t.useCases.GetRuns(database.Empty, database.Empty, request.Identifiers.Supervisor, database.Zero, database.Zero)
 
 	if len(rr) < 1 {
 		*response = thread2.NewResponse(thread2.Runner)
@@ -190,8 +202,19 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread2.Request, iRespo
 
 	cfg = pipelineConfigs[0]
 
+	var startedBy run.StartedBy
+	if iRequest.StartedBy == thread2.HttpClient {
+		startedBy = run.Operator
+	} else if iRequest.StartedBy == thread2.Processor {
+		startedBy = run.Processor
+	} else if iRequest.StartedBy == thread2.Scheduler {
+		startedBy = run.Scheduler
+	} else {
+		startedBy = run.Unknown
+	}
+
 	id, err = t.useCases.CreateRun(iRequest.Identifiers.Namespace,
-		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg)
+		iRequest.Identifiers.Pipeline, iRequest.Identifiers.Processor, cfg, startedBy)
 
 	if err != nil {
 		// the runner shall inform the iRequest source that the thread was
