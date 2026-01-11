@@ -43,11 +43,11 @@ func (t *Thread) Setup() {
 		f(t.runCountCallback, w, r)
 	})
 
-	mux.HandleFunc("/statistic/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/run/statistic/", func(w http.ResponseWriter, r *http.Request) {
 		f(t.statisticCallback, w, r)
 	})
 
-	mux.HandleFunc("/statistic/info", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/run/statistic/info", func(w http.ResponseWriter, r *http.Request) {
 		f(t.statisticInfoCallback, w, r)
 	})
 

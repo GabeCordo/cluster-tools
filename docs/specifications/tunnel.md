@@ -1,6 +1,8 @@
 # core-processor tunnel
 This specification covers the TCP tunnel between the **core** and **processor** services.
 
+You can implement the tunnel protocol to create custom **processor** services and communicate with the core.
+
 ---
 
 ## Tunnel Message

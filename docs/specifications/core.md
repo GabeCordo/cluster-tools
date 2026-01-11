@@ -383,21 +383,21 @@ curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/run/count\?na
 ---
 
 
-### /statistic
+### /run/statistic
 
 #### GET
 Fetch the statistics collected from completed pipeline runs.
 
 ###### CURL Example
 ```bash
-curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/statistic\?namespace=common\&pipeline=hello-world
+curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/run/statistic\?namespace=common\&pipeline=hello-world
 ```
 
 
 ---
 
 
-### /statistic/info
+### /run/statistic/info
 
 #### GET
 
@@ -405,14 +405,14 @@ curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/statistic\?na
 
 ###### CURL Example
 ```bash
-curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/statistic/info
+curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/run/statistic/info
 ```
 
 ##### Retrieve Pipeline Statistics for a Namespace
 
 ###### CURL Example
 ```bash
-curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/statistic/info\?namespace=common
+curl -H "Accept: application/json" -X GET -L http://127.0.0.1:8136/run/statistic/info\?namespace=common
 ```
 
 

@@ -205,8 +205,10 @@ func (supervisor *Run) calculateDuration() {
 	seconds := uint64(duration.Seconds())
 	supervisor.Time.Duration.Seconds = seconds - (minutes * 60)
 
-	milliseconds := uint64(duration.Milliseconds())
-	supervisor.Time.Duration.Millisecond = milliseconds - (seconds * 1000)
+	if (duration.Milliseconds() > 0) && (duration.Milliseconds() < 100000) {
+		milliseconds := uint64(duration.Milliseconds()) // #nosec G115
+		supervisor.Time.Duration.Millisecond = milliseconds - (seconds * 1000)
+	}
 }
 
 type Database interface {
