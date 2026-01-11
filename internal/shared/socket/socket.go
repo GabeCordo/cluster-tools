@@ -62,8 +62,8 @@ type Type uint8
 
 const (
 	Module Type = iota
-	Log
 	Run
+	Log
 )
 
 /* -------------------------- **** Types ***** ---------------------------- */
@@ -72,7 +72,7 @@ const (
 // is the data type sent across a socket connection.
 type Message struct {
 	Action Action `json:"action"` // What the endpoint should do.
-	Record Type   `json:"record"` // What the structure of data is.
+	Record Type   `json:"type"`   // What the structure of data is.
 	Data   any    `json:"data"`   // The data sent to the endpoint.
 }
 

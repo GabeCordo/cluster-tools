@@ -2,10 +2,11 @@ package run
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/plover"
 	"sync"
 	"time"
+
+	"github.com/FortifiedCode/flock/internal/targets/core/database"
+	"github.com/FortifiedCode/plover"
 )
 
 type Status string
@@ -81,17 +82,17 @@ type Run struct {
 	Status Status `json:"status,omitempty"`
 
 	Time struct {
-		Created     time.Time `json:"created"`
-		LastUpdated time.Time `json:"last_updated"`
+		Created     time.Time `json:"created,omitempty"`
+		LastUpdated time.Time `json:"last_updated,omitempty"`
 		Duration    struct {
 			Hours       uint64 `json:"hours"`
 			Minutes     uint64 `json:"minutes"`
 			Seconds     uint64 `json:"seconds"`
 			Millisecond uint64 `json:"milliseconds"`
-		} `json:"duration"`
+		} `json:"duration,omitempty"`
 	} `json:"time"`
 
-	StartedBy StartedBy `json:"started_by"`
+	StartedBy StartedBy `json:"started_by,omitempty"`
 
 	Processor uint64 `json:"processor,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
