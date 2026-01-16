@@ -1,7 +1,7 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Container Continuous Integration
+name: Continuous Integration
 
 on:
   push:
@@ -11,6 +11,9 @@ on:
 jobs:
   build-and-push-container:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tag: [ linux/amd64, linux/arm64 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,18 +24,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.PAT_TOKEN }}
+          password: ${{ secrets.GH_ACCESS_TOKEN_WRITE }}
 
       - name: GitHub Tag Name example
         run: |
@@ -42,7 +39,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         env:
-          GOPRIVATE: github.com/Sentmint
+          GOPRIVATE: github.com/FortifiedCode
         with:
           context: .
           cache-from: type=gha
@@ -50,17 +47,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            sentmint/pipeline-ops:latest
-            sentmint/pipeline-ops:${{  github.ref_name }}
-            ghcr.io/sentmint/pipeline-ops:latest
-            ghcr.io/sentmint/pipeline-ops:${{  github.ref_name }}
-  update-production-tag:
-    needs: build-and-push-container
-    runs-on: ubuntu-latest
-    steps:
-      - uses: sentmint/DevOps@0.8.0
-        with:
-          application: pipelines
-          service: pipeline-ops
-          tag: ${{  github.ref_name }}
-          token: ${{ secrets.PAT_TOKEN }}
+            ghcr.io/fortifiedcode/flock:latest
+            ghcr.io/fortifiedcode/flock:${{  github.ref_name }}
+          secrets: |
+            "username=${{ secrets.USERNAME }}"
+            "token=${{ secrets.GH_ACCESS_TOKEN }}"
