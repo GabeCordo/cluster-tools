@@ -25,25 +25,19 @@ func main() {
 			"\n\t\t[normal|warning|fatal] specify the log priority " +
 			"\n\t\t\t(ex. find fatal errors)")
 
-	stc := cli.AddCommand("stats", controllers.StatisticsController{})
-	stc.SetCategory("data").SetDescription("used to view the statistic files stored on the system")
-
 	sc := cli.AddCommand("start", controllers.StartCommand{})
 	sc.SetCategory("utils").SetDescription("start the flock on the log system")
-
-	rc := cli.AddCommand("repl", controllers.ReplController{})
-	rc.SetCategory("utils").SetDescription("enable or disable the repl when running mango start")
-
-	shc := cli.AddCommand("scheduler", controllers.ScheduleController{})
-	shc.SetCategory("utils").SetDescription("create or delete schedules for when clusters should be provisioned")
 
 	cc := cli.AddCommand("config", controllers.ConfigCommand{})
 	cc.SetCategory("utils").SetDescription("update the global flock configuration")
 
 	// util controllers
 
-	ec := cli.AddCommand("example", controllers.ExampleController{})
-	ec.SetCategory("utils").SetDescription("an example processor node to test the gateway")
+	connectController := cli.AddCommand("origin", controllers.OriginController{})
+	connectController.SetCategory("utils").SetDescription("point to a core server")
+
+	processorController := cli.AddCommand("processor", controllers.ProcessorController{})
+	processorController.SetCategory("utils").SetDescription("processors are servers exposing compute resources")
 
 	runc := cli.AddCommand("run", controllers.RunController{})
 	runc.SetCategory("utils").SetDescription("run a pipeline on the gateway")
@@ -62,7 +56,7 @@ func main() {
 	nc := cli.AddCommand("namespace", controllers.NamespaceController{})
 	nc.SetCategory("config").SetDescription("switch the namespace used by pops")
 
-	gc := cli.AddCommand("gate", controllers.GatewayController{})
+	gc := cli.AddCommand("gate", controllers.OriginController{})
 	gc.SetCategory("config").SetDescription("switch the gateway used by pops")
 
 	cli.Run()
