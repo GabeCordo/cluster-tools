@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
 	"io"
 	"net/http"
+
+	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
+	"github.com/FortifiedCode/plover"
 )
 
 func RunPipelineOnProcessor(host string, pl *plover.PipelineIR) error {

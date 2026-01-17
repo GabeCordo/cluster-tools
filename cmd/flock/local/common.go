@@ -2,11 +2,12 @@ package local
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 )
 
-const defaultFilePerm = 0600
+const defaultFilePerm = 0777
 
 type Config struct {
 	Namespace string `json:"namespace"`
@@ -72,33 +73,39 @@ func updateConfig(config *Config) error {
 	return json.NewEncoder(f).Encode(config)
 }
 
-func getConfig(config *Config) error {
+func getConfig(config *Config) (err error) {
 
-	f, err := os.Open(ToolsConfig) // #nosec G304 -- Constant is not user controlled
-	if err != nil {
-		panic(err)
+	if config == nil {
+		return errors.New("config is nil")
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Print(err)
-		}
-	}(f)
 
-	return json.NewDecoder(f).Decode(config)
+	var f *os.File
+	f, err = os.Open(ToolsConfig) // #nosec G304 -- Constant is not user controlled
+	if err != nil {
+		return err
+	}
+
+	err = json.NewDecoder(f).Decode(config)
+	if err != nil {
+		return err
+	}
+
+	return f.Close()
 }
 
-func getOrCreateConfig(config *Config) error {
+func getOrCreateConfig(config *Config) (err error) {
 
-	if err := getConfig(config); err != nil {
+	if config == nil {
+		return errors.New("config is nil")
+	}
 
+	err = getConfig(config)
+	if err != nil {
 		config.Namespace = "common"
 		config.Core = "http://localhost:8136"
 
-		if err = createConfig(config); err != nil {
-			return err
-		}
+		err = createConfig(config)
 	}
 
-	return nil
+	return err
 }

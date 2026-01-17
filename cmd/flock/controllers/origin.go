@@ -7,27 +7,29 @@ import (
 	"github.com/FortifiedCode/flock/cmd/flock/local"
 )
 
-type GatewayController struct {
+type OriginController struct {
 }
 
-func (controller GatewayController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
+func (controller OriginController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if cli.Flag(commandline.Show) {
 		controller.showFlag(cli)
-	} else {
+	} else if cli.Flag(commandline.Update) {
 		controller.switchFlag(cli)
+	} else {
+		fmt.Println("[!] origin expects a 'show' or 'update' flag passed to it.")
 	}
 
 	return commandline.Terminate
 }
 
-func (controller GatewayController) showFlag(cli *commandline.CommandLine) {
+func (controller OriginController) showFlag(cli *commandline.CommandLine) {
 
 	core := local.GetCore()
 	fmt.Println(core)
 }
 
-func (controller GatewayController) switchFlag(cli *commandline.CommandLine) {
+func (controller OriginController) switchFlag(cli *commandline.CommandLine) {
 
 	newGateway := cli.NextArg()
 	if newGateway == commandline.FinalArg {

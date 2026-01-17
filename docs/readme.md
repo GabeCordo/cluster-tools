@@ -1,6 +1,10 @@
 # Flock Documentation
 This page acts as an entrypoint to understanding the architecture of the flock framework.
 
+## Command Line Tools
+The `flock` command line tool is the officially supported cli for interacting with the core. A guide 
+to using the `flock` interface can be found [here](/docs/specifications/commandline.md).
+
 ## Specifications
 Define the interfaces and protocols used to communicate between a core and processor.
 
