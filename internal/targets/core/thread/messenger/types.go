@@ -2,11 +2,12 @@ package messenger
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message/email"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/email"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 type Config struct {

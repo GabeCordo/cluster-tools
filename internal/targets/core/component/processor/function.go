@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"github.com/FortifiedCode/plover"
 	"sync"
 )
 
@@ -22,7 +21,7 @@ type Function struct {
 	mutex sync.Mutex
 }
 
-func newFunction(builder *plover.FunctionIR) *Function {
+func newFunction(builder *ScalingFunctions.FunctionIR) *Function {
 	function := new(Function)
 
 	function.data.Name = builder.Identifier

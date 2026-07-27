@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core"
 	"io"
 	"os"
 
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
+
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,7 +18,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err != nil {
-		fmt.Printf("[%sx%s] flock has never been initialized, statistic 'flock init'\n",
+		fmt.Printf("[%sx%s] FunctionScheduler has never been initialized, statistic 'FunctionScheduler init'\n",
 			terminal.Red, terminal.Reset)
 		return commandline.Terminate
 	}

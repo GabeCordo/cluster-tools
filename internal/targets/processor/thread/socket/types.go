@@ -3,13 +3,14 @@ package socket
 import (
 	"crypto/x509"
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread"
-	"github.com/FortifiedCode/flock/internal/targets/processor/use_cases/socket"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	nonce2 "github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/socket"
 )
 
 // Frontend Thread

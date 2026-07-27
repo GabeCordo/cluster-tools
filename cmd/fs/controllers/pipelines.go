@@ -2,14 +2,14 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/api"
-	"github.com/FortifiedCode/plover"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/api"
+
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/cmd/flock/local"
+	"github.com/GabeCordo/FunctionScheduler/cmd/FunctionScheduler/local"
 	"gopkg.in/yaml.v3"
 )
 
@@ -45,7 +45,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	}
 
 	pipelinePaths := make([]string, 0)
-	pipelines := make([]*plover.PipelineIR, 0)
+	pipelines := make([]*ScalingFunctions.PipelineIR, 0)
 
 	// if the path provided is a folder, try to grab all the deployment (pipeline) files
 	// inside the folder and register them on the core
@@ -76,7 +76,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 		}
 
 		p := &struct {
-			Pipeline *plover.PipelineIR `yaml:"pipeline"`
+			Pipeline *ScalingFunctions.PipelineIR `yaml:"pipeline"`
 		}{}
 		if err = yaml.NewDecoder(f).Decode(p); err == nil {
 			pipelines = append(pipelines, p.Pipeline)
@@ -101,7 +101,7 @@ func (controller PipelineController) Run(cli *commandline.CommandLine) commandli
 	return commandline.Terminate
 }
 
-func (controller PipelineController) addPipelines(pipelines []*plover.PipelineIR) {
+func (controller PipelineController) addPipelines(pipelines []*ScalingFunctions.PipelineIR) {
 
 	core := local.GetCore()
 	namespace := local.GetNamespace()
@@ -129,7 +129,7 @@ func (controller PipelineController) addPipelines(pipelines []*plover.PipelineIR
 	}
 }
 
-func (controller PipelineController) deletePipelines(pipelines []*plover.PipelineIR) {
+func (controller PipelineController) deletePipelines(pipelines []*ScalingFunctions.PipelineIR) {
 
 	core := local.GetCore()
 	namespace := local.GetNamespace()

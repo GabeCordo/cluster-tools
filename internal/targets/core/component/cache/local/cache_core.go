@@ -3,10 +3,11 @@ package local
 import (
 	"bytes"
 	"fmt"
-	cache2 "github.com/FortifiedCode/flock/internal/targets/core/component/cache"
 	"log"
 	"math/rand"
 	"time"
+
+	cache2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache"
 )
 
 const (

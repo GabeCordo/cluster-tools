@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
 )
 
 type UseCases struct {

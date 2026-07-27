@@ -1,11 +1,11 @@
 package in_memory
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
 	"strconv"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
 type LocalDatabase struct {
@@ -27,7 +27,7 @@ func NewLocalDatabase() *LocalDatabase {
 	return registry
 }
 
-// Get returns a list of *plover.PipelineIR records from the run.LocalDatabase.
+// Get returns a list of *ScalingFunctions.PipelineIR records from the run.LocalDatabase.
 func (localDatabase *LocalDatabase) Get(filter database.Filter) (runs []*run.Run) {
 
 	id, err := strconv.ParseUint(filter.Identifier, 10, 64)
@@ -80,7 +80,7 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) (runs []*run.Run
 	return runs
 }
 
-// Count returns the number of *plover.PipelineIR records from the run.LocalDatabase.
+// Count returns the number of *ScalingFunctions.PipelineIR records from the run.LocalDatabase.
 func (localDatabase *LocalDatabase) Count(filter database.Filter) (count uint32) {
 
 	count = 0
@@ -123,8 +123,8 @@ func (localDatabase *LocalDatabase) Count(filter database.Filter) (count uint32)
 	return count
 }
 
-// Create adds a *plover.PipelineIR record to the run.LocalDatabase.
-func (localDatabase *LocalDatabase) Create(filter database.Filter, data *plover.PipelineIR, startedBy run.StartedBy) (uint64, error) {
+// Create adds a *ScalingFunctions.PipelineIR record to the run.LocalDatabase.
+func (localDatabase *LocalDatabase) Create(filter database.Filter, data *ScalingFunctions.PipelineIR, startedBy run.StartedBy) (uint64, error) {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()

@@ -1,8 +1,9 @@
 package cache
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {

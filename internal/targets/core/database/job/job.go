@@ -2,8 +2,9 @@ package job
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
 )
 
 // Dump
@@ -18,9 +19,9 @@ type Dump struct {
 type Job struct {
 	Identifier       string            `yaml:"identifier" json:"identifier" bson:"identifier"`
 	Namespace        string            `yaml:"namespace" json:"namespace" bson:"namespace"`
-	Pipeline string            `yaml:"pipeline" json:"pipeline" bson:"pipeline"`
-	Interval database.Interval `yaml:"interval" json:"interval" bson:"interval"`
-	Metadata map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty" bson:"metadata,omitempty"`
+	Pipeline         string            `yaml:"pipeline" json:"pipeline" bson:"pipeline"`
+	Interval         database.Interval `yaml:"interval" json:"interval" bson:"interval"`
+	Metadata         map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty" bson:"metadata,omitempty"`
 	lastAttemptedRun time.Time
 	running          bool
 }

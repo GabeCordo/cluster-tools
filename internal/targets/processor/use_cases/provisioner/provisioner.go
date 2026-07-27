@@ -2,17 +2,17 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
 	"sync"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
-func (useCases *UseCases) GetStatistics() (statistics []*plover.Statistics) {
+func (useCases *UseCases) GetStatistics() (statistics []*ScalingFunctions.Statistics) {
 
 	runs := useCases.Provisioner.GetRuns()
-	statistics = make([]*plover.Statistics, len(runs))
+	statistics = make([]*ScalingFunctions.Statistics, len(runs))
 
 	for _, r := range runs {
 		statistics = append(statistics, r.GetStatistics())
@@ -49,7 +49,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 	}
 
 	useCases.Logger.Printf("%s[%s]%s Data Active (run: %d)\n", terminal.Green, request.Pipeline.Identifier, terminal.Reset, rInstance.Id)
-	go func(rInstance plover.Interactable) {
+	go func(rInstance ScalingFunctions.Interactable) {
 
 		m := sync.Mutex{} // used for sending updates to the gateway
 
@@ -58,7 +58,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		// as data flows through the channels between functions.
 		//
 		// idea:
-		// every 1s send an update of the statistics to the flock gateway so the operator
+		// every 1s send an update of the statistics to the FunctionScheduler gateway so the operator
 		// or developer can track the progress of the pipeline instance in real-time
 		//
 		// important note:
@@ -165,7 +165,7 @@ func (useCases *UseCases) StopRun(supervisor uint64) error {
 	return nil
 }
 
-func (useCases *UseCases) GetModules() []*plover.Module {
+func (useCases *UseCases) GetModules() []*ScalingFunctions.Module {
 
 	return useCases.Repository.GetModules()
 }

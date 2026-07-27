@@ -2,13 +2,13 @@ package mongo
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/drivers/mongo"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/pipeline"
-	"github.com/FortifiedCode/plover"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline"
 )
 
-const DatabaseName string = "flock"
+const DatabaseName string = "FunctionScheduler"
 const CollectionName string = "pipelines"
 
 type MongoDatabase struct {
@@ -22,8 +22,8 @@ func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 	return mongoDatabase, nil
 }
 
-// Get returns the *plover.PipelineIR records associated with the filter.
-func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plover.PipelineIR) {
+// Get returns the *ScalingFunctions.PipelineIR records associated with the filter.
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*ScalingFunctions.PipelineIR) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return records
@@ -55,8 +55,8 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plove
 	return records
 }
 
-// Create stores a *plover.PipelineIR record inside the pipeline.MongoDatabase.
-func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *plover.PipelineIR) (id string, err error) {
+// Create stores a *ScalingFunctions.PipelineIR record inside the pipeline.MongoDatabase.
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *ScalingFunctions.PipelineIR) (id string, err error) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return id, database.NotConnected
@@ -92,8 +92,8 @@ func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *plover
 	return id, err
 }
 
-// Replace swaps a *plover.PipelineIR record with another one in the pipeline.MongoDatabase.
-func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *plover.PipelineIR) (err error) {
+// Replace swaps a *ScalingFunctions.PipelineIR record with another one in the pipeline.MongoDatabase.
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *ScalingFunctions.PipelineIR) (err error) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return database.NotConnected
@@ -122,7 +122,7 @@ func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *plove
 	return err
 }
 
-// Delete removes a *plover.PipelineIR record inside the pipeline.MongoDatabase.
+// Delete removes a *ScalingFunctions.PipelineIR record inside the pipeline.MongoDatabase.
 func (mongoDatabase MongoDatabase) Delete(filter database.Filter) (err error) {
 
 	if !mongoDatabase.driver.IsConnected() {

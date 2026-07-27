@@ -2,10 +2,11 @@ package json_socket
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/socket"
 	"net"
 	"sync"
 	"testing"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
 )
 
 ///////////////////////////////////////////////////////////////

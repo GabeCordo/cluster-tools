@@ -2,9 +2,10 @@ package provision
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
 	"reflect"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
 )
 
 type Module struct {

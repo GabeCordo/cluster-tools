@@ -8,16 +8,16 @@ will be called.
 ## existing controllers
 
 ### doctor
-Verify the required temporary files have been created and the general config used by flock is valid.
+Verify the required temporary files have been created and the general config used by FunctionScheduler is valid.
 
 ### init
-Create the required temporary files and general config used by flock.
+Create the required temporary files and general config used by FunctionScheduler.
 
 ### logs
-View a list of logs created by the flock process that exist in the local file system. 
+View a list of logs created by the FunctionScheduler process that exist in the local file system. 
 
 ### repl
-Invoke an interactive shell to monitor the state of the flock process.
+Invoke an interactive shell to monitor the state of the FunctionScheduler process.
 
 ### schedule
 Create a new execution schedule for a module/cluster pair. 
@@ -26,4 +26,4 @@ Create a new execution schedule for a module/cluster pair.
 Invoke the POPS process.
 
 ### statistics
-View a list of statistics created by the flock process that exist in the local file system.
+View a list of statistics created by the FunctionScheduler process that exist in the local file system.

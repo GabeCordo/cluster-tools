@@ -1,9 +1,9 @@
 package scheduler
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/scheduler/job"
-	jobDatabase "github.com/FortifiedCode/flock/internal/targets/core/database/job"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/scheduler/job"
+	jobDatabase "github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
 type UseCases struct {

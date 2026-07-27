@@ -1,8 +1,7 @@
 package thread
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/plover"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
 )
 
 type InterruptEvent uint8
@@ -27,10 +26,10 @@ const (
 )
 
 type ProvisionerRequest struct {
-	Action    ProvisionerAction
-	Namespace string
+	Action     ProvisionerAction
+	Namespace  string
 	Supervisor uint64
-	Pipeline   *plover.PipelineIR
+	Pipeline   *ScalingFunctions.PipelineIR
 	Metadata   map[string]string
 	Path       string
 	Nonce      nonce.Nonce

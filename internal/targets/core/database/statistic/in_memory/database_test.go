@@ -1,8 +1,9 @@
 package in_memory
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/database/statistic"
 	"testing"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
 )
 
 func Test_StatisticLocalDatabase_Is_Implemented(t *testing.T) {

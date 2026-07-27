@@ -2,7 +2,6 @@ package processor
 
 import (
 	"errors"
-	"github.com/FortifiedCode/plover"
 	"testing"
 )
 
@@ -55,7 +54,7 @@ func TestTable_AddModule(t *testing.T) {
 
 	table := NewTable()
 
-	moduleConfig := &plover.ModuleIR{}
+	moduleConfig := &ScalingFunctions.ModuleIR{}
 	if err := table.AddModule(0, moduleConfig); !errors.Is(err, DoesNotExist) {
 		t.Error("table should throw DoesNotExist for unknown processor")
 	}
@@ -75,8 +74,8 @@ func TestTable_AddModule2(t *testing.T) {
 		return
 	}
 
-	moduleConfig := &plover.ModuleIR{Identifier: "foo", Functions: make([]plover.FunctionIR, 1)}
-	moduleConfig.Functions[0] = plover.FunctionIR{Identifier: "bar"}
+	moduleConfig := &ScalingFunctions.ModuleIR{Identifier: "foo", Functions: make([]ScalingFunctions.FunctionIR, 1)}
+	moduleConfig.Functions[0] = ScalingFunctions.FunctionIR{Identifier: "bar"}
 
 	if err := table.AddModule(0, moduleConfig); err != nil {
 		t.Error(err)

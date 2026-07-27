@@ -2,8 +2,8 @@ package processor
 
 import (
 	"errors"
-	processor2 "github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/plover"
+
+	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
 )
 
 func (uc UseCases) GetModules() []processor2.ModuleData {
@@ -11,9 +11,9 @@ func (uc UseCases) GetModules() []processor2.ModuleData {
 	return uc.ProcessorTable.RegisteredModules()
 }
 
-func (uc UseCases) AddModule(processorId uint64, cfg *plover.ModuleIR) error {
+func (uc UseCases) AddModule(processorId uint64, cfg *ScalingFunctions.ModuleIR) error {
 
-	if ee := plover.VerifyIR(cfg); len(ee) != 0 {
+	if ee := ScalingFunctions.VerifyIR(cfg); len(ee) != 0 {
 		return errors.New("module pipeline is not valid")
 	}
 
@@ -55,9 +55,9 @@ func (uc UseCases) AddModule(processorId uint64, cfg *plover.ModuleIR) error {
 	//}
 	//}
 
-	// let the operator have an understanding of the flock's state
+	// let the operator have an understanding of the FunctionScheduler's state
 	// ->	when a processor is added it may change what modules/configs/processors are available to use
-	//		and whether they are mounted in the flock currently
+	//		and whether they are mounted in the FunctionScheduler currently
 	uc.Logger.Println("UPDATED ==================>")
 	uc.ProcessorTable.Print()
 

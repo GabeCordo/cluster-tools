@@ -2,11 +2,12 @@ package database
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	database2 "github.com/FortifiedCode/flock/internal/targets/core/use_cases/database"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	database2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/database"
 )
 
 var StoreTypeMismatch = errors.New("the received type and desired database type do not match")
@@ -41,8 +42,8 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-	useCases database2.UseCases
-	logger   logging.Logger
+	useCases               database2.UseCases
+	logger                 logging.Logger
 	messengerResponseTable *nonce.ResponseTable
 }
 

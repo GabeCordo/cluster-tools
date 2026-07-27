@@ -2,8 +2,9 @@ package log
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message"
 	"strings"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
 )
 
 type File struct {

@@ -26,18 +26,18 @@ RUN --mount=type=secret,id=username  \
 WORKDIR /go/src
 COPY . .
 
-WORKDIR /go/src/cmd/flock
+WORKDIR /go/src/cmd/fs
 
 # Private Imports Will Fall Under ForitifiedCode
-ENV GOPRIVATE=github.com/FortifiedCode
+ENV GOPRIVATE=github.com/GabeCordo
 
 RUN go mod tidy
 
 # disable cgo so the binary can be brought to a smaller container
 ENV CGO_ENABLED=0
-RUN go build -o flock --tags=production
-RUN ./flock init
-RUN ./flock doctor
+RUN go build -o fs --tags=production
+RUN ./fs init
+RUN ./fs doctor
 
 ##########################################################################################################
 #       Production Container
@@ -45,10 +45,10 @@ RUN ./flock doctor
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=build-env /go/src/cmd/flock/flock /
-COPY --from=build-env /root/.cache/flock /root/.cache/flock
+COPY --from=build-env /go/src/cmd/FunctionScheduler/fs /
+COPY --from=build-env /root/.cache/FunctionScheduler /root/.cache/FunctionScheduler
 
 EXPOSE 8136
 EXPOSE 8137
 
-ENTRYPOINT ["/flock", "start"]
+ENTRYPOINT ["/fs", "start"]

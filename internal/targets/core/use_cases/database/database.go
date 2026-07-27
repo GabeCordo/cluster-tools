@@ -2,17 +2,17 @@ package database
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/plover"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
 )
 
-func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
+func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *ScalingFunctions.PipelineIR) (err error) {
 
 	if pipelineData == nil {
-		return errors.New("the *plover.PipelineIR cannot be nil")
+		return errors.New("the *ScalingFunctions.PipelineIR cannot be nil")
 	}
 
-	err = plover.CleanupIR(pipelineData)
+	err = ScalingFunctions.CleanupIR(pipelineData)
 	_, err = uc.PipelineDatabase.Create(
 		database.Filter{
 			Namespace:  namespaceId,
@@ -24,7 +24,7 @@ func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipeline
 	return err
 }
 
-func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statisticData *plover.Statistics) (err error) {
+func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statisticData *ScalingFunctions.Statistics) (err error) {
 
 	_, err = uc.StatisticDatabase.Create(
 		database.Filter{
@@ -36,14 +36,14 @@ func (uc UseCases) CreateStatisticRecord(namespaceId, pipelineId string, statist
 	return err
 }
 
-func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []*plover.PipelineIR, err error) {
+func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines []*ScalingFunctions.PipelineIR, err error) {
 
 	results := uc.PipelineDatabase.Get(database.Filter{
 		Namespace:  namespaceId,
 		Identifier: pipelineId,
 	})
 
-	pipelines = make([]*plover.PipelineIR, len(results))
+	pipelines = make([]*ScalingFunctions.PipelineIR, len(results))
 	for i, result := range results {
 		pipelines[i] = result
 	}
@@ -51,14 +51,14 @@ func (uc UseCases) GetPipelineRecord(namespaceId, pipelineId string) (pipelines 
 	return pipelines, err
 }
 
-func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []*plover.Statistics, err error) {
+func (uc UseCases) GetStatisticRecord(namespaceId, pipelineId string) (statistics []*ScalingFunctions.Statistics, err error) {
 
 	results := uc.StatisticDatabase.Get(database.Filter{
 		Namespace: namespaceId,
 		Pipeline:  pipelineId,
 	})
 
-	statistics = make([]*plover.Statistics, len(results))
+	statistics = make([]*ScalingFunctions.Statistics, len(results))
 	for i, result := range results {
 		statistics[i] = result
 	}
@@ -145,7 +145,7 @@ func (uc UseCases) DeleteStatisticRecord(namespaceId string) (err error) {
 	return err
 }
 
-func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *plover.PipelineIR) (err error) {
+func (uc UseCases) ReplacePipelineRecord(namespaceId, pipelineId string, pipelineData *ScalingFunctions.PipelineIR) (err error) {
 
 	err = uc.PipelineDatabase.Replace(database.Filter{
 		Namespace:  namespaceId,

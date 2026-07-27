@@ -2,26 +2,26 @@ package provision
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/buffers"
-	"github.com/FortifiedCode/plover"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
 )
 
 type Provisioner struct {
-	repository *plover.Repository
-	runs       map[uint64]plover.Interactable
+	repository *ScalingFunctions.Repository
+	runs       map[uint64]ScalingFunctions.Interactable
 	mutex      sync.RWMutex
 	activeRuns uint64
 	runIds     *buffers.RingBuffer
 }
 
-func New(repository *plover.Repository, ids *buffers.RingBuffer) *Provisioner {
+func New(repository *ScalingFunctions.Repository, ids *buffers.RingBuffer) *Provisioner {
 
 	provisioner := new(Provisioner)
 	if provisioner == nil {
 		panic("failed to allocate memory for Provisioner struct")
 	}
-	provisioner.runs = make(map[uint64]plover.Interactable)
+	provisioner.runs = make(map[uint64]ScalingFunctions.Interactable)
 	provisioner.runIds = ids
 	provisioner.repository = repository
 	provisioner.activeRuns = 0
@@ -42,12 +42,12 @@ func (provisioner *Provisioner) RunExists(id uint64) bool {
 	return found
 }
 
-func (provisioner *Provisioner) CreateRun(namespace string, identifier uint64, metadata map[string]string, core string, pipeline *plover.PipelineIR) (plover.Interactable, error) {
+func (provisioner *Provisioner) CreateRun(namespace string, identifier uint64, metadata map[string]string, core string, pipeline *ScalingFunctions.PipelineIR) (ScalingFunctions.Interactable, error) {
 
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	p := plover.Build(pipeline, provisioner.repository)
+	p := ScalingFunctions.Build(pipeline, provisioner.repository)
 	i := p.Interactable()
 	i.Id = identifier
 
@@ -82,22 +82,22 @@ func (provisioner *Provisioner) DeleteRun(id uint64) (deleted, found bool) {
 	return deleted, found
 }
 
-func (provisioner *Provisioner) GetRun(id uint64) (plover.Interactable, bool) {
+func (provisioner *Provisioner) GetRun(id uint64) (ScalingFunctions.Interactable, bool) {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
 	if r, found := provisioner.runs[id]; found {
 		return r, true
 	} else {
-		return plover.Interactable{}, false
+		return ScalingFunctions.Interactable{}, false
 	}
 }
 
-func (provisioner *Provisioner) GetRuns() (runs []plover.Interactable) {
+func (provisioner *Provisioner) GetRuns() (runs []ScalingFunctions.Interactable) {
 	provisioner.mutex.RLock()
 	defer provisioner.mutex.RUnlock()
 
-	runs = make([]plover.Interactable, provisioner.activeRuns)
+	runs = make([]ScalingFunctions.Interactable, provisioner.activeRuns)
 	for _, r := range provisioner.runs {
 		runs = append(runs, r)
 	}

@@ -1,9 +1,9 @@
 package socket
 
 import (
-	"github.com/FortifiedCode/flock/internal/flags"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/flags"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {
@@ -58,7 +58,7 @@ func (t *Thread) HandleRequest(request *thread.Request) (response *thread.Respon
 	if flags.DEBUG {
 		t.logger.Printf("Received %s ", request.ToString())
 	}
-	
+
 	response = thread.NewResponse(thread.Socket)
 	thread.CopyMetadata(request, response)
 

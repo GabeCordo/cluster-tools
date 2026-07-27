@@ -2,12 +2,13 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread"
-	"github.com/FortifiedCode/flock/internal/targets/processor/use_cases/provisioner"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/provisioner"
 )
 
 const nonceMin = 1000000

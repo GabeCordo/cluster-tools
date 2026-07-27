@@ -1,8 +1,9 @@
 package in_memory
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/database/contact"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/contact"
 )
 
 type Database struct {

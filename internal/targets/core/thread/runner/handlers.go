@@ -2,12 +2,12 @@ package runner
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message/log"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	thread2 "github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/plover"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/log"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	thread2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ func (t *Thread) handleUpdateRun(request *thread2.Request, response **thread2.Re
 
 	status := r.GetStatus()
 	if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
-		t.logger.Printf("[proc: %d -> flock][id: %d] runner has completed\n", r.Processor, r.GetId())
+		t.logger.Printf("[proc: %d -> FunctionScheduler][id: %d] runner has completed\n", r.Processor, r.GetId())
 		t.requestStore[request.Nonce] = request
 		thread2.AsyncCreateStatisticRecordInDatabase(t.channels.c15, t.logger, request, r)
 	}
@@ -171,9 +171,9 @@ func (t *Thread) handleStopRun(request *thread2.Request, response **thread2.Resp
 
 func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread2.Request, iResponse *thread2.Response) {
 
-	var id uint64 = 0          // set to a value >0 when no err
-	var cfg *plover.PipelineIR // set to a valid value when no err
-	var err error              // indicates we could not create a new record
+	var id uint64 = 0                    // set to a value >0 when no err
+	var cfg *ScalingFunctions.PipelineIR // set to a valid value when no err
+	var err error                        // indicates we could not create a new record
 
 	if !iResponse.Success {
 		oResponse := thread2.NewResponse(thread2.Runner)
@@ -183,7 +183,7 @@ func (t *Thread) handleDatabaseReturnsPipeline(iRequest *thread2.Request, iRespo
 		return
 	}
 
-	pipelineConfigs, ok := iResponse.Data.([]*plover.PipelineIR)
+	pipelineConfigs, ok := iResponse.Data.([]*ScalingFunctions.PipelineIR)
 	if !ok {
 		oResponse := thread2.NewResponse(thread2.Runner)
 		oResponse.Error = errors.New("expected response to be []pipeline.Data")
@@ -276,7 +276,7 @@ func (t *Thread) handleSocketCreatesRun(iRequest *thread2.Request, iResponse *th
 
 	if iResponse.Error != nil {
 		t.logger.Print(iResponse.Error.Error())
-		t.logger.Printf("[flock -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "could not connect to the processor and runner is canceled")
+		t.logger.Printf("[FunctionScheduler -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "could not connect to the processor and runner is canceled")
 		r.Status = run.Cancelled
 
 		oResponse := thread2.NewResponse(thread2.Runner)
@@ -287,7 +287,7 @@ func (t *Thread) handleSocketCreatesRun(iRequest *thread2.Request, iResponse *th
 		return
 	}
 
-	t.logger.Printf("[flock -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "connected to processor and runner is active")
+	t.logger.Printf("[FunctionScheduler -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "connected to processor and runner is active")
 	r.Status = run.Active
 
 	oResponse := thread2.NewResponse(thread2.Runner)

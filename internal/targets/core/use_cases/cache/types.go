@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/component/cache"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache"
 )
 
 type UseCase struct {

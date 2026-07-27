@@ -2,8 +2,9 @@ package json_socket
 
 import (
 	"encoding/json"
-	"github.com/FortifiedCode/flock/internal/shared/socket"
 	"io"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
 )
 
 //////////////////////////////////////////////////////////////////////////////

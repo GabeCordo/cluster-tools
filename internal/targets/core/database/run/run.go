@@ -5,8 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/plover"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
 )
 
 type Status string
@@ -71,10 +70,10 @@ const (
 )
 
 type Request struct {
-	Id        uint64             `json:"id"`
-	Namespace string             `json:"namespace"`
-	Config    *plover.PipelineIR `json:"config"`
-	Metadata  map[string]string  `json:"data"`
+	Id        uint64                       `json:"id"`
+	Namespace string                       `json:"namespace"`
+	Config    *ScalingFunctions.PipelineIR `json:"config"`
+	Metadata  map[string]string            `json:"data"`
 }
 
 type Run struct {
@@ -97,14 +96,14 @@ type Run struct {
 	Processor uint64 `json:"processor,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 
-	Pipeline plover.PipelineIR `json:"pipeline,omitempty"`
+	Pipeline ScalingFunctions.PipelineIR `json:"pipeline,omitempty"`
 
-	Statistics *plover.Statistics `json:"statistics"`
+	Statistics *ScalingFunctions.Statistics `json:"statistics"`
 
 	mutex sync.RWMutex
 }
 
-func New(runId, processorId uint64, namespaceName string, startedBy StartedBy, cfg *plover.PipelineIR) *Run {
+func New(runId, processorId uint64, namespaceName string, startedBy StartedBy, cfg *ScalingFunctions.PipelineIR) *Run {
 	run := new(Run)
 
 	run.Status = Created
@@ -113,7 +112,7 @@ func New(runId, processorId uint64, namespaceName string, startedBy StartedBy, c
 	run.Namespace = namespaceName
 	run.StartedBy = startedBy
 	run.Pipeline = *cfg // copy instance
-	run.Statistics = plover.NewStatistics(0, 0)
+	run.Statistics = ScalingFunctions.NewStatistics(0, 0)
 	run.Time.Created = time.Now()
 	run.Time.LastUpdated = run.Time.Created
 
@@ -167,15 +166,15 @@ func (supervisor *Run) GetId() uint64 {
 	return supervisor.Id
 }
 
-func (supervisor *Run) GetPipeline() *plover.PipelineIR {
+func (supervisor *Run) GetPipeline() *ScalingFunctions.PipelineIR {
 	return &supervisor.Pipeline
 }
 
-func (supervisor *Run) GetStatistic() *plover.Statistics {
+func (supervisor *Run) GetStatistic() *ScalingFunctions.Statistics {
 	return supervisor.Statistics
 }
 
-func (supervisor *Run) SetStatistic(statistic *plover.Statistics) error {
+func (supervisor *Run) SetStatistic(statistic *ScalingFunctions.Statistics) error {
 	if statistic == nil {
 		return errors.New("statistic is nil")
 	}
@@ -214,6 +213,6 @@ func (supervisor *Run) calculateDuration() {
 type Database interface {
 	Get(filter database.Filter) []*Run
 	Count(filter database.Filter) uint32
-	Create(filter database.Filter, data *plover.PipelineIR, startedBy StartedBy) (uint64, error)
+	Create(filter database.Filter, data *ScalingFunctions.PipelineIR, startedBy StartedBy) (uint64, error)
 	Print()
 }

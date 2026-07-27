@@ -1,8 +1,7 @@
 package rest
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/plover"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
 )
 
 type Request struct {
@@ -27,17 +26,17 @@ type ClusterRequest struct {
 type SupervisorAction string
 
 const (
-	Update SupervisorAction = "update"
-	Crash                   = "crash"
+	Update   SupervisorAction = "update"
+	Crash                     = "crash"
 	Complete                  = "complete"
 )
 
 type SupervisorRequest struct {
-	Identifier uint64            `json:"identifier"`
-	Action     SupervisorAction  `json:"action,omitempty"`
-	Statistics plover.Statistics `json:"statistics,omitempty"`
-	Log        LogRequest        `json:"log,omitempty"`
-	Cache      CacheRequest      `json:"cache,omitempty"`
+	Identifier uint64                      `json:"identifier"`
+	Action     SupervisorAction            `json:"action,omitempty"`
+	Statistics ScalingFunctions.Statistics `json:"statistics,omitempty"`
+	Log        LogRequest                  `json:"log,omitempty"`
+	Cache      CacheRequest                `json:"cache,omitempty"`
 }
 
 type LogLevel string

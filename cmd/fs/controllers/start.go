@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
 )
 
 type StartCommand struct {
@@ -48,7 +48,7 @@ func (sc StartCommand) Run(cli *commandline.CommandLine) commandline.TerminateOn
 	// check to see that the etl thread has been initialized with the required files
 	// if it has not, fail and tell the operator to call the 'etl init' command
 	if _, err := os.Stat(DefaultConfigsFolder); err != nil {
-		fmt.Printf("missing configurations folder at %s\nmake sure you run 'flock init'\n", DefaultConfigsFolder)
+		fmt.Printf("missing configurations folder at %s\nmake sure you run 'FunctionScheduler init'\n", DefaultConfigsFolder)
 		return commandline.Terminate
 	}
 

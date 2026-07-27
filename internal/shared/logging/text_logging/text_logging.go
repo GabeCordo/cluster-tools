@@ -3,9 +3,10 @@ package text_logging
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
 	"log"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
 )
 
 //////////////////////////////////////////////////////////////////////////////

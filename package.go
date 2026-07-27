@@ -1,10 +1,10 @@
-package flock
+package FunctionScheduler
 
 import (
-	processor2 "github.com/FortifiedCode/flock/internal/targets/processor"
-	"github.com/FortifiedCode/plover"
 	"os"
 	"path/filepath"
+
+	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor"
 )
 
 const defaultConfigName = "processor0"
@@ -13,7 +13,7 @@ type Processor struct {
 	value *processor2.Processor
 }
 
-func New(repository *plover.Repository) Processor {
+func New(repository *ScalingFunctions.Repository) Processor {
 
 	ex, err := os.Executable()
 	if err != nil {

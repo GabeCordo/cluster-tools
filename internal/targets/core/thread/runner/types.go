@@ -2,10 +2,11 @@ package runner
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/flock/internal/targets/core/use_cases/runner"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/runner"
 )
 
 type Config struct {

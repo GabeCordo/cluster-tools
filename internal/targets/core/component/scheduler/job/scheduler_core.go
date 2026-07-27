@@ -1,10 +1,11 @@
 package job
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
 	"log"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
 // Watch

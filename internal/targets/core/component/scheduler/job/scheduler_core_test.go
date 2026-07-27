@@ -1,10 +1,11 @@
 package job
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job/in_memory"
 	"testing"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job/in_memory"
 )
 
 var testInterval = &database.Interval{

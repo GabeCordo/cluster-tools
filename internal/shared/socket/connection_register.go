@@ -3,9 +3,10 @@ package socket
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/buffers"
 	"net"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
 )
 
 //////////////////////////////////////////////////////////////////////////////

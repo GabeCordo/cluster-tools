@@ -15,7 +15,7 @@ type Config struct {
 
 var (
 	userCacheDir, _        = os.UserCacheDir()
-	DefaultFrameworkFolder = userCacheDir + "/flock/"
+	DefaultFrameworkFolder = userCacheDir + "/FunctionScheduler/"
 	ToolsFolder            = DefaultFrameworkFolder + "/tools/"
 	ToolsConfig            = ToolsFolder + "config.json"
 )

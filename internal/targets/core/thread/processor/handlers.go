@@ -1,9 +1,8 @@
 package processor
 
 import (
-	processor2 "github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	thread "github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/plover"
+	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	thread "github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +93,7 @@ func (t *Thread) handleCreateModule(request *thread.Request, response **thread.R
 
 	*response = thread.NewResponse(thread.Processor)
 
-	cfg, ok := (request.Data).(*plover.ModuleIR)
+	cfg, ok := (request.Data).(*ScalingFunctions.ModuleIR)
 	if !ok {
 		(*response).Success = false
 		(*response).Error = thread.BadRequestType

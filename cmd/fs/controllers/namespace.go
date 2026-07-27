@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/FortifiedCode/flock/cmd/flock/local"
+	"github.com/GabeCordo/FunctionScheduler/cmd/FunctionScheduler/local"
 )
 
 type NamespaceController struct {

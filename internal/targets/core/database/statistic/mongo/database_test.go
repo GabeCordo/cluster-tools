@@ -1,10 +1,11 @@
 package mongo
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/drivers/mongo"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/statistic"
 	"testing"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
 )
 
 const TestDatabaseUri = "mongodb://localhost:27017"

@@ -3,13 +3,14 @@ package log
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
 )
 
 var logRegex = regexp.MustCompile(`\[(.+)]\[(.+)](.+)`)

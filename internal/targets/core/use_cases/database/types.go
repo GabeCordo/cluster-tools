@@ -1,10 +1,10 @@
 package database
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/pipeline"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/statistic"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
 )
 
 type UseCases struct {

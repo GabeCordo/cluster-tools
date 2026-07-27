@@ -2,11 +2,10 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/plover"
 	"time"
 
 	"github.com/FortifiedCode/commandline"
-	flock "github.com/FortifiedCode/flock"
+	FunctionScheduler "github.com/GabeCordo/FunctionScheduler"
 )
 
 func generator(out chan int) {
@@ -40,7 +39,7 @@ type ExampleController struct {
 
 func (controller ExampleController) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
-	repository := plover.NewRepository()
+	repository := ScalingFunctions.NewRepository()
 
 	m := repository.Module("common")
 	m.Version = "v1.0"
@@ -61,7 +60,7 @@ func (controller ExampleController) Run(cli *commandline.CommandLine) commandlin
 		fmt.Print(err)
 	}
 
-	processor := flock.New(repository)
+	processor := FunctionScheduler.New(repository)
 	processor.Connect()
 
 	return commandline.Terminate

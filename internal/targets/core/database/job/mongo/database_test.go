@@ -1,9 +1,10 @@
 package mongo
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/drivers/mongo"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
 	"testing"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
 func Test_StatisticMongoDatabase_Is_Implemented(t *testing.T) {

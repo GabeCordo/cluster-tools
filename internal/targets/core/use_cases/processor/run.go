@@ -2,16 +2,16 @@ package processor
 
 import (
 	"errors"
-	processor3 "github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/plover"
+
+	processor3 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 func (uc UseCases) FindCandidateProcessor(r *thread.Response) (*processor3.Processor, error) {
 
-	pp, ok := r.Data.([]*plover.PipelineIR)
+	pp, ok := r.Data.([]*ScalingFunctions.PipelineIR)
 	if !ok {
-		return nil, errors.New("FindCandidateProcessor expected []*plover.PipelineIR type")
+		return nil, errors.New("FindCandidateProcessor expected []*ScalingFunctions.PipelineIR type")
 	}
 
 	if len(pp) < 1 {

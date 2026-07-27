@@ -1,5 +1,5 @@
 # core
-The core is a collection of source files required by the flock process.
+The core is a collection of source files required by the FunctionScheduler process.
 
 ## Folders
 

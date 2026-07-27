@@ -1,14 +1,13 @@
 package processor
 
 import (
-	"github.com/FortifiedCode/plover"
 	"sync"
 )
 
 type ModuleData struct {
 	Name    string
 	Version string
-	Contact plover.ContactIR
+	Contact ScalingFunctions.ContactIR
 	Mounted bool
 }
 
@@ -19,7 +18,7 @@ type Module struct {
 	mutex     sync.RWMutex
 }
 
-func newModule(name string, version string, contact ...plover.ContactIR) *Module {
+func newModule(name string, version string, contact ...ScalingFunctions.ContactIR) *Module {
 	module := new(Module)
 
 	module.data.Name = name
@@ -55,7 +54,7 @@ type ModuleConfig struct {
 	Exports     []ModuleFunction `yaml:"exports" json:"functions"`
 }
 
-func (module *Module) addFunction(builder *plover.FunctionIR) (success bool) {
+func (module *Module) addFunction(builder *ScalingFunctions.FunctionIR) (success bool) {
 
 	module.mutex.Lock()
 	defer module.mutex.Unlock()

@@ -1,12 +1,12 @@
 package socket
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/socket"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
 )
 
-const privateKeyPathEnvVar = "FLOCK_SERVER_TLS_KEY"
-const certificatePathEnvVar = "FLOCK_SERVER_TLS_CERT"
+const privateKeyPathEnvVar = "FunctionScheduler_SERVER_TLS_KEY"
+const certificatePathEnvVar = "FunctionScheduler_SERVER_TLS_CERT"
 
 type UseCases struct {
 	Socket socket.Server

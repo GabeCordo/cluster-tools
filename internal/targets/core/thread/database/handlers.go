@@ -2,14 +2,14 @@ package database
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/contact"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/plover"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/contact"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	configData, ok := (request.Data).(*plover.PipelineIR)
+	configData, ok := (request.Data).(*ScalingFunctions.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
@@ -31,7 +31,7 @@ func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *t
 
 func (t *Thread) handleCreateStatisticRecord(request *thread.Request, response *thread.Response) {
 
-	statisticsData, ok := (request.Data).(*plover.Statistics)
+	statisticsData, ok := (request.Data).(*ScalingFunctions.Statistics)
 	if !ok {
 		response.Success = false
 		response.Error = StoreTypeMismatch
@@ -132,7 +132,7 @@ func (t *Thread) handleDeleteStatisticRecord(request *thread.Request, response *
 
 func (t *Thread) handleUpdatePipelineRecord(request *thread.Request, response *thread.Response) {
 
-	cfg, ok := (request.Data).(*plover.PipelineIR)
+	cfg, ok := (request.Data).(*ScalingFunctions.PipelineIR)
 	if !ok {
 		response.Success = false
 		response.Error = thread.BadRequestType

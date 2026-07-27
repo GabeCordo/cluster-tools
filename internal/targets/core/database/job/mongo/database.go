@@ -1,12 +1,12 @@
 package mongo
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/drivers/mongo"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
-const DatabaseName string = "flock"
+const DatabaseName string = "FunctionScheduler"
 const CollectionName string = "jobs"
 
 type MongoDatabase struct {

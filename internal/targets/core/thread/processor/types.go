@@ -2,10 +2,11 @@ package processor
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	processor2 "github.com/FortifiedCode/flock/internal/targets/core/use_cases/processor"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/processor"
 )
 
 type Config struct {

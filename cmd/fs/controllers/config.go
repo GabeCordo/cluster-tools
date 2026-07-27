@@ -3,11 +3,12 @@ package controllers
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core"
 	"io"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
 
 	"github.com/FortifiedCode/commandline"
 	"gopkg.in/yaml.v3"
@@ -146,7 +147,7 @@ func (command ConfigCommand) updateField(c *core.Config, fields []string, value 
 func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultCoreConfigFile); err != nil {
-		fmt.Println("[x] flock has never been initialized, statistic 'flock init'")
+		fmt.Println("[x] FunctionScheduler has never been initialized, statistic 'FunctionScheduler init'")
 		return commandline.Terminate
 	}
 

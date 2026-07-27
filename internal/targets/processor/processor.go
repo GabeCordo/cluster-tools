@@ -1,22 +1,22 @@
 package processor
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/buffers"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
-	"github.com/FortifiedCode/flock/internal/shared/socket/json_socket"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/processor/component/provision"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread/provisioner"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread/socket"
-	provisioner2 "github.com/FortifiedCode/flock/internal/targets/processor/use_cases/provisioner"
-	socket2 "github.com/FortifiedCode/flock/internal/targets/processor/use_cases/socket"
-	"github.com/FortifiedCode/plover"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging/text_logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket/json_socket"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/component/provision"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/provisioner"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/socket"
+	provisioner2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/provisioner"
+	socket2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/socket"
 )
 
 const defaultInterruptChannelSize = 1
@@ -56,7 +56,7 @@ type Processor struct {
 	logger logging.Logger
 }
 
-func New(config *Config, repository *plover.Repository) *Processor {
+func New(config *Config, repository *ScalingFunctions.Repository) *Processor {
 
 	// check arguments passed to the New function
 	if config == nil {
@@ -64,7 +64,7 @@ func New(config *Config, repository *plover.Repository) *Processor {
 	}
 
 	if repository == nil {
-		panic("the *plover.Repository argument cannot be nil")
+		panic("the *ScalingFunctions.Repository argument cannot be nil")
 	}
 
 	// constructor for the *Processor structure
@@ -128,7 +128,7 @@ func New(config *Config, repository *plover.Repository) *Processor {
 }
 
 // Connect
-// establish a connection with the Flock core processes. Upon establishing
+// establish a connection with the FunctionScheduler core processes. Upon establishing
 // connection, the processor shall register modules to the core and wait
 // for processing requests from the core.
 func (p *Processor) Connect() {

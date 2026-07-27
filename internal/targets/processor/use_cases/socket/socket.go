@@ -3,10 +3,11 @@ package socket
 import (
 	"crypto/x509"
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/socket"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
 )
 
 func (uc *UseCases) SetupSocketEventHandlers(events socket.ClientEvents) {

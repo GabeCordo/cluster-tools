@@ -4,18 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/plover"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
 )
 
 type LocalDatabase struct {
-	records map[string]map[string]*plover.PipelineIR
+	records map[string]map[string]*ScalingFunctions.PipelineIR
 
 	mutex sync.RWMutex
 }
@@ -23,7 +23,7 @@ type LocalDatabase struct {
 func NewLocalPipelineDatabase() *LocalDatabase {
 
 	localDatabase := new(LocalDatabase)
-	localDatabase.records = make(map[string]map[string]*plover.PipelineIR)
+	localDatabase.records = make(map[string]map[string]*ScalingFunctions.PipelineIR)
 
 	return localDatabase
 }
@@ -149,7 +149,7 @@ func (localDatabase *LocalDatabase) Load(path string) error {
 			return err
 		}
 
-		cfg := &plover.PipelineIR{}
+		cfg := &ScalingFunctions.PipelineIR{}
 		if err = json.NewDecoder(f).Decode(cfg); err != nil {
 			return err
 		}
@@ -161,8 +161,8 @@ func (localDatabase *LocalDatabase) Load(path string) error {
 	return err
 }
 
-// Get retrieves a *plover.PipelineIR record from the pipeline.LocalDatabase.
-func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plover.PipelineIR) {
+// Get retrieves a *ScalingFunctions.PipelineIR record from the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*ScalingFunctions.PipelineIR) {
 
 	localDatabase.mutex.RLock()
 	defer localDatabase.mutex.RUnlock()
@@ -176,7 +176,7 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plov
 		return results
 	}
 
-	var pipeline *plover.PipelineIR
+	var pipeline *ScalingFunctions.PipelineIR
 	if filter.Identifier != "" {
 		pipeline, found = module[filter.Identifier]
 		if !found {
@@ -192,8 +192,8 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plov
 	return results
 }
 
-// Create adds a new *plover.PipelineIR record to the pipeline.LocalDatabase.
-func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plover.PipelineIR) (string, error) {
+// Create adds a new *ScalingFunctions.PipelineIR record to the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record *ScalingFunctions.PipelineIR) (string, error) {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
@@ -203,7 +203,7 @@ func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plove
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]*plover.PipelineIR)
+		idToCfgMap := make(map[string]*ScalingFunctions.PipelineIR)
 		localDatabase.records[filter.Namespace] = idToCfgMap
 		module = idToCfgMap
 	}
@@ -220,8 +220,8 @@ func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plove
 	return record.Identifier, nil
 }
 
-// Replace swaps a *plover.PipelineIR with an existing record in the pipeline.LocalDatabase.
-func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plover.PipelineIR) error {
+// Replace swaps a *ScalingFunctions.PipelineIR with an existing record in the pipeline.LocalDatabase.
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *ScalingFunctions.PipelineIR) error {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
@@ -231,7 +231,7 @@ func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plov
 	// the module needs to exist for us to add new configs to it
 	// if it doesn't exist, lazily create it in the database
 	if !found {
-		idToCfgMap := make(map[string]*plover.PipelineIR)
+		idToCfgMap := make(map[string]*ScalingFunctions.PipelineIR)
 		localDatabase.records[filter.Namespace] = idToCfgMap
 	}
 
@@ -239,7 +239,7 @@ func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plov
 	return nil
 }
 
-// Delete removes a *plover.PipelineIR from the pipeline.LocalDatabase.
+// Delete removes a *ScalingFunctions.PipelineIR from the pipeline.LocalDatabase.
 func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 
 	localDatabase.mutex.Lock()
@@ -259,7 +259,7 @@ func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 	return nil
 }
 
-// Print outputs the *plover.PipelineIR records in the pipeline.LocalDatabase to the console.
+// Print outputs the *ScalingFunctions.PipelineIR records in the pipeline.LocalDatabase to the console.
 func (localDatabase *LocalDatabase) Print() {
 
 	for moduleName, module := range localDatabase.records {

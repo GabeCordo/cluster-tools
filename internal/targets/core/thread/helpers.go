@@ -2,16 +2,16 @@ package thread
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/flags"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message/log"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
 	"strconv"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/flags"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/log"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
 type Mandatory struct {
@@ -22,7 +22,7 @@ type Mandatory struct {
 	Timeout       float64
 }
 
-func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf []*plover.PipelineIR, found bool) {
+func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName string) (conf []*ScalingFunctions.PipelineIR, found bool) {
 
 	request := Request{
 		Action: GetAction,
@@ -55,7 +55,7 @@ func GetPipelineFromDatabase(mandatory Mandatory, namespaceName, pipelineName st
 		return nil, false
 	}
 
-	pp, ok := databaseResponse.Data.([]*plover.PipelineIR)
+	pp, ok := databaseResponse.Data.([]*ScalingFunctions.PipelineIR)
 	if !ok {
 		return nil, false
 	}
@@ -104,7 +104,7 @@ func GetNamespacesFromDatabase(mandatory Mandatory) (namespaces []string, err er
 	return namespaces, err
 }
 
-func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []*plover.PipelineIR, found bool) {
+func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (configs []*ScalingFunctions.PipelineIR, found bool) {
 
 	request := Request{
 		Action: GetAction,
@@ -136,11 +136,11 @@ func GetPipelinesFromDatabase(mandatory Mandatory, namespaceName string) (config
 		return nil, false
 	}
 
-	pp, ok := databaseResponse.Data.([]*plover.PipelineIR)
+	pp, ok := databaseResponse.Data.([]*ScalingFunctions.PipelineIR)
 	return pp, ok
 }
 
-func StorePipelineInDatabase(mandatory Mandatory, namespace, identifier string, p *plover.PipelineIR) error {
+func StorePipelineInDatabase(mandatory Mandatory, namespace, identifier string, p *ScalingFunctions.PipelineIR) error {
 
 	request := Request{
 		Action: CreateAction,
@@ -178,7 +178,7 @@ func StorePipelineInDatabase(mandatory Mandatory, namespace, identifier string, 
 	return nil
 }
 
-func ReplacePipelineInDatabase(mandatory Mandatory, namespace, identifier string, p *plover.PipelineIR) (success bool) {
+func ReplacePipelineInDatabase(mandatory Mandatory, namespace, identifier string, p *ScalingFunctions.PipelineIR) (success bool) {
 
 	request := Request{
 		Action: UpdateAction,
@@ -606,7 +606,7 @@ func StopRun(mandatory Mandatory, id uint64) error {
 	return response.Error
 }
 
-func FindStatistic(mandatory Mandatory, namespaceName, pipelineName string) (entries []*plover.Statistics, found bool) {
+func FindStatistic(mandatory Mandatory, namespaceName, pipelineName string) (entries []*ScalingFunctions.Statistics, found bool) {
 
 	request := Request{
 		Action: GetAction,
@@ -638,7 +638,7 @@ func FindStatistic(mandatory Mandatory, namespaceName, pipelineName string) (ent
 		return nil, false
 	}
 
-	statistics, ok := (databaseResponse.Data).([]*plover.Statistics)
+	statistics, ok := (databaseResponse.Data).([]*ScalingFunctions.Statistics)
 	if !ok {
 		return nil, false
 	}
@@ -725,7 +725,7 @@ func GetModules(mandatory Mandatory) (success bool, modules []processor.ModuleDa
 	return success, modules
 }
 
-func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *plover.ModuleIR) {
+func AsyncAddModule(mandatory Mandatory, processorId uint64, cfg *ScalingFunctions.ModuleIR) {
 
 	request := new(Request)
 	if request == nil {
@@ -1279,7 +1279,7 @@ func AsyncGetPipelineFromDatabase(pipe chan<- *Request, l logging.Logger, oldReq
 	pipe <- request
 }
 
-func AsyncSendRunToSocket(pipe chan<- *Request, l logging.Logger, oldRequest *Request, id uint64, cfg *plover.PipelineIR, metadata map[string]string) {
+func AsyncSendRunToSocket(pipe chan<- *Request, l logging.Logger, oldRequest *Request, id uint64, cfg *ScalingFunctions.PipelineIR, metadata map[string]string) {
 
 	runRequest := run.Request{
 		Id:        id,

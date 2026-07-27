@@ -2,15 +2,15 @@ package database
 
 import (
 	"errors"
-	in_memory2 "github.com/FortifiedCode/flock/internal/targets/core/database/job/in_memory"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/pipeline/in_memory"
-	in_memory3 "github.com/FortifiedCode/flock/internal/targets/core/database/statistic/in_memory"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	database2 "github.com/FortifiedCode/flock/internal/targets/core/use_cases/database"
-	"github.com/FortifiedCode/plover"
 	"testing"
 
-	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
+	in_memory2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job/in_memory"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline/in_memory"
+	in_memory3 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic/in_memory"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	database2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/database"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging/text_logging"
 )
 
 func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) *Thread {
@@ -51,7 +51,7 @@ func TestThread_DatabaseStore_ClusterConfig(t *testing.T) {
 	namespaceId := "common"
 	pipelineId := "foo"
 
-	p := &plover.PipelineIR{Identifier: pipelineId}
+	p := &ScalingFunctions.PipelineIR{Identifier: pipelineId}
 
 	request := &thread.Request{
 		Action: thread.CreateAction,
@@ -106,7 +106,7 @@ func TestThread_DatabaseStore_SupervisorStatistic(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	clusterStatistic := &plover.Statistics{}
+	clusterStatistic := &ScalingFunctions.Statistics{}
 
 	request := thread.Request{
 		Action: thread.CreateAction,
@@ -131,7 +131,7 @@ func TestThread_DatabaseStore_SupervisorStatistic2(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	clusterStatistic := &plover.Statistics{}
+	clusterStatistic := &ScalingFunctions.Statistics{}
 
 	request := &thread.Request{
 		Action: thread.CreateAction,
@@ -163,7 +163,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 	namespaceId := "test_namespace"
 	pipelineId := "test_pipeline"
 
-	pipelineRecord := &plover.PipelineIR{Identifier: pipelineId}
+	pipelineRecord := &ScalingFunctions.PipelineIR{Identifier: pipelineId}
 
 	in <- &thread.Request{
 		Action: thread.CreateAction,
@@ -194,7 +194,7 @@ func TestThread_DatabaseFetch_ClusterConfig(t *testing.T) {
 		return
 	}
 
-	fetchedPipelines, ok := (response.Data).([]*plover.PipelineIR)
+	fetchedPipelines, ok := (response.Data).([]*ScalingFunctions.PipelineIR)
 	if !ok {
 		t.Error("expected fetched record to be of type []cluster.pipeline")
 		return
@@ -218,9 +218,9 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 	th := generateDatabaseThread(in, out)
 	go th.Start()
 
-	stat := &plover.Statistics{}
-	stat.Functions = make([]plover.FunctionStatistic, 3)
-	stat.Pipes = make([]plover.PipeStatistic, 2)
+	stat := &ScalingFunctions.Statistics{}
+	stat.Functions = make([]ScalingFunctions.FunctionStatistic, 3)
+	stat.Pipes = make([]ScalingFunctions.PipeStatistic, 2)
 	stat.Functions[0].Provisions = 5
 
 	namespaceId := "test_namespace"
@@ -255,7 +255,7 @@ func TestThread_DatabaseFetch_SupervisorStatistic(t *testing.T) {
 		return
 	}
 
-	fetchedClusterStats, ok := (response.Data).([]*plover.Statistics)
+	fetchedClusterStats, ok := (response.Data).([]*ScalingFunctions.Statistics)
 	if !ok {
 		t.Error("expected fetched record to be of type []database.Statistic")
 		return
@@ -284,7 +284,7 @@ func TestThread_DatabaseDelete_ClusterConfig(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterConfig := plover.PipelineIR{Identifier: c}
+	clusterConfig := ScalingFunctions.PipelineIR{Identifier: c}
 
 	in <- &thread.Request{
 		Action:      thread.CreateAction,
@@ -330,9 +330,9 @@ func TestThread_DatabaseDelete_SupervisorStatistic(t *testing.T) {
 
 	m := "test_module"
 	c := "test_cluster"
-	clusterStat := &plover.Statistics{}
-	clusterStat.Functions = make([]plover.FunctionStatistic, 3)
-	clusterStat.Pipes = make([]plover.PipeStatistic, 2)
+	clusterStat := &ScalingFunctions.Statistics{}
+	clusterStat.Functions = make([]ScalingFunctions.FunctionStatistic, 3)
+	clusterStat.Pipes = make([]ScalingFunctions.PipeStatistic, 2)
 	clusterStat.Functions[2].Provisions = 5
 
 	in <- &thread.Request{

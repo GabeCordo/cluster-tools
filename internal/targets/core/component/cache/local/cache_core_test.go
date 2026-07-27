@@ -2,9 +2,10 @@ package local
 
 import (
 	"errors"
-	cache2 "github.com/FortifiedCode/flock/internal/targets/core/component/cache"
 	"testing"
 	"time"
+
+	cache2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache"
 )
 
 func TestCache_Save(t *testing.T) {

@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"github.com/FortifiedCode/plover"
 	"testing"
 )
 
@@ -9,7 +8,7 @@ import (
 // Test that the number of Processors is incremented after Add
 func TestCluster_Add(t *testing.T) {
 
-	function := newFunction(&plover.FunctionIR{Identifier: "test"})
+	function := newFunction(&ScalingFunctions.FunctionIR{Identifier: "test"})
 
 	processor := newProcessor(0, "localhost:8000")
 	function.Add(processor)
@@ -24,7 +23,7 @@ func TestCluster_Add(t *testing.T) {
 // fashion so that balances are distributed equally across them.
 func TestCluster_SelectProcessor(t *testing.T) {
 
-	function := newFunction(&plover.FunctionIR{Identifier: "test"})
+	function := newFunction(&ScalingFunctions.FunctionIR{Identifier: "test"})
 
 	processor1 := newProcessor(0, "localhost:8000")
 	function.Add(processor1)

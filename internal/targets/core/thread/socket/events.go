@@ -2,12 +2,12 @@ package socket
 
 import (
 	"encoding/json"
-	"github.com/FortifiedCode/flock/internal/shared/socket"
-	processor2 "github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/plover"
 	"net"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
+	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 type Events struct {
@@ -60,7 +60,7 @@ func (events Events) OnMessageEvent(id socket.ConnectionId, request *socket.Mess
 						return
 					}
 
-					config := new(plover.ModuleIR)
+					config := new(ScalingFunctions.ModuleIR)
 					err = json.Unmarshal(b, config)
 					if err != nil {
 						events.thread.logger.Printf("ConnectionId %d invalid data for Create Module", id)

@@ -1,10 +1,11 @@
 package processor
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread/provisioner"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread/socket"
 	"os"
 	"path/filepath"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/provisioner"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/socket"
 
 	"github.com/BurntSushi/toml"
 )

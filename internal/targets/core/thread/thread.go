@@ -3,7 +3,8 @@ package thread
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
 )
 
 var InternalError = errors.New("there was an internal error in the system")

@@ -2,8 +2,9 @@ package socket
 
 import (
 	"crypto/tls"
-	socket2 "github.com/FortifiedCode/flock/internal/shared/socket"
 	"os"
+
+	socket2 "github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
 )
 
 func (uc *UseCases) SetupSocketEventHandlers(events socket2.ServerEvents) {

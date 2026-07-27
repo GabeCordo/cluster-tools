@@ -4,9 +4,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
 var (
@@ -36,7 +35,7 @@ func TestRegistry_Create(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &plover.PipelineIR{} // todo: this is a temp hack
+	cfg := &ScalingFunctions.PipelineIR{} // todo: this is a temp hack
 	id, err := registry.Create(filter, cfg, run.Operator)
 	if err != nil {
 		t.Error("failed to create a new runner")
@@ -59,7 +58,7 @@ func TestRegistry_Get(t *testing.T) {
 		Config:    "tmp",
 	}
 
-	cfg := &plover.PipelineIR{Identifier: ClusterName}
+	cfg := &ScalingFunctions.PipelineIR{Identifier: ClusterName}
 	id, err := registry.Create(filter, cfg, run.Operator)
 	if err != nil {
 		t.Error("failed to create a new runner")

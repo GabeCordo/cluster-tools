@@ -3,11 +3,12 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/processor"
-	job2 "github.com/FortifiedCode/flock/internal/targets/core/component/scheduler/job"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	job2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/scheduler/job"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
 func (uc UseCases) GetJobs(filter database.Filter) (jobs []*job.Job) {

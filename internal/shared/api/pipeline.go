@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
 	"io"
 	"net/http"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
-func RunPipelineOnProcessor(host string, pl *plover.PipelineIR) error {
+func RunPipelineOnProcessor(host string, pl *ScalingFunctions.PipelineIR) error {
 
 	body := &struct {
-		Namespace  string            `json:"namespace"`
-		Supervisor uint64            `json:"id"`
-		Config     plover.PipelineIR `json:"pipeline"`
-		Metadata   map[string]string `json:"metadata"`
+		Namespace  string                      `json:"namespace"`
+		Supervisor uint64                      `json:"id"`
+		Config     ScalingFunctions.PipelineIR `json:"pipeline"`
+		Metadata   map[string]string           `json:"metadata"`
 	}{
 		"default", 0, *pl, make(map[string]string),
 	}
@@ -68,7 +68,7 @@ func IsPipelineOnCore(host, namespace, pl string) (bool, error) {
 		return false, nil
 	}
 
-	pipelines := make([]plover.PipelineIR, 0)
+	pipelines := make([]ScalingFunctions.PipelineIR, 0)
 	err = json.NewDecoder(rsp.Body).Decode(&pipelines)
 	if err != nil {
 		return false, err
@@ -83,7 +83,7 @@ func IsPipelineOnCore(host, namespace, pl string) (bool, error) {
 	return false, nil
 }
 
-func CreatePipelineOnCore(host, namespace string, pl *plover.PipelineIR) error {
+func CreatePipelineOnCore(host, namespace string, pl *ScalingFunctions.PipelineIR) error {
 
 	url := fmt.Sprintf("%s/pipeline?namespace=%s", host, namespace)
 
@@ -115,7 +115,7 @@ func CreatePipelineOnCore(host, namespace string, pl *plover.PipelineIR) error {
 	}
 }
 
-func ReplacePipelineOnCore(host, namespace string, pl *plover.PipelineIR) error {
+func ReplacePipelineOnCore(host, namespace string, pl *ScalingFunctions.PipelineIR) error {
 
 	url := fmt.Sprintf("%s/pipeline?namespace=%s", host, namespace)
 

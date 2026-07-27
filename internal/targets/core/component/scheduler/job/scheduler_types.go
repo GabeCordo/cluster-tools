@@ -1,8 +1,9 @@
 package job
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
 // Config

@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/job"
 	"io"
 	"net/http"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
 )
 
 func GetJobs(host, namespace string) ([]job.Job, error) {

@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/statistic"
-	"github.com/FortifiedCode/plover"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
 )
 
 type LocalDatabase struct {
@@ -38,7 +38,7 @@ func (localDatabase *LocalDatabase) Save(path string) error {
 	localDatabase.mutex.RLock()
 	defer localDatabase.mutex.RUnlock()
 
-	fileName := fmt.Sprintf("flock_stats_%s.json", time.Now().Format(time.RFC3339))
+	fileName := fmt.Sprintf("FunctionScheduler_stats_%s.json", time.Now().Format(time.RFC3339))
 	outputFilePath := filepath.Join(path, fileName)
 
 	if _, err := os.Stat(outputFilePath); os.IsExist(err) {
@@ -68,8 +68,8 @@ func (localDatabase *LocalDatabase) Load(path string) (err error) {
 	return err
 }
 
-// Get returns a list of *plover.Statistic records in the statistic.LocalDatabase.
-func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plover.Statistics) {
+// Get returns a list of *ScalingFunctions.Statistic records in the statistic.LocalDatabase.
+func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*ScalingFunctions.Statistics) {
 
 	localDatabase.mutex.RLock()
 	defer localDatabase.mutex.RUnlock()
@@ -100,8 +100,8 @@ func (localDatabase *LocalDatabase) Get(filter database.Filter) (results []*plov
 	return results
 }
 
-// Create adds a new *plover.Statistic record to the statistic.LocalDatabase.
-func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plover.Statistics) (*plover.Statistics, error) {
+// Create adds a new *ScalingFunctions.Statistic record to the statistic.LocalDatabase.
+func (localDatabase *LocalDatabase) Create(filter database.Filter, record *ScalingFunctions.Statistics) (*ScalingFunctions.Statistics, error) {
 
 	localDatabase.mutex.Lock()
 	defer localDatabase.mutex.Unlock()
@@ -128,7 +128,7 @@ func (localDatabase *LocalDatabase) Create(filter database.Filter, record *plove
 	return record, nil
 }
 
-// Delete removes a *plover.Statistic record from the statistic.LocalDatabase.
+// Delete removes a *ScalingFunctions.Statistic record from the statistic.LocalDatabase.
 func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 
 	localDatabase.mutex.Lock()
@@ -143,7 +143,7 @@ func (localDatabase *LocalDatabase) Delete(filter database.Filter) error {
 }
 
 // Replace is not implemented for the statistic.LocalDatabase.
-func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *plover.Statistics) (err error) {
+func (localDatabase *LocalDatabase) Replace(filter database.Filter, record *ScalingFunctions.Statistics) (err error) {
 
 	err = database.NotImplemented
 	return err
@@ -156,7 +156,7 @@ func (localDatabase *LocalDatabase) Distinct(filter database.Filter) (results []
 	return results, err
 }
 
-// Print outputs the *plover.Statistic records inside the statistic.LocalDatabase to the console.
+// Print outputs the *ScalingFunctions.Statistic records inside the statistic.LocalDatabase to the console.
 func (localDatabase *LocalDatabase) Print() {
 
 	for moduleName, module := range localDatabase.records {

@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/FortifiedCode/flock/internal/targets/core/component/cache/local"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
 	"testing"
 
-	"github.com/FortifiedCode/flock/internal/shared/logging/text_logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache/local"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging/text_logging"
 )
 
 func GenerateTestCacheThread(in chan *thread.Request, out chan *thread.Response) *Thread {

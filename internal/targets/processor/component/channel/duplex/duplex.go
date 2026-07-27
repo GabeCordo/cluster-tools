@@ -2,7 +2,6 @@ package duplex
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/plover"
 	"reflect"
 	"sync"
 	"time"
@@ -54,7 +53,7 @@ type ManagedChannel struct {
 	Size   int
 	Config ManagedChannelConfig
 
-	Statistics     *plover.PipeStatistic
+	Statistics     *ScalingFunctions.PipeStatistic
 	TotalProcessed int
 
 	channel chan Wrapper
@@ -72,7 +71,7 @@ type ManagedChannel struct {
 	wg sync.WaitGroup
 }
 
-func New(name string, threshold int, growth float64, stats *plover.PipeStatistic) *ManagedChannel {
+func New(name string, threshold int, growth float64, stats *ScalingFunctions.PipeStatistic) *ManagedChannel {
 	mc := new(ManagedChannel)
 
 	mc.Name = name

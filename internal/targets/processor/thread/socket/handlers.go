@@ -1,17 +1,16 @@
 package socket
 
 import (
-	common "github.com/FortifiedCode/flock/internal/shared/socket"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread"
-	"github.com/FortifiedCode/plover"
+	common "github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
 )
 
 func (t *Thread) handleSocketModuleAdd(request *thread.SocketRequest) {
 
-	module, ok := request.Data.(plover.ModuleIR)
+	module, ok := request.Data.(ScalingFunctions.ModuleIR)
 	if !ok {
-		t.logger.Warnln("received module add with invalid data, expected plover.ModuleIR")
+		t.logger.Warnln("received module add with invalid data, expected ScalingFunctions.ModuleIR")
 		return
 	}
 

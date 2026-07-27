@@ -1,9 +1,9 @@
 package messenger
 
 import (
-	"github.com/FortifiedCode/flock/internal/flags"
-	"github.com/FortifiedCode/flock/internal/shared/terminal"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/flags"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {

@@ -1,14 +1,14 @@
 package mongo
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/drivers/mongo"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/statistic"
-	"github.com/FortifiedCode/plover"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
 )
 
-const DatabaseName string = "flock"
+const DatabaseName string = "FunctionScheduler"
 const CollectionName string = "statistics"
 
 type MongoDatabase struct {
@@ -22,8 +22,8 @@ func NewMongoDatabase(driver mongo.Driver) (*MongoDatabase, error) {
 	return mongoDatabase, nil
 }
 
-// Get retrieves *plover.Statistic records from the statistic.MongoDatabase.
-func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plover.Statistics) {
+// Get retrieves *ScalingFunctions.Statistic records from the statistic.MongoDatabase.
+func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*ScalingFunctions.Statistics) {
 
 	if !mongoDatabase.driver.IsConnected() {
 		return records
@@ -45,7 +45,7 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plove
 		return records
 	}
 
-	records = make([]*plover.Statistics, len(stats))
+	records = make([]*ScalingFunctions.Statistics, len(stats))
 	for i, stat := range stats {
 		records[i] = stat.Data
 	}
@@ -53,7 +53,7 @@ func (mongoDatabase MongoDatabase) Get(filter database.Filter) (records []*plove
 	return records
 }
 
-func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *plover.Statistics) (result *plover.Statistics, err error) {
+func (mongoDatabase MongoDatabase) Create(filter database.Filter, record *ScalingFunctions.Statistics) (result *ScalingFunctions.Statistics, err error) {
 
 	result = nil
 	if !mongoDatabase.driver.IsConnected() {
@@ -102,7 +102,7 @@ func (mongoDatabase MongoDatabase) Distinct(filter database.Filter) (results []a
 }
 
 // Replace is not implemented for the statistic.MongoDatabase.
-func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *plover.Statistics) (err error) {
+func (mongoDatabase MongoDatabase) Replace(filter database.Filter, record *ScalingFunctions.Statistics) (err error) {
 
 	err = database.NotImplemented
 	return err

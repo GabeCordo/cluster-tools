@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core"
 	"os"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
 
 	"github.com/FortifiedCode/commandline"
 	"gopkg.in/yaml.v3"

@@ -1,5 +1,5 @@
-# Flock Documentation
-This page acts as an entrypoint to understanding the architecture of the flock framework.
+# FunctionScheduler Documentation
+This page acts as an entrypoint to understanding the architecture of the FunctionScheduler framework.
 
 ## Specifications
 Define the interfaces and protocols used to communicate between a core and processor.

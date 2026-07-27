@@ -3,7 +3,6 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/FortifiedCode/plover"
 	"sync"
 )
 
@@ -124,9 +123,9 @@ func (table *Table) GetModule(name string) (instance *Module, found bool) {
 }
 
 // AddModule
-// inform the flock that the processor now supports provisioning calls
+// inform the FunctionScheduler that the processor now supports provisioning calls
 // for a module and all its listed functions
-func (table *Table) AddModule(processorId uint64, config *plover.ModuleIR) error {
+func (table *Table) AddModule(processorId uint64, config *ScalingFunctions.ModuleIR) error {
 
 	table.mutex.Lock()
 	defer table.mutex.Unlock()
@@ -265,7 +264,7 @@ func (table *Table) RemoveModule(processor uint64, name string) error {
 }
 
 // RegisteredModules
-// Fetch a copy of all modules stored on the flock.
+// Fetch a copy of all modules stored on the FunctionScheduler.
 func (table *Table) RegisteredModules() []ModuleData {
 
 	table.mutex.RLock()

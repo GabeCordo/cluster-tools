@@ -2,8 +2,8 @@ github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/FortifiedCode/commandline v0.3.1 h1:1ooV3FGyCupyT345PFHf0l2y01WK/icIz2HHvI/lU7Q=
 github.com/FortifiedCode/commandline v0.3.1/go.mod h1:6DBDpnLlIU4SMI0OqvRRKC7Dw0cIvesk4RPGfctr4qo=
-github.com/FortifiedCode/plover v0.3.4 h1:y4/IvV8or5XSol2fGKpmu/zZnJjqVQnPbONcQ+FlP0g=
-github.com/FortifiedCode/plover v0.3.4/go.mod h1:rlwU1IAwzCdi9VWopmeljMlHQOb3CMwPtMBJZ4PrqnM=
+github.com/GabeCordo/ScalingFunctions v0.3.4 h1:y4/IvV8or5XSol2fGKpmu/zZnJjqVQnPbONcQ+FlP0g=
+github.com/GabeCordo/ScalingFunctions v0.3.4/go.mod h1:rlwU1IAwzCdi9VWopmeljMlHQOb3CMwPtMBJZ4PrqnM=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/golang/snappy v1.0.0 h1:Oy607GVXHs7RtbggtPBnr2RmDArIsAefDwvrdWvRhGs=

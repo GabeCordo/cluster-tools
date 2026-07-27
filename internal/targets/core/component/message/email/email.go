@@ -2,8 +2,9 @@ package email
 
 import (
 	"fmt"
-	"github.com/FortifiedCode/flock/internal/targets/core/component/message"
 	"sync"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
 )
 
 var DefaultSmtpEndpoint = SmtpEndpoint{

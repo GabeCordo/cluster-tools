@@ -2,10 +2,10 @@ package runner
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/core/database"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
 	"strconv"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
 func (uc UseCases) GetRuns(namespace, pipeline string, identifier, maximum, offset uint64) (rr []*run.Run) {
@@ -48,7 +48,7 @@ func (uc UseCases) CountRuns(namespace, pipeline string) (count uint32) {
 	return count
 }
 
-func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *plover.PipelineIR, startedBy run.StartedBy) (uint64, error) {
+func (uc UseCases) CreateRun(namespace, pipeline string, processor uint64, config *ScalingFunctions.PipelineIR, startedBy run.StartedBy) (uint64, error) {
 
 	filter := database.Filter{
 		Processor: processor,

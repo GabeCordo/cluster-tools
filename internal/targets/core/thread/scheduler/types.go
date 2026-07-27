@@ -2,10 +2,11 @@ package scheduler
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	nonce2 "github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/targets/core/thread"
-	"github.com/FortifiedCode/flock/internal/targets/core/use_cases/scheduler"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	nonce2 "github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/scheduler"
 )
 
 type Config struct {
@@ -30,8 +31,8 @@ type Thread struct {
 
 		close chan thread.InterruptEvent
 	}
-	useCases scheduler.UseCases
-	logger   logging.Logger
+	useCases               scheduler.UseCases
+	logger                 logging.Logger
 	noncePool              *nonce2.Pool
 	processorResponseTable *nonce2.ResponseTable
 	databaseResponseTable  *nonce2.ResponseTable

@@ -1,9 +1,8 @@
 package thread
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/nonce"
-	"github.com/FortifiedCode/flock/internal/targets/core/database/run"
-	"github.com/FortifiedCode/plover"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
 )
 
 type ProvisionerMandatory struct {
@@ -11,7 +10,7 @@ type ProvisionerMandatory struct {
 	NoncePool *nonce.Pool
 }
 
-func AsyncRunStart(mandatory ProvisionerMandatory, namespace string, supervisor uint64, cfg *plover.PipelineIR, meta map[string]string) {
+func AsyncRunStart(mandatory ProvisionerMandatory, namespace string, supervisor uint64, cfg *ScalingFunctions.PipelineIR, meta map[string]string) {
 
 	// there is a possibility the user never passed an args value to the HTTP endpoint,
 	// so we need to replace it with and empty array
@@ -64,7 +63,7 @@ func AsyncRunUpdate(mandatory SocketMandatory, run *run.Run) {
 	mandatory.Pipe <- sR
 }
 
-func AsyncModuleAdd(mandatory SocketMandatory, moduleIR *plover.ModuleIR) {
+func AsyncModuleAdd(mandatory SocketMandatory, moduleIR *ScalingFunctions.ModuleIR) {
 
 	sR := NewSocketRequest()
 	sR.Action = SocketModuleAdd

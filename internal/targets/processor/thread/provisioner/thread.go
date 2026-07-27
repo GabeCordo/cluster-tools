@@ -2,9 +2,10 @@ package provisioner
 
 import (
 	"errors"
-	"github.com/FortifiedCode/flock/internal/targets/processor/thread"
-	"github.com/FortifiedCode/flock/internal/targets/processor/use_cases/provisioner"
 	"time"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/provisioner"
 )
 
 func (t *Thread) Setup() {

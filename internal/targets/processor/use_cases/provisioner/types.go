@@ -1,12 +1,12 @@
 package provisioner
 
 import (
-	"github.com/FortifiedCode/flock/internal/shared/buffers"
-	"github.com/FortifiedCode/flock/internal/shared/logging"
-	"github.com/FortifiedCode/flock/internal/targets/processor/component/provision"
-	"github.com/FortifiedCode/plover"
 	"sync"
 	"sync/atomic"
+
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
+	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
+	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/component/provision"
 )
 
 const MaxNumOfSupervisors = 1
@@ -16,10 +16,10 @@ type ProvisionRequest struct {
 	Supervisor uint64
 	Metadata   map[string]string
 	Core       string
-	Pipeline   *plover.PipelineIR
+	Pipeline   *ScalingFunctions.PipelineIR
 }
 type UseCases struct {
-	Repository   *plover.Repository
+	Repository   *ScalingFunctions.Repository
 	Provisioner  *provision.Provisioner
 	Logger       logging.Logger
 	Backlog      *buffers.RingBuffer
