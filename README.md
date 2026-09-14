@@ -1,5 +1,8 @@
 # DistributedFunctions
 
+[![Build Status](https://github.com/GabeCordo/DistributedFunctions/actions/workflows/go_checkers.yml/badge.svg)](https://github.com/GabeCordo/DistributedFunctions/actions/workflows/go_checkers.yml)
+[![License](https://img.shields.io/github/license/GabeCordo/DistributedFunctions)](./LICENSE)
+
 An open source router for horizontally scaling applications.
 
 ### Installation
