@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/ScalingFunctions"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/api"
 
-	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/DistributedFunctions/cmd/DistributedFunctions/local"
+	"github.com/GabeCordo/Commandline"
+	"github.com/GabeCordo/DistributedFunctions/cmd/fs/local"
 	"gopkg.in/yaml.v3"
 )
 

@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"github.com/GabeCordo/ScalingFunctions"
 	"testing"
 )
 

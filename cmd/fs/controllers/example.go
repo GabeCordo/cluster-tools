@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/GabeCordo/ScalingFunctions"
 	"time"
 
-	"github.com/FortifiedCode/commandline"
+	"github.com/GabeCordo/Commandline"
 	DistributedFunctions "github.com/GabeCordo/DistributedFunctions"
 )
 

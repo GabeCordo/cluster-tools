@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/ScalingFunctions"
 	"log"
 	"os"
 	"path/filepath"

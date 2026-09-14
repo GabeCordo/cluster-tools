@@ -3,6 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
+	"github.com/GabeCordo/ScalingFunctions"
 	"sync"
 )
 

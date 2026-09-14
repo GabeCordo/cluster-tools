@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
+	"github.com/GabeCordo/ScalingFunctions"
 )
 
 type Request struct {

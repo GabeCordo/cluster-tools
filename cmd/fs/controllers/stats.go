@@ -10,8 +10,8 @@ import (
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/api"
 
-	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/DistributedFunctions/cmd/DistributedFunctions/local"
+	"github.com/GabeCordo/Commandline"
+	"github.com/GabeCordo/DistributedFunctions/cmd/fs/local"
 )
 
 type StatsController struct {
@@ -60,7 +60,7 @@ func (controller StatsController) showFlag(cli *commandline.CommandLine) {
 				sigs <- syscall.SIGTERM
 			}
 
-			var numOfGoroutines uint16 = 0
+			var numOfGoroutines uint32 = 0
 			for _, f := range run.Statistics.Functions {
 				numOfGoroutines += f.Active
 			}

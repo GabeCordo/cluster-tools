@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"github.com/GabeCordo/ScalingFunctions"
 	"sync"
 	"sync/atomic"
 

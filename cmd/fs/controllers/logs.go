@@ -10,7 +10,7 @@ import (
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message/log"
 
-	"github.com/FortifiedCode/commandline"
+	"github.com/GabeCordo/Commandline"
 )
 
 type LogController struct {

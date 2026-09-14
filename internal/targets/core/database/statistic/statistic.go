@@ -1,6 +1,7 @@
 package statistic
 
 import (
+	"github.com/GabeCordo/ScalingFunctions"
 	"time"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"

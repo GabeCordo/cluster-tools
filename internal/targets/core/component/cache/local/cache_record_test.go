@@ -27,7 +27,7 @@ func TestRecord_IsExpired2(t *testing.T) {
 
 func TestRecord_IsExpired3(t *testing.T) {
 
-	twoMinutesAgo := time.Now().Add(-1 * 2 * time.Minute)
+	twoMinutesAgo := time.Now().Add(-1*2*time.Minute - 100*time.Millisecond)
 	record := &Record{created: twoMinutesAgo, expiry: DefaultCacheExpiry}
 
 	if !record.IsExpired() {

@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/FortifiedCode/commandline"
+	"github.com/GabeCordo/Commandline"
 )
 
 type StatisticsController struct {

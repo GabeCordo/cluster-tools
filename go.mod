@@ -1,11 +1,11 @@
 module github.com/GabeCordo/DistributedFunctions
 
-go 1.24.6
+go 1.25
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/FortifiedCode/commandline v0.3.1
-	github.com/GabeCordo/ScalingFunctions v0.4.0
+	github.com/GabeCordo/Commandline v0.4.0
+	github.com/GabeCordo/ScalingFunctions v0.5.0
 	go.mongodb.org/mongo-driver v1.17.4
 	gopkg.in/yaml.v3 v3.0.1
 )

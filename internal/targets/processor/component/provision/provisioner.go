@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"github.com/GabeCordo/ScalingFunctions"
 	"sync"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/buffers"
@@ -47,8 +48,7 @@ func (provisioner *Provisioner) CreateRun(namespace string, identifier uint64, m
 	provisioner.mutex.Lock()
 	defer provisioner.mutex.Unlock()
 
-	p := ScalingFunctions.Build(pipeline, provisioner.repository)
-	i := p.Interactable()
+	i := ScalingFunctions.Build(pipeline, provisioner.repository)
 	i.Id = identifier
 
 	provisioner.activeRuns++

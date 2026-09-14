@@ -2,6 +2,7 @@ package thread
 
 import (
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/ScalingFunctions"
 )
 
 type InterruptEvent uint8

@@ -2,6 +2,7 @@ package runner
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 	"strconv"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"

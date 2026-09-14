@@ -2,6 +2,7 @@ package socket
 
 import (
 	"encoding/json"
+	"github.com/GabeCordo/ScalingFunctions"
 	"net"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket"

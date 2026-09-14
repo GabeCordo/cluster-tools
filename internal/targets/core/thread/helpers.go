@@ -2,6 +2,7 @@ package thread
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 	"strconv"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/flags"

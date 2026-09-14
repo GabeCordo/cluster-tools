@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"github.com/GabeCordo/ScalingFunctions"
 	"time"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/drivers/mongo"

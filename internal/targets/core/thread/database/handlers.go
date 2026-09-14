@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/contact"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"

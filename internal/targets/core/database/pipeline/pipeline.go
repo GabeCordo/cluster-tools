@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/ScalingFunctions"
 )
 
 type Pipeline struct {

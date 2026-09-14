@@ -10,7 +10,7 @@ import (
 
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core"
 
-	"github.com/FortifiedCode/commandline"
+	"github.com/GabeCordo/Commandline"
 	"gopkg.in/yaml.v3"
 )
 

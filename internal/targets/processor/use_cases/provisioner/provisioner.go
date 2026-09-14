@@ -2,6 +2,7 @@ package provisioner
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 	"sync"
 	"time"
 

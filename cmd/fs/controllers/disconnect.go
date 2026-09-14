@@ -5,7 +5,7 @@ import (
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/api"
 
-	"github.com/FortifiedCode/commandline"
+	"github.com/GabeCordo/Commandline"
 )
 
 type DisconnectController struct {

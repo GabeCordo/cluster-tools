@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 	"testing"
 
 	in_memory2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job/in_memory"

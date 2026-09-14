@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/FortifiedCode/commandline"
+	"github.com/GabeCordo/Commandline"
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core"
 )

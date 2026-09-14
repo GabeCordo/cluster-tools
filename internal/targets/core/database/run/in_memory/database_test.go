@@ -1,6 +1,7 @@
 package in_memory
 
 import (
+	"github.com/GabeCordo/ScalingFunctions"
 	"strconv"
 	"testing"
 

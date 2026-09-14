@@ -4,6 +4,7 @@ import (
 	common "github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
+	"github.com/GabeCordo/ScalingFunctions"
 )
 
 func (t *Thread) handleSocketModuleAdd(request *thread.SocketRequest) {

@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/DistributedFunctions/cmd/DistributedFunctions/local"
+	"github.com/GabeCordo/Commandline"
+	"github.com/GabeCordo/DistributedFunctions/cmd/fs/local"
 )
 
 type GatewayController struct {

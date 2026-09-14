@@ -2,6 +2,7 @@ package duplex
 
 import (
 	"fmt"
+	"github.com/GabeCordo/ScalingFunctions"
 	"reflect"
 	"sync"
 	"time"

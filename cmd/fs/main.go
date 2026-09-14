@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/DistributedFunctions/cmd/DistributedFunctions/controllers"
+	"github.com/GabeCordo/Commandline"
+	"github.com/GabeCordo/DistributedFunctions/cmd/fs/controllers"
 )
 
 // @title Swagger Example API

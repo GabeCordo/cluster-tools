@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/shared/drivers/mongo"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"

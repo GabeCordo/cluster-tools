@@ -1,6 +1,7 @@
 package DistributedFunctions
 
 import (
+	"github.com/GabeCordo/ScalingFunctions"
 	"os"
 	"path/filepath"
 

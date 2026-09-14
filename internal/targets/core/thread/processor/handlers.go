@@ -3,6 +3,7 @@ package processor
 import (
 	processor2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
 	thread "github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	"github.com/GabeCordo/ScalingFunctions"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////

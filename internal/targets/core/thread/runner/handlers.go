@@ -2,6 +2,7 @@ package runner
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message/log"

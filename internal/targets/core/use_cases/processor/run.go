@@ -2,6 +2,7 @@ package processor
 
 import (
 	"errors"
+	"github.com/GabeCordo/ScalingFunctions"
 
 	processor3 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
 	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
