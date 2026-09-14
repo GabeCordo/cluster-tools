@@ -4,9 +4,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/component/provision"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/buffers"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/component/provision"
 )
 
 const MaxNumOfSupervisors = 1

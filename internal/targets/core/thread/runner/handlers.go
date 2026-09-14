@@ -3,11 +3,11 @@ package runner
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/log"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
-	thread2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message/log"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
+	thread2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ func (t *Thread) handleUpdateRun(request *thread2.Request, response **thread2.Re
 
 	status := r.GetStatus()
 	if (status == run.Completed) || (status == run.Crashed) || (status == run.Terminated) {
-		t.logger.Printf("[proc: %d -> FunctionScheduler][id: %d] runner has completed\n", r.Processor, r.GetId())
+		t.logger.Printf("[proc: %d -> DistributedFunctions][id: %d] runner has completed\n", r.Processor, r.GetId())
 		t.requestStore[request.Nonce] = request
 		thread2.AsyncCreateStatisticRecordInDatabase(t.channels.c15, t.logger, request, r)
 	}
@@ -276,7 +276,7 @@ func (t *Thread) handleSocketCreatesRun(iRequest *thread2.Request, iResponse *th
 
 	if iResponse.Error != nil {
 		t.logger.Print(iResponse.Error.Error())
-		t.logger.Printf("[FunctionScheduler -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "could not connect to the processor and runner is canceled")
+		t.logger.Printf("[DistributedFunctions -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "could not connect to the processor and runner is canceled")
 		r.Status = run.Cancelled
 
 		oResponse := thread2.NewResponse(thread2.Runner)
@@ -287,7 +287,7 @@ func (t *Thread) handleSocketCreatesRun(iRequest *thread2.Request, iResponse *th
 		return
 	}
 
-	t.logger.Printf("[FunctionScheduler -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "connected to processor and runner is active")
+	t.logger.Printf("[DistributedFunctions -> proc: %d][id: %d] %s\n", iRequest.Identifiers.Processor, r.GetId(), "connected to processor and runner is active")
 	r.Status = run.Active
 
 	oResponse := thread2.NewResponse(thread2.Runner)

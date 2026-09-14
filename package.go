@@ -1,10 +1,10 @@
-package FunctionScheduler
+package DistributedFunctions
 
 import (
 	"os"
 	"path/filepath"
 
-	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor"
+	processor2 "github.com/GabeCordo/DistributedFunctions/internal/targets/processor"
 )
 
 const defaultConfigName = "processor0"

@@ -1,42 +1,20 @@
-# FunctionScheduler
+# DistributedFunctions
 
-An open source ingress gateway for monitoring and load balancing requests to distributed data pipelines. 
+An open source router for horizontally scaling applications.
 
-Pops provides fine-grained control over a deployment of horizontally distribute pipelines to control: how they
-are provisioned, how they should be taken offline, how they should be made redundant, and how they should be versioned.
-
-> FunctionScheduler is a personal project that is a work in progress. 
-
-### Local FunctionScheduler Installation
-Before performing a local installation make sure the GOPATH bin folder has been added to your environment PATH variable. The
-'go install' command is a quick way to build and store a binary inside $(go env GOPATH)/bin. You will not be able to call a binary
-installed with 'go install' otherwise.
+### Installation
+To install the distributed functions application use curl to install using the commandline.
 
 ```shell
-   # create a log copy of the thread
-   git clone https://github.com/GabeCordo/FunctionScheduler
-   
-   # install the FunctionScheduler binary
-   cd /cmd/FunctionScheduler
-   # generate the FunctionScheduler binary in the GOPATH bin folder
-   go install
-   # generate global files used by the thread when statistic
-   FunctionScheduler init
-   # validate FunctionScheduler is installed correctly
-   FunctionScheduler doctor
-  
+curl -fsSL https://github.com/GabeCordo/DistributedFunctions/scripts/install.sh | bash
 ```
-
-### Running FunctionScheduler
-FunctionScheduler is an orchestrator that manages pipeline operations.
-
-```shell
-FunctionScheduler start
-```
-
-### Testing
-Unit Tests and Code Coverage is a priority for future areas of work.
 
 ### Documentation
 
 Documentation can be found inside the docs folder [here](docs/readme.md).
+
+## Disclaimer
+
+The framework is made open-source under the GNU lesser general public licence. All source code made available has been developed without the use of AI generated code that may come from sources that violate the GNU lesser general public licence. The use of AI coding tools is welcomed without the use of generated code.  
+
+> Contributions to the framework have been steady since 2022 closed source. I have decided to open-source the code in hopes that another developer out there finds value in it as I have.

@@ -3,8 +3,8 @@ package mongo
 import (
 	"testing"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/pipeline"
 )
 
 func Test_StatisticMongoDatabase_Is_Implemented(t *testing.T) {

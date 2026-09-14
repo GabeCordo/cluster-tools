@@ -1,12 +1,12 @@
 package mongo
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
 )
 
-const DatabaseName string = "FunctionScheduler"
+const DatabaseName string = "DistributedFunctions"
 const CollectionName string = "jobs"
 
 type MongoDatabase struct {

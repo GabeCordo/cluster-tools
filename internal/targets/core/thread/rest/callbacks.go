@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/pipeline"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 // TODO : add comments to the else conditions where the processor may support
@@ -21,7 +21,7 @@ import (
 func (t *Thread) processorCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		/* show the operator all the processors attached to the FunctionScheduler */
+		/* show the operator all the processors attached to the DistributedFunctions */
 		t.getProcessorCallback(w, r)
 	} else {
 		/* the rest does not support any other methods on the processor */
@@ -59,7 +59,7 @@ func (t *Thread) getProcessorCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) moduleCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		/* show the operator all the modules registered to the FunctionScheduler */
+		/* show the operator all the modules registered to the DistributedFunctions */
 		t.getModuleCallback(w, r)
 	} else if r.Method == http.MethodPut {
 		/* the operator shall be allowed to mount and unmount modules */
@@ -148,11 +148,11 @@ func (t *Thread) putModuleCallback(w http.ResponseWriter, r *http.Request) {
 func (t *Thread) functionCallback(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		/* the operator shall see clusters registered to the FunctionScheduler */
+		/* the operator shall see clusters registered to the DistributedFunctions */
 		t.getFunctionCallback(w, r)
 	} else if r.Method == http.MethodPut {
-		/* the operator shall mount clusters in the FunctionScheduler */
-		/* the operator shall unmount clusters in the FunctionScheduler */
+		/* the operator shall mount clusters in the DistributedFunctions */
+		/* the operator shall unmount clusters in the DistributedFunctions */
 		t.putFunctionCallback(w, r)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -1,5 +1,5 @@
-# FunctionScheduler Documentation
-This page acts as an entrypoint to understanding the architecture of the FunctionScheduler framework.
+# DistributedFunctions Documentation
+This page acts as an entrypoint to understanding the architecture of the DistributedFunctions framework.
 
 ## Specifications
 Define the interfaces and protocols used to communicate between a core and processor.

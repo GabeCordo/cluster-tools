@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message"
 )
 
 var logRegex = regexp.MustCompile(`\[(.+)]\[(.+)](.+)`)

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
-	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
+	processor2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 type Events struct {

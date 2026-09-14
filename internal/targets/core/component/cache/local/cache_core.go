@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"time"
 
-	cache2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache"
+	cache2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/cache"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/FortifiedCode/commandline"
-	FunctionScheduler "github.com/GabeCordo/FunctionScheduler"
+	DistributedFunctions "github.com/GabeCordo/DistributedFunctions"
 )
 
 func generator(out chan int) {
@@ -60,7 +60,7 @@ func (controller ExampleController) Run(cli *commandline.CommandLine) commandlin
 		fmt.Print(err)
 	}
 
-	processor := FunctionScheduler.New(repository)
+	processor := DistributedFunctions.New(repository)
 	processor.Connect()
 
 	return commandline.Terminate

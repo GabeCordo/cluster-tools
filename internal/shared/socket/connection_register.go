@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/buffers"
 )
 
 //////////////////////////////////////////////////////////////////////////////

@@ -1,12 +1,12 @@
 package socket
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
 )
 
-const privateKeyPathEnvVar = "FunctionScheduler_SERVER_TLS_KEY"
-const certificatePathEnvVar = "FunctionScheduler_SERVER_TLS_CERT"
+const privateKeyPathEnvVar = "DistributedFunctions_SERVER_TLS_KEY"
+const certificatePathEnvVar = "DistributedFunctions_SERVER_TLS_CERT"
 
 type UseCases struct {
 	Socket socket.Server

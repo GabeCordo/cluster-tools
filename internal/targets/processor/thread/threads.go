@@ -1,7 +1,7 @@
 package thread
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
 )
 
 type InterruptEvent uint8

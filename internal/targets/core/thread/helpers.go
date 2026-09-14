@@ -4,14 +4,14 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/flags"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/log"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/flags"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message/log"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
 )
 
 type Mandatory struct {

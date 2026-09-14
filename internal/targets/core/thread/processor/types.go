@@ -3,10 +3,10 @@ package processor
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
-	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	processor2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/use_cases/processor"
 )
 
 type Config struct {

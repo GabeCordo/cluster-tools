@@ -3,10 +3,10 @@ package cache
 import (
 	"testing"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache/local"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/cache/local"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging/text_logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging/text_logging"
 )
 
 func GenerateTestCacheThread(in chan *thread.Request, out chan *thread.Response) *Thread {

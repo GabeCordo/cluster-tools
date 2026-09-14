@@ -1,6 +1,6 @@
 package logging
 
-import "github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+import "github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
 
 //////////////////////////////////////////////////////////////////////////////
 //							   	  Logging

@@ -7,9 +7,9 @@ import (
 	"net/http/pprof"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/flags"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/flags"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {

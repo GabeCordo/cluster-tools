@@ -3,10 +3,10 @@ package runner
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/runner"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/use_cases/runner"
 )
 
 type Config struct {

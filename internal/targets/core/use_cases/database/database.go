@@ -3,7 +3,7 @@ package database
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
 )
 
 func (uc UseCases) CreatePipelineRecord(namespaceId, pipelineId string, pipelineData *ScalingFunctions.PipelineIR) (err error) {

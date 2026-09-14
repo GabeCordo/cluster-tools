@@ -1,8 +1,8 @@
 package thread
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
 )
 
 type ProvisionerMandatory struct {

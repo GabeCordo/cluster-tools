@@ -5,12 +5,12 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	nonce2 "github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	nonce2 "github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/use_cases/socket"
 )
 
 // Frontend Thread

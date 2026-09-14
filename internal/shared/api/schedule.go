@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
 )
 
 func GetJobs(host, namespace string) ([]job.Job, error) {

@@ -6,17 +6,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/buffers"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging/text_logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket/json_socket"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/component/provision"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/provisioner"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/socket"
-	provisioner2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/provisioner"
-	socket2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/buffers"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging/text_logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket/json_socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/component/provision"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread/provisioner"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread/socket"
+	provisioner2 "github.com/GabeCordo/DistributedFunctions/internal/targets/processor/use_cases/provisioner"
+	socket2 "github.com/GabeCordo/DistributedFunctions/internal/targets/processor/use_cases/socket"
 )
 
 const defaultInterruptChannelSize = 1
@@ -128,7 +128,7 @@ func New(config *Config, repository *ScalingFunctions.Repository) *Processor {
 }
 
 // Connect
-// establish a connection with the FunctionScheduler core processes. Upon establishing
+// establish a connection with the DistributedFunctions core processes. Upon establishing
 // connection, the processor shall register modules to the core and wait
 // for processing requests from the core.
 func (p *Processor) Connect() {

@@ -3,7 +3,7 @@ package cache
 import (
 	"testing"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 func TestThread_IncomingSaveRequest(t *testing.T) {

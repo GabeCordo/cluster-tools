@@ -3,11 +3,11 @@ package cache
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/cache"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
-	cache2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/cache"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/cache"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	cache2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/use_cases/cache"
 )
 
 type Config struct {

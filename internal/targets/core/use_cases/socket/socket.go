@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"os"
 
-	socket2 "github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
+	socket2 "github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
 )
 
 func (uc *UseCases) SetupSocketEventHandlers(events socket2.ServerEvents) {

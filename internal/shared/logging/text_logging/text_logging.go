@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
 )
 
 //////////////////////////////////////////////////////////////////////////////

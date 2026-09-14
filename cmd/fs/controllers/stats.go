@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/api"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/api"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/FunctionScheduler/cmd/FunctionScheduler/local"
+	"github.com/GabeCordo/DistributedFunctions/cmd/DistributedFunctions/local"
 )
 
 type StatsController struct {

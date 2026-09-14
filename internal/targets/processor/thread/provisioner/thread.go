@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/provisioner"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/use_cases/provisioner"
 )
 
 func (t *Thread) Setup() {

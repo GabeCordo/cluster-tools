@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core"
 
 	"github.com/FortifiedCode/commandline"
 	"gopkg.in/yaml.v3"
@@ -147,7 +147,7 @@ func (command ConfigCommand) updateField(c *core.Config, fields []string, value 
 func (command ConfigCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultCoreConfigFile); err != nil {
-		fmt.Println("[x] FunctionScheduler has never been initialized, statistic 'FunctionScheduler init'")
+		fmt.Println("[x] DistributedFunctions has never been initialized, statistic 'DistributedFunctions init'")
 		return commandline.Terminate
 	}
 

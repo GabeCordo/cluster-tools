@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
 )
 
 func (useCases *UseCases) GetStatistics() (statistics []*ScalingFunctions.Statistics) {
@@ -58,7 +58,7 @@ func (useCases *UseCases) CreateRun(request *ProvisionRequest, updateRunEvent fu
 		// as data flows through the channels between functions.
 		//
 		// idea:
-		// every 1s send an update of the statistics to the FunctionScheduler gateway so the operator
+		// every 1s send an update of the statistics to the DistributedFunctions gateway so the operator
 		// or developer can track the progress of the pipeline instance in real-time
 		//
 		// important note:

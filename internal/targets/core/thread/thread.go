@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
 )
 
 var InternalError = errors.New("there was an internal error in the system")

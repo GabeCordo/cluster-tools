@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/FunctionScheduler/cmd/FunctionScheduler/controllers"
+	"github.com/GabeCordo/DistributedFunctions/cmd/DistributedFunctions/controllers"
 )
 
 // @title Swagger Example API
@@ -13,7 +13,7 @@ func main() {
 	cli := commandline.NewCommandLine()
 
 	ic := cli.AddCommand("init", controllers.InitCommand{})
-	ic.SetCategory("utils").SetDescription("initialize the global files required to start the FunctionScheduler")
+	ic.SetCategory("utils").SetDescription("initialize the global files required to start the DistributedFunctions")
 
 	dc := cli.AddCommand("doctor", controllers.DoctorCommand{})
 	dc.SetCategory("utils").SetDescription("verify the integrity of the global files on the log system")
@@ -29,7 +29,7 @@ func main() {
 	stc.SetCategory("data").SetDescription("used to view the statistic files stored on the system")
 
 	sc := cli.AddCommand("start", controllers.StartCommand{})
-	sc.SetCategory("utils").SetDescription("start the FunctionScheduler on the log system")
+	sc.SetCategory("utils").SetDescription("start the DistributedFunctions on the log system")
 
 	rc := cli.AddCommand("repl", controllers.ReplController{})
 	rc.SetCategory("utils").SetDescription("enable or disable the repl when running mango start")
@@ -38,7 +38,7 @@ func main() {
 	shc.SetCategory("utils").SetDescription("create or delete schedules for when clusters should be provisioned")
 
 	cc := cli.AddCommand("config", controllers.ConfigCommand{})
-	cc.SetCategory("utils").SetDescription("update the global FunctionScheduler configuration")
+	cc.SetCategory("utils").SetDescription("update the global DistributedFunctions configuration")
 
 	// util controllers
 
@@ -55,7 +55,7 @@ func main() {
 	schc.SetCategory("utils").SetDescription("schedule jobs on the gateway")
 
 	statc := cli.AddCommand("jobs", controllers.StatsController{})
-	statc.SetCategory("utils").SetDescription("view stats associated with jobs on FunctionScheduler")
+	statc.SetCategory("utils").SetDescription("view stats associated with jobs on DistributedFunctions")
 
 	// configuration controllers
 

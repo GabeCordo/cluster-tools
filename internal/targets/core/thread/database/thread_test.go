@@ -4,13 +4,13 @@ import (
 	"errors"
 	"testing"
 
-	in_memory2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job/in_memory"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline/in_memory"
-	in_memory3 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic/in_memory"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
-	database2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/database"
+	in_memory2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job/in_memory"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/pipeline/in_memory"
+	in_memory3 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/statistic/in_memory"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	database2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/use_cases/database"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging/text_logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging/text_logging"
 )
 
 func generateDatabaseThread(in chan *thread.Request, out chan *thread.Response) *Thread {

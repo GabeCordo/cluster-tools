@@ -3,7 +3,7 @@ package in_memory
 import (
 	"testing"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/pipeline"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/pipeline"
 )
 
 func Test_StatisticLocalDatabase_Is_Implemented(t *testing.T) {

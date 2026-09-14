@@ -3,8 +3,8 @@ package database
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/contact"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/contact"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 func (t *Thread) handleCreatePipelineRecord(request *thread.Request, response *thread.Response) {

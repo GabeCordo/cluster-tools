@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
 )
 
 type LocalDatabase struct {

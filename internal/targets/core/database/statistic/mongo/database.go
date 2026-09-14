@@ -3,12 +3,12 @@ package mongo
 import (
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/drivers/mongo"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/drivers/mongo"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/statistic"
 )
 
-const DatabaseName string = "FunctionScheduler"
+const DatabaseName string = "DistributedFunctions"
 const CollectionName string = "statistics"
 
 type MongoDatabase struct {

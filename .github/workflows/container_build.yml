@@ -47,8 +47,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/fortifiedcode/FunctionScheduler:latest
-            ghcr.io/fortifiedcode/FunctionScheduler:${{  github.ref_name }}
+            ghcr.io/fortifiedcode/DistributedFunctions:latest
+            ghcr.io/fortifiedcode/DistributedFunctions:${{  github.ref_name }}
           secrets: |
             "username=${{ secrets.USERNAME }}"
             "token=${{ secrets.GH_ACCESS_TOKEN }}"

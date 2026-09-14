@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
 )
 
 type Schedule struct {

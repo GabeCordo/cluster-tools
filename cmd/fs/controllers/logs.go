@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/log"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message/log"
 
 	"github.com/FortifiedCode/commandline"
 )

@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,7 +18,7 @@ type DoctorCommand struct {
 func (dc DoctorCommand) Run(cl *commandline.CommandLine) commandline.TerminateOnCompletion {
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err != nil {
-		fmt.Printf("[%sx%s] FunctionScheduler has never been initialized, statistic 'FunctionScheduler init'\n",
+		fmt.Printf("[%sx%s] DistributedFunctions has never been initialized, statistic 'DistributedFunctions init'\n",
 			terminal.Red, terminal.Reset)
 		return commandline.Terminate
 	}

@@ -3,8 +3,8 @@ package processor
 import (
 	"errors"
 
-	processor3 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	processor3 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 func (uc UseCases) FindCandidateProcessor(r *thread.Response) (*processor3.Processor, error) {

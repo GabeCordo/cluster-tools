@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/provisioner"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread/provisioner"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread/socket"
 
 	"github.com/BurntSushi/toml"
 )

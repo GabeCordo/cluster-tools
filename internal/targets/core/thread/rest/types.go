@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	nonce2 "github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	nonce2 "github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 // Frontend Thread

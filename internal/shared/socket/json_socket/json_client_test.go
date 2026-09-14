@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
 )
 
 ///////////////////////////////////////////////////////////////

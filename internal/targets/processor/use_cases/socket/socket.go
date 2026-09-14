@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
 )
 
 func (uc *UseCases) SetupSocketEventHandlers(events socket.ClientEvents) {

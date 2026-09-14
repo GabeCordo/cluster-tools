@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
 )
 
 type Module struct {

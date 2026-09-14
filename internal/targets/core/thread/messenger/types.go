@@ -3,11 +3,11 @@ package messenger
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/message/email"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/message/email"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 type Config struct {

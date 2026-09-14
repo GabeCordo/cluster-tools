@@ -3,10 +3,10 @@ package scheduler
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	nonce2 "github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/scheduler"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	nonce2 "github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/use_cases/scheduler"
 )
 
 type Config struct {

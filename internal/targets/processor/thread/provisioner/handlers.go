@@ -3,9 +3,9 @@ package provisioner
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
-	thread2 "github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/use_cases/provisioner"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
+	thread2 "github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/use_cases/provisioner"
 )
 
 func (t *Thread) handleGetModules(request *thread2.ProvisionerRequest, response *thread2.ProvisionerResponse) {

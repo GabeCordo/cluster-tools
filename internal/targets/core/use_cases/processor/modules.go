@@ -3,7 +3,7 @@ package processor
 import (
 	"errors"
 
-	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	processor2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
 )
 
 func (uc UseCases) GetModules() []processor2.ModuleData {
@@ -55,9 +55,9 @@ func (uc UseCases) AddModule(processorId uint64, cfg *ScalingFunctions.ModuleIR)
 	//}
 	//}
 
-	// let the operator have an understanding of the FunctionScheduler's state
+	// let the operator have an understanding of the DistributedFunctions's state
 	// ->	when a processor is added it may change what modules/configs/processors are available to use
-	//		and whether they are mounted in the FunctionScheduler currently
+	//		and whether they are mounted in the DistributedFunctions currently
 	uc.Logger.Println("UPDATED ==================>")
 	uc.ProcessorTable.Print()
 

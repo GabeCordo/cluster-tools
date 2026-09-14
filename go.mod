@@ -1,4 +1,4 @@
-module github.com/GabeCordo/FunctionScheduler
+module github.com/GabeCordo/DistributedFunctions
 
 go 1.24.6
 

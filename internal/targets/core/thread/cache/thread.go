@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
 )
 
 func (t *Thread) Setup() {

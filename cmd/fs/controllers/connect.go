@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/api"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/api"
 
 	"github.com/FortifiedCode/commandline"
 )

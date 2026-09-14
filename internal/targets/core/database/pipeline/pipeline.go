@@ -1,7 +1,7 @@
 package pipeline
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
 )
 
 type Pipeline struct {

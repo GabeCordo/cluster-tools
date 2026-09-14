@@ -3,7 +3,7 @@ package in_memory
 import (
 	"sync"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/contact"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/contact"
 )
 
 type Database struct {

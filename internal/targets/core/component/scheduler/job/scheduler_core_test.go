@@ -3,9 +3,9 @@ package job
 import (
 	"testing"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job/in_memory"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job/in_memory"
 )
 
 var testInterval = &database.Interval{

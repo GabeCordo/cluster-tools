@@ -1,7 +1,7 @@
 package socket
 
 import (
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
 )
 
 func (t *Thread) Setup() {

@@ -45,8 +45,8 @@ RUN ./fs doctor
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=build-env /go/src/cmd/FunctionScheduler/fs /
-COPY --from=build-env /root/.cache/FunctionScheduler /root/.cache/FunctionScheduler
+COPY --from=build-env /go/src/cmd/DistributedFunctions/fs /
+COPY --from=build-env /root/.cache/DistributedFunctions /root/.cache/DistributedFunctions
 
 EXPOSE 8136
 EXPOSE 8137

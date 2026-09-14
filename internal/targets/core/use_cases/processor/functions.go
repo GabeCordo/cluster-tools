@@ -3,7 +3,7 @@ package processor
 import (
 	"errors"
 
-	processor2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/component/processor"
+	processor2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/component/processor"
 )
 
 func (uc UseCases) GetFunctions(name string) ([]processor2.FunctionData, error) {

@@ -3,11 +3,11 @@ package database
 import (
 	"errors"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/logging"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/nonce"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread"
-	database2 "github.com/GabeCordo/FunctionScheduler/internal/targets/core/use_cases/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/logging"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/nonce"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread"
+	database2 "github.com/GabeCordo/DistributedFunctions/internal/targets/core/use_cases/database"
 )
 
 var StoreTypeMismatch = errors.New("the received type and desired database type do not match")

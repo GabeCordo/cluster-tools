@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
 )
 
 func (uc UseCases) GetRuns(namespace, pipeline string, identifier, maximum, offset uint64) (rr []*run.Run) {

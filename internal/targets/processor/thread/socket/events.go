@@ -3,9 +3,9 @@ package socket
 import (
 	"encoding/json"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/socket"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/run"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/processor/thread"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/run"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/processor/thread"
 )
 
 type Events struct {

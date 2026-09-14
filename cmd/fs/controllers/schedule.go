@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/job"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/job"
 
 	"github.com/FortifiedCode/commandline"
 	"gopkg.in/yaml.v3"

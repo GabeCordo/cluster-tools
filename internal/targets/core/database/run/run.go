@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
 )
 
 type Status string

@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/database/statistic"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/database/statistic"
 )
 
 type LocalDatabase struct {
@@ -38,7 +38,7 @@ func (localDatabase *LocalDatabase) Save(path string) error {
 	localDatabase.mutex.RLock()
 	defer localDatabase.mutex.RUnlock()
 
-	fileName := fmt.Sprintf("FunctionScheduler_stats_%s.json", time.Now().Format(time.RFC3339))
+	fileName := fmt.Sprintf("DistributedFunctions_stats_%s.json", time.Now().Format(time.RFC3339))
 	outputFilePath := filepath.Join(path, fileName)
 
 	if _, err := os.Stat(outputFilePath); os.IsExist(err) {

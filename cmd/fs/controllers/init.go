@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core"
 
 	"github.com/FortifiedCode/commandline"
-	"github.com/GabeCordo/FunctionScheduler/internal/shared/terminal"
+	"github.com/GabeCordo/DistributedFunctions/internal/shared/terminal"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	userCacheDir, _         = os.UserCacheDir()
-	DefaultFrameworkFolder  = userCacheDir + "/FunctionScheduler/"
+	DefaultFrameworkFolder  = userCacheDir + "/DistributedFunctions/"
 	DefaultConfigsFolder    = DefaultFrameworkFolder + "configs/"
 	DefaultCoreConfigFile   = DefaultFrameworkFolder + "core.yml"
 	DefaultLogsFolder       = DefaultFrameworkFolder + "logs/"
@@ -56,12 +56,12 @@ func (ic InitCommand) Run(cli *commandline.CommandLine) commandline.TerminateOnC
 	defaultConfig.Processor.MaxRetry = 10
 
 	if _, err := os.Stat(DefaultFrameworkFolder); err == nil {
-		fmt.Printf("[%s!%s]FunctionScheduler has already been initialized\n",
+		fmt.Printf("[%s!%s]DistributedFunctions has already been initialized\n",
 			terminal.Red, terminal.Reset)
 		return commandline.Terminate
 	}
 
-	fmt.Println("FunctionScheduler has not been initialized")
+	fmt.Println("DistributedFunctions has not been initialized")
 
 	if err := os.Mkdir(DefaultFrameworkFolder, 0700); err != nil {
 		fmt.Printf("[%sx%s] failed to create %s directory %s\n",

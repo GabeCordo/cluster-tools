@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/cache"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/database"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/messenger"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/processor"
-	httpClient "github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/rest"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/runner"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/scheduler"
-	"github.com/GabeCordo/FunctionScheduler/internal/targets/core/thread/socket"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/cache"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/database"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/messenger"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/processor"
+	httpClient "github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/rest"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/runner"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/scheduler"
+	"github.com/GabeCordo/DistributedFunctions/internal/targets/core/thread/socket"
 
 	"gopkg.in/yaml.v3"
 )
@@ -123,7 +123,7 @@ func (config *Config) Print() {
 
 func (config *Config) ToYAML(path string) error {
 
-	// if a FunctionScheduler already exists, delete it
+	// if a DistributedFunctions already exists, delete it
 	_, err := os.Stat(path)
 	if err == nil {
 		// attempt to remove the path
@@ -149,7 +149,7 @@ func (config *Config) ToYAML(path string) error {
 }
 
 func (config *Config) Store() bool {
-	// verify that the FunctionScheduler file we initially loaded from has not been deleted
+	// verify that the DistributedFunctions file we initially loaded from has not been deleted
 	if _, err := os.Stat(config.Paths.Root); errors.Is(err, os.ErrNotExist) {
 		return false
 	}
@@ -248,7 +248,7 @@ func YAMLToETLConfig(config *Config, path string) error {
 
 	err = yaml.NewDecoder(f).Decode(&config)
 	if err != nil {
-		// the file is not a JSON or is a malformed (fields missing) FunctionScheduler
+		// the file is not a JSON or is a malformed (fields missing) DistributedFunctions
 		log.Println(err)
 		return err
 	}
